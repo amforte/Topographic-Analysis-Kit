@@ -47,7 +47,7 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
     addParamValue(p,'rlf_radius',2500,@(x) isscalar(x) && isnumeric(x));
     addParamValue(p,'min_grad',0.001,@(x) isscalar(x) && isnumeric(x));
 
-    parse(p,DEM,FD,S,A,basin_num,varargin{:});
+    parse(p,DEM,FD,S,A,varargin{:});
     DEM=p.Results.DEM;
     FD=p.Results.FD;
     S=p.Results.S;
