@@ -1,6 +1,4 @@
 # TopoTools
-Set of matlab based tools for topographic analysis, built on top of TopoToolbox.
-
 These are a series of matlab functions written by Adam M. Forte that build upon the functionality of TopoToolbox (https://topotoolbox.wordpress.com/). Each function contains a header with basic functionality info along with expected inputs and possible outputs. This readme compiles some of that information and lays out possible workflows. Discussions of workflows and tools assume a basic familiarity with the TopoToolbox data classes and Matlab functions.
 
 # Getting Started
