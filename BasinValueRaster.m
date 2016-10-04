@@ -9,7 +9,7 @@ function [OUT]=BasinValueRaster(DEM,valueOI,location_of_data_files)
 	%	'gradient' - mean gradient of basin
 	%	'chir2' - R^2 value of chi-z fit (proxy for disequilibrium)
 	%	'drainage_area' - drainage area in km2 of basin
-    %   'theta' - best fit concavity resultant from the topo toolbox chiplot function
+    	%   'theta' - best fit concavity resultant from the topo toolbox chiplot function
 	% location_of_data_files - full path of folder which contains the mat files from 'ProcessRiverBasins' as a string
 	% 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
