@@ -1,5 +1,5 @@
 # TopoTools
-These are a series of matlab functions written by Adam M. Forte that build upon the functionality of TopoToolbox (https://topotoolbox.wordpress.com/). Each function contains a header with basic functionality info along with expected inputs and possible outputs. This readme compiles some of that information and lays out possible workflows. Discussions of workflows and tools assume a basic familiarity with the TopoToolbox data classes and Matlab functions.
+These are a series of matlab functions written by Adam M. Forte (aforte 'at' asu.edu) that build upon the functionality of TopoToolbox (https://topotoolbox.wordpress.com/). Each function contains a header with basic functionality info along with expected inputs and possible outputs. This readme compiles some of that information and lays out possible workflows. Discussions of workflows and tools assume a basic familiarity with the TopoToolbox data classes and Matlab functions.
 
 # Getting Started
 The first step in most processing workflows is going to the 'MakeStreams' function, which takes a georeferenced DEM file as either a GeoTiff or ascii and produces the basic TopoToolbox datasets (DEM as a GRIDobj, flow direction as FLOWobj, flow accumulation as GRIDobj, and stream network as STREAMobj). All other functions require outputs from this function.
