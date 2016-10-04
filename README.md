@@ -26,7 +26,4 @@ Several functions are designed to allow interactive selection of river profiles 
 There are several other functions in the folder, many of these are helper functions used by some of the above functions (i.e. put the whole folder and all of its subfolders on your path or things will break!). There is a folder called 'SwathTools' which contains some functions that wrap TopoToolbox's existing and (powerful) SWATHobj functions.
 
 # Dependencies
-These codes make use of several other Matlab toolboxes, which are freely available from the Matlab file exchange but I have not included here as a courtesy to the developers of those toolboxes. These are the toolboxes:
--hline and vline
--real2rgb
--cbrewer
+These codes make use of several other Matlab toolboxes, which are freely available from the Matlab file exchange but I have not included here as a courtesy to the developers of those toolboxes. These are the toolboxes: 'hline and vline', 'real2rgb', and 'cbrewer'.
