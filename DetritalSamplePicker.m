@@ -61,7 +61,7 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
     % Check for outlets file from previous run
     if exist('Outlets.mat','file')==2;
         load('Outlets.mat','Outlets');
-        ii=max(Outlets(:,1))+1;
+        ii=max(Outlets(:,3))+1;
     else 
        ii=1; 
        Outlets=zeros(0,3);
