@@ -1,4 +1,5 @@
 function [BED]=DippingBedFinder(dem_location,x_coord,y_coord,hght_abv_base,thickness,strike,dip);
+% Oct 14 2016 - Currently Malfunctioning - Will Fix Soon
 % Function to determine the expected location of a planar dipping bed within a landscape based on an input coordinate
 %
 % Required Inputs:
