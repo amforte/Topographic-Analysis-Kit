@@ -1,5 +1,4 @@
 function [BED]=DippingBedFinder(dem_location,x_coord,y_coord,hght_abv_base,thickness,strike,dip);
-% Oct 14 2016 - Currently Malfunctioning - Will Fix Soon
 % Function to determine the expected location of a planar dipping bed within a landscape based on an input coordinate
 %
 % Required Inputs:
@@ -96,84 +95,51 @@ hold off
 
 % Output
 GRIDobj2ascii(BED,'Bed_Location.txt');
-
-
 end
 
 function [de]=PlaneOrient(strike,dip,xmax,ymax,xi,yi)
-   strike=-strike; 
+ % Convert to dip direction
+ if strike>=0 & strike<270
+    didi=strike+90;
+elseif strike>=270 & strike<=360
+    didi=(strike+90)-360;
+end
 
-  % Check for vertical beds
-  if dip==90
-    error('Beds cannot be vertical');
-  end
+if didi>=0 & didi<90
+    % Calculate normal vector
+    df=90-dip;
+    c=tand(df);
+    a=sind(didi);
+    b=cosd(didi);
 
-  if strike>=0 & strike<90;
-    BetaX=90-strike;
-    BetaY=strike;
-
-    AlphaX=atan(sin(deg2rad(BetaX))*tan(deg2rad(dip)));
-    AlphaY=atan(sin(deg2rad(BetaY))*tan(deg2rad(dip)));
-
-    % Calc normal vector
-    XVec=[xmax,0,-xmax*tan(AlphaX)];
-    YVec=[0,-ymax,-ymax*tan(AlphaY)];
-    normal=cross(XVec,YVec);
-
-    a=normal(:,1); b=normal(:,2); c=normal(:,3);
-    d=-1*(a*0+b*ymax+c*0);
-
-    de=(a.*xi + b.*yi+d)./-c;
-
-  elseif strike>=90 & strike<180;
-    BetaX=strike-90;
-    BetaY=180-strike;
-
-    AlphaX=atan(sin(deg2rad(BetaX))*tan(deg2rad(dip)));
-    AlphaY=atan(sin(deg2rad(BetaY))*tan(deg2rad(dip)));
-
-    % Calc normal vector
-    XVec=[-xmax,0,-xmax*tan(AlphaX)];
-    YVec=[0,-ymax,-ymax*tan(AlphaY)];
-    normal=cross(XVec,YVec);
-
-    a=normal(:,1); b=normal(:,2); c=normal(:,3);
-    d=-1*(a*xmax+b*ymax+c*0);
-
-    de=(a.*xi + b.*yi+d)./-c;
-  elseif strike>=180 & strike<270;
-    BetaX=270-strike;
-    BetaY=strike-180;
-
-    AlphaX=atan(sin(deg2rad(BetaX))*tan(deg2rad(dip)));
-    AlphaY=atan(sin(deg2rad(BetaY))*tan(deg2rad(dip)));
-
-    % Calc normal vector
-    XVec=[-xmax,0,-xmax*tan(AlphaX)];
-    YVec=[0,ymax,-ymax*tan(AlphaY)];
-    normal=cross(XVec,YVec);
-
-    a=normal(:,1); b=normal(:,2); c=normal(:,3);
     d=-1*(a*xmax+b*0+c*0);
+elseif didi>=90 & didi<180
+    % Calculate normal vector
+    df=90-dip;
+    c=tand(df);
+    a=cosd(didi-90);
+    b=-1*sind(didi-90);
 
-    de=(a.*xi + b.*yi+d)./-c;
-  else 
-    BetaX=strike-270;
-    BetaY=360-strike;
+    d=-1*(a*0+b*ymax+c*0);
+elseif didi>=180 & didi<270
+    % Calculate normal vector
+    df=90-dip;
+    c=tand(df);
+    a=-1*sind(didi-180);
+    b=-1*cosd(didi-180);
 
-    AlphaX=atan(sin(deg2rad(BetaX))*tan(deg2rad(dip)));
-    AlphaY=atan(sin(deg2rad(BetaY))*tan(deg2rad(dip)));
+    d=-1*(a*xmax+b*ymax+c*0);
+elseif didi>=270 & didi<=360
+      % Calculate normal vector
+    df=90-dip;
+    c=tand(df);
+    a=sind(didi-270);
+    b=-1*cosd(didi-270);
 
-    % Calc normal vector
-    XVec=[xmax,0,-xmax*tan(AlphaX)];
-    YVec=[0,ymax,-ymax*tan(AlphaY)];
-    normal=cross(XVec,YVec);
-
-    a=normal(:,1); b=normal(:,2); c=normal(:,3);
-    d=-1*(a*0+b*0+c*0);
-
-    de=(a.*xi + b.*yi+d)./-c;
-  end
-
+    d=-1*(a*xmax+b*0+c*0);
+end
+% Calculate depth surface and flip values
+  de=(a.*xi + b.*yi+d)./-c;
+  de=flipud(de);
 
 end 
