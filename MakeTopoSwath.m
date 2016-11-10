@@ -45,15 +45,30 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,sample,smoo
 	end
 
 	% Make Swath 
-	SW=SWATHobj(DEM,points,'width',width,'dx',sample,'smooth',smooth,'plot',false);
+	% Deal with changes in versions of TopoToolbox
+	try
+		SW=SWATHobj(DEM,points,'width',width,'dx',sample,'smooth',smooth,'plot',false); % Older versions
+	catch
+		SW=SWATHobj(DEM,points(:,1),points(:,2),'width',width,'dx',sample,'smooth',smooth,'plot',false); % Newer versions
+	end
 
 	% Extract useful values from swath object
-	elevs=cell2mat(SW.Z);
+	try
+		elevs=cell2mat(SW.Z); % Old
+	catch 
+		elevs=SW.Z; % New
+	end
+
 	mean_elevs=nanmean(elevs);
 	min_elevs=nanmin(elevs);
 	max_elevs=nanmax(elevs);
-	xypoints=cell2mat(SW.xy);
-	swdist=cell2mat(SW.distx);
+	try
+		xypoints=cell2mat(SW.xy); % Old
+		swdist=cell2mat(SW.distx);
+	catch
+		xypoints=SW.xy; % New
+		swdist=SW.distx;
+	end
 
 	SwathMat=[swdist min_elevs.' mean_elevs.' max_elevs.'];
 
