@@ -7,7 +7,11 @@ function [n_x,n_y]=ReFrameRot(SWATH,x,y)
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Find Angle
-	xypoints=cell2mat(SWATH.xy);
+	try
+		xypoints=cell2mat(SWATH.xy); %Old TopoToolbox
+	catch
+		xypoints=SWATH.xy; %New TopoToolbox
+	end
 	start_p=xypoints(1,:);
 	stop_p=xypoints(length(xypoints),:);
 
