@@ -35,7 +35,7 @@ function [OUT]=BasinValueRaster(DEM,valueOI,location_of_data_files,varargin)
 
 	addParamValue(p,'method','subdivided',@(x) ischar(validatestring(x,{'subdivided','nested'})));
 
-	parse(p,DEM,FD,S,river_mouths,varargin{:});
+	parse(p,DEM,valueOI,location_of_data_files,varargin{:});
 	DEM=p.Results.DEM;
 	valueOI=p.Results.valueOI;
 	location_of_data_files=p.Results.location_of_data_files;
