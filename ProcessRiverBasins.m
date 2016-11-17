@@ -108,8 +108,7 @@ function []=ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 			Ac=flowacc(FDc);
 			DEMc=imposemin(FDc,DEMoc,.001); % Hyrdologically condition DEM
 			DEMc_res=DEMc.cellsize;
-			min_area=floor(threshold_area/(DEMc_res*DEMc_res));
-			Sc=STREAMobj(FDc,,'minarea',min_area,'unit','mapunits');
+			Sc=STREAMobj(FDc,,'minarea',threshold_area,'unit','mapunits');
 
 			% Extract largest drainage
 			SLc=klargestconncomps(Sc,1);	
