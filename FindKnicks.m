@@ -21,10 +21,13 @@ function [KnickPoints]=FindKnicks(Basin_Data_File,plot_result)
 
 	% De-Densify Network
 	S=modify(Sc,'streamorder','>1');
+	if isempty(S.x)
+		S=Sc;
+	end
 
 	% Find Channel Heads of Channel Network
 	ChXY=streampoi(S,'channelheads','xy');
-	ChIX=streampoi(S,'channelheads','ix');
+	ChIX=coord2ind(DEMoc,ChXY(:,1),ChXY(:,2));
 	NumHeads=numel(ChIX);
 
 	% Create Logical Seed Raster
