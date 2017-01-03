@@ -1624,41 +1624,2079 @@ function [knl,ksn_master,Sc]=KSN_Profiler(DEM,FD,A,S,varargin)
 					% Determine where ksn value fits into color scale and plot
 					ksn_val=Cseg.ks;
 
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Begin main IF statement to switch between options %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	if strcmp(theta_method,'ksn')==1 && strcmp(pick_method,'chi')==1 && strcmp(junction_method,'check')==1
+
+		while strcmp(str2,'Y')==1;
+			while strcmp(str1,'N')==1;	
+				str3='R'; %Reset redo flag
+	            disp('Zoom or pan to area of interest and then press enter');
+	            pause();
+
+				disp('    Choose point near channel head of interest')
+				[x,y]=ginput(1);
+				pOI=[x y];
+
+				% Find nearest channel head
+				distance=sqrt(sum(bsxfun(@minus, ch, pOI).^2,2));
+				chOI=ch(distance==min(distance),:);
+
+				% Build logical raster
+				ix=coord2ind(DEM,chOI(:,1),chOI(:,2));
+				IX=GRIDobj(DEM);
+				IX.Z(ix)=1;
+				[ixmat,X,Y]=GRIDobj2mat(IX);
+				ixmat=logical(ixmat);
+				IX=GRIDobj(X,Y,ixmat);
+
+				Sn=modify(S,'downstreamto',IX);
+
+				% Build composite stream network of picked streams
+				if ii>1
+					[IIXX,~,~,Si]=intersectlocs(Sc,Sn);
+					if isempty(IIXX)
+						Sn=Sn;
+						Sct=union(Sn,Sc,FD);
+					else
+						Sn=Si;
+						Sct=union(Sn,Sc,FD);
+					end
+				else
+					Sct=Sn;
+				end
+
+				figure(f1)
+				hold on
+				p1=plot(Sn,'-k','LineWidth',2);
+				hold off
+
+				prompt='    Is this the stream segment you wanted? Y/N [Y]: ';
+				str1=input(prompt,'s');
+				if isempty(str1)
+					str1 = 'Y';
+					Sc=Sct;
+				elseif strcmp(str1,'Y')==1; 
+					Sc=Sct;
+				else
+					delete(p1);
+				end
+			end
+
+			% Calculate chi
+			C=ChiCalc(Sn,DEMc,A,1,ref_theta);
+			while strcmp(str3,'R');
+				f2=figure(2);
+				set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
+
+				clf
+				subplot(2,1,2)
+				hold on
+				plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+				plotdz(Sn,DEMc,'dunit','km','Color','k');
+				xlabel('Distance from Mouth (km)')
+				ylabel('Elevation (m)')
+				legend('Unconditioned DEM','Conditioned DEM','location','best');
+				title('Long Profile')
+				hold off
+
+				subplot(2,1,1)
+				hold on
+				plot(C.chi,C.elev,'-k');
+				scatter(C.chi,C.elev,20,'r');
+				xlabel('Chi')
+				ylabel('Elevation (m)')
+				title('Chi - Z : Pick Segments','Color','r')
+				hold off
+
+				% suptitle(['Reference concavity = ' num2str(C.mn)]);
+
+				disp('    Select bounds for calculating channel steepnesses and press enter when completed')
+				[cv,e]=ginput;
+
+				if isempty(cv)
+					ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.mn];
+
+					% Determine where ksn value fits into color scale and plot
+					ksn_val=C.ks;
+
 					if ksn_val > mksn;
 						figure(f1)
 						hold on
-						plot(Seg,'Color',KSN_col(end,:),'LineWidth',2);
+						plot(Sn,'Color',KSN_col(end,:),'LineWidth',2);
 						hold off
 					else
-						edges=linspace(0,500,10);
+						edges=linspace(0,mksn,10);
 						n=histc(ksn_val,edges);
 						figure(f1)
 						hold on
-						plot(Seg,'Color',KSN_col(logical(n),:),'LineWidth',2);
+						plot(Sn,'Color',KSN_col(logical(n),:),'LineWidth',2);
 						hold off	
 					end
 
-					ksn_nodes{jj,1}=[Cseg.x Cseg.y Cseg.area ones(numel(Cseg.x),1)*Cseg.ks ones(numel(Cseg.x),1)*Cseg.mn];
+					[~,lbix]=min(C.chi);
+					elbl=C.elev(lbix);
+					figure(f2)
+					subplot(2,1,1);
+					hold on
+					plot(C.chi,C.pred+elbl,'-g','LineWidth',2);
+					hold off
+
+					res_list=[C.chi C.res];
+
+				else
+					% Sort knickpoint list and construct bounds list
+					cvs=sortrows(cv);
+					bnds=vertcat(0,cvs,C.chi(1));
+
+					num_bnds=numel(bnds);
+					rc=C.chi;
+					rx=C.x;
+					ry=C.y;
+					for jj=1:num_bnds-1
+						% disp([' Calculating segment ' num2str(jj)])
+						% Extract bounds
+						lb=bnds(jj);
+						rb=bnds(jj+1);
+
+						% Clip out stream segment
+						lb_chidist=sqrt(sum(bsxfun(@minus, rc, lb).^2,2));
+						rb_chidist=sqrt(sum(bsxfun(@minus, rc, rb).^2,2));
+
+						lbx=rx(lb_chidist==min(lb_chidist));
+						lby=ry(lb_chidist==min(lb_chidist));
+
+						rbx=rx(rb_chidist==min(rb_chidist));
+						rby=ry(rb_chidist==min(rb_chidist));	
+
+						lix=coord2ind(DEM,lbx,lby);
+						LIX=GRIDobj(DEM);
+						LIX.Z(lix)=1;
+						[lixmat,X,Y]=GRIDobj2mat(LIX);
+						lixmat=logical(lixmat);
+						LIX=GRIDobj(X,Y,lixmat);	
+
+						rix=coord2ind(DEM,rbx,rby);
+						RIX=GRIDobj(DEM);
+						RIX.Z(rix)=1;
+						[rixmat,X,Y]=GRIDobj2mat(RIX);
+						rixmat=logical(rixmat);
+						RIX=GRIDobj(X,Y,rixmat);	
+
+						Seg=modify(Sn,'downstreamto',RIX);
+						Seg=modify(Seg,'upstreamto',LIX);
+
+
+						% Calculate chi to find ksn and bestfit concavity 
+						Cseg=ChiCalc(Seg,DEMc,A,1,ref_theta);
+
+						% Determine where ksn value fits into color scale and plot
+						ksn_val=Cseg.ks;
+
+						if ksn_val > mksn;
+							figure(f1)
+							hold on
+							plot(Seg,'Color',KSN_col(end,:),'LineWidth',2);
+							hold off
+						else
+							edges=linspace(0,mksn,10);
+							n=histc(ksn_val,edges);
+							figure(f1)
+							hold on
+							plot(Seg,'Color',KSN_col(logical(n),:),'LineWidth',2);
+							hold off	
+						end
+
+						ksn_nodes{jj,1}=[Cseg.x Cseg.y Cseg.area ones(numel(Cseg.x),1)*Cseg.ks ones(numel(Cseg.x),1)*Cseg.mn];
+
+						% Plot linear fits	
+						rchi=rc(rb_chidist==min(rb_chidist));
+						lchi=rc(lb_chidist==min(lb_chidist));
+						segChi=linspace(lchi,rchi,numel(Cseg.chi));
+						seg0Chi=linspace(0,max(Cseg.chi),numel(Cseg.chi));
+						[~,lbix]=min(Cseg.chi);
+						elbl=Cseg.elev(lbix);
+
+						figure(f2)
+						subplot(2,1,1);
+						hold on
+						plot(segChi,(seg0Chi.*ksn_val)+elbl,'-g','LineWidth',2);
+						hold off
+
+						res_list{jj,1}=[Cseg.chi+lchi Cseg.res];	
+
+					end
+
+					ksn_list=vertcat(ksn_nodes{:});
+					res_list=vertcat(res_list{:});
 				end
 
-				ksn_list=vertcat(ksn_nodes{:});
+				f3=figure(3);
+				set(f3,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
+
+				clf
+				subplot(2,1,2)
+				hold on
+				plot(res_list(:,1),ksn_list(:,4),'-k');
+				xlabel('Chi')
+				ylabel('k_{sn}')
+				title('k_{sn} - Chi')
+				hold off
+
+				subplot(2,1,1)
+				hold on
+				stem(res_list(:,1),res_list(:,2),'filled','-k');
+				xlabel('Chi')
+				ylabel('Residual (m)')
+				title('Residual on k_{sn} fit')
+				hold off
+
+				prompt='    Continue picking (Y), stop picking (N), or redo fit on this stream (R)? [Y]: ';
+				str2=input(prompt,'s');
+				if isempty(str2)
+					str2 = 'Y';
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+					ii=ii+1;
+				elseif strcmp(str2,'Y');
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+					ii=ii+1;
+				elseif strcmp(str2,'N');
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+				elseif strcmp(str2,'R');
+					str3 = 'R';
+					str2 = 'Y';
+					clear ksn_list ksn_nodes res_list;
+				end
+
+				close figure 2
+				close figure 3
+			end
+		end
+
+	elseif strcmp(theta_method,'ksn')==1 && strcmp(pick_method,'stream')==1 && strcmp(junction_method,'check')==1
+
+		while strcmp(str2,'Y')==1;
+			while strcmp(str1,'N')==1;	
+				str3='R';
+	            disp('Zoom or pan to area of interest and then press enter');
+	            pause();
+
+				disp('    Choose point near channel head of interest')
+				[x,y]=ginput(1);
+				pOI=[x y];
+
+				% Find nearest channel head
+				distance=sqrt(sum(bsxfun(@minus, ch, pOI).^2,2));
+				chOI=ch(distance==min(distance),:);
+
+				% Build logical raster
+				ix=coord2ind(DEM,chOI(:,1),chOI(:,2));
+				IX=GRIDobj(DEM);
+				IX.Z(ix)=1;
+				[ixmat,X,Y]=GRIDobj2mat(IX);
+				ixmat=logical(ixmat);
+				IX=GRIDobj(X,Y,ixmat);
+
+				Sn=modify(S,'downstreamto',IX);
+
+				% Build composite stream network of picked streams
+				if ii>1
+					[IIXX,~,~,Si]=intersectlocs(Sc,Sn);
+					if isempty(IIXX)
+						Sn=Sn;
+						Sct=union(Sn,Sc,FD);
+					else
+						Sn=Si;
+						Sct=union(Sn,Sc,FD);
+					end
+				else
+					Sct=Sn;
+				end
+
+				figure(f1)
+				hold on
+				p1=plot(Sn,'-k','LineWidth',2);
+				hold off
+
+				prompt='    Is this the stream segment you wanted? Y/N [Y]: ';
+				str1=input(prompt,'s');
+				if isempty(str1)
+					str1 = 'Y';
+					Sc=Sct;
+				elseif strcmp(str1,'Y')==1; 
+					Sc=Sct;
+				else
+					delete(p1);
+				end
 			end
 
-			ksn_master{ii,1}=ksn_list;
-			clear ksn_list ksn_nodes;
+			% Calculate chi
+			% C=chiplot(Sn,DEMc,A,'a0',1,'mn',ref_theta,'plot',false);
+			C=ChiCalc(Sn,DEMc,A,1,ref_theta);
+			while strcmp(str3,'R');
+				f2=figure(2);
+				set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
 
-			ii=ii+1;
+				clf
+				subplot(2,1,1);
+				hold on
+				plot(C.chi,C.elev,'-k');
+				scatter(C.chi,C.elev,20,'r');
+				xlabel('Chi')
+				ylabel('Elevation (m)')
+				title('Chi - Z')
+				hold off
 
-			prompt='    Continue picking? Y/N [Y]: ';
-			str2=input(prompt,'s');
-			if isempty(str2)
-				str2 = 'Y';
-				str1 = 'N';
-			elseif strcmp(str2,'Y')==1;
-				str1='N';
+				subplot(2,1,2);
+				hold on
+				plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+				plotdz(Sn,DEMc,'dunit','km','Color','k');
+				xlabel('Distance from Mouth (km)')
+				ylabel('Elevation (m)')
+				legend('Unconditioned DEM','Conditioned DEM','location','best');
+				title('Long Profile : Pick Segments','Color','r')
+				hold off
+
+				% suptitle(['Reference concavity = ' num2str(C.mn)]);
+
+				disp('    Select bounds for calculating channel steepnesses and press enter when completed')
+				[d,e]=ginput;
+				d=d*1000; % convert back to meters;
+
+				if isempty(d)
+					ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.mn];
+
+					% Determine where ksn value fits into color scale and plot
+					ksn_val=C.ks;
+
+					if ksn_val > mksn;
+						figure(f1)
+						hold on
+						plot(Sn,'Color',KSN_col(end,:),'LineWidth',2);
+						hold off
+					else
+						edges=linspace(0,mksn,10);
+						n=histc(ksn_val,edges);
+						figure(f1)
+						hold on
+						plot(Sn,'Color',KSN_col(logical(n),:),'LineWidth',2);
+						hold off	
+					end
+
+					[~,lbix]=min(C.chi);
+					elbl=C.elev(lbix);
+					figure(f2)
+					subplot(2,1,1);
+					hold on
+					plot(C.chi,C.pred+elbl,'-g','LineWidth',2);
+					hold off
+
+					res_list=[C.chi C.res];
+
+				else
+					% Sort knickpoint list and construct bounds list
+					ds=sortrows(d);
+					bnds=vertcat(0,ds,max(Sn.distance));
+
+					num_bnds=numel(bnds);
+					rd=Sn.distance;
+					rx=Sn.x;
+					ry=Sn.y;
+					rc=flipud(C.chi);
+					for jj=1:num_bnds-1
+						% disp([' Calculating segment ' num2str(jj)])
+						% Extract bounds
+						lb=bnds(jj);
+						rb=bnds(jj+1);
+
+						% Clip out stream segment
+						lb_dist=sqrt(sum(bsxfun(@minus, rd, lb).^2,2));
+						rb_dist=sqrt(sum(bsxfun(@minus, rd, rb).^2,2));
+
+						lbx=rx(lb_dist==min(lb_dist));
+						lby=ry(lb_dist==min(lb_dist));
+
+						rbx=rx(rb_dist==min(rb_dist));
+						rby=ry(rb_dist==min(rb_dist));	
+
+						lix=coord2ind(DEM,lbx,lby);
+						LIX=GRIDobj(DEM);
+						LIX.Z(lix)=1;
+						[lixmat,X,Y]=GRIDobj2mat(LIX);
+						lixmat=logical(lixmat);
+						LIX=GRIDobj(X,Y,lixmat);	
+
+						rix=coord2ind(DEM,rbx,rby);
+						RIX=GRIDobj(DEM);
+						RIX.Z(rix)=1;
+						[rixmat,X,Y]=GRIDobj2mat(RIX);
+						rixmat=logical(rixmat);
+						RIX=GRIDobj(X,Y,rixmat);	
+
+						Seg=modify(Sn,'downstreamto',RIX);
+						Seg=modify(Seg,'upstreamto',LIX);
+
+
+						% Calculate chi to find ksn and bestfit concavity 
+						Cseg=ChiCalc(Seg,DEMc,A,1,ref_theta);
+
+						% Determine where ksn value fits into color scale and plot
+						ksn_val=Cseg.ks;
+
+						if ksn_val > mksn;
+							figure(f1)
+							hold on
+							plot(Seg,'Color',KSN_col(end,:),'LineWidth',2);
+							hold off
+						else
+							edges=linspace(0,mksn,10);
+							n=histc(ksn_val,edges);
+							figure(f1)
+							hold on
+							plot(Seg,'Color',KSN_col(logical(n),:),'LineWidth',2);
+							hold off	
+						end
+
+						ksn_nodes{jj,1}=[Cseg.x Cseg.y Cseg.area ones(numel(Cseg.x),1)*Cseg.ks ones(numel(Cseg.x),1)*Cseg.mn];
+
+						% Plot linear fits	
+						rchi=rc(rb_dist==min(rb_dist));
+						lchi=rc(lb_dist==min(lb_dist));
+						segChi=linspace(lchi,rchi,numel(Cseg.chi));
+						seg0Chi=linspace(0,max(Cseg.chi),numel(Cseg.chi));
+						[~,lbix]=min(Cseg.chi);
+						elbl=Cseg.elev(lbix);
+
+						figure(f2)
+						subplot(2,1,1);
+						hold on
+						plot(segChi,(seg0Chi.*ksn_val)+elbl,'-g','LineWidth',2);
+						hold off
+
+						res_list{jj,1}=[Cseg.chi+lchi Cseg.res];	
+					end
+
+					ksn_list=vertcat(ksn_nodes{:});
+					res_list=vertcat(res_list{:});
+				end
+
+				f3=figure(3);
+				set(f3,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
+
+				clf
+				subplot(2,1,2)
+				hold on
+				plot(res_list(:,1),ksn_list(:,4),'-k');
+				xlabel('Chi')
+				ylabel('k_{sn}')
+				title('k_{sn} - Chi')
+				hold off
+
+				subplot(2,1,1)
+				hold on
+				stem(res_list(:,1),res_list(:,2),'filled','-k');
+				xlabel('Chi')
+				ylabel('Residual (m)')
+				title('Residual on k_{sn} fit')
+				hold off
+
+				prompt='    Continue picking (Y), stop picking (N), or redo fit on this stream (R)? [Y]: ';
+				str2=input(prompt,'s');
+				if isempty(str2)
+					str2 = 'Y';
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+					ii=ii+1;
+				elseif strcmp(str2,'Y');
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+					ii=ii+1;
+				elseif strcmp(str2,'N');
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+				elseif strcmp(str2,'R');
+					str3 = 'R';
+					str2 = 'Y';
+					clear ksn_list ksn_nodes res_list;
+				end
+
+				close figure 2
+				close figure 3
+			end
+		end
+
+	elseif strcmp(theta_method,'ksn')==1 && strcmp(pick_method,'chi')==1 && strcmp(junction_method,'ignore')==1
+
+		while strcmp(str2,'Y')==1;
+			while strcmp(str1,'N')==1;	
+				str3='R'; %Reset redo flag
+	            disp('Zoom or pan to area of interest and then press enter');
+	            pause();
+
+				disp('    Choose point near channel head of interest')
+				[x,y]=ginput(1);
+				pOI=[x y];
+
+				% Find nearest channel head
+				distance=sqrt(sum(bsxfun(@minus, ch, pOI).^2,2));
+				chOI=ch(distance==min(distance),:);
+
+				% Build logical raster
+				ix=coord2ind(DEM,chOI(:,1),chOI(:,2));
+				IX=GRIDobj(DEM);
+				IX.Z(ix)=1;
+				[ixmat,X,Y]=GRIDobj2mat(IX);
+				ixmat=logical(ixmat);
+				IX=GRIDobj(X,Y,ixmat);
+
+				Sn=modify(S,'downstreamto',IX);
+
+				% Build composite stream network of picked streams
+				if ii>1
+					Sct=union(Sn,Sc,FD);
+				else
+					Sct=Sn;
+				end
+
+
+				figure(f1)
+				hold on
+				p1=plot(Sn,'-k','LineWidth',2);
+				hold off
+
+				prompt='    Is this the stream segment you wanted? Y/N [Y]: ';
+				str1=input(prompt,'s');
+				if isempty(str1)
+					str1 = 'Y';
+					Sc=Sct;
+				elseif strcmp(str1,'Y')==1; 
+					Sc=Sct;
+				else
+					delete(p1);
+				end
 			end
 
-			close figure 2
+			% Calculate chi
+			C=ChiCalc(Sn,DEMc,A,1,ref_theta);
+			while strcmp(str3,'R');
+				f2=figure(2);
+				set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
+
+				clf
+				subplot(2,1,2);
+				hold on
+				plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+				plotdz(Sn,DEMc,'dunit','km','Color','k');
+				xlabel('Distance from Mouth (km)')
+				ylabel('Elevation (m)')
+				legend('Unconditioned DEM','Conditioned DEM','location','best');
+				title('Long Profile')
+				hold off
+
+				subplot(2,1,1);
+				hold on
+				plot(C.chi,C.elev,'-k');
+				scatter(C.chi,C.elev,20,'r');
+				xlabel('Chi')
+				ylabel('Elevation (m)')
+				title('Chi - Z : Pick Segments','Color','r')
+				hold off
+
+				% suptitle(['Reference concavity = ' num2str(C.mn)]);
+
+				disp('    Select bounds for calculating channel steepnesses and press enter when completed')
+				[cv,e]=ginput;
+
+				if isempty(cv)
+					ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.mn];
+
+					% Determine where ksn value fits into color scale and plot
+					ksn_val=C.ks;
+
+					if ksn_val > mksn;
+						figure(f1)
+						hold on
+						plot(Sn,'Color',KSN_col(end,:),'LineWidth',2);
+						hold off
+					else
+						edges=linspace(0,mksn,10);
+						n=histc(ksn_val,edges);
+						figure(f1)
+						hold on
+						plot(Sn,'Color',KSN_col(logical(n),:),'LineWidth',2);
+						hold off	
+					end
+
+					[~,lbix]=min(C.chi);
+					elbl=C.elev(lbix);
+					figure(f2)
+					subplot(2,1,1);
+					hold on
+					plot(C.chi,C.pred+elbl,'-g','LineWidth',2);
+					hold off
+
+					res_list=[C.chi C.res];
+
+				else
+					% Sort knickpoint list and construct bounds list
+					cvs=sortrows(cv);
+					bnds=vertcat(0,cvs,C.chi(1));
+
+					num_bnds=numel(bnds);
+					rc=C.chi;
+					rx=C.x;
+					ry=C.y;
+					for jj=1:num_bnds-1
+						% disp([' Calculating segment ' num2str(jj)])
+						% Extract bounds
+						lb=bnds(jj);
+						rb=bnds(jj+1);
+
+						% Clip out stream segment
+						lb_chidist=sqrt(sum(bsxfun(@minus, rc, lb).^2,2));
+						rb_chidist=sqrt(sum(bsxfun(@minus, rc, rb).^2,2));
+
+						lbx=rx(lb_chidist==min(lb_chidist));
+						lby=ry(lb_chidist==min(lb_chidist));
+
+						rbx=rx(rb_chidist==min(rb_chidist));
+						rby=ry(rb_chidist==min(rb_chidist));	
+
+						lix=coord2ind(DEM,lbx,lby);
+						LIX=GRIDobj(DEM);
+						LIX.Z(lix)=1;
+						[lixmat,X,Y]=GRIDobj2mat(LIX);
+						lixmat=logical(lixmat);
+						LIX=GRIDobj(X,Y,lixmat);	
+
+						rix=coord2ind(DEM,rbx,rby);
+						RIX=GRIDobj(DEM);
+						RIX.Z(rix)=1;
+						[rixmat,X,Y]=GRIDobj2mat(RIX);
+						rixmat=logical(rixmat);
+						RIX=GRIDobj(X,Y,rixmat);	
+
+						Seg=modify(Sn,'downstreamto',RIX);
+						Seg=modify(Seg,'upstreamto',LIX);
+
+
+						% Calculate chi to find ksn and bestfit concavity 
+						% Cseg=chiplot(Seg,DEMc,A,'a0',1,'mn',ref_theta,'plot',false);
+						Cseg=ChiCalc(Seg,DEMc,A,1,ref_theta);
+
+						% Determine where ksn value fits into color scale and plot
+						ksn_val=Cseg.ks;
+
+						if ksn_val > mksn;
+							figure(f1)
+							hold on
+							plot(Seg,'Color',KSN_col(end,:),'LineWidth',2);
+							hold off
+						else
+							edges=linspace(0,mksn,10);
+							n=histc(ksn_val,edges);
+							figure(f1)
+							hold on
+							plot(Seg,'Color',KSN_col(logical(n),:),'LineWidth',2);
+							hold off	
+						end
+
+						ksn_nodes{jj,1}=[Cseg.x Cseg.y Cseg.area ones(numel(Cseg.x),1)*Cseg.ks ones(numel(Cseg.x),1)*Cseg.mn];
+
+						% Plot linear fits	
+						rchi=rc(rb_chidist==min(rb_chidist));
+						lchi=rc(lb_chidist==min(lb_chidist));
+						segChi=linspace(lchi,rchi,numel(Cseg.chi));
+						seg0Chi=linspace(0,max(Cseg.chi),numel(Cseg.chi));
+						[~,lbix]=min(Cseg.chi);
+						elbl=Cseg.elev(lbix);
+
+						figure(f2)
+						subplot(2,1,1);
+						hold on
+						plot(segChi,(seg0Chi.*ksn_val)+elbl,'-g','LineWidth',2);
+						hold off
+
+						res_list{jj,1}=[Cseg.chi+lchi Cseg.res];	
+
+					end
+
+					ksn_list=vertcat(ksn_nodes{:});
+					res_list=vertcat(res_list{:});
+				end
+
+				f3=figure(3);
+				set(f3,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
+
+				clf
+				subplot(2,1,2)
+				hold on
+				plot(res_list(:,1),ksn_list(:,4),'-k');
+				xlabel('Chi')
+				ylabel('k_{sn}')
+				title('k_{sn} - Chi')
+				hold off
+
+				subplot(2,1,1)
+				hold on
+				stem(res_list(:,1),res_list(:,2),'filled','-k');
+				xlabel('Chi')
+				ylabel('Residual (m)')
+				title('Residual on k_{sn} fit')
+				hold off
+
+				prompt='    Continue picking (Y), stop picking (N), or redo fit on this stream (R)? [Y]: ';
+				str2=input(prompt,'s');
+				if isempty(str2)
+					str2 = 'Y';
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+					ii=ii+1;
+				elseif strcmp(str2,'Y');
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+					ii=ii+1;
+				elseif strcmp(str2,'N');
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+				elseif strcmp(str2,'R');
+					str3 = 'R';
+					str2 = 'Y';
+					clear ksn_list ksn_nodes res_list;
+				end
+
+				close figure 2
+				close figure 3
+			end
+		end
+
+	elseif strcmp(theta_method,'ksn')==1 && strcmp(pick_method,'stream')==1 && strcmp(junction_method,'ignore')==1
+
+		while strcmp(str2,'Y')==1;
+			while strcmp(str1,'N')==1;	
+				str3='R';
+	            disp('Zoom or pan to area of interest and then press enter');
+	            pause();
+
+				disp('    Choose point near channel head of interest')
+				[x,y]=ginput(1);
+				pOI=[x y];
+
+				% Find nearest channel head
+				distance=sqrt(sum(bsxfun(@minus, ch, pOI).^2,2));
+				chOI=ch(distance==min(distance),:);
+
+				% Build logical raster
+				ix=coord2ind(DEM,chOI(:,1),chOI(:,2));
+				IX=GRIDobj(DEM);
+				IX.Z(ix)=1;
+				[ixmat,X,Y]=GRIDobj2mat(IX);
+				ixmat=logical(ixmat);
+				IX=GRIDobj(X,Y,ixmat);
+
+				Sn=modify(S,'downstreamto',IX);
+
+				% Build composite stream network of picked streams
+				if ii>1
+					Sct=union(Sn,Sc,FD);
+				else
+					Sct=Sn;
+				end
+
+				figure(f1)
+				hold on
+				p1=plot(Sn,'-k','LineWidth',2);
+				hold off
+
+				prompt='    Is this the stream segment you wanted? Y/N [Y]: ';
+				str1=input(prompt,'s');
+				if isempty(str1)
+					str1 = 'Y';
+					Sc=Sct;
+				elseif strcmp(str1,'Y')==1; 
+					Sc=Sct;
+				else
+					delete(p1);
+				end
+			end
+
+			% Calculate chi
+			% C=chiplot(Sn,DEMc,A,'a0',1,'mn',ref_theta,'plot',false);
+			C=ChiCalc(Sn,DEMc,A,1,ref_theta);
+			while strcmp(str3,'R');
+				f2=figure(2);
+				set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
+
+				clf
+				subplot(2,1,1);
+				hold on
+				plot(C.chi,C.elev,'-k');
+				scatter(C.chi,C.elev,20,'r');
+				xlabel('Chi')
+				ylabel('Elevation (m)')
+				title('Chi - Z')
+				hold off
+
+				subplot(2,1,2);
+				hold on
+				plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+				plotdz(Sn,DEMc,'dunit','km','Color','k');
+				xlabel('Distance from Mouth (km)')
+				ylabel('Elevation (m)')
+				legend('Unconditioned DEM','Conditioned DEM','location','best');
+				title('Long Profile : Pick Segments','Color','r')
+				hold off
+
+				% suptitle(['Reference concavity = ' num2str(C.mn)]);
+
+				disp('    Select bounds for calculating channel steepnesses and press enter when completed')
+				[d,e]=ginput;
+				d=d*1000; % convert back to meters;
+
+				if isempty(d)
+					ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.mn];
+
+					% Determine where ksn value fits into color scale and plot
+					ksn_val=C.ks;
+
+					if ksn_val > mksn;
+						figure(f1)
+						hold on
+						plot(Sn,'Color',KSN_col(end,:),'LineWidth',2);
+						hold off
+					else
+						edges=linspace(0,mksn,10);
+						n=histc(ksn_val,edges);
+						figure(f1)
+						hold on
+						plot(Sn,'Color',KSN_col(logical(n),:),'LineWidth',2);
+						hold off	
+					end
+
+					[~,lbix]=min(C.chi);
+					elbl=C.elev(lbix);
+					figure(f2)
+					subplot(2,1,1);
+					hold on
+					plot(C.chi,C.pred+elbl,'-g','LineWidth',2);
+					hold off
+
+					res_list=[C.chi C.res];
+
+				else
+					% Sort knickpoint list and construct bounds list
+					ds=sortrows(d);
+					bnds=vertcat(0,ds,max(Sn.distance));
+
+					num_bnds=numel(bnds);
+					rd=Sn.distance;
+					rx=Sn.x;
+					ry=Sn.y;
+					rc=flipud(C.chi);
+					for jj=1:num_bnds-1
+						% disp([' Calculating segment ' num2str(jj)])
+						% Extract bounds
+						lb=bnds(jj);
+						rb=bnds(jj+1);
+
+						% Clip out stream segment
+						lb_dist=sqrt(sum(bsxfun(@minus, rd, lb).^2,2));
+						rb_dist=sqrt(sum(bsxfun(@minus, rd, rb).^2,2));
+
+						lbx=rx(lb_dist==min(lb_dist));
+						lby=ry(lb_dist==min(lb_dist));
+
+						rbx=rx(rb_dist==min(rb_dist));
+						rby=ry(rb_dist==min(rb_dist));	
+
+						lix=coord2ind(DEM,lbx,lby);
+						LIX=GRIDobj(DEM);
+						LIX.Z(lix)=1;
+						[lixmat,X,Y]=GRIDobj2mat(LIX);
+						lixmat=logical(lixmat);
+						LIX=GRIDobj(X,Y,lixmat);	
+
+						rix=coord2ind(DEM,rbx,rby);
+						RIX=GRIDobj(DEM);
+						RIX.Z(rix)=1;
+						[rixmat,X,Y]=GRIDobj2mat(RIX);
+						rixmat=logical(rixmat);
+						RIX=GRIDobj(X,Y,rixmat);	
+
+						Seg=modify(Sn,'downstreamto',RIX);
+						Seg=modify(Seg,'upstreamto',LIX);
+
+
+						% Calculate chi to find ksn and bestfit concavity 
+						% Cseg=chiplot(Seg,DEMc,A,'a0',1,'mn',ref_theta,'plot',false);
+						Cseg=ChiCalc(Seg,DEMc,A,1,ref_theta);
+
+						% Determine where ksn value fits into color scale and plot
+						ksn_val=Cseg.ks;
+
+						if ksn_val > mksn;
+							figure(f1)
+							hold on
+							plot(Seg,'Color',KSN_col(end,:),'LineWidth',2);
+							hold off
+						else
+							edges=linspace(0,mksn,10);
+							n=histc(ksn_val,edges);
+							figure(f1)
+							hold on
+							plot(Seg,'Color',KSN_col(logical(n),:),'LineWidth',2);
+							hold off	
+						end
+
+						ksn_nodes{jj,1}=[Cseg.x Cseg.y Cseg.area ones(numel(Cseg.x),1)*Cseg.ks ones(numel(Cseg.x),1)*Cseg.mn];
+
+						% Plot linear fits	
+						rchi=rc(rb_dist==min(rb_dist));
+						lchi=rc(lb_dist==min(lb_dist));
+						segChi=linspace(lchi,rchi,numel(Cseg.chi));
+						seg0Chi=linspace(0,max(Cseg.chi),numel(Cseg.chi));
+						[~,lbix]=min(Cseg.chi);
+						elbl=Cseg.elev(lbix);
+
+						figure(f2)
+						subplot(2,1,1);
+						hold on
+						plot(segChi,(seg0Chi.*ksn_val)+elbl,'-g','LineWidth',2);
+						hold off
+
+						res_list{jj,1}=[Cseg.chi+lchi Cseg.res];
+					end
+
+					ksn_list=vertcat(ksn_nodes{:});
+					res_list=vertcat(res_list{:});
+				end
+
+				f3=figure(3);
+				set(f3,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
+
+				clf
+				subplot(2,1,2)
+				hold on
+				plot(res_list(:,1),ksn_list(:,4),'-k');
+				xlabel('Chi')
+				ylabel('k_{sn}')
+				title('k_{sn} - Chi')
+				hold off
+
+				subplot(2,1,1)
+				hold on
+				stem(res_list(:,1),res_list(:,2),'filled','-k');
+				xlabel('Chi')
+				ylabel('Residual (m)')
+				title('Residual on k_{sn} fit')
+				hold off
+
+				prompt='    Continue picking (Y), stop picking (N), or redo fit on this stream (R)? [Y]: ';
+				str2=input(prompt,'s');
+				if isempty(str2)
+					str2 = 'Y';
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+					ii=ii+1;
+				elseif strcmp(str2,'Y');
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+					ii=ii+1;
+				elseif strcmp(str2,'N');
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+				elseif strcmp(str2,'R');
+					str3 = 'R';
+					str2 = 'Y';
+					clear ksn_list ksn_nodes res_list;
+				end
+
+				close figure 2
+				close figure 3
+			end
+		end
+
+	elseif strcmp(theta_method,'concavity')==1 && strcmp(pick_method,'chi')==1 && strcmp(junction_method,'check')==1
+		while strcmp(str2,'Y')==1;
+			while strcmp(str1,'N')==1;	
+				str3='R'; %Reset redo flag
+	            disp('Zoom or pan to area of interest and then press enter');
+	            pause();
+
+				disp('    Choose point near channel head of interest')
+				[x,y]=ginput(1);
+				pOI=[x y];
+
+				% Find nearest channel head
+				distance=sqrt(sum(bsxfun(@minus, ch, pOI).^2,2));
+				chOI=ch(distance==min(distance),:);
+
+				% Build logical raster
+				ix=coord2ind(DEM,chOI(:,1),chOI(:,2));
+				IX=GRIDobj(DEM);
+				IX.Z(ix)=1;
+				[ixmat,X,Y]=GRIDobj2mat(IX);
+				ixmat=logical(ixmat);
+				IX=GRIDobj(X,Y,ixmat);
+
+				Sn=modify(S,'downstreamto',IX);
+
+				% Build composite stream network of picked streams
+				if ii>1
+					[IIXX,~,~,Si]=intersectlocs(Sc,Sn);
+					if isempty(IIXX)
+						Sn=Sn;
+						Sct=union(Sn,Sc,FD);
+					else
+						Sn=Si;
+						Sct=union(Sn,Sc,FD);
+					end
+				else
+					Sct=Sn;
+				end
+
+				figure(f1)
+				hold on
+				p1=plot(Sn,'-k','LineWidth',2);
+				hold off
+
+				prompt='    Is this the stream segment you wanted? Y/N [Y]: ';
+				str1=input(prompt,'s');
+				if isempty(str1)
+					str1 = 'Y';
+					Sc=Sct;
+				elseif strcmp(str1,'Y')==1; 
+					Sc=Sct;
+				else
+					delete(p1);
+				end
+			end
+
+			% Calculate chi and best fit concavity for display purposes
+			C=ChiCalc(Sn,DEMc,A,1);
+			while strcmp(str3,'R');
+
+				f2=figure(2);
+				set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
+
+				clf
+				subplot(2,1,2);
+				hold on
+				plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+				plotdz(Sn,DEMc,'dunit','km','Color','k');
+				xlabel('Distance from Mouth (km)')
+				ylabel('Elevation (m)')
+				legend('Unconditioned DEM','Conditioned DEM','location','best');
+				title('Long Profile')
+				hold off
+
+				subplot(2,1,1);
+				hold on
+				plot(C.chi,C.elev,'-k');
+				scatter(C.chi,C.elev,20,'r');
+				xlabel('Chi')
+				ylabel('Elevation (m)')
+				title('Chi - Z : Pick Segments','Color','r')
+				hold off
+
+				% suptitle(['Best fit concavity = ' num2str(C.mn)]);
+
+				disp('    Select bounds for calculating channel steepnesses and press enter when completed')
+				[cv,e]=ginput;
+
+				if isempty(cv)
+					ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.mn];
+
+					% Determine where ksn value fits into color scale and plot
+					ksn_val=C.ks;
+
+					if ksn_val > mksn;
+						figure(f1)
+						hold on
+						plot(Sn,'Color',KSN_col(end,:),'LineWidth',2);
+						hold off
+					else
+						edges=linspace(0,mksn,10);
+						n=histc(ksn_val,edges);
+						figure(f1)
+						hold on
+						plot(Sn,'Color',KSN_col(logical(n),:),'LineWidth',2);
+						hold off	
+					end
+
+					[~,lbix]=min(C.chi);
+					elbl=C.elev(lbix);
+					figure(f2)
+					subplot(2,1,1);
+					hold on
+					plot(C.chi,C.pred+elbl,'-g','LineWidth',2);
+					hold off
+
+					res_list=[C.distance C.res];
+
+				else
+					% Sort knickpoint list and construct bounds list
+					cvs=sortrows(cv);
+					bnds=vertcat(0,cvs,C.chi(1));
+
+					num_bnds=numel(bnds);
+					rc=C.chi;
+					rx=C.x;
+					ry=C.y;
+					rd=C.distance;
+					for jj=1:num_bnds-1
+						% disp([' Calculating segment ' num2str(jj)])
+						% Extract bounds
+						lb=bnds(jj);
+						rb=bnds(jj+1);
+
+						% Clip out stream segment
+						lb_chidist=sqrt(sum(bsxfun(@minus, rc, lb).^2,2));
+						rb_chidist=sqrt(sum(bsxfun(@minus, rc, rb).^2,2));
+
+						lbx=rx(lb_chidist==min(lb_chidist));
+						lby=ry(lb_chidist==min(lb_chidist));
+
+						rbx=rx(rb_chidist==min(rb_chidist));
+						rby=ry(rb_chidist==min(rb_chidist));	
+
+						lix=coord2ind(DEM,lbx,lby);
+						LIX=GRIDobj(DEM);
+						LIX.Z(lix)=1;
+						[lixmat,X,Y]=GRIDobj2mat(LIX);
+						lixmat=logical(lixmat);
+						LIX=GRIDobj(X,Y,lixmat);	
+
+						rix=coord2ind(DEM,rbx,rby);
+						RIX=GRIDobj(DEM);
+						RIX.Z(rix)=1;
+						[rixmat,X,Y]=GRIDobj2mat(RIX);
+						rixmat=logical(rixmat);
+						RIX=GRIDobj(X,Y,rixmat);	
+
+						Seg=modify(Sn,'downstreamto',RIX);
+						Seg=modify(Seg,'upstreamto',LIX);
+
+
+						% Calculate chi to find ksn and bestfit concavity 
+						Cseg=ChiCalc(Seg,DEMc,A,1);
+
+						% Determine where ksn value fits into color scale and plot
+						ksn_val=Cseg.ks;
+
+						if ksn_val > mksn;
+							figure(f1)
+							hold on
+							plot(Seg,'Color',KSN_col(end,:),'LineWidth',2);
+							hold off
+						else
+							edges=linspace(0,mksn,10);
+							n=histc(ksn_val,edges);
+							figure(f1)
+							hold on
+							plot(Seg,'Color',KSN_col(logical(n),:),'LineWidth',2);
+							hold off	
+						end
+
+						ksn_nodes{jj,1}=[Cseg.x Cseg.y Cseg.area ones(numel(Cseg.x),1)*Cseg.ks ones(numel(Cseg.x),1)*Cseg.mn];
+
+						% Plot linear fits	
+						rchi=rc(rb_chidist==min(rb_chidist));
+						lchi=rc(lb_chidist==min(lb_chidist));
+						ld=rd(lb_chidist==min(lb_chidist));
+						segChi=linspace(lchi,rchi,numel(Cseg.chi));
+						seg0Chi=linspace(0,max(Cseg.chi),numel(Cseg.chi));
+						[~,lbix]=min(Cseg.chi);
+						elbl=Cseg.elev(lbix);
+
+						figure(f2)
+						subplot(2,1,1);
+						hold on
+						plot(segChi,(seg0Chi.*ksn_val)+elbl,'-g','LineWidth',2);
+						hold off
+
+						res_list{jj,1}=[Cseg.distance+ld Cseg.res];
+					end
+
+					ksn_list=vertcat(ksn_nodes{:});
+					res_list=vertcat(res_list{:});
+				end
+
+				f3=figure(3);
+				set(f3,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
+
+				clf
+				subplot(3,1,2)
+				hold on
+				plot(res_list(:,1)./1000,ksn_list(:,4),'-k');
+				xlabel('Distance (km)')
+				ylabel('k_{sn}')
+				title('k_{sn} - Distance')
+				hold off
+
+				subplot(3,1,1)
+				hold on
+				stem(res_list(:,1)./1000,res_list(:,2),'filled','-k');
+				xlabel('Distance (km)')
+				ylabel('Residual (m)')
+				title('Residual on k_{sn} fit')
+				hold off
+
+				subplot(3,1,3)
+				hold on
+				plot(res_list(:,1)./1000,ksn_list(:,5),'-k');
+				xlabel('Distance (km)')
+				ylabel('Concavity')
+				title('Concavity - Distance')
+				hold off
+
+				prompt='    Continue picking (Y), stop picking (N), or redo fit on this stream (R)? [Y]: ';
+				str2=input(prompt,'s');
+				if isempty(str2)
+					str2 = 'Y';
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+					ii=ii+1;
+				elseif strcmp(str2,'Y');
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+					ii=ii+1;
+				elseif strcmp(str2,'N');
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+				elseif strcmp(str2,'R');
+					str3 = 'R';
+					str2 = 'Y';
+					clear ksn_list ksn_nodes res_list;
+				end
+
+				close figure 2
+				close figure 3
+			end
+		end
+
+	elseif strcmp(theta_method,'concavity')==1 && strcmp(pick_method,'stream')==1 && strcmp(junction_method,'check')==1
+
+		while strcmp(str2,'Y')==1;
+			while strcmp(str1,'N')==1;	
+				str3='R';
+	            disp('Zoom or pan to area of interest and then press enter');
+	            pause();
+
+				disp('    Choose point near channel head of interest')
+				[x,y]=ginput(1);
+				pOI=[x y];
+
+				% Find nearest channel head
+				distance=sqrt(sum(bsxfun(@minus, ch, pOI).^2,2));
+				chOI=ch(distance==min(distance),:);
+
+				% Build logical raster
+				ix=coord2ind(DEM,chOI(:,1),chOI(:,2));
+				IX=GRIDobj(DEM);
+				IX.Z(ix)=1;
+				[ixmat,X,Y]=GRIDobj2mat(IX);
+				ixmat=logical(ixmat);
+				IX=GRIDobj(X,Y,ixmat);
+
+				Sn=modify(S,'downstreamto',IX);
+
+				% Build composite stream network of picked streams
+				if ii>1
+					[IIXX,~,~,Si]=intersectlocs(Sc,Sn);
+					if isempty(IIXX)
+						Sn=Sn;
+						Sct=union(Sn,Sc,FD);
+					else
+						Sn=Si;
+						Sct=union(Sn,Sc,FD);
+					end
+				else
+					Sct=Sn;
+				end
+
+				figure(f1)
+				hold on
+				p1=plot(Sn,'-k','LineWidth',2);
+				hold off
+
+				prompt='    Is this the stream segment you wanted? Y/N [Y]: ';
+				str1=input(prompt,'s');
+				if isempty(str1)
+					str1 = 'Y';
+					Sc=Sct;
+				elseif strcmp(str1,'Y')==1; 
+					Sc=Sct;
+				else
+					delete(p1);
+				end
+			end
+
+			% Calculate chi
+			C=ChiCalc(Sn,DEMc,A,1);
+			while strcmp(str3,'R');
+
+				f2=figure(2);
+				set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
+
+				clf
+				subplot(2,1,1);
+				hold on
+				plot(C.chi,C.elev,'-k');
+				scatter(C.chi,C.elev,20,'r');
+				xlabel('Chi')
+				ylabel('Elevation (m)')
+				title('Chi - Z')
+				hold off
+
+				subplot(2,1,2);
+				hold on
+				plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+				plotdz(Sn,DEMc,'dunit','km','Color','k');
+				xlabel('Distance from Mouth (km)')
+				ylabel('Elevation (m)')
+				legend('Unconditioned DEM','Conditioned DEM','location','best');
+				title('Long Profile : Pick Segments','Color','r')
+				hold off
+
+				% suptitle(['Best fit concavity = ' num2str(C.mn)]);
+
+				disp('    Select bounds for calculating channel steepnesses and press enter when completed')
+				[d,e]=ginput;
+				d=d*1000; % convert back to meters;
+
+				if isempty(d)
+					ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.mn];
+
+					% Determine where ksn value fits into color scale and plot
+					ksn_val=C.ks;
+
+					if ksn_val > mksn;
+						figure(f1)
+						hold on
+						plot(Sn,'Color',KSN_col(end,:),'LineWidth',2);
+						hold off
+					else
+						edges=linspace(0,mksn,10);
+						n=histc(ksn_val,edges);
+						figure(f1)
+						hold on
+						plot(Sn,'Color',KSN_col(logical(n),:),'LineWidth',2);
+						hold off	
+					end
+
+					[~,lbix]=min(C.chi);
+					elbl=C.elev(lbix);
+					figure(f2)
+					subplot(2,1,1);
+					hold on
+					plot(C.chi,C.pred+elbl,'-g','LineWidth',2);
+					hold off
+
+					res_list=[C.distance C.res];
+
+				else
+					% Sort knickpoint list and construct bounds list
+					ds=sortrows(d);
+					bnds=vertcat(0,ds,max(Sn.distance));
+
+					num_bnds=numel(bnds);
+					rd=Sn.distance;
+					rx=Sn.x;
+					ry=Sn.y;
+					rc=flipud(C.chi);
+					for jj=1:num_bnds-1
+						% disp([' Calculating segment ' num2str(jj)])
+						% Extract bounds
+						lb=bnds(jj);
+						rb=bnds(jj+1);
+
+						% Clip out stream segment
+						lb_dist=sqrt(sum(bsxfun(@minus, rd, lb).^2,2));
+						rb_dist=sqrt(sum(bsxfun(@minus, rd, rb).^2,2));
+
+						lbx=rx(lb_dist==min(lb_dist));
+						lby=ry(lb_dist==min(lb_dist));
+
+						rbx=rx(rb_dist==min(rb_dist));
+						rby=ry(rb_dist==min(rb_dist));	
+
+						lix=coord2ind(DEM,lbx,lby);
+						LIX=GRIDobj(DEM);
+						LIX.Z(lix)=1;
+						[lixmat,X,Y]=GRIDobj2mat(LIX);
+						lixmat=logical(lixmat);
+						LIX=GRIDobj(X,Y,lixmat);	
+
+						rix=coord2ind(DEM,rbx,rby);
+						RIX=GRIDobj(DEM);
+						RIX.Z(rix)=1;
+						[rixmat,X,Y]=GRIDobj2mat(RIX);
+						rixmat=logical(rixmat);
+						RIX=GRIDobj(X,Y,rixmat);	
+
+						Seg=modify(Sn,'downstreamto',RIX);
+						Seg=modify(Seg,'upstreamto',LIX);
+
+
+						% Calculate chi to find ksn and bestfit concavity 
+						% Cseg=chiplot(Seg,DEMc,A,'a0',1,'mn',ref_theta,'plot',false);
+						Cseg=ChiCalc(Seg,DEMc,A,1);
+
+						% Determine where ksn value fits into color scale and plot
+						ksn_val=Cseg.ks;
+
+						if ksn_val > mksn;
+							figure(f1)
+							hold on
+							plot(Seg,'Color',KSN_col(end,:),'LineWidth',2);
+							hold off
+						else
+							edges=linspace(0,mksn,10);
+							n=histc(ksn_val,edges);
+							figure(f1)
+							hold on
+							plot(Seg,'Color',KSN_col(logical(n),:),'LineWidth',2);
+							hold off	
+						end
+
+						ksn_nodes{jj,1}=[Cseg.x Cseg.y Cseg.area ones(numel(Cseg.x),1)*Cseg.ks ones(numel(Cseg.x),1)*Cseg.mn];
+
+						% Plot linear fits	
+						rchi=rc(rb_dist==min(rb_dist));
+						lchi=rc(lb_dist==min(lb_dist));
+						ld=rd(lb_dist==min(lb_dist));
+						segChi=linspace(lchi,rchi,numel(Cseg.chi));
+						seg0Chi=linspace(0,max(Cseg.chi),numel(Cseg.chi));
+						[~,lbix]=min(Cseg.chi);
+						elbl=Cseg.elev(lbix);
+
+						figure(f2)
+						subplot(2,1,1);
+						hold on
+						plot(segChi,(seg0Chi.*ksn_val)+elbl,'-g','LineWidth',2);
+						hold off
+
+						res_list{jj,1}=[Cseg.distance+ld Cseg.res];
+					end
+
+					ksn_list=vertcat(ksn_nodes{:});
+					res_list=vertcat(res_list{:});
+				end
+
+				f3=figure(3);
+				set(f3,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
+
+				clf
+				subplot(3,1,2)
+				hold on
+				plot(res_list(:,1)./1000,ksn_list(:,4),'-k');
+				xlabel('Distance (km)')
+				ylabel('k_{sn}')
+				title('k_{sn} - Distance')
+				hold off
+
+				subplot(3,1,1)
+				hold on
+				stem(res_list(:,1)./1000,res_list(:,2),'filled','-k');
+				xlabel('Distance (km)')
+				ylabel('Residual (m)')
+				title('Residual on k_{sn} fit')
+				hold off
+
+				subplot(3,1,3)
+				hold on
+				plot(res_list(:,1)./1000,ksn_list(:,5),'-k');
+				xlabel('Distance (km)')
+				ylabel('Concavity')
+				title('Concavity - Distance')
+				hold off
+
+				prompt='    Continue picking (Y), stop picking (N), or redo fit on this stream (R)? [Y]: ';
+				str2=input(prompt,'s');
+				if isempty(str2)
+					str2 = 'Y';
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+					ii=ii+1;
+				elseif strcmp(str2,'Y');
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+					ii=ii+1;
+				elseif strcmp(str2,'N');
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+				elseif strcmp(str2,'R');
+					str3 = 'R';
+					str2 = 'Y';
+					clear ksn_list ksn_nodes res_list;
+				end
+
+				close figure 2
+				close figure 3
+			end
+		end
+
+	elseif strcmp(theta_method,'concavity')==1 && strcmp(pick_method,'chi')==1 && strcmp(junction_method,'ignore')==1
+		while strcmp(str2,'Y')==1;
+			while strcmp(str1,'N')==1;	
+				str3='R';
+	            disp('Zoom or pan to area of interest and then press enter');
+	            pause();
+
+				disp('    Choose point near channel head of interest')
+				[x,y]=ginput(1);
+				pOI=[x y];
+
+				% Find nearest channel head
+				distance=sqrt(sum(bsxfun(@minus, ch, pOI).^2,2));
+				chOI=ch(distance==min(distance),:);
+
+				% Build logical raster
+				ix=coord2ind(DEM,chOI(:,1),chOI(:,2));
+				IX=GRIDobj(DEM);
+				IX.Z(ix)=1;
+				[ixmat,X,Y]=GRIDobj2mat(IX);
+				ixmat=logical(ixmat);
+				IX=GRIDobj(X,Y,ixmat);
+
+				Sn=modify(S,'downstreamto',IX);
+
+				% Build composite stream network of picked streams
+				if ii>1
+					Sct=union(Sn,Sc,FD);
+				else
+					Sct=Sn;
+				end
+
+				figure(f1)
+				hold on
+				p1=plot(Sn,'-k','LineWidth',2);
+				hold off
+
+				prompt='    Is this the stream segment you wanted? Y/N [Y]: ';
+				str1=input(prompt,'s');
+				if isempty(str1)
+					str1 = 'Y';
+					Sc=Sct;
+				elseif strcmp(str1,'Y')==1; 
+					Sc=Sct;
+				else
+					delete(p1);
+				end
+			end
+
+			% Calculate chi and best fit concavity for display purposes
+			C=ChiCalc(Sn,DEMc,A,1);
+			while strcmp(str3,'R');
+
+				f2=figure(2);
+				set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
+
+				clf
+				subplot(2,1,2);
+				hold on
+				plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+				plotdz(Sn,DEMc,'dunit','km','Color','k');
+				xlabel('Distance from Mouth (km)')
+				ylabel('Elevation (m)')
+				legend('Unconditioned DEM','Conditioned DEM','location','best');
+				title('Long Profile')
+				hold off
+
+				subplot(2,1,1);
+				hold on
+				plot(C.chi,C.elev,'-k');
+				scatter(C.chi,C.elev,20,'r');
+				xlabel('Chi')
+				ylabel('Elevation (m)')
+				title('Chi - Z : Pick Segments','Color','r')
+				hold off
+
+				% suptitle(['Best fit concavity = ' num2str(C.mn)]);
+
+				disp('    Select bounds for calculating channel steepnesses and press enter when completed')
+				[cv,e]=ginput;
+
+				if isempty(cv)
+					ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.mn];
+
+					% Determine where ksn value fits into color scale and plot
+					ksn_val=C.ks;
+
+					if ksn_val > mksn;
+						figure(f1)
+						hold on
+						plot(Sn,'Color',KSN_col(end,:),'LineWidth',2);
+						hold off
+					else
+						edges=linspace(0,mksn,10);
+						n=histc(ksn_val,edges);
+						figure(f1)
+						hold on
+						plot(Sn,'Color',KSN_col(logical(n),:),'LineWidth',2);
+						hold off	
+					end
+
+					[~,lbix]=min(C.chi);
+					elbl=C.elev(lbix);
+					figure(f2)
+					subplot(2,1,1);
+					hold on
+					plot(C.chi,C.pred+elbl,'-g','LineWidth',2);
+					hold off
+
+					res_list=[C.distance C.res];
+
+				else
+					% Sort knickpoint list and construct bounds list
+					cvs=sortrows(cv);
+					bnds=vertcat(0,cvs,C.chi(1));
+
+					num_bnds=numel(bnds);
+					rc=C.chi;
+					rx=C.x;
+					ry=C.y;
+					rd=C.distance;
+					for jj=1:num_bnds-1
+						% disp([' Calculating segment ' num2str(jj)])
+						% Extract bounds
+						lb=bnds(jj);
+						rb=bnds(jj+1);
+
+						% Clip out stream segment
+						lb_chidist=sqrt(sum(bsxfun(@minus, rc, lb).^2,2));
+						rb_chidist=sqrt(sum(bsxfun(@minus, rc, rb).^2,2));
+
+						lbx=rx(lb_chidist==min(lb_chidist));
+						lby=ry(lb_chidist==min(lb_chidist));
+
+						rbx=rx(rb_chidist==min(rb_chidist));
+						rby=ry(rb_chidist==min(rb_chidist));	
+
+						lix=coord2ind(DEM,lbx,lby);
+						LIX=GRIDobj(DEM);
+						LIX.Z(lix)=1;
+						[lixmat,X,Y]=GRIDobj2mat(LIX);
+						lixmat=logical(lixmat);
+						LIX=GRIDobj(X,Y,lixmat);	
+
+						rix=coord2ind(DEM,rbx,rby);
+						RIX=GRIDobj(DEM);
+						RIX.Z(rix)=1;
+						[rixmat,X,Y]=GRIDobj2mat(RIX);
+						rixmat=logical(rixmat);
+						RIX=GRIDobj(X,Y,rixmat);	
+
+						Seg=modify(Sn,'downstreamto',RIX);
+						Seg=modify(Seg,'upstreamto',LIX);
+
+
+						% Calculate chi to find ksn and bestfit concavity 
+						% Cseg=chiplot(Seg,DEMc,A,'a0',1,'plot',false);
+						Cseg=ChiCalc(Seg,DEMc,A,1);
+
+						% Determine where ksn value fits into color scale and plot
+						ksn_val=Cseg.ks;
+
+						if ksn_val > mksn;
+							figure(f1)
+							hold on
+							plot(Seg,'Color',KSN_col(end,:),'LineWidth',2);
+							hold off
+						else
+							edges=linspace(0,mksn,10);
+							n=histc(ksn_val,edges);
+							figure(f1)
+							hold on
+							plot(Seg,'Color',KSN_col(logical(n),:),'LineWidth',2);
+							hold off	
+						end
+
+						ksn_nodes{jj,1}=[Cseg.x Cseg.y Cseg.area ones(numel(Cseg.x),1)*Cseg.ks ones(numel(Cseg.x),1)*Cseg.mn];
+
+						% Plot linear fits	
+						rchi=rc(rb_chidist==min(rb_chidist));
+						lchi=rc(lb_chidist==min(lb_chidist));
+						ld=rd(lb_chidist==min(lb_chidist));
+						segChi=linspace(lchi,rchi,numel(Cseg.chi));
+						seg0Chi=linspace(0,max(Cseg.chi),numel(Cseg.chi));
+						[~,lbix]=min(Cseg.chi);
+						elbl=Cseg.elev(lbix);
+
+						figure(f2)
+						subplot(2,1,1);
+						hold on
+						plot(segChi,(seg0Chi.*ksn_val)+elbl,'-g','LineWidth',2);
+						hold off
+
+						res_list{jj,1}=[Cseg.distance+ld Cseg.res];
+
+					end
+
+					ksn_list=vertcat(ksn_nodes{:});
+					res_list=vertcat(res_list{:});
+				end
+
+				f3=figure(3);
+				set(f3,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
+
+				clf
+				subplot(3,1,2)
+				hold on
+				plot(res_list(:,1)./1000,ksn_list(:,4),'-k');
+				xlabel('Distance (km)')
+				ylabel('k_{sn}')
+				title('k_{sn} - Distance')
+				hold off
+
+				subplot(3,1,1)
+				hold on
+				stem(res_list(:,1)./1000,res_list(:,2),'filled','-k');
+				xlabel('Distance (km)')
+				ylabel('Residual (m)')
+				title('Residual on k_{sn} fit')
+				hold off
+
+				subplot(3,1,3)
+				hold on
+				plot(res_list(:,1)./1000,ksn_list(:,5),'-k');
+				xlabel('Distance (km)')
+				ylabel('Concavity')
+				title('Concavity - Distance')
+				hold off
+
+				prompt='    Continue picking (Y), stop picking (N), or redo fit on this stream (R)? [Y]: ';
+				str2=input(prompt,'s');
+				if isempty(str2)
+					str2 = 'Y';
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+					ii=ii+1;
+				elseif strcmp(str2,'Y');
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+					ii=ii+1;
+				elseif strcmp(str2,'N');
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+				elseif strcmp(str2,'R');
+					str3 = 'R';
+					str2 = 'Y';
+					clear ksn_list ksn_nodes res_list;
+				end
+
+				close figure 2
+				close figure 3
+			end
+		end
+
+	elseif strcmp(theta_method,'concavity')==1 && strcmp(pick_method,'stream')==1 && strcmp(junction_method,'ignore')==1
+
+		while strcmp(str2,'Y')==1;
+			while strcmp(str1,'N')==1;	
+				str3='R';
+	            disp('Zoom or pan to area of interest and then press enter');
+	            pause();
+
+				disp('    Choose point near channel head of interest')
+				[x,y]=ginput(1);
+				pOI=[x y];
+
+				% Find nearest channel head
+				distance=sqrt(sum(bsxfun(@minus, ch, pOI).^2,2));
+				chOI=ch(distance==min(distance),:);
+
+				% Build logical raster
+				ix=coord2ind(DEM,chOI(:,1),chOI(:,2));
+				IX=GRIDobj(DEM);
+				IX.Z(ix)=1;
+				[ixmat,X,Y]=GRIDobj2mat(IX);
+				ixmat=logical(ixmat);
+				IX=GRIDobj(X,Y,ixmat);
+
+				Sn=modify(S,'downstreamto',IX);
+
+				% Build composite stream network of picked streams
+				if ii>1
+					Sct=union(Sn,Sc,FD);
+				else
+					Sct=Sn;
+				end
+
+				figure(f1)
+				hold on
+				p1=plot(Sn,'-k','LineWidth',2);
+				hold off
+
+				prompt='    Is this the stream segment you wanted? Y/N [Y]: ';
+				str1=input(prompt,'s');
+				if isempty(str1)
+					str1 = 'Y';
+					Sc=Sct;
+				elseif strcmp(str1,'Y')==1; 
+					Sc=Sct;
+				else
+					delete(p1);
+				end
+			end
+
+			% Calculate chi
+			% C=chiplot(Sn,DEMc,A,'a0',1,'mn',ref_theta,'plot',false);
+			C=ChiCalc(Sn,DEMc,A,1);
+			while strcmp(str3,'R');
+
+				f2=figure(2);
+				set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
+
+				clf
+				subplot(2,1,1);
+				hold on
+				plot(C.chi,C.elev,'-k');
+				scatter(C.chi,C.elev,20,'r');
+				xlabel('Chi')
+				ylabel('Elevation (m)')
+				title('Chi - Z')
+				hold off
+
+				subplot(2,1,2);
+				hold on
+				plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+				plotdz(Sn,DEMc,'dunit','km','Color','k');
+				xlabel('Distance from Mouth (km)')
+				ylabel('Elevation (m)')
+				legend('Unconditioned DEM','Conditioned DEM','location','best');
+				title('Long Profile : Pick Segments','Color','r')
+				hold off
+
+				% suptitle(['Best fit concavity = ' num2str(C.mn)]);
+
+				disp('    Select bounds for calculating channel steepnesses and press enter when completed')
+				[d,e]=ginput;
+				d=d*1000; % convert back to meters;
+
+				if isempty(d)
+					ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.mn];
+
+					% Determine where ksn value fits into color scale and plot
+					ksn_val=C.ks;
+
+					if ksn_val > mksn;
+						figure(f1)
+						hold on
+						plot(Sn,'Color',KSN_col(end,:),'LineWidth',2);
+						hold off
+					else
+						edges=linspace(0,mksn,10);
+						n=histc(ksn_val,edges);
+						figure(f1)
+						hold on
+						plot(Sn,'Color',KSN_col(logical(n),:),'LineWidth',2);
+						hold off	
+					end
+
+					[~,lbix]=min(C.chi);
+					elbl=C.elev(lbix);
+					figure(f2)
+					subplot(2,1,1);
+					hold on
+					plot(C.chi,C.pred+elbl,'-g','LineWidth',2);
+					hold off
+
+					res_list=[C.distance C.res];
+
+				else
+					% Sort knickpoint list and construct bounds list
+					ds=sortrows(d);
+					bnds=vertcat(0,ds,max(Sn.distance));
+
+					num_bnds=numel(bnds);
+					rd=Sn.distance;
+					rx=Sn.x;
+					ry=Sn.y;
+					rc=flipud(C.chi);					
+					for jj=1:num_bnds-1
+						% disp([' Calculating segment ' num2str(jj)])
+						% Extract bounds
+						lb=bnds(jj);
+						rb=bnds(jj+1);
+
+						% Clip out stream segment
+						lb_dist=sqrt(sum(bsxfun(@minus, rd, lb).^2,2));
+						rb_dist=sqrt(sum(bsxfun(@minus, rd, rb).^2,2));
+
+						lbx=rx(lb_dist==min(lb_dist));
+						lby=ry(lb_dist==min(lb_dist));
+
+						rbx=rx(rb_dist==min(rb_dist));
+						rby=ry(rb_dist==min(rb_dist));	
+
+						lix=coord2ind(DEM,lbx,lby);
+						LIX=GRIDobj(DEM);
+						LIX.Z(lix)=1;
+						[lixmat,X,Y]=GRIDobj2mat(LIX);
+						lixmat=logical(lixmat);
+						LIX=GRIDobj(X,Y,lixmat);	
+
+						rix=coord2ind(DEM,rbx,rby);
+						RIX=GRIDobj(DEM);
+						RIX.Z(rix)=1;
+						[rixmat,X,Y]=GRIDobj2mat(RIX);
+						rixmat=logical(rixmat);
+						RIX=GRIDobj(X,Y,rixmat);	
+
+						Seg=modify(Sn,'downstreamto',RIX);
+						Seg=modify(Seg,'upstreamto',LIX);
+
+
+						% Calculate chi to find ksn and bestfit concavity 
+						% Cseg=chiplot(Seg,DEMc,A,'a0',1,'mn',ref_theta,'plot',false);
+						Cseg=ChiCalc(Seg,DEMc,A,1);
+
+						% Determine where ksn value fits into color scale and plot
+						ksn_val=Cseg.ks;
+
+						if ksn_val > mksn;
+							figure(f1)
+							hold on
+							plot(Seg,'Color',KSN_col(end,:),'LineWidth',2);
+							hold off
+						else
+							edges=linspace(0,mksn,10);
+							n=histc(ksn_val,edges);
+							figure(f1)
+							hold on
+							plot(Seg,'Color',KSN_col(logical(n),:),'LineWidth',2);
+							hold off	
+						end
+
+						ksn_nodes{jj,1}=[Cseg.x Cseg.y Cseg.area ones(numel(Cseg.x),1)*Cseg.ks ones(numel(Cseg.x),1)*Cseg.mn];
+
+						% Plot linear fits	
+						rchi=rc(rb_dist==min(rb_dist));
+						lchi=rc(lb_dist==min(lb_dist));
+						ld=rd(lb_dist==min(lb_dist));
+						segChi=linspace(lchi,rchi,numel(Cseg.chi));
+						seg0Chi=linspace(0,max(Cseg.chi),numel(Cseg.chi));
+						[~,lbix]=min(Cseg.chi);
+						elbl=Cseg.elev(lbix);
+
+						figure(f2)
+						subplot(2,1,1);
+						hold on
+						plot(segChi,(seg0Chi.*ksn_val)+elbl,'-g','LineWidth',2);
+						hold off
+
+						res_list{jj,1}=[Cseg.distance+ld Cseg.res];
+					end
+
+					ksn_list=vertcat(ksn_nodes{:});
+					res_list=vertcat(res_list{:});
+				end
+
+				f3=figure(3);
+				set(f3,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
+
+				clf
+				subplot(3,1,2)
+				hold on
+				plot(res_list(:,1)./1000,ksn_list(:,4),'-k');
+				xlabel('Distance (km)')
+				ylabel('k_{sn}')
+				title('k_{sn} - Distance')
+				hold off
+
+				subplot(3,1,1)
+				hold on
+				stem(res_list(:,1)./1000,res_list(:,2),'filled','-k');
+				xlabel('Distance (km)')
+				ylabel('Residual (m)')
+				title('Residual on k_{sn} fit')
+				hold off
+
+				subplot(3,1,3)
+				hold on
+				plot(res_list(:,1)./1000,ksn_list(:,5),'-k');
+				xlabel('Distance (km)')
+				ylabel('Concavity')
+				title('Concavity - Distance')
+				hold off
+
+				prompt='    Continue picking (Y), stop picking (N), or redo fit on this stream (R)? [Y]: ';
+				str2=input(prompt,'s');
+				if isempty(str2)
+					str2 = 'Y';
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+					ii=ii+1;
+				elseif strcmp(str2,'Y');
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+					ii=ii+1;
+				elseif strcmp(str2,'N');
+					str1 = 'N';
+					str3 = 'C';
+					ksn_master{ii,1}=ksn_list;
+					clear ksn_list ksn_nodes res_list;
+				elseif strcmp(str2,'R');
+					str3 = 'R';
+					str2 = 'Y';
+					clear ksn_list ksn_nodes res_list;
+				end
+
+				close figure 2
+				close figure 3
+			end
 		end
 
 	else
