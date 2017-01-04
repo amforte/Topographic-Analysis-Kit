@@ -5,14 +5,14 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	% Keeps running dataset of all the streams you pick and accept.
 	%
 	% Syntax: 
-	%	SegmentPicker(DEM,FD,S,A,basin_num)
-	%	SegmentPicker(DEM,FD,S,A,basin_num,pn,pv,...)
+	%	SegmentPicker(DEM,FD,A,S,basin_num)
+	%	SegmentPicker(DEM,FD,A,S,basin_num,pn,pv,...)
 	%
 	% Required Inputs:
 	%	DEM - Digital Elevation as a GRIDobj, assumes unconditioned DEM (e.g. DEMoc from ProcessRiverBasins)
 	%	FD - Flow direction as FLOWobj
+	%	A - Flow accumulation GRIDobj	
 	%	S - Stream network as STREAMobj
-	%	A - Flow accumulation GRIDobj
 	%	basin_num - basin number from process river basins for output name or other identifying number for the set of streams you will pick
 	%
 	% Optional Inputs
