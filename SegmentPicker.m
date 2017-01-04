@@ -147,7 +147,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 						if ii==1
 							hold on
 							imageschs(DEM,DEM,'colormap','gray','colorbar',false);
-							plot(S,'-k');
+							plot(S,'-y');
 							hold off
 						end
 					end
@@ -367,7 +367,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 						if ii==1
 							hold on
 							imageschs(DEM,DEM,'colormap','gray','colorbar',false);
-							plot(S,'-k');
+							plot(S,'-y');
 							hold off
 						end
 					end
@@ -469,7 +469,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 					case 'lines'
 						hold on
 						imageschs(DEM,DEM,'colormap','gray','colorbar',false);
-						plot(S,'-k');
+						plot(S,'-y');
 						hold off
 					end
 
@@ -686,7 +686,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 					case 'lines'
 						hold on
 						imageschs(DEM,DEM,'colormap','gray','colorbar',false);
-						plot(S,'-k');
+						plot(S,'-y');
 						hold off
 					end
 
