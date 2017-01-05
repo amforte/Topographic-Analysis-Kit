@@ -2353,10 +2353,11 @@ elseif strcmp(theta_method,'auto')==1 && strcmp(pick_method,'stream')==1 && strc
 
 	ksnR.Z(ix)=knl(:,4);
 	thetaR.Z(ix)=knl(:,5);
+	segthetaR.Z(ix)=knl(:,6);
 
 	% Create KSN map structure and export shapefile
 	KSN=STREAMobj2mapstruct(S,'seglength',smooth_distance,'attributes',...
-		{'ksn' ksnR @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'theta' thetaR @mean});
+		{'ksn' ksnR @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'theta' thetaR @mean 'seg_theta' segthetaR @mean});
 	shapewrite(KSN,'ksn.shp');
 
 % Main Function End
