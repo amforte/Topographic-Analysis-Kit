@@ -140,7 +140,7 @@ function [ChiOBJ]=MakeChiMap(DEM,FD,A,cutoff_drainage_area,ref_concavity);
 	IX=streampoi(S,'outlets','ix');
 
 	DA=A.*(A.cellsize^2);
-	C=chitransform(S,DA,'mn',ref_concavity);
+	C=chitransform(S,DA,'mn',ref_concavity,'a0',1);
 
 	% Make Empty GRIDobj
 	ChiOBJ=GRIDobj(DEM);
@@ -157,7 +157,7 @@ function [ChiOBJ]=MakeChiGrid(FD,A,ref_concavity)
 	S=STREAMobj(FD,'minarea',0);
 
 	DA=A.*(A.cellsize^2);
-	C=chitransform(S,DA,'mn',ref_concavity);
+	C=chitransform(S,DA,'mn',ref_concavity,'a0',1);
 
 	% Make Empty GRIDobj
 	ChiOBJ=GRIDobj(A);
