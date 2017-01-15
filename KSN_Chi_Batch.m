@@ -112,7 +112,12 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 
 		switch output
 		case true
-			varargout{1}=KSN;
+			KSNG=GRIDobj(DEM);
+			for ii=1:numel(KSN)
+				ix=coord2ind(DEM,KSN(ii).X,KSN(ii).Y);
+				KSNG.Z(ix)=KSN(ii).ksn;
+			end
+			varargout{1}=KSNG;
 		end
 
 
@@ -231,7 +236,12 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 
 		switch output
 		case true
-			varargout{1}=KSN;
+			KSNG=GRIDobj(DEM);
+			for ii=1:numel(KSN)
+				ix=coord2ind(DEM,KSN(ii).X,KSN(ii).Y);
+				KSNG.Z(ix)=KSN(ii).ksn;
+			end
+			varargout{1}=KSNG;
 			varargout{2}=ChiMap;
 			varargout{3}=ChiGrid;
 		end
