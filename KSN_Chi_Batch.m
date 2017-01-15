@@ -56,7 +56,7 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 	addRequired(p,'product',@(x) ischar(validatestring(x,{'ksn','chimap','chigrid','all'})));
 
 	addParamValue(p,'smooth_distance',1000,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'min_ksn',1,@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'min_ksn',0.1,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'ref_concavity',0.45,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'output',false,@(x) isscalar(x) && islogical(x));
 	addParamValue(p,'adjust_base_level',false,@(x) isscalar(x) && islogical(x));
