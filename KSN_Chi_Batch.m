@@ -15,7 +15,6 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 	%
 	% Optional Inputs:
 	% 	smooth_distance [1000] - smoothing distance in map units for smoothing ksn values, equivalent to smoothing in Profiler
-	% 	min_ksn [1] - minimum ksn for calculating minimum gradients at different drainage areas 
 	% 	ref_concavity [0.45] - reference concavity (as a positive value) for calculating ksn
 	% 	output [false]- switch to either output matlab files to the workspace (true) or to not only save the specified files
 	%		without any workspace output (false)
@@ -56,7 +55,6 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 	addRequired(p,'product',@(x) ischar(validatestring(x,{'ksn','chimap','chigrid','all'})));
 
 	addParamValue(p,'smooth_distance',1000,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'min_ksn',0.1,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'ref_concavity',0.45,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'output',false,@(x) isscalar(x) && islogical(x));
 	addParamValue(p,'adjust_base_level',false,@(x) isscalar(x) && islogical(x));
@@ -72,7 +70,6 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 	product=p.Results.product;
 
 	smooth_distance=p.Results.smooth_distance;
-	min_ksn=p.Results.min_ksn;
 	ref_concavity=p.Results.ref_concavity;
 	output=p.Results.output;
 	abl=p.Results.adjust_base_level;
@@ -93,8 +90,7 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 	case 'ksn'
 
 		disp('Calculating channel steepness')
-		[G,Gmin] = CompGrad(DEM,FD,A,min_ksn,ref_concavity);
-
+		
 		if abl & strcmp(blm,'elevation')
 			[S]=SetBaseLevel(DEM,FD,A,S,blm,'min_elevation',me);
 		elseif abl & strcmp(blm,'drain_area');
@@ -102,10 +98,16 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 		elseif abl
 			[S]=SetBaseLevel(DEM,FD,A,S,blm);
 		end	
+		
+		zc=mincosthydrocon(S,DEM,'interp',0.1);
+		DEMc=GRIDobj(DEM);
+		DEMc.Z(DEMc.Z==0)=NaN;
+		DEMc.Z(S.IXgrid)=zc;
+		G=gradient8(DEMc);
 
 		ksn=G./(A.*(A.cellsize^2)).^(-ref_concavity);
 		KSN=STREAMobj2mapstruct(S,'seglength',smooth_distance,'attributes',...
-			{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'gmin' Gmin @mode});
+			{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean});
 
 		disp('Writing ARC files')
 		shapewrite(KSN,'ksn.shp');
@@ -200,8 +202,6 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 	case 'all'
 
 		disp('Calculating channel steepness')
-		[G,Gmin] = CompGrad(DEM,FD,A,min_ksn,ref_concavity);
-
 		if abl & strcmp(blm,'elevation')
 			[S]=SetBaseLevel(DEM,FD,A,S,blm,'min_elevation',me);
 		elseif abl & strcmp(blm,'drain_area');
@@ -209,6 +209,16 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 		elseif abl
 			[S]=SetBaseLevel(DEM,FD,A,S,blm);
 		end	
+
+		zc=mincosthydrocon(S,DEM,'interp',0.1);
+		DEMc=GRIDobj(DEM);
+		DEMc.Z(DEMc.Z==0)=NaN;
+		DEMc.Z(S.IXgrid)=zc;
+		G=gradient8(DEMc);
+
+		ksn=G./(A.*(A.cellsize^2)).^(-ref_concavity);
+		KSN=STREAMobj2mapstruct(S,'seglength',smooth_distance,'attributes',...
+			{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean});
 
 		ksn=G./(A.*(A.cellsize^2)).^(-ref_concavity);
 		KSN=STREAMobj2mapstruct(S,'seglength',smooth_distance,'attributes',...
@@ -293,47 +303,4 @@ function [ChiOBJ]=MakeChiGrid(DEM,FD,A,ref_concavity,abl,varargin)
 
 	% Populate Grid
 	ChiOBJ.Z(S.IXgrid)=C;
-end
-
-function [G,GminIX] = CompGrad(DEM,FD,A,min_ksn,ref_concavity)
-
-	% Convert Area in Pixels to Drainage Area in Sq Meters
-	DA=A.*(A.cellsize^2);
-
-	% Find Max Drainage Area Exponent
-	maxDA=max(max(DA));
-	ex=ceil(log10(maxDA));
-
-	% Build Range
-	bins=logspace(4,ex,ex-4+1); % Min area is 1e4
-	num_bins=numel(bins);
-
-	% Build Masks and Gradients
-	for ii=1:num_bins
-		da=bins(ii);
-		% Build Indices
-		if ii==1
-			IX=DA<=da;
-		else
-			IX=DA>bins(ii-1) & DA<=da;
-		end
-
-		% Calculate and Impose Min Gradient
-		minG=min_ksn*(da^-ref_concavity);
-		Gtemp=gradient8(imposemin(FD,DEM,minG));
-		GIX=Gtemp.*IX;
-
-		% Layer Composite
-		if ii==1
-			G=GIX;
-		else
-			G=G+GIX;
-		end
-	end
-
-	% Build map of where minimum gradient has been imposed
-	Gn=gradient8(DEM);
-	mIX=Gn.Z~=G.Z;
-	[X,Y]=getcoordinates(DEM);
-	GminIX=GRIDobj(X,Y,double(mIX));
 end
