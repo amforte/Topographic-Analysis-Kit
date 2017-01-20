@@ -199,9 +199,17 @@ function SubDivideBigBasins(location_of_data_files,max_basin_size,divide_method,
 					max_grad=nanmax(Goc.Z(:));
 					std_grad=nanstd(Goc.Z(:));
 					se_grad=std_grad/sqrt(sum(~isnan(Goc.Z(:)))); % Standard error
+					
+					% Calculate basin wide elevation statistics
+					min_z=nanmin(DEMoc.Z(:));
+					mean_z=nanmean(DEMoc.Z(:));
+					max_z=nanmax(DEMoc.Z(:));
+					std_z=nanstd(DEMoc.Z(:));
+					se_z=std_z/sqrt(sum(~isnan(DEMoc.Z(:)))); % Standard error
 
 					KSNc_stats=[mean_ksn se_ksn std_ksn min_ksn max_ksn];
 					Gc_stats=double([mean_grad se_grad std_grad min_grad max_grad]);
+					Zc_stats=double([mean_z se_z std_z min_z max_z]);
 
 					SubFileName=['Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '.mat'];
 
@@ -224,9 +232,9 @@ function SubDivideBigBasins(location_of_data_files,max_basin_size,divide_method,
 							se_AGc=std_AGc/sqrt(sum(~isnan(AGcOI.Z(:))));
 							AGc_stats(kk,:)=[mean_AGc se_AGc std_AGc min_AGc max_AGc];
 						end
-						save(SubFileName,'RiverMouth','DEMcc','DEMoc','drainage_area','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Centroid','ChiOBJc','ksn_method','clip_method','AGc','AGc_stats');
+						save(SubFileName,'RiverMouth','DEMcc','DEMoc','drainage_area','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method','clip_method','AGc','AGc_stats');
 					elseif isempty(VarInd)
-						save(SubFileName,'RiverMouth','DEMcc','DEMoc','drainage_area','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Centroid','ChiOBJc','ksn_method','clip_method');
+						save(SubFileName,'RiverMouth','DEMcc','DEMoc','drainage_area','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method','clip_method');
 					end
 
 					switch write_arc_files
@@ -310,8 +318,16 @@ function SubDivideBigBasins(location_of_data_files,max_basin_size,divide_method,
 					std_grad=nanstd(vertcat(Goc.Z(:)));
 					se_grad=std_grad/sqrt(sum(sum(~isnan(Goc.Z)))); % Standard error
 
+					% Calculate basin wide elevation statistics
+					min_z=nanmin(DEMoc.Z(:));
+					mean_z=nanmean(DEMoc.Z(:));
+					max_z=nanmax(DEMoc.Z(:));
+					std_z=nanstd(DEMoc.Z(:));
+					se_z=std_z/sqrt(sum(~isnan(DEMoc.Z(:)))); % Standard error
+
 					KSNc_stats=[mean_ksn se_ksn std_ksn min_ksn max_ksn];
 					Gc_stats=double([mean_grad se_grad std_grad min_grad max_grad]);
+					Zc_stats=double([mean_z se_z std_z min_z max_z]);
 
 					SubFileName=['Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '.mat'];
 
@@ -334,9 +350,9 @@ function SubDivideBigBasins(location_of_data_files,max_basin_size,divide_method,
 							se_AGc=std_AGc/sqrt(sum(~isnan(AGcOI.Z(:))));
 							AGc_stats(kk,:)=[mean_AGc se_AGc std_AGc min_AGc max_AGc];
 						end
-						save(SubFileName,'RiverMouth','DEMoc','drainage_area','Sc','SAc','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Centroid','ChiOBJc','ksn_method','clip_method','AGc','AGc_stats');
+						save(SubFileName,'RiverMouth','DEMoc','drainage_area','Sc','SAc','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method','clip_method','AGc','AGc_stats');
 					elseif isempty(VarInd)
-						save(SubFileName,'RiverMouth','DEMoc','drainage_area','Sc','SAc','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Centroid','ChiOBJc','ksn_method','clip_method');
+						save(SubFileName,'RiverMouth','DEMoc','drainage_area','Sc','SAc','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method','clip_method');
 					end
 
 					switch write_arc_files
