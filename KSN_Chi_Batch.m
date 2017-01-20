@@ -220,10 +220,6 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 		KSN=STREAMobj2mapstruct(S,'seglength',smooth_distance,'attributes',...
 			{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean});
 
-		ksn=G./(A.*(A.cellsize^2)).^(-ref_concavity);
-		KSN=STREAMobj2mapstruct(S,'seglength',smooth_distance,'attributes',...
-			{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'gmin' Gmin @mode});
-
 	    disp('Calculating chi map');
 		[ChiMap]=MakeChiMap(DEM,FD,A,S,ref_concavity);
 
