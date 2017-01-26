@@ -3,7 +3,8 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	% and with commonly desired attributes from the results of 'ProcessRiverBasins' etc. See below for a full list of fields that the output shapefile
 	% will include. If additional grids were provided to 'ProcessRiverBasins', mean and standard error values for those grids will be auto-populated in
 	% the shapefile and the name of the fields will be the character array provided in the second column of additional grids input. This function also
-	% allows you to input a list of additional fields you wish to include (see Optional Inputs below)
+	% allows you to input a list of additional fields you wish to include (see Optional Inputs below). If you would rather create a GRIDobj with specified
+	% values, use 'Basin2Raster'.
 	%
 	% Required Inputs:
 	%		DEM - GRIDobj of the DEM originally used as input for 'ProcessRiverBasins' for the basins of interest.
