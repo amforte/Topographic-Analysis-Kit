@@ -1,6 +1,7 @@
 function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 	% Function takes outputs from 'ProcessRiverBasins' function and produces a single GRIDobj with individual drainage
-	% basins (as selected by 'ProcessRiverBasins' and 'SubDivideBigBasins') assinged various values
+	% basins (as selected by 'ProcessRiverBasins' and 'SubDivideBigBasins') assigned various values. If you would rather
+	% create a shapefile, use 'Basin2Shape'.
 	%
 	% Required Inputs:
 	%	DEM - GRIDobj of full extent of datasets
