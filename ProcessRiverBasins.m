@@ -59,7 +59,7 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 	addParamValue(p,'clip_method','clip',@(x) ischar(validatestring(x,{'clip','segment'})));
 	addParamValue(p,'ksn_method','quick',@(x) ischar(validatestring(x,{'quick','trib'})));
 	addParamValue(p,'add_grids',[],@(x) isa(x,'cell') && size(x,2)==2);
-	addParamValue(p,'resample_method','nearest',ischar(validatestring(x,{'nearest','bilinear','bicubic'})));
+	addParamValue(p,'resample_method','nearest',@(x) ischar(validatestring(x,{'nearest','bilinear','bicubic'})));
 
 	parse(p,DEM,FD,S,river_mouths,varargin{:});
 	DEM=p.Results.DEM;
@@ -89,7 +89,7 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 			AGoi=AG{jj,1};
 			if ~validatealignment(AGoi,DEM);
 				disp(['Resampling ' AG{jj,2} ' GRIDobj to be the same resolution and dimensions as the input DEM by the ' resample_method ' method']);
-				AG{jj,1}=resample(Agoi,DEM,resample_method);
+				AG{jj,1}=resample(AGoi,DEM,resample_method);
 			end
 		end
 	end
