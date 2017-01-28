@@ -133,6 +133,29 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 		MS(ii,1).se_ksn=KSNc_stats(2);
 		MS(ii,1).mean_gradient=Gc_stats(1);
 		MS(ii,1).se_gradient=Gc_stats(2);
+		
+		% Determine if a georef structure exists and if so, produce lat-lon locations for sample points
+		if ~isempty(DEM.georef)
+			try
+				% Check how projection is stored (control for older TopoToolbox methods)
+				if isfield(DEM.georef,'mstruct')
+					proj=DEM.georef.mstruct;
+				else
+					proj=DEM.georef;
+				end
+				% Project
+				[s_lat,s_lon]=projinv(proj,RiverMouth(:,1),RiverMouth(:,2));
+				% Populate lat lon coordinates
+				MS(ii,1).samp_lat=s_lat;
+				MS(ii,1).samp_lon=s_lon;
+			catch
+				str=sprintf('Projection is either not supported or you do not have the Mapping Toolbox,\n unable to convert river mouth coordinates to lat-lon');
+				disp(str);
+			end
+		else
+			str=sprintf('GRIDobj does not have projection information, unable to convert river mouth coordinates to lat-lon');
+			disp(str);
+		end
 
 		% Check for additional grids within the process river basins output
 		VarList=whos('-file',FileName);
@@ -143,11 +166,10 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 			num_grids=size(AGc,1);
 
 			for kk=1:num_grids
-				prop_name=AGc{kk,2};
-				mean_val=AGc_stats(kk,1);
-				se_val=AGc_stats(kk,2);
-				eval(['MS(' num2str(ii) ',1).mean_' prop_name '=' num2str(mean_val)]);
-				eval(['MS(' num2str(ii) ',1).se_' prop_name '=' num2str(se_val)]);	
+				mean_prop_name=['mean_' AGC{kk,2}];
+				se_prop_name=['se_' AGC{kk,2}];
+				MS(ii,1).(mean_prop_name)=double(AGc_stats(kk,1));
+				MS(ii,1).(se_prop_name)=double(AGc_stats(kk,2));	
 			end
 		end		
 
@@ -166,9 +188,9 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 					field_value=efvOI{kk};
 					% Check to see if field value is a number or string
 					if ischar(field_value)
-						eval(['MS(' num2str(ii) ',1).' field_name '=' '''' field_value '''']);
+						MS(ii,1).(field_name)=field_value;
 					elseif isnumeric(field_value)
-						eval(['MS(' num2str(ii) ',1).' field_name '=' num2str(field_value)]);
+						MS(ii,1).(field_name)=double(field_value);
 					else
 						error(['Extra field value provided for ' field_name ' is neither numeric or a character']);
 					end
