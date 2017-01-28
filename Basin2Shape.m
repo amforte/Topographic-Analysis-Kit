@@ -12,6 +12,7 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	% 		max_basin_size - size above which drainage basins will be subdivided in square kilometers  
 	%
 	% Optional Inputs:
+	%		shape_name ['basins'] - name for the shapefile to be export, must have no spaces to be a valid name for ArcGIS and should NOT include the '.shp';
 	%		include ['all'] - parameter to specify which basins to include in building the shapfile. The default 'all' will include all basin mat files in the 
 	%			folder you specify. The optional 'subdivided' will check to see if a given main basin was subdivided using 'SubdivideBigBasin' and then only include 
 	%			the subdivided versions of that basin (i.e. the original main basin for those subbasins will not be included in the shapefile). 
@@ -48,6 +49,7 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
 	addRequired(p,'location_of_data_files',@(x) isdir(x));
 
+	addParamValue(p,'shape_name','basins',@(x) ischar(x));
 	addParamValue(p,'include','all',@(x) ischar(validatestring(x,{'all','subdivided'})));
 	addParamValue(p,'extra_field_values',[],@(x) isa(x,'cell'));
 	addParamValue(p,'extra_field_names',[],@(x) isa(x,'cell') & size(x,1)==1);
@@ -56,6 +58,7 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	DEM=p.Results.DEM;
 	location_of_data_files=p.Results.location_of_data_files;
 
+	shape_name=p.Results.shape_name;
 	include=p.Results.include;
 	efv=p.Results.extra_field_values;
 	efn=p.Results.extra_field_names;
@@ -208,4 +211,5 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	close(w1);
 
 	cd(current);
-	shapewrite(MS,'Basins.shp');
+	out_shape_name=[shape_name '.shp'];
+	shapewrite(MS,out_shape_name);
