@@ -169,8 +169,8 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 			num_grids=size(AGc,1);
 
 			for kk=1:num_grids
-				mean_prop_name=['mean_' AGC{kk,2}];
-				se_prop_name=['se_' AGC{kk,2}];
+				mean_prop_name=['mean_' AGc{kk,2}];
+				se_prop_name=['se_' AGc{kk,2}];
 				MS(ii,1).(mean_prop_name)=double(AGc_stats(kk,1));
 				MS(ii,1).(se_prop_name)=double(AGc_stats(kk,2));	
 			end
