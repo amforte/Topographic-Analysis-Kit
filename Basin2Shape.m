@@ -30,6 +30,8 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	%		Outputs a mapstructure and saves a shapefile with the following default fields:
 	%			river_mouth - river mouth number provided to ProcessRiverBasins
 	%			drainage_area - drainage area of basin in km^2
+	%			center_x - x coordinate of basin in projected coordinates
+	%			center_y - y coordinate of basin in projected coordinates
 	%			outlet_elevation - elevation of pour point in m
 	%			mean_el - mean elevation of basin in meters
 	%			max_el - maximum elevation of basin in meters
@@ -108,7 +110,7 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 		FileName=FileList(ii,1).name;
 		DB=GRIDobj(DEM);
 
-		load(FileName,'DEMoc','RiverMouth','drainage_area','out_el','KSNc_stats','Zc_stats','Gc_stats');
+		load(FileName,'DEMoc','RiverMouth','drainage_area','out_el','KSNc_stats','Zc_stats','Gc_stats','Centroid');
 
 		I=~isnan(DEMoc.Z);
 		[X,Y]=getcoordinates(DEMoc);
@@ -130,6 +132,8 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 		MS(ii,1).Y=ms_temp.Y;
 		MS(ii,1).ID=ii;
 		MS(ii,1).river_mouth=ms_temp.gridval;
+		MS(ii,1).center_x=Centroid(1);
+		MS(ii,1).center_y=Centroid(2);
 		MS(ii,1).drainage_area=drainage_area;
 		MS(ii,1).outlet_elevation=out_el;
 		MS(ii,1).mean_el=Zc_stats(1);
