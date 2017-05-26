@@ -4403,7 +4403,14 @@ chiF=chi(Lib);
 zabsF=zx(Lib)-zb;
 
 chiS=linspace(0,max(chiF),numel(chiF)).';
-zS=spline(chiF,zabsF,chiS);
+try
+	zS=spline(chiF,zabsF,chiS);
+catch
+	% cubic spline will fail if segments is nearly straight, skip spline fit
+	% in this case to avoid erroring out
+	zS=zabsF;
+	chiS=chiF;
+end
 
 % Calculate beta
 switch betamethod
