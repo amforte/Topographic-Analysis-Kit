@@ -15,6 +15,9 @@ function [BED]=DippingBedFinder(DEM,xy,hght_abv_base,thickness,strike,dip);
     %   (1 where the bed should appear, 0 where it should not)
     %
     % Example Input:
+    %   To make a DEM GRIDobj:
+    %   [DEM]=GRIDobj('name_of_tif.tif'); or [DEM]=GRIDobj('name_of_ascii.txt');
+    %   then
     % 	[BED]=DippingBedFinder(DEM,[45325.23 1024567.2],10,50,270,40); If you want to provide a coordinate
     %   [BED]=DippingBedFinder(DEM,[],10,50,270,40); If you want to pick a spot on the DEM
     %
