@@ -12,6 +12,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 	%	A - Flow accumulation GRIDobj
 	%
 	% Optional Inputs:
+	%	conditioned_DEM [] - option to provide a hydrologically conditioned DEM for use in this function (do not provide a conditoned DEM
+	%		for the main required DEM input!) which will be used for extracting elevations. See 'ConditionDEM' function for options for making a 
+	%		hydrological conditioned DEM. If no input is provided the code defaults to using the mincosthydrocon function.
 	%	theta_method ['ref']- options for concavity
 	%		'ref' - uses a reference concavity, the user can specify this value with the reference concavity option (see below)
 	%		'auto' - function finds a best fit concavity for the provided stream
@@ -22,6 +25,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 	%	refit_streams [false] - option to recalculate chi based on the concavity of the picked segment (true), useful if you want to try to precisely 
 	%		match the shape of the picked segment of the profile. Only used if 'theta_method' is set to 'auto'
 	%	save_figures [false] - option to save (if set to true) figures at the end of the projection process
+	%	interp_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a conditioned DEM)
 	%
 	% Output:
 	%	Produces a 2 x n cell array with a column for each stream segment provided (or channel head if a network is provided). The first row is the x-y
@@ -52,6 +56,8 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 	addParamValue(p,'ref_concavity',0.45,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'refit_streams',false,@(x) isscalar(x) && islogical(x));
 	addParamValue(p,'save_figures',false,@(x) isscalar(x) && islogical(x));
+	addParamValue(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
+	addParamValue(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
 
 	parse(p,DEM,FD,A,Streams,varargin{:});
 	DEM=p.Results.DEM;
@@ -65,6 +71,8 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 	refit_streams=p.Results.refit_streams;
 	pick_method=p.Results.pick_method;
 	save_figures=p.Results.save_figures;
+	iv=p.Results.interp_value;
+	DEMc=p.Results.conditioned_DEM;
 
 	if isa(Slist,'cell')
 		for ii=1:numel(Slist)
@@ -83,11 +91,13 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 		num_ch=numel(chix);
 	end
 
-	% Create hydrologically conditioned DEM;
-	zc=mincosthydrocon(ST,DEM,'interp',0.1);
-	DEMc=GRIDobj(DEM);
-	DEMc.Z(DEMc.Z==0)=NaN;
-	DEMc.Z(ST.IXgrid)=zc;
+	% Hydrologically condition dem
+	if isempty(DEMc)
+		zc=mincosthydrocon(S,DEM,'interp',iv);
+		DEMc=GRIDobj(DEM);
+		DEMc.Z(DEMc.Z==0)=NaN;
+		DEMc.Z(S.IXgrid)=zc;
+	end
 
 	% Parse Switches
 	if strcmp(theta_method,'ref') & strcmp(pick_method,'chi');

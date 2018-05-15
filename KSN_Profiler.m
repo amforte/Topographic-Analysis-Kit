@@ -15,6 +15,9 @@ function [knl,ksn_master,bnd_list,Sc]=KSN_Profiler(DEM,FD,A,S,varargin)
 	%	A - Flow accumulation GRIDobj
 	%
 	% Optional Inputs:
+	%	conditioned_DEM [] - option to provide a hydrologically conditioned DEM for use in this function (do not provide a conditoned DEM
+	%		for the main required DEM input!) which will be used for extracting elevations. See 'ConditionDEM' function for options for making a 
+	%		hydrological conditioned DEM. If no input is provided the code defaults to using the mincosthydrocon function.
 	%	shape_name ['ksn'] - name for the shapefile to be export, must have no spaces to be a valid name for ArcGIS and should NOT include the '.shp'
 	% 	input_method ['interactive'] - parameter which controls how streams of interest are supplied, expects either 'interactive', 'all_streams', or 'channel_heads'.
 	%		'interactive' - user picks streams of interest by selecting channelheads on a map, this option will also iteratively build a 
@@ -49,6 +52,7 @@ function [knl,ksn_master,bnd_list,Sc]=KSN_Profiler(DEM,FD,A,S,varargin)
 	%	ref_concavity [0.45] - refrence concavity used if 'theta_method' is set to 'ksn'
 	%	max_ksn [250] - maximum  ksn used for the color scale, will not effect actual results, for display purposes only
 	%	threshold_area [1e6] - used to redraw downsampled stream network if 'plot_type' is set to 'downsample' 
+	%	interp_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a conditioned DEM)
 	%		
 	% Outputs:
 	%	knl - n x 8 matrix of node list for selected stream segments, columns are x coordinate, y coordinate, drainage area, ksn,
@@ -86,6 +90,8 @@ function [knl,ksn_master,bnd_list,Sc]=KSN_Profiler(DEM,FD,A,S,varargin)
 	addParamValue(p,'input_method','interactive',@(x) ischar(validatestring(x,{'interactive','channel_heads','all_streams'})));
 	addParamValue(p,'channel_head_list',[],@(x) isnumeric(x) & size(x,2)==2);
 	addParamValue(p,'min_channel_length',[],@(x) isnumeric(x) & isscalar(x));
+	addParamValue(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
+	addParamValue(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
 
 	parse(p,DEM,FD,A,S,varargin{:});
 	DEM=p.Results.DEM;
@@ -104,6 +110,8 @@ function [knl,ksn_master,bnd_list,Sc]=KSN_Profiler(DEM,FD,A,S,varargin)
 	input_method=p.Results.input_method;
 	chl=p.Results.channel_head_list;
 	min_channel_length=p.Results.min_channel_length;
+	iv=p.Results.interp_value;
+	DEMc=p.Results.conditioned_DEM;
 
 	% Max Ksn for color scaling
 	mksn=p.Results.max_ksn;
@@ -146,11 +154,15 @@ function [knl,ksn_master,bnd_list,Sc]=KSN_Profiler(DEM,FD,A,S,varargin)
 		input_method='preselected';
 	end
 
-	% Create hydrologically conditioned DEM;
-	zc=mincosthydrocon(S,DEM,'interp',0.1);
-	DEMc=GRIDobj(DEM);
-	DEMc.Z(DEMc.Z==0)=NaN;
-	DEMc.Z(S.IXgrid)=zc;
+	% Hydrologically condition dem
+	if isempty(DEMc)
+		zc=mincosthydrocon(S,DEM,'interp',iv);
+		DEMc=GRIDobj(DEM);
+		DEMc.Z(DEMc.Z==0)=NaN;
+		DEMc.Z(S.IXgrid)=zc;
+	end
+
+	% Make gradient
 	G=gradient8(DEMc);
 
 

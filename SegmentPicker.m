@@ -1,8 +1,8 @@
 function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	% Function to select a segment of a stream network from the top of the stream, and plot the long profile 
-	% and chi-Z relationship of that segment,also outputs the extraced portion of the stream network and chi structure 
-	% (out of 'chiplot'). Allows user to iteratively select different parts of the stream network and display. 
-	% Keeps running dataset of all the streams you pick and accept.
+	% 	and chi-Z relationship of that segment,also outputs the extraced portion of the stream network and chi structure 
+	% 	(out of 'chiplot'). Allows user to iteratively select different parts of the stream network and display. 
+	% 	Keeps running dataset of all the streams you pick and accept.
 	%
 	% Syntax: 
 	%	SegmentPicker(DEM,FD,A,S,basin_num)
@@ -16,6 +16,9 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	%	basin_num - basin number from process river basins for output name or other identifying number for the set of streams you will pick
 	%
 	% Optional Inputs
+	%	conditioned_DEM [] - option to provide a hydrologically conditioned DEM for use in this function (do not provide a conditoned DEM
+	%		for the main required DEM input!) which will be used for extracting elevations. See 'ConditionDEM' function for options for making a 
+	%		hydrological conditioned DEM. If no input is provided the code defaults to using the mincosthydrocon function.
 	%	direction ['down'] - expects either 'up' or 'down', default is 'down', if 'up' assumes individual selections are points above
 	%		which you wish to extract and view stream profiles (i.e. a pour point), if 'down' assumes individual
 	%		selections are channel heads if specific streams you wish to extract and view stream profiles. 
@@ -41,6 +44,8 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	%	     	 then chi and distance are recalculated (i.e. the outlet as determined by the min_elev or max_area condition
 	%			 will have a chi value of zero and a distance from mouth value of zero).
 	%	threshold_area [1e6] - used to redraw downsampled stream network if 'plot_type' is set to 'downsample'
+	%	interp_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a conditioned DEM)
+
 	%
 	% Outputs:
 	%	Saves an output called 'PickedSegements_*.mat' with the provided basin number containing these results:
@@ -81,6 +86,8 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	addParamValue(p,'recalc',false,@(x) isscalar(x));
 	addParamValue(p,'picks',[],@(x) (isnumeric(x) && size(x,2)==3) | ischar(x));
 	addParamValue(p,'threshold_area',1e6,@(x) isnumeric(x));
+	addParamValue(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
+	addParamValue(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
 
 	parse(p,DEM,FD,A,S,basin_num,varargin{:});
 	DEM=p.Results.DEM;
@@ -95,6 +102,9 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	plot_style=p.Results.plot_style;
 	threshold_area=p.Results.threshold_area;
 	points=p.Results.picks;
+	iv=p.Results.interp_value;
+	DEMc=p.Results.conditioned_DEM;
+
 
 	% Catch errors
 	if strcmp(direction,'up') && ~isempty(p.Results.min_elev)
@@ -134,10 +144,12 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 
 	% Hydrologically condition dem
-	zc=mincosthydrocon(S,DEM,'interp',0.1);
-	DEMc=GRIDobj(DEM);
-	DEMc.Z(DEMc.Z==0)=NaN;
-	DEMc.Z(S.IXgrid)=zc;
+	if isempty(DEMc)
+		zc=mincosthydrocon(S,DEM,'interp',iv);
+		DEMc=GRIDobj(DEM);
+		DEMc.Z(DEMc.Z==0)=NaN;
+		DEMc.Z(S.IXgrid)=zc;
+	end
 
 	switch plot_type
 	case 'downsample'

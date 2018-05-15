@@ -1,9 +1,9 @@
 function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	% Function takes a dem and outputs the necessary base datasets for use in other TopoToolbox functions.
-	% Input DEMs with grid resolutions (i.e. cellsizes) that are not whole numbers sometimes cause issues
-	% in companion functions. If the provided DEM has a non-whole number for a cellsize, the code will not
-	% warn the user (but not do anything). If you want to fix the cellsize issue, you can either reproject
-	% in a GIS program or you can use this code (with 'resample_grid' set to true) to do it for you.
+	% 	Input DEMs with grid resolutions (i.e. cellsizes) that are not whole numbers sometimes cause issues
+	% 	in companion functions. If the provided DEM has a non-whole number for a cellsize, the code will
+	% 	warn the user (but not do anything). If you want to fix the cellsize issue, you can either reproject
+	% 	in a GIS program or you can use this code (with 'resample_grid' set to true) to do it for you.
 	%
 	% Required Inputs:
 	% 	dem - either full path of dem file as either an ascii text file (recommended) or geotiff OR 
