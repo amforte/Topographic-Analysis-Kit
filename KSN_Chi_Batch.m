@@ -8,10 +8,11 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 	%	S - STREAM object
 	% 	product - switch to determine which products to produce
 	%		'ksn' - ksn map as a shapefile
+	%		'ksngrid' - ascii file with ksn interpolated at all points in a grid
 	%		'chimap' - ascii file with chi calculated in channel networks
 	%		'chigrid' - ascii file with chi calculate at all points in a grid
 	%		'chi' - results for both chimap and chigrid
-	%		'all' - ksn, chimap, and chigrids
+	%		'all' - ksn, ksngrid, chimap, and chigrids
 	%
 	% Optional Inputs:
 	%	file_name_prefix ['batch'] - prefix for outputs, will append the type of output, i.e. 'ksn', 'chimap', etc
@@ -46,7 +47,7 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 	%	[KSN,ChiMap,ChiGrid]=KSN_Chi_Batch(DEM,FD,A,S,'output',true,'theta_ref',0.55);
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Winter 2017 %
+	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Parse Inputs
@@ -56,7 +57,7 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 	addRequired(p,'FD', @(x) isa(x,'FLOWobj'));
 	addRequired(p,'A', @(x) isa(x,'GRIDobj'));
 	addRequired(p,'S',@(x) isa(x,'STREAMobj'));
-	addRequired(p,'product',@(x) ischar(validatestring(x,{'ksn','chimap','chigrid','all'})));
+	addRequired(p,'product',@(x) ischar(validatestring(x,{'ksn','ksngrid','chimap','chigrid','all'})));
 
 	addParamValue(p,'file_name_prefix','batch',@(x) ischar(x));
 	addParamValue(p,'segment_length',1000,@(x) isscalar(x) && isnumeric(x));
@@ -127,6 +128,10 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 			end
 			varargout{1}=KSNG;
 		end
+
+	case 'ksngrid'
+
+		disp('NOT YET IMPLEMENTED')
 
 
 	case 'chimap'
