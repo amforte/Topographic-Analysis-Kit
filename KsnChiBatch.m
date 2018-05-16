@@ -51,7 +51,7 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 
 	% Parse Inputs
 	p = inputParser;         
-	p.FunctionName = 'KSN_Chi_Batch';
+	p.FunctionName = 'KsnChiBatch';
 	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
 	addRequired(p,'FD', @(x) isa(x,'FLOWobj'));
 	addRequired(p,'A', @(x) isa(x,'GRIDobj'));
