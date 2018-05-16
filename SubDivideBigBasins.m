@@ -208,7 +208,7 @@ function SubDivideBigBasins(location_of_data_files,max_basin_size,divide_method,
 					end
 
 					% Calculate chi and create chi map
-					Cc=chitransform(Sc,Ac.*(Ac.cellsize^2),'a0',1,'mn',theta_ref);
+					Cc=chitransform(Sc,Ac,'a0',1,'mn',theta_ref);
 					ChiOBJc=GRIDobj(DEMoc);
 					ChiOBJc.Z(Sc.IXgrid)=Cc;
 
@@ -298,6 +298,31 @@ function SubDivideBigBasins(location_of_data_files,max_basin_size,divide_method,
 						save(SubFileName,'AGc','AGc_stats','-append');
 					end
 
+					VarInd=find(strcmp(cellstr(char(VarList.name)),'ACGc'));
+					if ~isempty(VarInd)
+						load(FileName,'ACGc');
+						ACG=ACGc;
+						num_grids=size(ACG,1);
+						ACGc=cell(size(ACG));
+						for kk=1:num_grids
+							ACGcOI=crop(ACG{kk,1},I,nan);
+							ACGc{kk,1}=ACGcOI;
+							ACGc{kk,3}=ACG{kk,3};
+							edg=ACG{kk,2}.Numbers;
+							edg=edg+0.5;
+							edg=vertcat(0.5,edg);
+							[N,~]=histcounts(ACGcOI.Z(:),edg);
+							ix=find(N);
+							T=ACG{kk,2};
+							T=T(ix);
+							N=N(ix)';
+							T.Counts=N;
+							ACGc{kk,2}=T;
+							ACGc_stats(kk,1)=[mode(ACGOI.Z(:))];
+						end
+						save(FileName,'ACGc','ACGc_stats','-append');	
+					end	
+
 					VarInd=find(strcmp(cellstr(char(VarList.name)),'rlf'));
 					if ~isempty(VarInd)
 						load(FileName,'rlf');
@@ -348,6 +373,14 @@ function SubDivideBigBasins(location_of_data_files,max_basin_size,divide_method,
 								GRIDobj2ascii(AGc{kk,1},AGcFileName);
 							end
 						end
+
+						if ~isempty(ACG);
+							for jj=1:num_grids
+								ACGcFileName=['Basin_' num2str(basin_num) '_' ACGc{jj,3} '.txt'];
+								GRIDobj2ascii(ACGc{jj,1},ACGcFileName);
+							end
+						end
+
 					end
 
 				end % New basin loop end
@@ -388,7 +421,7 @@ function SubDivideBigBasins(location_of_data_files,max_basin_size,divide_method,
 					end
 
 					% Calculate chi and create chi map
-					Cc=chitransform(Sc,A0.*(A0.cellsize^2),'a0',1,'mn',theta_ref);
+					Cc=chitransform(Sc,A0,'a0',1,'mn',theta_ref);
 					ChiOBJc=GRIDobj(DEMoc);
 					ScIX=coord2ind(DEMoc,Sc.x,Sc.y);
 					ChiOBJc.Z(ScIX)=Cc;
@@ -473,6 +506,31 @@ function SubDivideBigBasins(location_of_data_files,max_basin_size,divide_method,
 						save(SubFileName,'AGc','AGc_stats','-append');						
 					end
 
+					VarInd=find(strcmp(cellstr(char(VarList.name)),'ACGc'));
+					if ~isempty(VarInd)
+						load(FileName,'ACGc');
+						ACG=ACGc;
+						num_grids=size(ACG,1);
+						ACGc=cell(size(ACG));
+						for kk=1:num_grids
+							ACGcOI=crop(ACG{kk,1},I,nan);
+							ACGc{kk,1}=ACGcOI;
+							ACGc{kk,3}=ACG{kk,3};
+							edg=ACG{kk,2}.Numbers;
+							edg=edg+0.5;
+							edg=vertcat(0.5,edg);
+							[N,~]=histcounts(ACGcOI.Z(:),edg);
+							ix=find(N);
+							T=ACG{kk,2};
+							T=T(ix);
+							N=N(ix)';
+							T.Counts=N;
+							ACGc{kk,2}=T;
+							ACGc_stats(kk,1)=[mode(ACGOI.Z(:))];
+						end
+						save(FileName,'ACGc','ACGc_stats','-append');	
+					end	
+
 					VarInd=find(strcmp(cellstr(char(VarList.name)),'rlf'));
 					if ~isempty(VarInd)
 						load(FileName,'rlf');
@@ -523,6 +581,13 @@ function SubDivideBigBasins(location_of_data_files,max_basin_size,divide_method,
 								GRIDobj2ascii(AGc{kk,1},AGcFileName);
 							end
 						end
+
+						if ~isempty(ACG);
+							for jj=1:num_grids
+								ACGcFileName=['Basin_' num2str(basin_num) '_' ACGc{jj,3} '.txt'];
+								GRIDobj2ascii(ACGc{jj,1},ACGcFileName);
+							end
+						end
 					end
 
 				end % New basin loop end
@@ -560,7 +625,7 @@ function [ksn_ms]=KSN_Trib(DEM,FD,A,S,theta_ref,segment_length)
 	z=mincosthydrocon(S,DEM,'interp',0.1);
 	zu=getnal(S,DEM);
 	z_res=z-zu;
-	c=chitransform(S,A.*(A.cellsize^2),'a0',1,'mn',theta_ref);
+	c=chitransform(S,A,'a0',1,'mn',theta_ref);
 	d=S.distance;
 	da=getnal(S,A.*(A.cellsize^2));
 	ixgrid=S.IXgrid;

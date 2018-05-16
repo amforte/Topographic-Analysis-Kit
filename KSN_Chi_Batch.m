@@ -26,21 +26,16 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 	%	ksn_method [quick] - switch between method to calculate ksn values, options are 'quick' and 'trib', the 'trib' method takes 3-4 times longer 
 	%		than the 'quick' method. In most cases, the 'quick' method works well, but if values near tributary junctions are important, then 'trib'
 	%		may be better as this calculates ksn values for individual channel segments individually
-	%	adjust_base_level [false] - flag to adjust base level of stream network. Chi values are sensitive to choice of baselevel so it is recommended 
-	%		that you (1) either clip the DEM prior to running 'MakeStreams' so that extracted streams will have what you deem to be appropriate base levels
-	%		 or (2) use one of the provided options with this flag to set base levels (see 'base_level_method').
-	%	base_level_method [] - parameter to control how stream network base level is adjusted, only valid if 'adjust_base_level' is true. Options for control
-	%		 of base level are:
+	%	output_level_method [] - parameter to control how stream network base level is adjusted. Options for control of output elevation are:
 	%			'elevation' - extract streams only above a given elevation (provided by the user using the 'min_elevation' parameter) to ensure that base level
 	%				elevation for all streams is uniform. If the provided elevation is too low (i.e. some outlets of the unaltered stream network are above this
 	%				elevation) then a warning will be displayed, but the code will still run.
-	%			'drain_area' - extract streams only below a given maximum drainage area (provided by the user using the 'max_drainage_area' parameter) to ensure
-	%				that the outlets of all extracted streams have the same drainage areas. If the provided maximum drainage area is too large (i.e. some outlets
-	%				have drainage areas smaller than this maximum) then a warning will be displayed, but the code will still run.
-	%			'max_out_elevation' - uses the maximum elevation of all stream outlets to extract streams only above this elevation
-	%			'min_out_drain_area' - uses the minimum drainage area of all stream outlets to extract streams only below this drainage area
+	%			'max_out_elevation' - uses the maximum elevation of all stream outlets to extract streams only above this elevation, only valid for options that operate
+	%				on streamlines only (i.e. will not work with 'ksngrid' or 'chigrid').
 	%	min_elevation [] - parameter to set minimum elevation for base level, required if 'base_level_method' is set to 'elevation'
-	%	max_drainage_area [] - parameter to set maximum drainage area for base level, required if 'base_level_method' is set to 'drain_area'
+	%	complete_networks_only [true] - if true (default) the code will only populate portions of the stream network that are complete. Generally, this
+	%			option should probably be left as true (i.e. chi will not be accurate if drainage area is not accurate), but this can be overly agressive
+	%			on certain DEMs and when used in tandem with 'min_elevation', it can be slow to calculate as it requires recalculation of the FLOWobj.
 	%	interp_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a conditioned DEM)
 	%
 	% Notes:
@@ -68,12 +63,11 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 	addParamValue(p,'theta_ref',0.45,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'output',false,@(x) isscalar(x) && islogical(x));
 	addParamValue(p,'ksn_method','quick',@(x) ischar(validatestring(x,{'quick','trib'})));
-	addParamValue(p,'adjust_base_level',false,@(x) isscalar(x) && islogical(x));
-	addParamValue(p,'base_level_method',[],@(x) ischar(validatestring(x,{'elevation','drain_area','max_out_elevation','min_out_drain_area'})));
+	addParamValue(p,'output_level_method',[],@(x) ischar(validatestring(x,{'elevation','max_out_elevation'})));
 	addParamValue(p,'min_elevation',[],@(x) isnumeric(x));
-	addParamValue(p,'max_drainage_area',[],@(x) isnumeric(x));
 	addParamValue(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
 	addParamValue(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
+	addParamValue(p,'complete_networks_only',true,@(x) isscalar(x) && islogical(x));
 
 	parse(p,DEM,FD,A,S,product,varargin{:});
 	DEM=p.Results.DEM;
@@ -87,20 +81,17 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 	theta_ref=p.Results.theta_ref;
 	output=p.Results.output;
 	ksn_method=p.Results.ksn_method;
-	abl=p.Results.adjust_base_level;
-	blm=p.Results.base_level_method;
+	blm=p.Results.output_level_method;
 	me=p.Results.min_elevation;
-	ma=p.Results.max_drainage_area;
 	iv=p.Results.interp_value;
 	DEMc=p.Results.conditioned_DEM;
+	cno=p.Results.complete_networks_only;
 
 	% Check that cut off values have been provided if base level
-	if abl & isempty(blm)
-		error('Base level adjustment set to true, but no base level adjustment method was provided');
-	elseif abl & strcmp(blm,'elevation') & isempty(me)
-		error('Selected base level adjust method "elevation" requires that you provide an input for parameter "min_elevation"');
-	elseif abl & strcmp(blm,'drain_area') & isempty(ma)
-		error('Selected base level adjust method "drain_area" requires that you provide an input for parameter "max_drainage_area"');
+	if strcmp(blm,'max_out_elevation') & (strcmp(product,'chigrid') | strcmp(product,'ksngrid') | strcmp(product,'all'))
+		warning('"max_out_elevation" is not a valid choice for a continuous gridded product, ignoring this input')
+	elseif strcmp(blm,'elevation') & isempty(me)
+		error('Selected outlet level adjust method "elevation" requires that you provide an input for parameter "min_elevation"');
 	end
 
 	switch product
@@ -108,13 +99,13 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 
 		disp('Calculating channel steepness')
 		
-		if abl & strcmp(blm,'elevation')
-			[S]=SetBaseLevel(DEM,FD,A,S,blm,'min_elevation',me);
-		elseif abl & strcmp(blm,'drain_area');
-			[S]=SetBaseLevel(DEM,FD,A,S,blm,'max_drainage_area',ma);
-		elseif abl
-			[S]=SetBaseLevel(DEM,FD,A,S,blm);
-		end	
+		if strcmp(blm,'elevation')
+			[S]=DTSetOutlet(DEM,FD,A,S,blm,'complete_networks_only',cno,'min_elevation',me);
+		elseif strcmp(blm,'max_out_elevation')
+			[S]=DTSetOutlet(DEM,FD,A,S,blm,'complete_networks_only',cno);
+		elseif isempty(blm) & cno
+			[S]=DTSetOutlet(DEM,FD,A,S,'complete_only','complete_networks_only',cno);
+		end
 
 		% Hydrologically condition dem
 		if isempty(DEMc)
@@ -138,6 +129,7 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 		switch output
 		case true
 			KSNG=GRIDobj(DEM);
+			KSNG.Z(:,:)=NaN;
 			for ii=1:numel(KSN)
 				ix=coord2ind(DEM,KSN(ii).X,KSN(ii).Y);
 				KSNG.Z(ix)=KSN(ii).ksn;
@@ -147,22 +139,11 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 
 	case 'ksngrid'
 
-		%%%
-		% NEED TO DEAL WITH OUTLET CONTROL
-		%%%
-
-		%% THIS IS TOO AGGRESSIVE AT THE MOMENT
-
-		if abl & strcmp(blm,'elevation')
+		if strcmp(blm,'elevation')
 			IDX=DEM<me;
 			DEM.Z(IDX.Z)=NaN;
-		elseif abl & strcmp(blm,'drain_area');
-			DA=A.*(A.cellsize^2);
-			IDX=DA>ma;
-			DEM.Z(IDX.Z)=NaN;
 		else
-			IDX=GRIDobj(DEM);
-			IDX.Z=logical(zeros(size(DEM.Z)));
+			IDX=GRIDobj(DEM,'logical');
 		end
 
 		if isempty(DEMc)
@@ -172,6 +153,14 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 			DEMc.Z(S.IXgrid)=zc;
 		else
 			DEMc.Z(IDX.Z)=NaN;
+		end
+
+		if strcmp(blm,'elevation')
+			[S]=DTSetOutlet(DEM,FD,A,S,blm,'complete_networks_only',cno,'min_elevation',me);
+		elseif strcmp(blm,'max_out_elevation')
+			[S]=DTSetOutlet(DEM,FD,A,S,blm,'complete_networks_only',cno);
+		elseif isempty(blm) & cno
+			[S]=DTSetOutlet(DEM,FD,A,S,'complete_only','complete_networks_only',cno);
 		end
 		
 		switch ksn_method
@@ -193,9 +182,11 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 		Fk=scatteredInterpolant(ksn_x,ksn_y,ksn_ksn);
 		ksn_int=Fk(X,Y);
 		KSNGrid=GRIDobj(xx,yy,ksn_int);
+		KSNGrid.Z(IDX.Z)=NaN;
 
 		disp('Writing ARC files')
-		GRIDobj2ascii(KSNGrid,'ksngrid.txt');
+		out_file_ksng=[file_name_prefix '_ksngrid.txt'];
+		GRIDobj2ascii(KSNGrid,out_file_ksng);
 
 		switch output
 		case true
@@ -204,19 +195,20 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 
 	case 'chimap'
 
-		if abl & strcmp(blm,'elevation')
-			[S]=SetBaseLevel(DEM,FD,A,S,blm,'min_elevation',me);
-		elseif abl & strcmp(blm,'drain_area');
-			[S]=SetBaseLevel(DEM,FD,A,S,blm,'max_drainage_area',ma);
-		elseif abl
-			[S]=SetBaseLevel(DEM,FD,A,S,blm);
-		end	
+		if strcmp(blm,'elevation')
+			[S]=DTSetOutlet(DEM,FD,A,S,blm,'complete_networks_only',cno,'min_elevation',me);
+		elseif strcmp(blm,'max_out_elevation')
+			[S]=DTSetOutlet(DEM,FD,A,S,blm,'complete_networks_only',cno);
+		elseif isempty(blm) & cno
+			[S]=DTSetOutlet(DEM,FD,A,S,'complete_only','complete_networks_only',cno);
+		end
 
 	    disp('Calculating chi map');
 		[ChiMap]=MakeChiMap(DEM,FD,A,S,theta_ref);
 
 		disp('Writing ARC files')
-		GRIDobj2ascii(ChiMap,'chimap.txt');
+		out_file_cm=[file_name_prefix '_chimap.txt'];
+		GRIDobj2ascii(ChiMap,out_file_cm);
 
 		switch output
 		case true
@@ -226,15 +218,7 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 	case 'chigrid'
 
 	    disp('Calculating chi grid');
-		if abl & strcmp(blm,'elevation')
-		    [ChiGrid]=MakeChiGrid(DEM,FD,A,theta_ref,abl,blm,me);
-		elseif abl & strcmp(blm,'drain_area');
-		    [ChiGrid]=MakeChiGrid(DEM,FD,A,theta_ref,abl,blm,ma);
-		elseif abl
-		    [ChiGrid]=MakeChiGrid(DEM,FD,A,theta_ref,abl,blm);
-		else
-			[ChiGrid]=MakeChiGrid(DEM,FD,A,theta_ref,abl);
-		end	
+		[ChiGrid]=MakeChiGrid(DEM,FD,'theta_ref',theta_ref,'complete_networks_only',cno,'min_elevation',me);
 
 	    disp('Writing ARC files')
 		out_file=[file_name_prefix '_chigrid.txt'];
@@ -247,27 +231,19 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 
 	case 'chi'
 
-		if abl & strcmp(blm,'elevation')
-			[S]=SetBaseLevel(DEM,FD,A,S,blm,'min_elevation',me);
-		elseif abl & strcmp(blm,'drain_area');
-			[S]=SetBaseLevel(DEM,FD,A,S,blm,'max_drainage_area',ma);
-		elseif abl
-			[S]=SetBaseLevel(DEM,FD,A,S,blm);
+		if strcmp(blm,'elevation')
+			[S]=DTSetOutlet(DEM,FD,A,S,blm,'complete_networks_only',cno,'min_elevation',me);
+		elseif strcmp(blm,'max_out_elevation')
+			[S]=DTSetOutlet(DEM,FD,A,S,blm,'complete_networks_only',cno);
+		elseif isempty(blm) & cno
+			[S]=DTSetOutlet(DEM,FD,A,S,'complete_only','complete_networks_only',cno);
 		end
 
 	    disp('Calculating chi map');
 		[ChiMap]=MakeChiMap(DEM,FD,A,S,theta_ref);
 
 	    disp('Calculating chi grid');
-		if abl & strcmp(blm,'elevation')
-		    [ChiGrid]=MakeChiGrid(DEM,FD,A,theta_ref,abl,blm,me);
-		elseif abl & strcmp(blm,'drain_area');
-		    [ChiGrid]=MakeChiGrid(DEM,FD,A,theta_ref,abl,blm,ma);
-		elseif abl
-		    [ChiGrid]=MakeChiGrid(DEM,FD,A,theta_ref,abl,blm);
-		else
-			[ChiGrid]=MakeChiGrid(DEM,FD,A,theta_ref,abl);
-		end	
+		[ChiGrid]=MakeChiGrid(DEM,FD,'theta_ref',theta_ref,'complete_networks_only',cno,'min_elevation',me);
 
 		disp('Writing ARC files')
 		out_file_cg=[file_name_prefix '_chigrid.txt'];
@@ -283,48 +259,64 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 
 	case 'all'
 
-		disp('Calculating channel steepness')
-		if abl & strcmp(blm,'elevation')
-			[S]=SetBaseLevel(DEM,FD,A,S,blm,'min_elevation',me);
-		elseif abl & strcmp(blm,'drain_area');
-			[S]=SetBaseLevel(DEM,FD,A,S,blm,'max_drainage_area',ma);
-		elseif abl
-			[S]=SetBaseLevel(DEM,FD,A,S,blm);
-		end	
+		if strcmp(blm,'elevation')
+			IDX=DEM<me;
+			DEM.Z(IDX.Z)=NaN;
+		else
+			IDX=GRIDobj(DEM,'logical');
+		end
 
-		% Hydrologically condition dem
+		disp('Calculating channel steepness')
+		if strcmp(blm,'elevation')
+			[S]=DTSetOutlet(DEM,FD,A,S,blm,'complete_networks_only',cno,'min_elevation',me);
+		elseif strcmp(blm,'max_out_elevation')
+			[S]=DTSetOutlet(DEM,FD,A,S,blm,'complete_networks_only',cno);
+		elseif isempty(blm) & cno
+			[S]=DTSetOutlet(DEM,FD,A,S,'complete_only','complete_networks_only',cno);
+		end
+
 		if isempty(DEMc)
 			zc=mincosthydrocon(S,DEM,'interp',iv);
 			DEMc=GRIDobj(DEM);
 			DEMc.Z(DEMc.Z==0)=NaN;
 			DEMc.Z(S.IXgrid)=zc;
+		else
+			DEMc.Z(IDX.Z)=NaN;
 		end
 		
 		switch ksn_method
 		case 'quick'
-			[KSN]=KSN_Quick(DEM,DEMc,A,S,theta_ref,segment_length);
+			[ksn_ms]=KSN_Quick(DEM,DEMc,A,S,theta_ref,segment_length);
 		case 'trib'
-			[KSN]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length);
+			[ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length);
 		end
+
+		disp('Calculating interpolated ksn grid')
+		[xx,yy]=getcoordinates(DEM);
+		[X,Y]=meshgrid(xx,yy);
+
+		ksn_cell=cell(numel(ksn_ms),1);
+		for ii=1:numel(ksn_ms)
+			ksn_cell{ii}=ones(numel(ksn_ms(ii).X),1)*ksn_ms(ii).ksn;
+		end
+		ksn_x=vertcat(ksn_ms.X); ksn_y=vertcat(ksn_ms.Y); ksn_ksn=vertcat(ksn_cell{:});
+
+		Fk=scatteredInterpolant(ksn_x,ksn_y,ksn_ksn);
+		ksn_int=Fk(X,Y);
+		KSNGrid=GRIDobj(xx,yy,ksn_int);
+		KSNGrid.Z(IDX.Z)=NaN;
 
 	    disp('Calculating chi map');
 		[ChiMap]=MakeChiMap(DEM,FD,A,S,theta_ref);
 
 	    disp('Calculating chi grid');
-		if abl & strcmp(blm,'elevation')
-		    [ChiGrid]=MakeChiGrid(DEM,FD,A,theta_ref,abl,blm,me);
-		elseif abl & strcmp(blm,'drain_area');
-		    [ChiGrid]=MakeChiGrid(DEM,FD,A,theta_ref,abl,blm,ma);
-		elseif abl
-		    [ChiGrid]=MakeChiGrid(DEM,FD,A,theta_ref,abl,blm);
-		else
-			[ChiGrid]=MakeChiGrid(DEM,FD,A,theta_ref,abl);
-		end	
-
+		[ChiGrid]=MakeChiGrid(DEM,FD,'theta_ref',theta_ref,'complete_networks_only',cno,'min_elevation',me);
 
 		disp('Writing ARC files')
 		out_file_ksn=[file_name_prefix '_ksn.shp'];
-		shapewrite(KSN,out_file_ksn);
+		shapewrite(ksn_ms,out_file_ksn);
+		out_file_ksng=[file_name_prefix '_ksngrid.txt'];
+		GRIDobj2ascii(KSNGrid,out_file_ksng);
 		out_file_cg=[file_name_prefix '_chigrid.txt'];
 		GRIDobj2ascii(ChiGrid,out_file_cg);
 		out_file_cm=[file_name_prefix '_chimap.txt'];
@@ -333,23 +325,124 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 		switch output
 		case true
 			KSNG=GRIDobj(DEM);
-			for ii=1:numel(KSN)
-				ix=coord2ind(DEM,KSN(ii).X,KSN(ii).Y);
-				KSNG.Z(ix)=KSN(ii).ksn;
+			KSNG.Z(:,:)=NaN;
+			for ii=1:numel(ksn_ms)
+				ix=coord2ind(DEM,ksn_ms(ii).X,ksn_ms(ii).Y);
+				KSNG.Z(ix)=ksn_ms(ii).ksn;
 			end
 			varargout{1}=KSNG;
-			varargout{2}=ChiMap;
-			varargout{3}=ChiGrid;
+			varargout{2}=KSNGrid;
+			varargout{3}=ChiMap;
+			varargout{4}=ChiGrid;
 		end
 	end
 
 % Main Function End
 end
 
+function [SC]=DTSetOutlet(DEM,FD,A,S,method,varargin)
+	% Clone of Divide Tools 'SetOutlet' function.
+
+	% Parse Inputs
+	p = inputParser;         
+	p.FunctionName = 'DTSetOutlet';
+	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
+	addRequired(p,'FD', @(x) isa(x,'FLOWobj'));
+	addRequired(p,'A', @(x) isa(x,'GRIDobj'));
+	addRequired(p,'S',@(x) isa(x,'STREAMobj'));
+	addRequired(p,'method',@(x) ischar(validatestring(x,{'elevation','max_out_elevation','complete_only'})));
+
+	addParamValue(p,'complete_networks_only',true,@(x) islogical(x) & isscalar(x));
+	addParamValue(p,'min_elevation',[],@(x) isnumeric(x));
+
+
+	parse(p,DEM,FD,A,S,method,varargin{:});
+	DEM=p.Results.DEM;
+	FD=p.Results.FD;
+	A=p.Results.A;
+	S=p.Results.S;
+	method=p.Results.method;
+
+	cno=p.Results.complete_networks_only;
+	me=p.Results.min_elevation;
+
+	if ~cno & strcmp(method,'complete_networks_only')
+		error('Cannot set method to complete_only and set complete_network_only to false');
+	end
+
+	if cno & ~strcmp(method,'complete_networks_only')
+		S=removeedgeeffects(S,FD,DEM);
+	end
+
+	%% Initiate graphical picker if no values for either min drainage area or min elevation are provided
+	if strcmp(method,'elevation') & isempty(me)
+		f1=figure(1);
+		set(f1,'Units','normalized','Position',[0.1 0.1 0.75 0.75]);
+		hold on
+		imageschs(DEM,DEM);
+		title('Zoom to desired view and press enter')
+		pause()
+		title('Pick point on DEM to select base level elevation');
+		[x,y]=ginput(1);
+		hold off
+		close(f1)
+		el_ix=coord2ind(DEM,x,y);
+		me=DEM.Z(el_ix);
+		disp(['Selected elevation is : ' num2str(me) ' m']);
+	end
+
+	%% Main switch between methods
+	switch method
+	case 'elevation'
+		st_el=getnal(S,DEM);
+		idx=st_el>=me;
+		IX=S.IXgrid(idx);
+		W=GRIDobj(DEM);
+		W.Z(IX)=1;
+		W.Z=logical(W.Z);
+		SC=STREAMobj(FD,W);
+		% Check to see if all outlets meet the condition
+		coix=streampoi(SC,'outlets','ix');
+		coel=DEM.Z(coix);
+		max_coel=max(coel);
+		if sum(coel>me)~=0 & ~cno
+			warning(['One or more stream outlets are above the provided elevation, maximum outlet elevation is ' num2str(max_coel)]);
+		elseif sum(coel>me)~=0 & cno
+			[xo,yo]=getoutline(DEM,true);
+			% Control for incosistent output of getoutline
+			sz=size(xo);
+			if sz(1)==1 & sz(2)>1
+				[oxy]=[xo' yo'];
+			elseif sz(2)==1 & sz(1)>1
+				[oxy]=[xo yo];
+			end
+			[coxy]=streampoi(SC,'outlets','xy');
+			idx2=coel>me & ismember(coxy,oxy,'rows'); % Find streams with outlets greater than min elevation AND along boundary of DEM
+			coix(idx2)=[];
+			W=GRIDobj(DEM);
+			W.Z(coix)=1;
+			W.Z=logical(W.Z);
+			SC=modify(SC,'upstreamto',W);			
+		end
+	case 'max_out_elevation'
+		coix=streampoi(S,'outlets','ix');
+		coel=DEM.Z(coix);
+		max_coel=max(coel);
+		st_el=getnal(S,DEM);
+		idx=st_el>=max_coel;
+		IX=S.IXgrid(idx);
+		W=GRIDobj(DEM);
+		W.Z(IX)=1;
+		W.Z=logical(W.Z);
+		SC=STREAMobj(FD,W);
+	case 'complete_only'
+		SC=removeedgeeffects(S,FD,DEM);
+	end
+end
+
 function [ChiOBJ]=MakeChiMap(DEM,FD,A,S,theta_ref);
 
-	DA=A.*(A.cellsize^2);
-	C=chitransform(S,DA,'mn',theta_ref,'a0',1);
+	C=chitransform(S,A,'mn',theta_ref,'a0',1);
 
 	% Make Empty GRIDobj
 	ChiOBJ=GRIDobj(DEM);
@@ -360,39 +453,159 @@ function [ChiOBJ]=MakeChiMap(DEM,FD,A,S,theta_ref);
 
 end
 
-function [ChiOBJ]=MakeChiGrid(DEM,FD,A,theta_ref,abl,varargin)
+function [ChiOBJ]=MakeChiGrid(DEM,FD,varargin)
+	% Clone of DivideTools 'ChiGrid' function with some options disabled.
 
-	% Generate dense stream network
-	S=STREAMobj(FD,'minarea',0);
+	% Parse Inputs
+	p = inputParser;         
+	p.FunctionName = 'ChiGrid';
+	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
+	addRequired(p,'FD', @(x) isa(x,'FLOWobj'));
 
-	if abl & numel(varargin)==1
-		blm=varargin{1};
-	elseif abl & numel(varargin)==2
-		blm=varargin{1};
-		con=varargin{2};
+	addParamValue(p,'theta_ref',0.5,@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'chi_ref_area',1,@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'complete_networks_only',true,@(x) isscalar(x) && islogical(x));
+	addParamValue(p,'min_elevation',[],@(x) isnumeric(x));
+
+	parse(p,DEM,FD,varargin{:});
+	DEM=p.Results.DEM;
+	FD=p.Results.FD;
+
+	mn=p.Results.theta_ref;
+	a0=p.Results.chi_ref_area;
+	me=p.Results.min_elevation;
+	cno=p.Results.complete_networks_only;
+
+	if isempty(me)
+		abl=false;
+	else
+		abl=true;
 	end
 
-	if abl & strcmp(blm,'elevation')
-		[S]=SetBaseLevel(DEM,FD,A,S,blm,'min_elevation',con);
-	elseif abl & strcmp(blm,'drain_area');
-		[S]=SetBaseLevel(DEM,FD,A,S,blm,'max_drainage_area',con);
-	elseif abl
-		[S]=SetBaseLevel(DEM,FD,A,S,blm);
+	if cno && ~abl
+		% Find nodes influenced by edge (From Topotoolbox blog)
+		IXE = GRIDobj(DEM,'logical');
+		IXE.Z(:,:) = true;
+		IXE.Z(2:end-1,2:end-1) = false;
+		IXE = influencemap(FD,IXE);
+		% Rest is mine
+		% Find drainage basins and all outlets
+		[DB,oixi]=drainagebasins(FD);
+		% Find where these share pixels other than the edge
+		db=DB.Z; db=db(3:end-2,3:end-2); % Move 2 pixels in to be conservative
+		ixe=IXE.Z; ixe=ixe(3:end-2,3:end-2); % Move 2 pixels in to be conservative
+		dbL=db(ixe);
+		% Compile list of drainage basins that are influenced by edge pixels
+		dbL=unique(dbL);
+		% Index list of outlets based on this
+		idxi=ismember(DB.Z(oixi),dbL);
+		oixi(idxi)=[];
+		% Remove drainage basins based on this
+		W=dependencemap(FD,oixi);
+		% DEM.Z(~mask.Z)=NaN;
+		% % Extract info from FLOWobj		
+		% W=~isnan(DEM);
+		I=W.Z(FD.ix);
+		ix=double(FD.ix(I));
+		ixc=double(FD.ixc(I));
+		% Recalculate indices
+		IX        = zeros(FD.size,'uint32');
+		IX(W.Z)   = 1:nnz(W.Z);
+		ix      = double(IX(ix));
+		ixc     = double(IX(ixc));
+		I          = ixc == 0;
+		ix(I)    = [];
+		ixc(I)   = [];
+	elseif cno && abl
+		% Recalculate flow directions after removing portions below min elevation
+		IX=DEM>me;
+		DEM.Z(IX.Z==false)=NaN;
+		FD=FLOWobj(DEM,'preprocess','carve');
+		% Find nodes influenced by edge (From Topotoolbox blog)
+		IXE = GRIDobj(DEM,'logical');
+		IXE.Z(:,:) = true;
+		IXE.Z(2:end-1,2:end-1) = false;
+		IXE = influencemap(FD,IXE);
+		% Rest is mine
+		% Find drainage basins and all outlets
+		[DB,oixi]=drainagebasins(FD);
+		% Find where these share pixels other than the edge
+		db=DB.Z; db=db(3:end-2,3:end-2); % Move 2 pixels in to be conservative
+		ixe=IXE.Z; ixe=ixe(3:end-2,3:end-2); % Move 2 pixels in to be conservative
+		dbL=db(ixe);
+		% Compile list of drainage basins that are influenced by edge pixels
+		dbL=unique(dbL);
+		% Index list of outlets based on this
+		idxi=ismember(DB.Z(oixi),dbL);
+		oixi(idxi)=[];
+		% Find offending drainage basins and recalculate indicies
+		W=dependencemap(FD,oixi);
+		I=W.Z(FD.ix);
+		ix=double(FD.ix(I));
+		ixc=double(FD.ixc(I));
+		% Recalculate indices
+		IX        = zeros(FD.size,'uint32');
+		IX(W.Z)   = 1:nnz(W.Z);
+		ix      = double(IX(ix));
+		ixc     = double(IX(ixc));
+		I          = ixc == 0;
+		ix(I)    = [];
+		ixc(I)   = [];
+	elseif ~cno && ~abl
+		% Extract info from FLOWobj	
+		W=~isnan(DEM);
+		I=W.Z(FD.ix);
+		ix=double(FD.ix(I));
+		ixc=double(FD.ixc(I));
+		% Recalculate indices
+		IX        = zeros(FD.size,'uint32');
+		IX(W.Z)   = 1:nnz(W.Z);
+		ix      = double(IX(ix));
+		ixc     = double(IX(ixc));
+		I          = ixc == 0;
+		ix(I)    = [];
+		ixc(I)   = [];
+	elseif ~cno && abl
+		W=DEM>me;
+		I=W.Z(FD.ix);
+		ix=double(FD.ix(I));
+		ixc=double(FD.ixc(I));
+		% Recalculate indices
+		IX        = zeros(FD.size,'uint32');
+		IX(W.Z)   = 1:nnz(W.Z);
+		ix      = double(IX(ix));
+		ixc     = double(IX(ixc));
+		I          = ixc == 0;
+		ix(I)    = [];
+		ixc(I)   = [];
 	end
 
-	DA=A.*(A.cellsize^2);
-	C=chitransform(S,DA,'mn',theta_ref,'a0',1);
+	% Generate coordinate list
+	IXgrid=find(W.Z);
+	[x,y]=ind2coord(DEM,IXgrid);
 
-	% Make Empty GRIDobj
-	ChiOBJ=GRIDobj(A);
+	% Distance between two nodes throughout grid
+	d = nan(size(x));
+	dedge = sqrt((x(ixc)-x(ix)).^2 + (y(ixc)-y(ix)).^2);
+	d(:) = 0;
+	d(ix) = dedge;
+
+	% Cumulative trapezoidal numerical integration of draiange area grid
+	DA=flowacc(FD).*(DEM.cellsize^2);
+	da=DA.Z(IXgrid);
+	c = zeros(size(da));
+	da = ((a0) ./da).^mn;
+	for r = numel(ix):-1:1;
+	    c(ix(r)) = c(ixc(r)) + (da(ixc(r))+(da(ix(r))-da(ixc(r)))/2)*d(ix(r));
+	end
+
+	% Generate and populate full chi grid
+	ChiOBJ=GRIDobj(DEM);
 	ChiOBJ.Z(ChiOBJ.Z==0)=NaN;
-
-	% Populate Grid
-	ChiOBJ.Z(S.IXgrid)=C;
+	ChiOBJ.Z(IXgrid)=c;
 end
 
 function [ksn_ms]=KSN_Quick(DEM,DEMc,A,S,theta_ref,segment_length)
-
 	G=gradient8(DEMc);
 	Z_RES=DEMc-DEM;
 
@@ -414,7 +627,7 @@ function [ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length)
 	zu=getnal(S,DEM);
 	z_res=z-zu;
 	waitbar(2/4,w1,'Calculating chi values');
-	c=chitransform(S,A.*(A.cellsize^2),'a0',1,'mn',theta_ref);
+	c=chitransform(S,A,'a0',1,'mn',theta_ref);
 	d=S.distance;
 	da=getnal(S,A.*(A.cellsize^2));
 	ixgrid=S.IXgrid;

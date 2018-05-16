@@ -9,6 +9,10 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 	% 		river_mouths - nx3 matrix of river mouths with x, y, and a number identifying the stream/basin of interest.
 	%					Needs to be in the same projection as the input DEM
 	% Optional Inputs:
+	%		conditioned_DEM [] - option to provide a hydrologically conditioned DEM for use in this function (do not provide a conditoned DEM
+	%			for the main required DEM input!) which will be used for extracting elevations. See 'ConditionDEM' function for options for making a 
+	%			hydrological conditioned DEM. If no input is provided the code defaults to using the mincosthydrocon function.
+	%		interp_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a conditioned DEM)
 	% 		threshold_area [1e6] - minimum accumulation area to define streams in meters squared
 	% 		segment_length [1000] - smoothing distance in meters for averaging along ksn, suggested value is 1000 meters
 	% 		theta_ref [0.45] - reference concavity for calculating ksn, suggested value is 0.45
@@ -24,13 +28,19 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 	%			watersheds are small and the DEMs are noisy, flow routing on the clipped DEMs in this case sometimes will route streams differently, 
 	%			e.g. routing streams out the side of the basin. It is strongly recommended that you use the default 'clip' method as opposed to the 'segment'
 	%			method, only using the 'segment' method if the clip method fails.
-	%		add_grids [] - option to provide a cell array of additional grids to clip by selected river basins. The expected input is a m x 2 cell array,
+	%		add_grids [] - option to provide a cell array of additional grids to clip by selected river basins. The expected input is a nx2 cell array,
 	%			where the first column is a GRIDobj and the second column is a string identifying what this grid is (so you can remember what these grids
 	%			are when looking at outputs later, but also used as the name of field values if you use 'Basin2Shape' on the output basins so these should be short 
 	%			strings with no spaces). The code will perform a check on any input grid to determine if it is the same dimensions and cellsize as the input DEM, if
 	%			it is not it will use the function 'resample' to transform the input grid. You can control the resampling method used with the 'resample_method' optional
 	%			parameter (see below), but this method will be applied to all grids you provide, so if you want to use different resampling methods for different grids
 	%			it is recommnended that you use the 'resample' function on the additional grids before you supply them to this function.
+	%		add_cat_grids [] - option to provide a cell array of additional grids that are categoricals (e.g. geologic maps) as produced by the 'CatPoly2GRIDobj' function.
+	%			The expected input is a nx3 cell array where the first column is the GRIDobj, the second column is the look_table, and the third column is a string identifying
+	%			what this grid is. It is assumed that when preprocessing these grids using 'CatPoly2GRIDobj' you use the same DEM GRIDobj you are inputing to the main function
+	%			here. These grids are treated differently that those provided to 'add_grids' as it is assumed because they are categorical data that finding mean values is 
+	%			not useful. Instead these use the 'majority' as the single value but also calculate statistics on the percentages of each clipped watershed occupied by each
+	%			category.
 	%		resample_method ['nearest'] - method to use in the resample function on additional grids (if required). Acceptable inputs are 'nearest', 'bilinear', 
 	%			or 'bicubic'. Method 'nearest' is appropriate if you do not want the resampling to interpolate between values (e.g. if an additinal grid has specific values
 	%			that correlate to a property like rock type) and either 'bilinear' or 'bicubic' is appropriate if you want smooth variations between nodes. 
@@ -66,10 +76,13 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 	addParamValue(p,'clip_method','clip',@(x) ischar(validatestring(x,{'clip','segment'})));
 	addParamValue(p,'ksn_method','quick',@(x) ischar(validatestring(x,{'quick','trib'})));
 	addParamValue(p,'add_grids',[],@(x) isa(x,'cell') && size(x,2)==2);
+	addParamValue(p,'add_cat_grids',[],@(x) isa(x,'cell') && size(x,2)==3);
 	addParamValue(p,'resample_method','nearest',@(x) ischar(validatestring(x,{'nearest','bilinear','bicubic'})));
 	addParamValue(p,'gradient_method','arcslope',@(x) ischar(validatestring(x,{'arcslope','gradient8'})));
 	addParamValue(p,'calc_relief',false,@(x) isscalar(x));
 	addParamValue(p,'relief_radii',[2500],@(x) isnumeric(x) && size(x,2)==1 || size(x,1)==1);
+	addParamValue(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
+	addParamValue(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
 
 	parse(p,DEM,FD,S,river_mouths,varargin{:});
 	DEM=p.Results.DEM;
@@ -84,10 +97,13 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 	clip_method=p.Results.clip_method;
 	ksn_method=p.Results.ksn_method;
 	AG=p.Results.add_grids;
+	ACG=p.Results.add_cat_grids;
 	resample_method=p.Results.resample_method;
 	gradient_method=p.Results.gradient_method;
 	calc_relief=p.Results.calc_relief;
 	relief_radii=p.Results.relief_radii;
+	iv=p.Results.interp_value;
+	DEMhc=p.Results.conditioned_DEM;
 
 	% Clippin gout NaNs, max elev set arbitrarily large but below the 32,768 internal NaN value.
 	max_elev=10000;
@@ -106,6 +122,7 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 			end
 		end
 	end
+
 
 	disp('Snapping river mouths to stream network')
 	xi=river_mouths(:,1);
@@ -159,7 +176,7 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 			end
 
 			% Calculate chi and create chi map
-			Cc=chitransform(Sc,Ac.*(Ac.cellsize^2),'a0',1,'mn',theta_ref);
+			Cc=chitransform(Sc,Ac,'a0',1,'mn',theta_ref);
 			ChiOBJc=GRIDobj(DEMoc);
 			ChiOBJc.Z(Sc.IXgrid)=Cc;
 
@@ -173,7 +190,11 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 
 			% Find best fit concavity
 			SLc=klargestconncomps(Sc,1);
-			zcon=mincosthydrocon(SLc,DEMoc,'interp',0.1);
+			if isempty(DEMhc)
+				zcon=mincosthydrocon(SLc,DEMoc,'interp',iv);
+			else
+				zcon=getnal(SLc,DEMhc);
+			end
 			DEMcc=GRIDobj(DEMoc);
 			DEMcc.Z(DEMcc.Z==0)=NaN;
 			DEMcc.Z(SLc.IXgrid)=zcon;
@@ -182,16 +203,16 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 			% Calculate ksn
 			switch ksn_method
 			case 'quick'
-				[MSc]=KSN_Quick(DEMoc,Ac,Sc,Chic.mn,segment_length);
-				[MSNc]=KSN_Quick(DEMoc,Ac,Sc,theta_ref,segment_length);
+				[MSc]=KSN_Quick(DEMoc,DEMcc,Ac,Sc,Chic.mn,segment_length);
+				[MSNc]=KSN_Quick(DEMoc,DEMcc,Ac,Sc,theta_ref,segment_length);
 			case 'trib'
 				% Overide choice if very small basin as KSN_Trib will fail for small basins
 				if drainage_area>2.5
-					[MSc]=KSN_Trib(DEMoc,FDc,Ac,Sc,Chic.mn,segment_length);
-					[MSNc]=KSN_Trib(DEMoc,FDc,Ac,Sc,theta_ref,segment_length);
+					[MSc]=KSN_Trib(DEMoc,DEMcc,FDc,Ac,Sc,Chic.mn,segment_length);
+					[MSNc]=KSN_Trib(DEMoc,DEMcc,FDc,Ac,Sc,theta_ref,segment_length);
 				else
-					[MSc]=KSN_Quick(DEMoc,Ac,Sc,Chic.mn,segment_length);
-					[MSNc]=KSN_Quick(DEMoc,Ac,Sc,theta_ref,segment_length);
+					[MSc]=KSN_Quick(DEMoc,DEMcc,Ac,Sc,Chic.mn,segment_length);
+					[MSNc]=KSN_Quick(DEMoc,DEMcc,Ac,Sc,theta_ref,segment_length);
 				end
 			end
 
@@ -245,6 +266,28 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 				save(FileName,'AGc','AGc_stats','-append');				
 			end
 
+			if ~isempty(ACG)
+				num_grids=size(ACG,1);
+				ACGc=cell(size(ACG));
+				for jj=1:num_grids
+					ACGcOI=crop(ACG{jj,1},I,nan);
+					ACGc{jj,1}=ACGcOI;
+					ACGc{jj,3}=ACG{jj,3};
+					edg=ACG{jj,2}.Numbers;
+					edg=edg+0.5;
+					edg=vertcat(0.5,edg);
+					[N,~]=histcounts(ACGcOI.Z(:),edg);
+					ix=find(N);
+					T=ACG{jj,2};
+					T=T(ix);
+					N=N(ix)';
+					T.Counts=N;
+					ACGc{jj,2}=T;
+					ACGc_stats(jj,1)=[mode(ACGOI.Z(:))];
+				end
+				save(FileName,'ACGc','ACGc_stats','-append');	
+			end				
+
 			if calc_relief
 				num_rlf=numel(relief_radii);
 				rlf=cell(num_rlf,2);
@@ -292,6 +335,13 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 						GRIDobj2ascii(AGc{jj,1},AGcFileName);
 					end
 				end
+
+				if ~isempty(ACG);
+					for jj=1:num_grids
+						ACGcFileName=['Basin_' num2str(basin_num) '_' ACGc{jj,3} '.txt'];
+						GRIDobj2ascii(ACGc{jj,1},ACGcFileName);
+					end
+				end
 			end
 
 			waitbar(ii/num_basins,w1,['Completed ' num2str(ii) ' of ' num2str(num_basins) ' total basins'])
@@ -303,10 +353,16 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 		% Generate flow accumulation and hydrologically conditioned DEM
 		disp('Generating hydrologically conditioned DEM for the entire region')
 		A=flowacc(FD);
-		zcon=mincosthydrocon(S,DEM,'interp',0.1);
-		DEMcon=GRIDobj(DEM);
-		DEMcon.Z(DEMcon.Z==0)=NaN;
-		DEMcon.Z(S.IXgrid)=zcon;
+
+		if isempty(DEMhc)
+			zc=mincosthydrocon(S,DEM,'interp',iv);
+			DEMcon=GRIDobj(DEM);
+			DEMcon.Z(DEMc.Z==0)=NaN;
+			DEMcon.Z(S.IXgrid)=zc;
+		else
+			DEMcon=DEMhc;
+		end
+
 		w1=waitbar(0,['Working on Basin Number 1 of ' num2str(num_basins) ' total basins']);
 		for ii=1:num_basins
 
@@ -319,6 +375,7 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 			% Build dependenc map and clip out drainage basins
 			I=dependencemap(FD,xx,yy);
 			DEMoc=crop(DEM,I,nan);
+			DEMcc=crop(DEMcon,I,nan);
 
 			% Calculate drainage area
 			dep_map=GRIDobj2mat(I);
@@ -345,7 +402,7 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 			end
 
 			% Calculate chi and create chi map
-			Cc=chitransform(Sc,A.*(A.cellsize^2),'a0',1,'mn',theta_ref);
+			Cc=chitransform(Sc,A,'a0',1,'mn',theta_ref);
 			ChiOBJc=GRIDobj(DEMoc);
 			ScIX=coord2ind(DEMoc,Sc.x,Sc.y);
 			ChiOBJc.Z(ScIX)=Cc;
@@ -363,16 +420,16 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 			% Calculate ksn
 			switch ksn_method
 			case 'quick'
-				[MSc]=KSN_Quick(DEM,A,Sc,-1*(SAc.theta),segment_length);
-				[MSNc]=KSN_Quick(DEM,A,Sc,theta_ref,segment_length);
+				[MSc]=KSN_Quick(DEM,DEMcon,A,Sc,-1*(SAc.theta),segment_length);
+				[MSNc]=KSN_Quick(DEM,DEMcon,A,Sc,theta_ref,segment_length);
 			case 'trib'
 				% Overide choice if very small basin as KSN_Trib will fail for small basins
 				if drainage_area>2.5
-					[MSc]=KSN_Trib(DEM,FD,A,Sc,-1*(SAc.theta),segment_length);
-					[MSNc]=KSN_Trib(DEM,FD,A,Sc,theta_ref,segment_length);
+					[MSc]=KSN_Trib(DEM,DEMcon,FD,A,Sc,-1*(SAc.theta),segment_length);
+					[MSNc]=KSN_Trib(DEM,DEMcon,FD,A,Sc,theta_ref,segment_length);
 				else
-					[MSc]=KSN_Quick(DEM,A,Sc,-1*(SAc.theta),segment_length);
-					[MSNc]=KSN_Quick(DEM,A,Sc,theta_ref,segment_length);				
+					[MSc]=KSN_Quick(DEM,DEMcon,A,Sc,-1*(SAc.theta),segment_length);
+					[MSNc]=KSN_Quick(DEM,DEMcon,A,Sc,theta_ref,segment_length);				
 				end
 			end
 
@@ -407,7 +464,7 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 
 			% Save base file
 			FileName=['Basin_' num2str(basin_num) '_Data.mat'];
-			save(FileName,'RiverMouth','DEMoc','out_el','drainage_area','Sc','SAc','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method','gradient_method','clip_method');
+			save(FileName,'RiverMouth','DEMoc','DEMcc','out_el','drainage_area','Sc','SAc','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method','gradient_method','clip_method');
 			% If additional grids are present, append these to the existing mat file
 			if ~isempty(AG)
 				num_grids=size(AG,1);
@@ -425,6 +482,28 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 				end
 				save(FileName,'AGc','AGc_stats','-append');				
 			end
+
+			if ~isempty(ACG)
+				num_grids=size(ACG,1);
+				ACGc=cell(size(ACG));
+				for jj=1:num_grids
+					ACGcOI=crop(ACG{jj,1},I,nan);
+					ACGc{jj,1}=ACGcOI;
+					ACGc{jj,3}=ACG{jj,3};
+					edg=ACG{jj,2}.Numbers;
+					edg=edg+0.5;
+					edg=vertcat(0.5,edg);
+					[N,~]=histcounts(ACGcOI.Z(:),edg);
+					ix=find(N);
+					T=ACG{jj,2};
+					T=T(ix);
+					N=N(ix)';
+					T.Counts=N;
+					ACGc{jj,2}=T;
+					ACGc_stats(jj,1)=[mode(ACGOI.Z(:))];
+				end
+				save(FileName,'ACGc','ACGc_stats','-append');	
+			end	
 
 			if calc_relief
 				num_rlf=numel(relief_radii);
@@ -473,6 +552,13 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 						GRIDobj2ascii(AGc{jj,1},AGcFileName);
 					end
 				end
+
+				if ~isempty(ACG);
+					for jj=1:num_grids
+						ACGcFileName=['Basin_' num2str(basin_num) '_' ACGc{jj,3} '.txt'];
+						GRIDobj2ascii(ACGc{jj,1},ACGcFileName);
+					end
+				end
 			end
 
 			waitbar(ii/num_basins,w1,['Completed ' num2str(ii) ' of ' num2str(num_basins) ' total basins'])
@@ -482,12 +568,7 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 end
 
 
-function [ksn_ms]=KSN_Quick(DEM,A,S,theta_ref,segment_length)
-
-	zc=mincosthydrocon(S,DEM,'interp',0.1);
-	DEMc=GRIDobj(DEM);
-	DEMc.Z(DEMc.Z==0)=NaN;
-	DEMc.Z(S.IXgrid)=zc;
+function [ksn_ms]=KSN_Quick(DEM,DEMc,A,S,theta_ref,segment_length)
 	G=gradient8(DEMc);
 	Z_RES=DEMc-DEM;
 
@@ -497,27 +578,34 @@ function [ksn_ms]=KSN_Quick(DEM,A,S,theta_ref,segment_length)
 		{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'cut_fill' Z_RES @mean});
 end
 
-function [ksn_ms]=KSN_Trib(DEM,FD,A,S,theta_ref,segment_length)
+function [ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length)
 
 	% Define non-intersecting segments
+	w1=waitbar(0,'Finding network segments');
 	[as]=networksegment_slim(DEM,FD,S);
 	seg_bnd_ix=as.ix;
 	% Precompute values or extract values needed for later
-	z=mincosthydrocon(S,DEM,'interp',0.1);
+	waitbar(1/4,w1,'Calculating hydrologically conditioned stream elevations');
+	z=getnal(S,DEMc);
 	zu=getnal(S,DEM);
 	z_res=z-zu;
-	c=chitransform(S,A.*(A.cellsize^2),'a0',1,'mn',theta_ref);
+	waitbar(2/4,w1,'Calculating chi values');
+	c=chitransform(S,A,'a0',1,'mn',theta_ref);
 	d=S.distance;
 	da=getnal(S,A.*(A.cellsize^2));
 	ixgrid=S.IXgrid;
+	waitbar(3/4,w1,'Extracting node ordered list');
 	% Extract ordered list of stream indices and find breaks between streams
 	s_node_list=S.orderednanlist;
 	streams_ix=find(isnan(s_node_list));
 	streams_ix=vertcat(1,streams_ix);
+	waitbar(1,w1,'Pre computations completed');
+	close(w1)
 	% Generate empty node attribute list for ksn values
 	ksn_nal=zeros(size(d));
 	% Begin main loop through channels
 	num_streams=numel(streams_ix)-1;
+	w1=waitbar(0,'Calculating k_{sn} values - 0% Done');
 	seg_count=1;
 	for ii=1:num_streams
 		% Extract node list for stream of interest
@@ -565,9 +653,14 @@ function [ksn_ms]=KSN_Trib(DEM,FD,A,S,theta_ref,segment_length)
 						seg_count=seg_count+1;
 					end
 			end
-		end	
+		end
+	perc_of_total=round((ii/num_streams)*1000)/10;
+	if rem(perc_of_total,1)==0
+		waitbar((ii/num_streams),w1,['Calculating k_{sn} values - ' num2str(perc_of_total) '% Done']);
 	end
-
+	
+	end
+	close(w1);
 end
 
 function seg = networksegment_slim(DEM,FD,S)

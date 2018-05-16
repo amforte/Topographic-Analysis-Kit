@@ -1,11 +1,17 @@
-function [KnickPoints]=FindKnicks(Basin_Data_File,plot_result)
-	% Basin_Data_File should be full file path to a saved result from the ProcessRiverBasins script
-	% plot_result expects 'true' if you want to see the result of you knickpoint picks or 'false' if you do not 
-	% want to see the results plotted 
-	% 
-	% Choose knickpoints on Chi-Elevation plot with mouse clicks and press return when you have selected
-	% all the knickpoints for a given stream segment. As you progress through, knickpoints you have already picked 
-	% (i.e. on shared portions of river profiles) will be displayed as red dots.
+function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result)
+	% Function for manually selecting knickpoints within a Basin_Data_File (i.e. result of ProcessRiverBasins). 
+	% 	Choose knickpoints on Chi-Elevation plot with mouse clicks and press return when you have selected
+	% 	all the knickpoints for a given stream segment. As you progress through, knickpoints you have already picked 
+	% 	(i.e. on shared portions of river profiles) will be displayed as red dots. If you're interested in trying out
+	%	an automated method of finding knickpoints, try 'knickpointfinder' included with TopoToolbox.
+	%
+	% Required Inputs:
+	% 	Basin_Data_File - full file path to a saved result from the ProcessRiverBasins script
+	% 	plot_result - logical flag to either plot the results (true) or not (false) 
+	%
+	% Outputs:
+	%	KnickPoints - nx5 matrix, one row for each selected knickpoints with columns being x, y, z, distance upstream, and chi value
+	%	
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Last Revised Spring 2016 %
@@ -14,11 +20,6 @@ function [KnickPoints]=FindKnicks(Basin_Data_File,plot_result)
 	% Load in File Contents
 	load(Basin_Data_File);
     
-    % Generate hillshade
-    HS=hillshade(DEMoc,'altitude',25);
-    [hs,X,Y]=GRIDobj2mat(HS);
-    hsi=real2rgb(hs,'gray');
-
 	% De-Densify Network
 	S=modify(Sc,'streamorder','>1');
 	if isempty(S.x)
@@ -70,8 +71,7 @@ function [KnickPoints]=FindKnicks(Basin_Data_File,plot_result)
 		figure(f2);
 		clf
 		hold on
-        imagesc(DEMc);
-        image(X,Y,hsi);
+		imageschs(DEM,DEM,'colormap','gray');
 		plot(S,'-w');
 		plot(SS,'-r');
 		hold off
@@ -127,13 +127,10 @@ function [KnickPoints]=FindKnicks(Basin_Data_File,plot_result)
 	case true
 		f1=figure(1);
 		set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.8],'renderer','painters');
-
-
-        
+       
 		subplot(1,2,1)
 		hold on
-        imagesc(DEMc);
-        image(X,Y,hsi);
+		imageschs(DEM,DEM,'colormap','gray');
         caxis([0 max(KnickPoints(:,3))]);
 		plot(S,'-w');
 		scatter(KnickPoints(:,1),KnickPoints(:,2),20,KnickPoints(:,3),'filled');

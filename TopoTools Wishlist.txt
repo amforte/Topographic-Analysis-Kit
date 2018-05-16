@@ -6,14 +6,15 @@ KSN_Profiler: slope-break KPs output as knickpoints (with option for shapefile)
 KSN_Profiler: add min_elev and max_area criteria from SegmentPicker (to stop extracting streams)
 KSN_Profiler: display mean values ksn values above ksn vs chi (with uncertainty maybe)
 KSN_Profiler: add fits on slope-area plot and ksn vs distance?
-KSN_Profiler:Way to convert/link between chi and slope area (shared scale? coloring?)
-KSN_Chi_Batch: replace chigrid with chigrid calc from divide tools
-KSN_Chi_Batch: implement ksn grid interpolation (NEED TO DEAL WITH OUTLET ELEVATION ISSUE)
+KSN_Profiler: Way to convert/link between chi and slope area (shared scale? coloring?)
+FindBasinKnicks: Add optional inputs for chi values, update plotting, and add option to output shapefiles directly
 SegmentPicker: add slope-area plot option
-ALL: fix calls to chitransform (Wolfgang fixed initial error where A was treated as DA)
 ALL: check functionality with new version of TopoToolbox
-ALL: check interoperability 
+ALL: check interoperability / similarity between parameter names and inputs
 
 ***DONE: ChiGrid: Figure out base level issue
 ***DONE: Produce wrapper for all the different DEM conditioning techniques
 ***DONE: KSN_Chi_Batch: add option to provide conditioned DEM
+***DONE: KSN_Chi_Batch: replace chigrid with chigrid calc from divide tools
+***DONE: KSN_Chi_Batch: implement ksn grid interpolation
+***DONE: ALL: fix calls to chitransform (Wolfgang fixed initial error where A was treated as DA)
