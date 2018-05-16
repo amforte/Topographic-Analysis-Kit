@@ -1,4 +1,4 @@
-function [knl,ksn_master,bnd_list,Sc]=KSN_Profiler(DEM,FD,A,S,varargin)
+function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	% Function to interactively select channel heads and define segements over which to calculate channel steepness values.
 	% 	This function is designed to be similar to the operation of Profiler_51. Function will display map with the stream network and
 	% 	expects the user to select a location near a channel head of interest. The user will be then prompted to confirm that the defined
@@ -72,7 +72,7 @@ function [knl,ksn_master,bnd_list,Sc]=KSN_Profiler(DEM,FD,A,S,varargin)
 
 	% Parse Inputs
 	p = inputParser;
-	p.FunctionName = 'KSN_Profiler';
+	p.FunctionName = 'KsnProfiler';
 	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
 	addRequired(p,'FD',@(x) isa(x,'FLOWobj'));
 	addRequired(p,'A',@(x) isa(x,'GRIDobj'));
