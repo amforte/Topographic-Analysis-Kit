@@ -15,6 +15,9 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 	%		'all' - ksn, ksngrid, chimap, and chigrids
 	%
 	% Optional Inputs:
+	%	conditioned_DEM [] - option to provide a hydrologically conditioned DEM for use in this function (do not provide a conditoned DEM
+	%		for the main required DEM input!) which will be used for extracting elevations. See 'ConditionDEM' function for options for making a 
+	%		hydrological conditioned DEM. If no input is provided the code defaults to using the mincosthydrocon function.
 	%	file_name_prefix ['batch'] - prefix for outputs, will append the type of output, i.e. 'ksn', 'chimap', etc
 	% 	segment_length [1000] - length of segments in map units for smoothing ksn values, equivalent to smoothing in Profiler
 	% 	theta_ref [0.45] - reference concavity (as a positive value) for calculating ksn
@@ -38,6 +41,7 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 	%			'min_out_drain_area' - uses the minimum drainage area of all stream outlets to extract streams only below this drainage area
 	%	min_elevation [] - parameter to set minimum elevation for base level, required if 'base_level_method' is set to 'elevation'
 	%	max_drainage_area [] - parameter to set maximum drainage area for base level, required if 'base_level_method' is set to 'drain_area'
+	%	interp_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a conditioned DEM)
 	%
 	% Notes:
 	%	Please be aware that the production of the chigrid can be time consuming, so be patient...
@@ -52,7 +56,7 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 
 	% Parse Inputs
 	p = inputParser;         
-	p.FunctionName = 'SetBaseLevel';
+	p.FunctionName = 'KSN_Chi_Batch';
 	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
 	addRequired(p,'FD', @(x) isa(x,'FLOWobj'));
 	addRequired(p,'A', @(x) isa(x,'GRIDobj'));
@@ -68,6 +72,8 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 	addParamValue(p,'base_level_method',[],@(x) ischar(validatestring(x,{'elevation','drain_area','max_out_elevation','min_out_drain_area'})));
 	addParamValue(p,'min_elevation',[],@(x) isnumeric(x));
 	addParamValue(p,'max_drainage_area',[],@(x) isnumeric(x));
+	addParamValue(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
+	addParamValue(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
 
 	parse(p,DEM,FD,A,S,product,varargin{:});
 	DEM=p.Results.DEM;
@@ -85,6 +91,8 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 	blm=p.Results.base_level_method;
 	me=p.Results.min_elevation;
 	ma=p.Results.max_drainage_area;
+	iv=p.Results.interp_value;
+	DEMc=p.Results.conditioned_DEM;
 
 	% Check that cut off values have been provided if base level
 	if abl & isempty(blm)
@@ -107,12 +115,20 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 		elseif abl
 			[S]=SetBaseLevel(DEM,FD,A,S,blm);
 		end	
+
+		% Hydrologically condition dem
+		if isempty(DEMc)
+			zc=mincosthydrocon(S,DEM,'interp',iv);
+			DEMc=GRIDobj(DEM);
+			DEMc.Z(DEMc.Z==0)=NaN;
+			DEMc.Z(S.IXgrid)=zc;
+		end
 		
 		switch ksn_method
 		case 'quick'
-			[KSN]=KSN_Quick(DEM,A,S,theta_ref,segment_length);
+			[KSN]=KSN_Quick(DEM,DEMc,A,S,theta_ref,segment_length);
 		case 'trib'
-			[KSN]=KSN_Trib(DEM,FD,A,S,theta_ref,segment_length);
+			[KSN]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length);
 		end
 
 		disp('Writing ARC files')
@@ -131,8 +147,60 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 
 	case 'ksngrid'
 
-		disp('NOT YET IMPLEMENTED')
+		%%%
+		% NEED TO DEAL WITH OUTLET CONTROL
+		%%%
 
+		%% THIS IS TOO AGGRESSIVE AT THE MOMENT
+
+		if abl & strcmp(blm,'elevation')
+			IDX=DEM<me;
+			DEM.Z(IDX.Z)=NaN;
+		elseif abl & strcmp(blm,'drain_area');
+			DA=A.*(A.cellsize^2);
+			IDX=DA>ma;
+			DEM.Z(IDX.Z)=NaN;
+		else
+			IDX=GRIDobj(DEM);
+			IDX.Z=logical(zeros(size(DEM.Z)));
+		end
+
+		if isempty(DEMc)
+			zc=mincosthydrocon(S,DEM,'interp',iv);
+			DEMc=GRIDobj(DEM);
+			DEMc.Z(DEMc.Z==0)=NaN;
+			DEMc.Z(S.IXgrid)=zc;
+		else
+			DEMc.Z(IDX.Z)=NaN;
+		end
+		
+		switch ksn_method
+		case 'quick'
+			[ksn_ms]=KSN_Quick(DEM,DEMc,A,S,theta_ref,segment_length);
+		case 'trib'
+			[ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length);
+		end
+
+		[xx,yy]=getcoordinates(DEM);
+		[X,Y]=meshgrid(xx,yy);
+
+		ksn_cell=cell(numel(ksn_ms),1);
+		for ii=1:numel(ksn_ms)
+			ksn_cell{ii}=ones(numel(ksn_ms(ii).X),1)*ksn_ms(ii).ksn;
+		end
+		ksn_x=vertcat(ksn_ms.X); ksn_y=vertcat(ksn_ms.Y); ksn_ksn=vertcat(ksn_cell{:});
+
+		Fk=scatteredInterpolant(ksn_x,ksn_y,ksn_ksn);
+		ksn_int=Fk(X,Y);
+		KSNGrid=GRIDobj(xx,yy,ksn_int);
+
+		disp('Writing ARC files')
+		GRIDobj2ascii(KSNGrid,'ksngrid.txt');
+
+		switch output
+		case true
+			varargout{1}=KSNGrid;
+		end
 
 	case 'chimap'
 
@@ -224,11 +292,19 @@ function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
 			[S]=SetBaseLevel(DEM,FD,A,S,blm);
 		end	
 
+		% Hydrologically condition dem
+		if isempty(DEMc)
+			zc=mincosthydrocon(S,DEM,'interp',iv);
+			DEMc=GRIDobj(DEM);
+			DEMc.Z(DEMc.Z==0)=NaN;
+			DEMc.Z(S.IXgrid)=zc;
+		end
+		
 		switch ksn_method
 		case 'quick'
-			[KSN]=KSN_Quick(DEM,A,S,theta_ref,segment_length);
+			[KSN]=KSN_Quick(DEM,DEMc,A,S,theta_ref,segment_length);
 		case 'trib'
-			[KSN]=KSN_Trib(DEM,FD,A,S,theta_ref,segment_length);
+			[KSN]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length);
 		end
 
 	    disp('Calculating chi map');
@@ -315,12 +391,8 @@ function [ChiOBJ]=MakeChiGrid(DEM,FD,A,theta_ref,abl,varargin)
 	ChiOBJ.Z(S.IXgrid)=C;
 end
 
-function [ksn_ms]=KSN_Quick(DEM,A,S,theta_ref,segment_length)
+function [ksn_ms]=KSN_Quick(DEM,DEMc,A,S,theta_ref,segment_length)
 
-	zc=mincosthydrocon(S,DEM,'interp',0.1);
-	DEMc=GRIDobj(DEM);
-	DEMc.Z(DEMc.Z==0)=NaN;
-	DEMc.Z(S.IXgrid)=zc;
 	G=gradient8(DEMc);
 	Z_RES=DEMc-DEM;
 
@@ -330,7 +402,7 @@ function [ksn_ms]=KSN_Quick(DEM,A,S,theta_ref,segment_length)
 		{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'cut_fill' Z_RES @mean});
 end
 
-function [ksn_ms]=KSN_Trib(DEM,FD,A,S,theta_ref,segment_length)
+function [ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length)
 
 	% Define non-intersecting segments
 	w1=waitbar(0,'Finding network segments');
@@ -338,7 +410,7 @@ function [ksn_ms]=KSN_Trib(DEM,FD,A,S,theta_ref,segment_length)
 	seg_bnd_ix=as.ix;
 	% Precompute values or extract values needed for later
 	waitbar(1/4,w1,'Calculating hydrologically conditioned stream elevations');
-	z=mincosthydrocon(S,DEM,'interp',0.1);
+	z=getnal(S,DEMc);
 	zu=getnal(S,DEM);
 	z_res=z-zu;
 	waitbar(2/4,w1,'Calculating chi values');
