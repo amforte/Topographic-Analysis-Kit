@@ -1,4 +1,4 @@
-function [varargout]=KSN_Chi_Batch(DEM,FD,A,S,product,varargin)
+function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	% Function to produce channel steepness, chi maps or chi grids for all channels within a DEM
 	% 
 	% Reqiured Inputs:
