@@ -1,4 +1,4 @@
-function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result)
+function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 	% Function for manually selecting knickpoints within a Basin_Data_File (i.e. result of ProcessRiverBasins). 
 	% 	Choose knickpoints on Chi-Elevation plot with mouse clicks and press return when you have selected
 	% 	all the knickpoints for a given stream segment. As you progress through, knickpoints you have already picked 
@@ -9,13 +9,35 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result)
 	% 	Basin_Data_File - full file path to a saved result from the ProcessRiverBasins script
 	% 	plot_result - logical flag to either plot the results (true) or not (false) 
 	%
+	% Optional Inputs
+	% 	theta_ref [0.5] - reference concavity for chi calculation
+	%	shape_name [] - character string to name output shapefile (without .shp), if no input is provided then
+	%		no shapefile is output
+	%
 	% Outputs:
 	%	KnickPoints - nx5 matrix, one row for each selected knickpoints with columns being x, y, z, distance upstream, and chi value
 	%	
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Spring 2016 %
+	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+	% Parse Inputs
+	p = inputParser;
+	p.FunctionName = 'FindBasinKnicks';
+	addRequired(p,'Basin_Data_File',@(x) ischar(x));
+	addRequired(p,'plot_result',@(x) islogical(x));
+
+	addParamValue(p,'theta_ref',0.5,@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'output_shape',[],@(x) ischar(x));
+
+	parse(p,Basin_Data_File,plot_results,varargin{:});
+	Basin_Data_File=p.Results.Basin_Data_File;
+	plot_result=p.Results.plot_result;
+
+	theta_ref=p.Results.theta_ref;
+	shape_name=p.Results.shape_name;
 
 	% Load in File Contents
 	load(Basin_Data_File);
@@ -58,7 +80,7 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result)
 
 		Channels{ii}=SS;
 
-		C=chiplot(SS,DEMc,Ac,'a0',1,'mn',0.5,'plot',false);
+		C=chiplot(SS,DEMcc,Ac,'a0',1,'mn',theta_ref,'plot',false);
 		Chi{ii}=C;
 
 		chi=C.chi;
@@ -71,7 +93,7 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result)
 		figure(f2);
 		clf
 		hold on
-		imageschs(DEM,DEM,'colormap','gray');
+		imageschs(DEMoc,DEMoc,'colormap','gray');
 		plot(S,'-w');
 		plot(SS,'-r');
 		hold off
@@ -111,10 +133,7 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result)
 			end
 
 			Knicks{ii}=knp;
-		else
-			;
 		end
-
 
 	end
 
@@ -123,14 +142,16 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result)
 
 	close all
 
-	switch plot_result
-	case true
+	if plot_result
 		f1=figure(1);
 		set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.8],'renderer','painters');
        
 		subplot(1,2,1)
 		hold on
-		imageschs(DEM,DEM,'colormap','gray');
+		[RGB]=imageschs(DEMoc,DEMoc,'colormap','gray');
+		[~,R]=GRIDobj2im(DEMoc);
+		imshow(RGB,R);
+		colormap(jet);
         caxis([0 max(KnickPoints(:,3))]);
 		plot(S,'-w');
 		scatter(KnickPoints(:,1),KnickPoints(:,2),20,KnickPoints(:,3),'filled');
@@ -139,13 +160,28 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result)
 		subplot(1,2,2)
 		hold on
         plotdz(S,DEMoc,'Color',[0.5 0.5 0.5]);
-		plotdz(S,DEMc,'color','k');
+		plotdz(S,DEMcc,'color','k');
         caxis([0 max(KnickPoints(:,3))]);
 		scatter(KnickPoints(:,4),KnickPoints(:,3),20,KnickPoints(:,3),'filled');
 		c1=colorbar;
 		ylabel(c1,'Knickpoint Elevation (m)');
 		hold off
+	end
 
+	if ~isempty(shape_name)
+		MS=struct;
+		for ii=1:size(KnickPoints,1)
+			MS(ii,1).ID=ii;
+			MS(ii,1).Geometry='Point';
+			MS(ii,1).X=KnickPoints(ii,1);
+			MS(ii,1).Y=KnickPoints(ii,2);
+			MS(ii,1).elev=KnickPoints(ii,3);
+			MS(ii,1).dist=KnickPoints(ii,4);
+			MS(ii,1).chi=KnickPoints(ii,5);
+		end
+		shp_out=[shape_name '.shp'];
+		shapewrite(MS,shp_out);
+	end
 
 % Function End
 end

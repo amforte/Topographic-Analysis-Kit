@@ -1,17 +1,19 @@
 TopoTools is currently undergoing a rennovation, below is a running list of changes that will be (or have been) implemented.
 Also, TopoTools is being renamed to Topographic Analysis Kit (TAK) to avoid confusion with TopoToolbox itself
 
-KSN_Profiler: add slope-area plot option (option to include it, not replace chi-z) with option to pick segments on this
-KSN_Profiler: slope-break KPs output as knickpoints (with option for shapefile)
-KSN_Profiler: add min_elev and max_area criteria from SegmentPicker (to stop extracting streams)
-KSN_Profiler: display mean values ksn values above ksn vs chi (with uncertainty maybe)
-KSN_Profiler: add fits on slope-area plot and ksn vs distance?
-KSN_Profiler: Way to convert/link between chi and slope area (shared scale? coloring?)
-FindBasinKnicks: Add optional inputs for chi values, update plotting, and add option to output shapefiles directly
+KsnProfiler: add slope-area plot option (option to include it, not replace chi-z) with option to pick segments on this
+KsnProfiler: slope-break KPs output as knickpoints (with option for shapefile)
+KsnProfiler: add min_elev and max_area criteria from SegmentPicker (to stop extracting streams)
+KsnProfiler: display mean values ksn values above ksn vs chi (with uncertainty maybe)
+KsnProfiler: add fits on slope-area plot and ksn vs distance?
+KsnProfiler: Way to convert/link between chi and slope area (shared scale? coloring?)
+KsnProfiler: Update image methods to remove real2rgb usage
 SegmentPicker: add slope-area plot option
 ALL: check functionality with new version of TopoToolbox
 ALL: check interoperability / similarity between parameter names and inputs
 
+***DONE: ProcessRiverBasins: Add option to autoextract based on elevation
+***DONE: FindBasinKnicks: Add optional inputs for chi values, update plotting, and add option to output shapefiles directly
 ***DONE: ChiGrid: Figure out base level issue
 ***DONE: Produce wrapper for all the different DEM conditioning techniques
 ***DONE: KSN_Chi_Batch: add option to provide conditioned DEM

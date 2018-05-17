@@ -6,8 +6,10 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 	% 		DEM - GRIDobj of the digital elevation model of your area loaded into the workspace
 	% 		FD - FLOWobj of the flow direction of your area loaded into the workspace
 	% 		S - STREAMobj of the stream network of your area loaded into the workspace	
-	% 		river_mouths - nx3 matrix of river mouths with x, y, and a number identifying the stream/basin of interest.
-	%					Needs to be in the same projection as the input DEM
+	% 		river_mouths - nx3 matrix of river mouths with x, y, and a number identifying the stream/basin of interest OR a single value that
+	%			will be interpreted as an elevation and the code will use this to autogenerate river mouths at this elevation. If you provide 
+	%			the river mouth locations, these need to be in the same projection as the input DEM
+	%
 	% Optional Inputs:
 	%		conditioned_DEM [] - option to provide a hydrologically conditioned DEM for use in this function (do not provide a conditoned DEM
 	%			for the main required DEM input!) which will be used for extracting elevations. See 'ConditionDEM' function for options for making a 
@@ -15,7 +17,7 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 	%		interp_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a conditioned DEM)
 	% 		threshold_area [1e6] - minimum accumulation area to define streams in meters squared
 	% 		segment_length [1000] - smoothing distance in meters for averaging along ksn, suggested value is 1000 meters
-	% 		theta_ref [0.45] - reference concavity for calculating ksn, suggested value is 0.45
+	% 		theta_ref [0.5] - reference concavity for calculating ksn, suggested value is 0.45
 	%		ksn_method [quick] - switch between method to calculate ksn values, options are 'quick' and 'trib', the 'trib' method takes 3-4 times longer 
 	%			than the 'quick' method. In most cases, the 'quick' method works well, but if values near tributary junctions are important, then 'trib'
 	%			may be better as this calculates ksn values for individual channel segments individually
@@ -67,9 +69,9 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
 	addRequired(p,'FD',@(x) isa(x,'FLOWobj'));
 	addRequired(p,'S',@(x) isa(x,'STREAMobj'));
-	addRequired(p,'river_mouths',@(x) isnumeric(x) && size(x,2)==3);
+	addRequired(p,'river_mouths',@(x) isnumeric(x) && size(x,2)==3 || isnumeric(x) && isscalar(x));
 
-	addParamValue(p,'theta_ref',0.45,@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'theta_ref',0.5,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'threshold_area',1e6,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'segment_length',1000,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'write_arc_files',false,@(x) isscalar(x));
@@ -123,19 +125,29 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,varargin)
 		end
 	end
 
+	if size(river_mouths,2)==3
+		disp('Snapping river mouths to stream network')
+		xi=river_mouths(:,1);
+		yi=river_mouths(:,2);
+		riv_nums=river_mouths(:,3);
+		num_basins=numel(xi);
+		[xn,yn]=snap2stream(S,xi,yi);
+		RM=[xn yn riv_nums];
+		num_basins=numel(xn);
+	elseif isscalar(river_mouths)
+		disp('Generating river mouths based on provided elevation')
+		sz=getnal(S,DEM);
+		ix1=S.IXgrid;
+		ix1(sz>=river_mouths)=[];
+		W=GRIDobj(DEM,'logical');
+		W.Z(ix1)=true;
+		Stemp=STREAMobj(FD,W);
+		oxy=streampoi(Stemp,'outlets','xy');
+		num_basins=size(oxy,1);
+		olist=[1:num_basins]';
+		RM=[oxy olist];
+	end
 
-	disp('Snapping river mouths to stream network')
-	xi=river_mouths(:,1);
-	yi=river_mouths(:,2);
-	riv_nums=river_mouths(:,3);
-
-	num_basins=numel(xi);
-
-	[xn,yn]=snap2stream(S,xi,yi);
-
-	RM=[xn yn riv_nums];
-
-	num_basins=numel(xn);
 
 	switch clip_method
 	case 'clip'
