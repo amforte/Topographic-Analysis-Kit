@@ -5,10 +5,10 @@ function SubDivideBigBasins(location_of_data_files,max_basin_size,divide_method,
 	% Required Inputs:
 	% 		location_of_data_files - full path of folder which contains the mat files from 'ProcessRiverBasins'
 	% 		max_basin_size - size above which drainage basins will be subdivided in square kilometers
-	%		divide_method - method for subdividing basins, options are:
-	%			'order' - use the outlets of streams of a given order that the user can specify with the optional's_order' parameter 
-	%			'confluences' - use the locations of confluences
-	%			'up_confluences' - use locations just upstream of confluences
+	%		divide_method - method for subdividing basins, options are ('confluences' and 'up_confluences' is NOT recommended large datasets):
+	%			'order' - use the outlets of streams of a given order that the user can specify with the optional 's_order' parameter 
+	%			'confluences' - use the locations of confluences (WILL PRODUCE A LOT OF BASINS!)
+	%			'up_confluences' - use locations just upstream of confluences (WILL PRODUCE A LOT OF SUB BASINS!)
 	%			'filtered_confluences' - use locations of confluences if drainage basin above confluence is of a specified size that the user
 	%				can specify with the optional 'min_basin_size'  
 	%			'p_filtered_confluences' - similar to filtered confluences, but the user defines a percentage of the main basin area
@@ -160,7 +160,7 @@ function SubDivideBigBasins(location_of_data_files,max_basin_size,divide_method,
 					DAG=A0.*(A0.cellsize^2);
 				end
 				da_cons=(DAG.Z(cons_ix))/1e6;
-				mbz=drainage_area*(min_basin_size/100);
+				mbz=DA*(min_basin_size/100);
 				da_idx=da_cons>=mbz;
 				cons=cons(da_idx,:);
 				x=cons(:,1);
@@ -244,11 +244,14 @@ function SubDivideBigBasins(location_of_data_files,max_basin_size,divide_method,
 						end
 					end
 
+					% Make interpolated ksn grid
+					[KsnOBJc] = KsnInt(DEMoc,MSNc);
+
 					% Calculate basin wide ksn statistics
-					min_ksn=min([MSNc.ksn]);
-					mean_ksn=mean([MSNc.ksn]);
-					max_ksn=max([MSNc.ksn]);
-					std_ksn=std([MSNc.ksn]);
+					min_ksn=nanmin([MSNc.ksn]);
+					mean_ksn=nanmean([MSNc.ksn]);
+					max_ksn=nanmax([MSNc.ksn]);
+					std_ksn=nanstd([MSNc.ksn]);
 					se_ksn=std_ksn/sqrt(numel(MSNc)); % Standard error
 
 					% Calculate basin wide gradient statistics
@@ -274,7 +277,7 @@ function SubDivideBigBasins(location_of_data_files,max_basin_size,divide_method,
 					out_el=double(DEMoc.Z(out_ix));
 
 					SubFileName=['Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '.mat'];
-					save(SubFileName,'RiverMouth','DEMcc','DEMoc','out_el','drainage_area','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method','clip_method');
+					save(SubFileName,'RiverMouth','DEMcc','DEMoc','out_el','drainage_area','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','KsnOBJc','ChiOBJc','ksn_method','clip_method');
 
 					VarList=whos('-file',FileName);
 					VarInd=find(strcmp(cellstr(char(VarList.name)),'AGc'));
@@ -452,11 +455,14 @@ function SubDivideBigBasins(location_of_data_files,max_basin_size,divide_method,
 						end
 					end
 
+					% Make interpolated ksn grid
+					[KsnOBJc] = KsnInt(DEMoc,MSNc);
+
 					% Calculate basin wide ksn statistics
-					min_ksn=min([MSNc.ksn]);
-					mean_ksn=mean([MSNc.ksn]);
-					max_ksn=max([MSNc.ksn]);
-					std_ksn=std([MSNc.ksn]);
+					min_ksn=nanmin([MSNc.ksn]);
+					mean_ksn=nanmean([MSNc.ksn]);
+					max_ksn=nanmax([MSNc.ksn]);
+					std_ksn=nanstd([MSNc.ksn]);
 					se_ksn=std_ksn/sqrt(numel(MSNc)); % Standard error
 
 					% Calculate basin wide gradient statistics
@@ -482,7 +488,7 @@ function SubDivideBigBasins(location_of_data_files,max_basin_size,divide_method,
 					out_el=double(DEMoc.Z(out_ix));
 
 					SubFileName=['Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '.mat'];
-					save(SubFileName,'RiverMouth','DEMoc','out_el','drainage_area','Sc','SAc','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method','clip_method');
+					save(SubFileName,'RiverMouth','DEMoc','out_el','drainage_area','Sc','SAc','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','KsnOBJc','ChiOBJc','ksn_method','clip_method');
 
 					VarList=whos('-file',FileName);
 					VarInd=find(strcmp(cellstr(char(VarList.name)),'AGc'));
@@ -746,4 +752,25 @@ function [KSN] = Chi_Z_Spline(c,z)
 	KSN= BETA; %Beta.*a0^mn - if a0 set to 1, not needed
 end
 
+function [KSNGrid] = KsnInt(DEM,ksn_ms)
+    [xx,yy]=getcoordinates(DEM);
+    [X,Y]=meshgrid(xx,yy);
 
+    ksn_cell=cell(numel(ksn_ms),1);
+    for ii=1:numel(ksn_ms)
+        ksn_cell{ii}=ones(numel(ksn_ms(ii).X),1)*ksn_ms(ii).ksn;
+    end
+    ksn_x=vertcat(ksn_ms.X); ksn_y=vertcat(ksn_ms.Y); ksn_ksn=vertcat(ksn_cell{:});
+    idx=isnan(ksn_ksn);
+    ksn_x(idx)=[];
+    ksn_y(idx)=[];
+    ksn_ksn(idx)=[];
+    
+    warning off
+    Fk=scatteredInterpolant(ksn_x,ksn_y,ksn_ksn,'natural');
+    warning on
+    ksn_int=Fk(X,Y);
+    KSNGrid=GRIDobj(xx,yy,ksn_int);
+    IDX=isnan(DEM);
+    KSNGrid.Z(IDX.Z)=NaN;
+end

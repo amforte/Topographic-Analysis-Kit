@@ -1,4 +1,4 @@
-function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
+function [T]=CompileBasinStats(location_of_data_files,varargin)
 	% Function to take the outputs from 'ProcessRiverBasins' and 'SubDivideBigBasins' and produce a single shapefile showing the outlines of polygons
 	% 	and with commonly desired attributes from the results of 'ProcessRiverBasins' etc. See below for a full list of fields that the output shapefile
 	% 	will include. If additional grids were provided to 'ProcessRiverBasins', mean and standard error values for those grids will be auto-populated in
@@ -7,11 +7,9 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	% 	values, use 'Basin2Raster'.
 	%
 	% Required Inputs:
-	%		DEM - GRIDobj of the DEM originally used as input for 'ProcessRiverBasins' for the basins of interest.
 	% 		location_of_data_files - full path of folder which contains the mat files from 'ProcessRiverBasins'
 	%
 	% Optional Inputs:
-	%		shape_name ['basins'] - name for the shapefile to be export, must have no spaces to be a valid name for ArcGIS and should NOT include the '.shp';
 	%		include ['all'] - parameter to specify which basins to include in building the shapfile. The default 'all' will include all basin mat files in the 
 	%			folder you specify. Providing 'subdivided' will check to see if a given main basin was subdivided using 'SubdivideBigBasins' and then only include 
 	%			the subdivided versions of that basin (i.e. the original main basin for those subbasins will not be included in the shapefile). Providing 'bigonly'
@@ -32,6 +30,14 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	%			to true there will be field names in the resulting shapefile named 'Q', 'Mz', and 'Pz' and the values stored in those columns will correspond to the percentage 
 	%			of each basin covered by each unit for each basin. Setting populate_categories to true will not have any effect if no entry was provided to 'add_cat_grids' when
 	%			running ProcessRiverBasins.
+	%		means_by_category [] - method to calculate means of various continuous values within by categories. Requires that a categorical grid was input to ProcessRiverBasins.
+	%			Expects a cell 1 x m cell array where the first entry is the name of the category to use (i.e. name for categorical grid you provided to ProcessRiverBasins) and
+	%			following entries are names of grids you wish to use to find means by categories, e.g. an example array might be {'geology','ksn','rlf2500','gradient'} if you 
+	%			were interested in looking for patterns in channel steepness, 2.5 km^2 relief, and gradient as a function of rock type/age. Valid inputs for the grid names are:
+	%				'ksn' - uses interpolated channel steepness grid
+	%				'gradient' - uses gradient grid
+	%				'rlf####' - where #### is the radius you provided to ProcessRiverBasins (requires that 'calc_relief' was set to true when running ProcessRiverBasins
+	%				'NAME' - where NAME is the name of an additional grid provided with the 'add_grids' option to ProcessRiverBasins
 	%
 	% Output:
 	%		Outputs a mapstructure (MS) and saves a shapefile with the following default fields:
@@ -54,29 +60,26 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 
 	% Parse Inputs
 	p = inputParser;
-	p.FunctionName = 'Basin2Shape';
-	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
+	p.FunctionName = 'CompileBasinStats';
 	addRequired(p,'location_of_data_files',@(x) isdir(x));
 
-	addParamValue(p,'shape_name','basins',@(x) ischar(x));
 	addParamValue(p,'include','all',@(x) ischar(validatestring(x,{'all','subdivided','bigonly'})));
 	addParamValue(p,'extra_field_values',[],@(x) isa(x,'cell'));
-	addParamValue(p,'extra_field_names',[],@(x) isa(x,'cell') & size(x,1)==1);
+	addParamValue(p,'extra_field_names',[],@(x) isa(x,'cell') && size(x,1)==1);
 	addParamValue(p,'uncertainty','se',@(x) ischar(validatestring(x,{'se','std','both'})));
 	addParamValue(p,'populate_categories',false,@(x) isscalar(x) && islogical(x))
-	addParamValue(p,'suppress_shape_write',false,@(x) isscalar(x) && islogical(x))
+	addParamValue(p,'means_by_category',[],@(x) isa(x,'cell' && size(x,1)>=2));
 
-	parse(p,DEM,location_of_data_files,varargin{:});
-	DEM=p.Results.DEM;
+
+	parse(p,location_of_data_files,varargin{:});
 	location_of_data_files=p.Results.location_of_data_files;
 
-	shape_name=p.Results.shape_name;
 	include=p.Results.include;
 	efv=p.Results.extra_field_values;
 	efn=p.Results.extra_field_names;
 	uncertainty=p.Results.uncertainty;
 	pc=p.Results.populate_categories;
-	ssw=p.Results.suppress_shape_write;
+	mbc=p.Results.means_by_category;
 
 	current=pwd;
 	cd(location_of_data_files);
@@ -116,85 +119,46 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 		num_files=numel(FileList);
 	end
 
-	% Initiate Map Structure
-	MS=struct;
+	% Initiate Table
+	T=table;
 
-	w1=waitbar(0,'Building polygons');
+	w1=waitbar(0,'Compiling table');
+	warning off
 	for ii=1:num_files;
 		FileName=FileList(ii,1).name;
-		DB=GRIDobj(DEM);
 
 		load(FileName,'DEMoc','RiverMouth','drainage_area','out_el','KSNc_stats','Zc_stats','Gc_stats','Centroid');
 
-		I=~isnan(DEMoc.Z);
-		[X,Y]=getcoordinates(DEMoc);
-		xmat=repmat(X,numel(Y),1);
-		ymat=repmat(Y,1,numel(X));
-
-		xix=xmat(I);
-		yix=ymat(I);
-
-		ix=coord2ind(DEM,xix,yix);
-
-		DB.Z(ix)=RiverMouth(:,3);
-
-		[ms_temp,~,~]=GRIDobj2polygon(DB);
-
-		% Populate default fields in output map structure
-		MS(ii,1).Geometry='Polygon';
-		MS(ii,1).X=ms_temp.X;
-		MS(ii,1).Y=ms_temp.Y;
-		MS(ii,1).ID=ii;
-		MS(ii,1).river_mouth=ms_temp.gridval;
-		MS(ii,1).center_x=Centroid(1);
-		MS(ii,1).center_y=Centroid(2);
-		MS(ii,1).drainage_area=drainage_area;
-		MS(ii,1).outlet_elevation=out_el;
-		MS(ii,1).mean_el=Zc_stats(1);
-		MS(ii,1).max_el=Zc_stats(5);
-		MS(ii,1).mean_ksn=KSNc_stats(1);
-		MS(ii,1).mean_gradient=Gc_stats(1);
+		% Populate default fields in Table
+		T.ID(ii)=ii;
+		T.river_mouth(ii)=RiverMouth(3);
+		T.out_x(ii)=RiverMouth(1);
+		T.out_y(ii)=RiverMouth(2);
+		T.center_x(ii)=Centroid(1);
+		T.center_y(ii)=Centroid(2);
+		T.drainage_area(ii)=drainage_area;
+		T.outlet_elevation(ii)=out_el;
+		T.mean_el(ii)=Zc_stats(1);
+		T.max_el(ii)=Zc_stats(5);
+		T.mean_ksn(ii)=KSNc_stats(1);
+		T.mean_gradient(ii)=Gc_stats(1);
 
 		switch uncertainty
 		case 'se'
-			MS(ii,1).se_el=Zc_stats(2);
-			MS(ii,1).se_ksn=KSNc_stats(2);
-			MS(ii,1).se_gradient=Gc_stats(2);
+			T.se_el(ii)=Zc_stats(2);
+			T.se_ksn(ii)=KSNc_stats(2);
+			T.se_gradient(ii)=Gc_stats(2);
 		case 'std'
-			MS(ii,1).std_el=Zc_stats(3);
-			MS(ii,1).std_ksn=KSNc_stats(3);
-			MS(ii,1).std_gradient=Gc_stats(3);
+			T.std_el(ii)=Zc_stats(3);
+			T.std_ksn(ii)=KSNc_stats(3);
+			T.std_gradient(ii)=Gc_stats(3);
 		case 'both'
-			MS(ii,1).se_el=Zc_stats(2);
-			MS(ii,1).se_ksn=KSNc_stats(2);
-			MS(ii,1).se_gradient=Gc_stats(2);
-			MS(ii,1).std_el=Zc_stats(3);
-			MS(ii,1).std_ksn=KSNc_stats(3);
-			MS(ii,1).std_gradient=Gc_stats(3);
-		end
-
-		
-		% Determine if a georef structure exists and if so, produce lat-lon locations for sample points
-		if ~isempty(DEM.georef)
-			try
-				% Check how projection is stored (control for older TopoToolbox methods)
-				if isfield(DEM.georef,'mstruct')
-					proj=DEM.georef.mstruct;
-				else
-					proj=DEM.georef;
-				end
-				% Project
-				[s_lat,s_lon]=projinv(proj,RiverMouth(:,1),RiverMouth(:,2));
-				% Populate lat lon coordinates
-				MS(ii,1).outlet_lat=s_lat;
-				MS(ii,1).outlet_lon=s_lon;
-			catch
-				str=sprintf('Projection is either not supported or you do not have the Mapping Toolbox,\n unable to convert river mouth coordinates to lat-lon');
-				disp(str);
-			end
-		else
-			str=sprintf('GRIDobj does not have projection information, unable to convert river mouth coordinates to lat-lon');
-			disp(str);
+			T.se_el(ii)=Zc_stats(2);
+			T.se_ksn(ii)=KSNc_stats(2);
+			T.se_gradient(ii)=Gc_stats(2);
+			T.std_el(ii)=Zc_stats(3);
+			T.std_ksn(ii)=KSNc_stats(3);
+			T.std_gradient(ii)=Gc_stats(3);
 		end
 
 		% Check for additional grids within the process river basins output
@@ -207,40 +171,20 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 
 			for kk=1:num_grids
 				mean_prop_name=['mean_' AGc{kk,2}];		
-				MS(ii,1).(mean_prop_name)=double(AGc_stats(kk,1));
+				T.(mean_prop_name)(ii)=double(AGc_stats(kk,1));
 
 				switch uncertainty
 				case 'se'
 					se_prop_name=['se_' AGc{kk,2}];
-					MS(ii,1).(se_prop_name)=double(AGc_stats(kk,2));
+					T.(se_prop_name)(ii)=double(AGc_stats(kk,2));
 				case 'std'
 					std_prop_name=['std_' AGc{kk,2}];
-					MS(ii,1).(std_prop_name)=double(AGc_stats(kk,3));
+					T.(std_prop_name)(ii)=double(AGc_stats(kk,3));
 				case 'both'
 					se_prop_name=['se_' AGc{kk,2}];
-					MS(ii,1).(se_prop_name)=double(AGc_stats(kk,2));
+					T.(se_prop_name)(ii)=double(AGc_stats(kk,2));
 					std_prop_name=['std_' AGc{kk,2}];
-					MS(ii,1).(std_prop_name)=double(AGc_stats(kk,3));
-				end
-			end
-		end	
-
-		VarInd=find(strcmp(cellstr(char(VarList.name)),'ACGc'));
-		if ~isempty(VarInd)
-			load(FileName,'ACGc','ACGc_stats');
-			num_grids=size(ACGc,1);
-
-			for kk=1:num_grids
-				mode_prop_name=['mode_' ACGc{kk,3}];		
-				MS(ii,1).(mode_prop_name)=double(ACGc_stats(kk,1));
-
-				if pc
-					ACG_T=ACGc{kk,2};
-					total_nodes=sum(ACG_T.Counts);
-					for ll=1:numel(ACG_T.Categories)
-						cat_name=matlab.lang.makeValidName(ACG_T.Categories{ll});
-						MS(ii,1).(cat_name)=double((ACG_T.Counts(ll)/total_nodes)*100);
-					end
+					T.(std_prop_name)(ii)=double(AGc_stats(kk,3));
 				end
 			end
 		end		
@@ -253,21 +197,21 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 			for kk=1:num_grids
 				mean_prop_name=['mean_rlf' num2str(rlf{kk,2})];
 				se_prop_name=['se_rlf' num2str(rlf{kk,2})];
-				MS(ii,1).(mean_prop_name)=double(rlf_stats(kk,1));
-				MS(ii,1).(se_prop_name)=double(rlf_stats(kk,2));
+				T.(mean_prop_name)(ii)=double(rlf_stats(kk,1));
+				T.(se_prop_name)(ii)=double(rlf_stats(kk,2));
 
 				switch uncertainty
 				case 'se'
 					se_prop_name=['se_rlf' num2str(rlf{kk,2})];
-					MS(ii,1).(se_prop_name)=double(rlf_stats(kk,2));
+					T.(se_prop_name)(ii)=double(rlf_stats(kk,2));
 				case 'std'
 					std_prop_name=['std_rlf' num2str(rlf{kk,2})];
-					MS(ii,1).(std_prop_name)=double(rlf_stats(kk,3));
+					T.(std_prop_name)(ii)=double(rlf_stats(kk,3));
 				case 'both'
 					se_prop_name=['se_rlf' num2str(rlf{kk,2})];
-					MS(ii,1).(se_prop_name)=double(rlf_stats(kk,2));
+					T.(se_prop_name)(ii)=double(rlf_stats(kk,2));
 					std_prop_name=['std_rlf' num2str(rlf{kk,2})];
-					MS(ii,1).(std_prop_name)=double(rlf_stats(kk,3));
+					T.(std_prop_name)(ii)=double(rlf_stats(kk,3));
 				end
 			end
 		end		
@@ -287,9 +231,9 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 					field_value=efvOI{kk};
 					% Check to see if field value is a number or string
 					if ischar(field_value)
-						MS(ii,1).(field_name)=field_value;
+						T.(field_name)(ii)=field_value;
 					elseif isnumeric(field_value)
-						MS(ii,1).(field_name)=double(field_value);
+						T.(field_name)(ii)=double(field_value);
 					else
 						error(['Extra field value provided for ' field_name ' is neither numeric or a character']);
 					end
@@ -307,29 +251,47 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 			num_grids=size(ACGc,1);
 
 			for kk=1:num_grids
-				mode_prop_name=['mode_' ACGc{kk,3}];	
-				ix=find(ACGc{kk,2}.Numbers==ACGc_stats(kk,1),1);	
-				MS(ii,1).(mode_prop_name)=ACGc{kk,2}.Categories{ix};
+				mode_prop_name=['mode_' ACGc{kk,3}];
+				ix=find(ACGc{kk,2}.Numbers==ACGc_stats(kk,1),1);
+				T.(mode_prop_name){ii}=ACGc{kk,2}.Categories{ix};
 
 				if pc
 					ACG_T=ACGc{kk,2};
 					total_nodes=sum(ACG_T.Counts);
 					for ll=1:numel(ACG_T.Categories)
 						cat_name=matlab.lang.makeValidName(ACG_T.Categories{ll});
-						MS(ii,1).(cat_name)=double((ACG_T.Counts(ll)/total_nodes)*100);
+						cat_name=[ACGc{kk,3} '_perc_' cat_name];
+						T.(cat_name)(ii)=double((ACG_T.Counts(ll)/total_nodes)*100);
 					end
 				end
+
+				if ~isempty(mbc)
+					disp('This option is not fully implemented')
+					% Partition input
+					cg=mbc(1);
+					dg=mbc(2:end);
+					num_dg=numel(dg);
+					% Find categorical grid
+					cix=find(ACGc(:,3),cg);
+					CG=ACGc{cix,1};
+					cgt=ACGc{cix,2};
+					%
+
+
+
+
+				end
+
+
 			end
-		end
+		end	
 
 
 		waitbar(ii/num_files);
 	end
+	warning on
 	close(w1);
 
 	cd(current);
-
-	out_shape_name=[shape_name '.shp'];
-	shapewrite(MS,out_shape_name);
 
 end

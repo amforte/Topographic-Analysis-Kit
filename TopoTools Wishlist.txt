@@ -8,6 +8,7 @@ KsnProfiler: display mean values ksn values above ksn vs chi (with uncertainty m
 KsnProfiler: add fits on slope-area plot and ksn vs distance?
 KsnProfiler: Way to convert/link between chi and slope area (shared scale? coloring?)
 KsnProfiler: Update image methods to remove real2rgb usage
+MakeCombinedSwath: Update to accept table output from Basin2Shape
 SegmentPicker: add slope-area plot option
 ALL: check functionality with new version of TopoToolbox
 ALL: check interoperability / similarity between parameter names and inputs

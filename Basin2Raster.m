@@ -13,6 +13,8 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 	%		'id' - basin ID number (i.e third column RiverMouth output)
 	%   	'theta' - best fit concavity resultant from the topo toolbox chiplot function (will not work if method for 
 	%			ProcessRiverBasin was 'segment')
+	%		'NAME' - where name is the name provided for an extra grid (i.e. entry to second column of 'add_grid' or entry to 
+	%			third column of 'add_cat_grid')
 	%	location_of_data_files - full path of folder which contains the mat files from 'ProcessRiverBasins' as a string
 	%
 	% Optional Inputs:
@@ -24,9 +26,8 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 	%		so you do not need to specify a value for this property. If you picked nested catchments manually and then
 	%		ran 'ProcessRiverBasins' you should use 'nested'.
 	%		 
-	% 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Spring 2016 %
+	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -34,7 +35,7 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 	p = inputParser;
 	p.FunctionName = 'Basin2Raster';
 	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
-	addRequired(p,'valueOI',@(x) ischar(validatestring(x,{'ksn','gradient','chir2','elevation','drainage_area','theta','id'})));
+	addRequired(p,'valueOI',@(x) ischar(x));
 	addRequired(p,'location_of_data_files',@(x) ischar(x));
 
 	addParamValue(p,'file_name_prefix','basins',@(x) ischar(x));
@@ -109,6 +110,31 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 				load(FileName,'DEMcc','Sc','Ac');
 				C=chiplot(Sc,DEMcc,Ac,'a0',1,'plot',false);
 				val=C.mn;
+			otherwise
+				VarList=whos('-file',FileName);
+				AGInd=find(strcmp(cellstr(char(VarList.name)),'AGc'));
+				ACGInd=find(strcmp(cellstr(char(VarList.name)),'ACGc'));
+				if ~isempty(AGInd)
+					load(FileName,'AGc');
+					AGInd=true;
+				end
+
+				if ~isempty(ACGInd)
+					load(FileName,'ACGc');
+					ACGInd=true;
+				end
+
+				if AGInd & any(strcmp(AGc(:,2),valueOI))
+					Nix=find(strcmp(AGc(:,2),valueOI));
+					load(FileName,'AGc_stats');
+					val=AGc_stats(Nix,1);
+				elseif ACGInd & any(strcmp(ACGc(:,3),valueOI))
+					Nix=find(trcmp(ACGc(:,3),valueOI));
+					load(FileName,'ACGc_stats');
+					val=ACGc_stats(Nix,1);
+				else
+					error('Name provided to "valueOI" does not match name in either additional grids or additional categorical grids');
+				end
 			end
 
 			if strcmp(valueOI,'theta')
@@ -189,6 +215,31 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 				load(FileName,'DEMcc','Sc','Ac');
 				C=chiplot(Sc,DEMcc,Ac,'a0',1,'plot',false);
 				val=C.mn;
+			otherwise
+				VarList=whos('-file',FileName);
+				AGInd=find(strcmp(cellstr(char(VarList.name)),'AGc'));
+				ACGInd=find(strcmp(cellstr(char(VarList.name)),'ACGc'));
+				if ~isempty(AGInd)
+					load(FileName,'AGc');
+					AGInd=true;
+				end
+
+				if ~isempty(ACGInd)
+					load(FileName,'ACGc');
+					ACGInd=true;
+				end
+
+				if AGInd & any(strcmp(AGc(:,2),valueOI))
+					Nix=find(strcmp(AGc(:,2),valueOI));
+					load(FileName,'AGc_stats');
+					val=AGc_stats(Nix,1);
+				elseif ACGInd & any(strcmp(ACGc(:,3),valueOI))
+					Nix=find(trcmp(ACGc(:,3),valueOI));
+					load(FileName,'ACGc_stats');
+					val=ACGc_stats(Nix,1);
+				else
+					error('Name provided to "valueOI" does not match name in either additional grids or additional categorical grids');
+				end
 			end
 
 			if strcmp(valueOI,'theta')
@@ -231,6 +282,9 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 		GRIDobj2ascii(OUT,out_file);
 	case 'theta'
 		out_file=[file_name_prefix '_theta.txt'];
+		GRIDobj2ascii(OUT,out_file);
+	otherwise
+		out_file=[file_name_prefix '_' valueOI '.txt'];
 		GRIDobj2ascii(OUT,out_file);
 	end
 

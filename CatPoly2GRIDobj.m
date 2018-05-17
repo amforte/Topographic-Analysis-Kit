@@ -41,4 +41,9 @@ function [OUT,look_table]=CatPoly2GRIDobj(DEM,poly_shape,field)
 
 	% Run polygon2GRIDobj
 	[OUT]=polygon2GRIDobj(DEM,PS,'replace_number');
+
+	% Remove nonexistent category-number pairs from look_table
+	pres=unique(OUT.Z(:));
+	ix=ismember(look_table.Numbers,pres);
+	look_table=look_table(ix,:);
 end
