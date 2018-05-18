@@ -40,9 +40,11 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	%				'NAME' - where NAME is the name of an additional grid provided with the 'add_grids' option to ProcessRiverBasins
 	%
 	% Output:
-	%		Outputs a mapstructure (MS) and saves a shapefile with the following default fields:
+	%		Outputs a table (T) with the following default fields:
 	%			river_mouth - river mouth number provided to ProcessRiverBasins
 	%			drainage_area - drainage area of basin in km^2
+	%			out_x - x coordinate of basin mouth
+	%			out_y - y coordinate of basin mouth
 	%			center_x - x coordinate of basin in projected coordinates
 	%			center_y - y coordinate of basin in projected coordinates
 	%			outlet_elevation - elevation of pour point in m
@@ -80,6 +82,10 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	uncertainty=p.Results.uncertainty;
 	pc=p.Results.populate_categories;
 	mbc=p.Results.means_by_category;
+
+	if ~isempty(mbc)
+		disp('Means_by_category option has not been fully tested')
+	end
 
 	current=pwd;
 	cd(location_of_data_files);
@@ -266,23 +272,46 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 				end
 
 				if ~isempty(mbc)
-					disp('This option is not fully implemented')
 					% Partition input
 					cg=mbc(1);
 					dg=mbc(2:end);
 					num_dg=numel(dg);
-					% Find categorical grid
+					% Find categorical grid of interest
 					cix=find(ACGc(:,3),cg);
-					CG=ACGc{cix,1};
-					cgt=ACGc{cix,2};
-					%
-
-
-
-
+					ACG=ACGc{cix,1}; % GRID
+					ACG_T=ACGc{cix,2}; %look up table
+					% Iterate through categories
+					for ll=1:numel(ACG_T.Categories)
+						IDX=GRIDobj(ACG,'logical');
+						IDX.Z=ismember(ACG.Z,ACG_T.Numbers(ll));
+						cat_name=matlab.lang.makeValidName(ACG_T.Categories{ll});
+						for mm=1:num_dg
+							dgOI=dg{mm};
+							if strcmp(dgOI,'ksn')
+								load(FileName,'KsnOBJc');
+								cat_nameN=['mksn_' cat_name];
+								T.(cat_nameN)(ii)=nanmean(KsnOBJc.Z(IDX.Z));
+							elseif strcmp(dgOI,'gradient')
+								load(FileName,'Goc');
+								cat_nameN=['mgrad_' cat_name];
+								T.(cat_nameN)(ii)=nanmean(Goc.Z(IDX.Z));
+							elseif regexp(dgOI,regexptranslate('wildcard','rlf*'))
+								rlfval=str2num(strrep(dgOI,'rlf',''));
+								rlfix=find(rlf(:,2)==rlfval);
+								if ~isempty(rlfix)
+									Rg=rlf{rlfix,1};
+									cat_nameN=['mr' num2str(rlfval) '_' cat_name];
+									T.(cat_nameN)(ii)=nanmean(Rg.Z(IDX.Z));	
+								end								
+							else 
+								dgix=find(strcmp(AGc(:,2),dgOI));
+								AGcOI=AGc{dgix,1};
+								cat_nameN=['m' AGc{dgix,2} '_' cat_name];
+								T.(cat_nameN)(ii)=nanmean(AGcOI.Z(IDX.Z));
+							end
+						end
+					end
 				end
-
-
 			end
 		end	
 
