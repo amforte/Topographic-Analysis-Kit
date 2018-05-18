@@ -30,6 +30,9 @@ function [OUT,look_table]=CatPoly2GRIDobj(DEM,poly_shape,field)
 	% Generate unique liss and the output lookup table
 	Categories=unique(Foi);
 	Numbers=[1:numel(Categories)]; Numbers=Numbers';
+	% Add an 'undef' category to deal with zeros that appear because of read errors
+	Numbers=vertcat(0,Numbers);
+	Categories=vertcat('undef',Categories);
 	look_table=table(Numbers,Categories);
 
 	% Replace categorical with number

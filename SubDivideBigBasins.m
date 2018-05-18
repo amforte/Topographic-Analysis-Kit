@@ -1,9 +1,9 @@
-function SubDivideBigBasins(location_of_data_files,max_basin_size,divide_method,varargin)
+function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 	% Function takes outputs from 'ProcessRiverBasins' function and subdvides any basin with a drainage area above a specified size and
 	% outputs clipped dem, stream network, variout topographic metrics, and river values (ks, ksn, chi)
 	%
 	% Required Inputs:
-	% 		location_of_data_files - full path of folder which contains the mat files from 'ProcessRiverBasins'
+	% 		basin_dir - full path of folder which contains the mat files from 'ProcessRiverBasins'
 	% 		max_basin_size - size above which drainage basins will be subdivided in square kilometers
 	%		divide_method - method for subdividing basins, options are ('confluences' and 'up_confluences' is NOT recommended large datasets):
 	%			'order' - use the outlets of streams of a given order that the user can specify with the optional 's_order' parameter 
@@ -17,9 +17,9 @@ function SubDivideBigBasins(location_of_data_files,max_basin_size,divide_method,
 	% Optional Inputs:
 	% 		threshold_area [1e6] - minimum accumulation area to define streams in meters squared
 	% 		segment_length [1000] - smoothing distance in meters for averaging along ksn, suggested value is 1000 meters
-	% 		theta_ref [0.45] - reference concavity for calculating ksn, suggested value is 0.45
+	% 		theta_ref [0.5] - reference concavity for calculating ksn
 	% 		write_arc_files [false] - set value to true to output a ascii's of various grids and a shapefile of the ksn, false to not output arc files
-	%		s_order [3] - stream order for defining stream outlets for subdividing if 'divide_method' is 'order'
+	%		s_order [3] - stream order for defining stream outlets for subdividing if 'divide_method' is 'order' (lower number will result in more sub-basins)
 	%		min_basins_size [10] - minimum basin size for auto-selecting sub basins. If 'divide_method' is 'filtered_confluences' this value is
 	%			interpreted as a minimum drainage area in km^2. If 'divide_method' is 'p_filtered_confluences', this value is interpreted as
 	%			the percentage of the input basin drainage area to use as a minimum drainage area, enter a value between 0 and 100 in this case.
@@ -38,11 +38,11 @@ function SubDivideBigBasins(location_of_data_files,max_basin_size,divide_method,
 	% Parse Inputs
 	p = inputParser;
 	p.FunctionName = 'SubDivideBigBasins';
-	addRequired(p,'location_of_data_files',@(x) isdir(x));
+	addRequired(p,'basin_dir',@(x) isdir(x));
 	addRequired(p,'max_basin_size',@(x) isnumeric(x));
 	addRequired(p,'divide_method',@(x) ischar(validatestring(x,{'order','confluences','up_confluences','filtered_confluences','p_filtered_confluences'})));
 
-	addParamValue(p,'theta_ref',0.45,@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'theta_ref',0.5,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'threshold_area',1e6,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'segment_length',1000,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'write_arc_files',false,@(x) isscalar(x));
@@ -52,8 +52,8 @@ function SubDivideBigBasins(location_of_data_files,max_basin_size,divide_method,
 	addParamValue(p,'FD_Original',[],@(x) isa(x,'FLOWobj'));
 	addParamValue(p,'S_Original',[],@(x) isa(x,'STREAMobj'));
 
-	parse(p,location_of_data_files,max_basin_size,divide_method,varargin{:});
-	location_of_data_files=p.Results.location_of_data_files;
+	parse(p,basin_dir,max_basin_size,divide_method,varargin{:});
+	location_of_data_files=p.Results.basin_dir;
 	max_basin_size=p.Results.max_basin_size;
 	divide_method=p.Results.divide_method;
 
@@ -315,15 +315,12 @@ function SubDivideBigBasins(location_of_data_files,max_basin_size,divide_method,
 							edg=edg+0.5;
 							edg=vertcat(0.5,edg);
 							[N,~]=histcounts(ACGcOI.Z(:),edg);
-							ix=find(N);
 							T=ACG{kk,2};
-							T=T(ix);
-							N=N(ix)';
-							T.Counts=N;
+							T.Counts=N';
 							ACGc{kk,2}=T;
-							ACGc_stats(kk,1)=[mode(ACGOI.Z(:))];
+							ACGc_stats(kk,1)=[mode(ACGcOI.Z(:))];
 						end
-						save(FileName,'ACGc','ACGc_stats','-append');	
+						save(SubFileName,'ACGc','ACGc_stats','-append');	
 					end	
 
 					VarInd=find(strcmp(cellstr(char(VarList.name)),'rlf'));
@@ -526,15 +523,12 @@ function SubDivideBigBasins(location_of_data_files,max_basin_size,divide_method,
 							edg=edg+0.5;
 							edg=vertcat(0.5,edg);
 							[N,~]=histcounts(ACGcOI.Z(:),edg);
-							ix=find(N);
 							T=ACG{kk,2};
-							T=T(ix);
-							N=N(ix)';
-							T.Counts=N;
+							T.Counts=N';
 							ACGc{kk,2}=T;
-							ACGc_stats(kk,1)=[mode(ACGOI.Z(:))];
+							ACGc_stats(kk,1)=[mode(ACGcOI.Z(:))];
 						end
-						save(FileName,'ACGc','ACGc_stats','-append');	
+						save(SubFileName,'ACGc','ACGc_stats','-append');	
 					end	
 
 					VarInd=find(strcmp(cellstr(char(VarList.name)),'rlf'));

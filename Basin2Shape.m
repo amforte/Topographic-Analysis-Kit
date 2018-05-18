@@ -308,8 +308,11 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 
 			for kk=1:num_grids
 				mode_prop_name=['mode_' ACGc{kk,3}];	
+				perc_prop_name=['mode_' ACGc{kk,3} '_pct'];
 				ix=find(ACGc{kk,2}.Numbers==ACGc_stats(kk,1),1);	
 				MS(ii,1).(mode_prop_name)=ACGc{kk,2}.Categories{ix};
+				total_nodes=sum(ACGc{kk,2}.Counts);	
+				MS(ii,1).(perc_prop_name)=double((ACGc{kk,2}.Counts(ix)/total_nodes)*100);
 
 				if pc
 					ACG_T=ACGc{kk,2};
