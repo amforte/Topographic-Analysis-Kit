@@ -135,6 +135,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 				KSNG.Z(ix)=KSN(ii).ksn;
 			end
 			varargout{1}=KSNG;
+			varargout{2}=KSN;
 		end
 
 	case 'ksngrid'
@@ -331,9 +332,10 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 				KSNG.Z(ix)=ksn_ms(ii).ksn;
 			end
 			varargout{1}=KSNG;
-			varargout{2}=KSNGrid;
-			varargout{3}=ChiMap;
-			varargout{4}=ChiGrid;
+			varargout{2}=KSN;
+			varargout{3}=KSNGrid;
+			varargout{4}=ChiMap;
+			varargout{5}=ChiGrid;
 		end
 	end
 

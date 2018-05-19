@@ -28,9 +28,12 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	%		filter_by_category [false] - logical flag to recalculate selected mean values based on filtering by particular categories within a categorical grid (provided to
 	%			ProcessRiverBasins as 'add_cat_grids'). Requires entries to 'filter_type', 'cat_grid', and 'cat_values'. Will produce filtered values for channel steepness, gradient,
 	%			and mean  elevation by default along with any additonal grids present (i.e. grids provided with 'add_grids' to ProcessRiverBasins).
-	%		filter_type ['exclude'] - behavior of filter, if 'filter_by_categories' is set to true. Valid inputs are 'exclude' and 'include'. If set to 'exclude', the filtered means
-	%			will be calculated excluding any portions of grids have the values of 'cat_values' in the 'cat_grid'. If set to 'include', filtered means will only be calculated 
-	%			for portions of grids that are within specified categories (see examples).
+	%		filter_type ['exclude'] - behavior of filter, if 'filter_by_categories' is set to true. Valid inputs are 'exclude', 'include', or 'mode'. If set to 'exclude', the filtered 
+	%			means will be calculated excluding any portions of grids have the values of 'cat_values' in the 'cat_grid'. If set to 'include', filtered means will only be calculated 
+	%			for portions of grids that are within specified categories. If set to 'mode', filtered means will be calculated based on the modal value of the categorical grid by basin,
+	%			e.g. if the mode of basin 1 is 'grMz' and the mode of basin 2 is 'T', then the filtered mean will be calculated based on nodes that are 'grMz' in basin 1 and are 'T' in 
+	%			basin 2. The idea behind this filter is if you wish to find characteristic stats for particular categories. If filter type is 'mode' then an entry for 'cat_values' is not
+	%			required.
 	%		cat_grid [] - name of categorical grid to use as filter, must be the same as the name provided to ProcessRiverBasins (i.e. third column in the cell array provided to
 	%			'add_cat_grids').
 	%		cat_values [] - 1xm cell array of categorical values of interest to use in filter. These must match valid categories in the lookup table as output from CatPoly2GRIDobj
@@ -44,7 +47,7 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	%			Expects a cell 1 x m cell array where the first entry is the name of the category to use (i.e. name for categorical grid you provided to ProcessRiverBasins) and
 	%			following entries are names of grids you wish to use to find means by categories, e.g. an example array might be {'geology','ksn','rlf2500','gradient'} if you 
 	%			were interested in looking for patterns in channel steepness, 2.5 km^2 relief, and gradient as a function of rock type/age. Valid inputs for the grid names are:
-	%				'ksn' - uses interpolated channel steepness grid
+	%				'ksn' - uses channel steepness map structure with user provided reference concavity
 	%				'gradient' - uses gradient grid
 	%				'rlf####' - where #### is the radius you provided to ProcessRiverBasins (requires that 'calc_relief' was set to true when running ProcessRiverBasins
 	%				'NAME' - where NAME is the name of an additional grid provided with the 'add_grids' option to ProcessRiverBasins
@@ -98,7 +101,7 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	addParamValue(p,'populate_categories',false,@(x) isscalar(x) && islogical(x))
 	addParamValue(p,'means_by_category',[],@(x) isa(x,'cell') && size(x,2)>=2);
 	addParamValue(p,'filter_by_category',false,@(x) isscalar(x) && islogical(x));
-	addParamValue(p,'filter_type','exclude',@(x) ischar(validatestring(x,{'exclude','include'})));
+	addParamValue(p,'filter_type','exclude',@(x) ischar(validatestring(x,{'exclude','include','mode'})));
 	addParamValue(p,'cat_grid',[],@(x) ischar(x));
 	addParamValue(p,'cat_values',[],@(x) isa(x,'cell') && size(x,1)==1);
 
@@ -118,8 +121,10 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	cgv=p.Results.cat_values;
 
 	% Check required entries
-	if fbc && isempty(cgn) | isempty(cgv)
-		error('If "filtery_by_category" is set to true, entries must be provided for both "cat_grid" and "cat_values"');
+	if fbc && ~strcmp(ft,'mode') && isempty(cgn) | isempty(cgv)
+		error('For "include" or "exclude" filters, entries must be provided for both "cat_grid" and "cat_values"');
+	elseif fbc && strcmp(ft,'mode') && isempty(cgn)
+		error('For "mode" filter, entry must be provided for "cat_grid"');
 	end
 
 	current=pwd;
@@ -176,7 +181,7 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 		FileName=FileList(ii,1).name;
 
 		load(FileName,'DEMoc','RiverMouth','drainage_area','out_el','KSNc_stats','Zc_stats','Gc_stats','Centroid');
-		waitbar(ii/num_files,w1,['Working on basin ' num2str(RiverMouth(3))]);
+
 		% Populate default fields in Table
 		T.ID(ii)=ii;
 		T.river_mouth(ii)=RiverMouth(3);
@@ -283,14 +288,21 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 			cix=find(strcmp(ACGc(:,3),cgn));
 			CG=ACGc{cix,1};
 			cgt=ACGc{cix,2};
-			% Find entries that match values of interest
-			vcix=ismember(cgt.Categories,cgv);
-			vnix=cgt.Numbers(vcix);
 			% Create filter 
 			F=GRIDobj(CG,'logical');
-			F.Z=ismember(CG.Z,vnix);
-			if strcmp(ft,'exclude')
-				F=~F;
+			if strcmp(ft,'include')
+				% Find entries that match values of interest
+				vcix=ismember(cgt.Categories,cgv);
+				vnix=cgt.Numbers(vcix);
+				F.Z=ismember(CG.Z,vnix);
+			elseif strcmp(ft,'exclude')
+				% Find entries that match values of interest
+				vcix=ismember(cgt.Categories,cgv);
+				vnix=cgt.Numbers(vcix);
+				F.Z=~ismember(CG.Z,vnix);
+			elseif strcmp(ft,'mode')
+				load(FileName,'ACGc_stats');
+				F.Z=ismember(CG.Z,ACGc_stats(cix,1));
 			end
 			% Apply filter
 			load(FileName,'DEMoc','Goc','MSNc');
@@ -377,9 +389,13 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 				end
 			end
 			% Generate column to record filter
-			filt_name=join(cgv);
-			filt_name=filt_name{1};
-			T.filter{ii}=[ft ' ' filt_name];
+			if ~strcmp(ft,'mode')
+				filt_name=join(cgv);
+				filt_name=filt_name{1};
+				T.filter{ii}=[ft ' ' filt_name];
+			else
+				T.filter{ii}=[cgn ' mode'];
+			end
 
 		elseif fbc & isempty(AcgInd)
 			error('No Categorical Grids were provided to ProcessRiverBasins so filtered values cannot be calculated');
@@ -455,10 +471,10 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 							dgOI=dg{mm};
 							if strcmp(dgOI,'ksn')
 								load(FileName,'MSNc');
-								KSNG=GRIDobj(CG);
+								KSNG=GRIDobj(ACG);
 								KSNG.Z(:,:)=NaN;
 								for oo=1:numel(MSNc)
-									ix=coord2ind(CG,MSNc(oo).X,MSNc(oo).Y);
+									ix=coord2ind(ACG,MSNc(oo).X,MSNc(oo).Y);
 									KSNG.Z(ix)=MSNc(oo).ksn;
 								end
 								cat_nameN=['mksn_' cat_name];

@@ -24,7 +24,8 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	%		e.g. if you only calculated standard deviations when running ProcessRiverBasins but supply 'se'	here, the code will ignore your choice
 	%		and use the standard deviation values.
 	%	color_by [] - value to color points by, valid for 'grd_ksn','grd_rlf','rlf_ksn', and 'xy'
-	%	cmap [jet] - colormap to use if an entry is provided to 'color_by'
+	%	cmap [jet] - colormap to use if an entry is provided to 'color_by', can be the name of a standard colormap or a nx3 array of rgb values
+	%		to use as a colormap. 
 	%	xval [] - value to plot on x axis (name of column as it appears in the provided table) for plot type 'xy'
 	%	yval [] - value to plot on y axis (name of column as it appears in the provided table) for plot type 'xy'
 	%	rlf_radius [2500] - radius of relief used when plotting relief related values
@@ -32,13 +33,26 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	%		the name of an additional grid provided to ProcessRiverMeans.
 	%	cat_mean2 [] - category to use for plotting, 'category_mean_compare' , valid inputs are 'ksn', 'rlf', 'gradient', or the name of an additional grid 
 	%		provided to ProcessRiverMeans.
-	%	only_positive [true] - filter out negative values when using either 'category_mean_hist' or 'category_mean_compare'	
+	%	only_positive [false] - filter out negative values when using either 'category_mean_hist' or 'category_mean_compare'	
 	%
 	% Examples:
+	%	% Plot of mean basin gradient vs 2500 m^2 relief using default relief radius
 	%	BasinStatsPlots(T,'grd_rlf');
+	%
+	%	% Plot of mean basin gradient vs mean basin channel steepness colored by mean elevation
 	%	BasinStatsPlots(T,'grd_ksn','color_by','mean_el');
+	%
+	%	% Plot of mean basin gradient vs mean basin channel steepenss colored by mode geology, where colormap has been scaled to provide unique colors for units
+	%	cmap=colorcube(numel(unique(T.mode_geology)));
+	%	BasinStatsPlots(T,'grd_ksn','color_by','mode_geology','cmap',cmap);
+	%
+	%	% Plot of mean basin channel steepenss vs basin drainage area
 	%	BasinStatsPlots(T,'xy','xval','drainage_area','yval','mean_ksn');
+	%
+	%	% Histograms of mean 2500 m^2 relief by individual categories (e.g. geology)
 	%	BasinStatsPlots(T,'category_mean_hist','cat_mean1','rlf');
+	%
+	%	% Plots of mean basin gradient vs mean basin channel steepness within individual categories
 	%	BasinStatsPlots(T,'category_mean_compare','cat_mean1','ksn','cat_mean2','gradient');
 	% 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -59,7 +73,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	addParamValue(p,'rlf_radius',2500,@(x) isnumeric(x) && isscalar(x));
 	addParamValue(p,'cat_mean1',[],@(x) ischar(x));
 	addParamValue(p,'cat_mean2',[],@(x) ischar(x));
-	addParamValue(p,'only_positive',true,@(x) isscalar(x) && islogical(x))
+	addParamValue(p,'only_positive',false,@(x) isscalar(x) && islogical(x))
 
 	parse(p,basin_table,plots,varargin{:});
 	T=p.Results.basin_table;
@@ -114,7 +128,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		elseif ~isempty(color_by) & isa(T.(color_by),'cell');
 			colormap(cmap);
 			scatter(k,g,30,categorical(T.(color_by)),'filled');
-			cb=colorbar;
+			cb=colorbar('Ticks',[1:numel(unique(T.(color_by)))],'YTickLabel',unique(T.(color_by)));
 			% Remove any underscores
 			color_by_label=strrep(color_by,'_',' ');
 			ylabel(cb,color_by_label);
@@ -170,7 +184,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		elseif ~isempty(color_by) & isa(T.(color_by),'cell');
 			colormap(cmap);
 			scatter(r,g,30,categorical(T.(color_by)),'filled');
-			cb=colorbar;
+			cb=colorbar('Ticks',[1:numel(unique(T.(color_by)))],'YTickLabel',unique(T.(color_by)));
 			% Remove any underscores
 			color_by_label=strrep(color_by,'_',' ');
 			ylabel(cb,color_by_label);
@@ -226,7 +240,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		elseif ~isempty(color_by) & isa(T.(color_by),'cell');
 			colormap(cmap);
 			scatter(k,r,30,categorical(T.(color_by)),'filled');
-			cb=colorbar;
+			cb=colorbar('Ticks',[1:numel(unique(T.(color_by)))],'YTickLabel',unique(T.(color_by)));
 			% Remove any underscores
 			color_by_label=strrep(color_by,'_',' ');
 			ylabel(cb,color_by_label);
@@ -509,7 +523,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		elseif ~isempty(color_by) & isa(T.(color_by),'cell');
 			colormap(cmap);
 			scatter(x,y,30,categorical(T.(color_by)),'filled');
-			cb=colorbar;
+			cb=colorbar('Ticks',[1:numel(unique(T.(color_by)))],'YTickLabel',unique(T.(color_by)));
 			% Remove any underscores
 			color_by_label=strrep(color_by,'_',' ');
 			ylabel(cb,color_by_label);

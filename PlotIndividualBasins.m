@@ -4,10 +4,11 @@ function PlotIndividualBasins(location_of_data_files)
 	%Inputs:
 	% location_of_data_files - full path of folder which contains the mat files from 'ProcessRiverBasins'
 	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Fall 2015 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+	current=pwd;
 	cd(location_of_data_files);
 	
 	%% Build File List
@@ -38,7 +39,14 @@ function PlotIndividualBasins(location_of_data_files)
 	num_files=numel(fileList);
 
 	for ii=1:num_files
-		load(fileList(ii,1).name,'DEMc','Chic','Sc','SAc','RiverMouth','drainage_area');
+
+		vI=who('-file',fileList(ii,1).name);
+		if ismember('SAc',vI)
+			load(fileList(ii,1).name,'DEMcc','ChiOBJc','Sc','SAc','RiverMouth','drainage_area');
+		else
+			load(fileList(ii,1).name,'DEMcc','ChiOBJc','Sc','Ac','RiverMouth','drainage_area');
+			SAc=slopearea(Sc,DEMcc,Ac,'plot',false);
+		end
 
 		f1=figure(1);
 		set(f1,'Units','inches','Position',[1.0 1.5 10 10],'renderer','painters','PaperSize',[10 10],'PaperPositionMode','auto');
@@ -46,14 +54,15 @@ function PlotIndividualBasins(location_of_data_files)
 		clf
 		subplot(3,1,1);
 		hold on
-		plotdz(Sc,DEMc,'dunit','km','smooth',true);
+		title(['Basin Number: ' num2str(RiverMouth(:,3)) ' - Drainage Area: ' num2str(drainage_area)]);
+		plotdz(Sc,DEMcc,'dunit','km','color','k');
 		xlabel('Distance (km)');
 		ylabel('Elevation (m)');
 		hold off
 
 		subplot(3,1,2);
 		hold on
-		plot(Chic.chi,Chic.elev,'-k');
+		plotdz(Sc,DEMcc,'distance',getnal(Sc,ChiOBJc),'color','k');
 		xlabel('Chi');
 		ylabel('Elevation (m)');
 		hold off
@@ -66,11 +75,9 @@ function PlotIndividualBasins(location_of_data_files)
 		ylabel('Log Slope');
 		hold off
 
-		suptitle(['Basin Number: ' num2str(RiverMouth(:,3)) ' - Drainage Area: ' num2str(drainage_area)]);
-
 		fileName=['BasinPlot_' num2str(RiverMouth(:,3)) '.pdf'];
 		print(f1,'-dpdf',fileName);
 		close all
-
 	end
+	cd(current);
 end
