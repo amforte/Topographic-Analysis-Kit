@@ -15,6 +15,8 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 	% 	smooth [0] - smoothing distance, width of filter in map units over which to smooth values, default (0) results in no smoothing
 	%	vex [10] - vertical exaggeration for displaying plot.
 	% 	plot_figure [false] - logical flag to plot result. 
+	%	plot_as_points [false] - logical flag to switch plot type to distributions of points
+	%	plot_as_heatmap [false] - logical flag to switch plot type to a heat map
 	%
 	% Outputs:
 	% 	SW - TopoToolbox Swath object, contains various information as a structure. Can plot path and box of swath with plot(SW) and
@@ -38,6 +40,8 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 	addParamValue(p,'smooth',0,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'vex',10,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'plot_figure',false,@(x) isscalar(x) && islogical(x));
+	addParamValue(p,'plot_as_points',false,@(x) isscalar(x) && islogical(x));
+	addParamValue(p,'plot_as_heatmap',false,@(x) isscalar(x) && islogical(x));
 
 	parse(p,DEM,points,width,varargin{:});
 	DEM=p.Results.DEM;
@@ -48,9 +52,15 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 	smth=p.Results.smooth;
 	vex=p.Results.vex;
 	plot_figure=p.Results.plot_figure;
+	plot_as_points=p.Results.plot_as_points;
+	plot_as_heatmap=p.Results.plot_as_heatmap;
 
 	if isempty(sample)
 		sample=DEM.cellsize;
+	end
+
+	if plot_as_points & plot_as_heatmap
+		error('Please only set one of "plot_as_points" and "plot_as_heatmap" to true');
 	end
 
 	% Find Bend Points in Swath
@@ -107,9 +117,43 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 		set(f1,'Units','inches','Position',[1.0 1.5 16 4],'renderer','painters','PaperSize',[16 4],'PaperOrientation','portrait','PaperPositionMode','auto');
 
 		hold on
-		plot(swdist,min_elevs,'-b');
-		plot(swdist,max_elevs,'-b');
-		plot(swdist,mean_elevs,'-k');
+
+		if plot_as_points
+			for ii=1:size(elevs,1)
+				scatter(swdist,elevs(ii,:),1,'k','.');
+			end
+
+		elseif plot_as_heatmap
+			el_range=linspace(min(min_elevs)-1,max(max_elevs)+1,101);
+			el_range_p=linspace(min(min_elevs)-1,max(max_elevs)+1,100);
+			C=zeros(100,numel(swdist));
+
+			cmap = jet(256);
+			cmap(1,:) = 1;
+			colormap(cmap);
+
+			for ii=1:numel(swdist)
+				[N,~]=histcounts(SW.Z(:,ii),el_range);
+				N=N';
+				mi=min_elevs(ii);
+				ma=max_elevs(ii);
+				idx=el_range_p>ma | el_range_p<mi;
+				N(idx)=-1;
+				C(:,ii)=N;
+			end
+
+			imagesc(swdist,el_range_p,C);
+			plot(swdist,min_elevs,'-k');
+			plot(swdist,max_elevs,'-k');		
+		else
+			xx=vertcat(swdist,flipud(swdist));
+			yy=horzcat(min_elevs,fliplr(max_elevs));
+			patch(xx,yy,[0.8 0.8 0.8]);
+
+			plot(swdist,min_elevs,'-k');
+			plot(swdist,max_elevs,'-k');
+			plot(swdist,mean_elevs,'-k','LineWidth',2);
+		end
 
 		daspect([vex 1 1])
 
@@ -118,6 +162,7 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 			plot([bends(jj),bends(jj)],yl,'-k');
 		end
 
+		text(100,max(ylim)-(max(max_elevs)*0.1),['VEX = ' num2str(vex)]);
 		xlabel('Distance along swath (m)');
 		ylabel('Elevation (m)');
 		xlim([0 max(swdist)]);
