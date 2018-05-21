@@ -132,6 +132,7 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,basin_dir,varargin)
 		cd(basin_dir);
 	else
 		mkdir(basin_dir);
+		cd(basin_rid);
 	end
 
 	% Perform check on dimensions and cellsize of additional grids and resample if necessary
@@ -307,9 +308,6 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,basin_dir,varargin)
 				end
 			end
 
-			% Make interpolated ksn grid
-			[KsnOBJc] = KsnInt(DEMoc,MSNc);
-
 			% Calculate basin wide ksn statistics
 			min_ksn=nanmin([MSNc.ksn]);
 			mean_ksn=nanmean([MSNc.ksn]);
@@ -341,7 +339,16 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,basin_dir,varargin)
 
 			% Save base file
 			FileName=['Basin_' num2str(basin_num) '_Data.mat'];
-			save(FileName,'RiverMouth','DEMcc','DEMoc','out_el','drainage_area','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','KsnOBJc','ksn_method','gradient_method','clip_method');
+			save(FileName,'RiverMouth','DEMcc','DEMoc','out_el','drainage_area','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method','gradient_method','clip_method');
+			
+			% Make interpolated ksn grid
+			try 
+				[KsnOBJc] = KsnInt(DEMoc,MSNc);
+				save(FileName,'KsnOBJc','-append');
+			catch
+				warning(['Interpolation of KSN grid failed for basin ' num2str(RiverMouth(:,3))]);
+			end
+
 			% If additional grids are present, append them to the mat file
 			if ~isempty(AG)
 				num_grids=size(AG,1);
@@ -524,9 +531,6 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,basin_dir,varargin)
 				end
 			end
 
-			% Make interpolated ksn grid
-			[KsnOBJc] = KsnInt(DEMoc,MSNc);
-
 			% Calculate basin wide ksn statistics
 			min_ksn=nanmin([MSNc.ksn]);
 			mean_ksn=nanmean([MSNc.ksn]);
@@ -558,7 +562,16 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,basin_dir,varargin)
 
 			% Save base file
 			FileName=['Basin_' num2str(basin_num) '_Data.mat'];
-			save(FileName,'RiverMouth','DEMoc','DEMcc','out_el','drainage_area','Sc','SAc','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','KsnOBJc','ChiOBJc','ksn_method','gradient_method','clip_method');
+			save(FileName,'RiverMouth','DEMoc','DEMcc','out_el','drainage_area','Sc','SAc','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method','gradient_method','clip_method');
+			
+			% Make interpolated ksn grid
+			try 
+				[KsnOBJc] = KsnInt(DEMoc,MSNc);
+				save(FileName,'KsnOBJc','-append');
+			catch
+				warning(['Interpolation of KSN grid failed for basin ' num2str(RiverMouth(:,3))]);
+			end
+
 			% If additional grids are present, append these to the existing mat file
 			if ~isempty(AG)
 				num_grids=size(AG,1);

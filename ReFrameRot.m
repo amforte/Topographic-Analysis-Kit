@@ -2,9 +2,7 @@ function [n_x,n_y]=ReFrameRot(SWATH,x,y)
 	% Function reprojects coordinates points into a new coordinate system with 
 	% a line between the endpoints of a swath profile being the new x-axis 
 	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Fall 2015 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% DEPRECATED - WILL BE DELETED IN FUTURE UPDATES
 
 	% Find Angle
 	try

@@ -114,7 +114,7 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 	if plot_figure
 		f1=figure(1);
 		clf 
-		set(f1,'Units','inches','Position',[1.0 1.5 16 4],'renderer','painters','PaperSize',[16 4],'PaperOrientation','portrait','PaperPositionMode','auto');
+		set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
 		hold on
 
@@ -162,14 +162,11 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 			plot([bends(jj),bends(jj)],yl,'-k');
 		end
 
-		text(100,max(ylim)-(max(max_elevs)*0.1),['VEX = ' num2str(vex)]);
-		xlabel('Distance along swath (m)');
+		xlabel(['Distance along swath (m) : VEX = ' num2str(vex)]);
 		ylabel('Elevation (m)');
 		xlim([0 max(swdist)]);
 		hold off
 	end
-
-
 end
 
 

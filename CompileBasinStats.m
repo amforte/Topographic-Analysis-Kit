@@ -183,46 +183,46 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 		load(FileName,'DEMoc','RiverMouth','drainage_area','out_el','KSNc_stats','Zc_stats','Gc_stats','Centroid');
 
 		% Populate default fields in Table
-		T.ID(ii)=ii;
-		T.river_mouth(ii)=RiverMouth(3);
-		T.out_x(ii)=RiverMouth(1);
-		T.out_y(ii)=RiverMouth(2);
-		T.center_x(ii)=Centroid(1);
-		T.center_y(ii)=Centroid(2);
-		T.drainage_area(ii)=drainage_area;
-		T.outlet_elevation(ii)=out_el;
-		T.mean_el(ii)=Zc_stats(1);
-		T.max_el(ii)=Zc_stats(5);
+		T.ID(ii,1)=ii;
+		T.river_mouth(ii,1)=RiverMouth(3);
+		T.out_x(ii,1)=RiverMouth(1);
+		T.out_y(ii,1)=RiverMouth(2);
+		T.center_x(ii,1)=Centroid(1);
+		T.center_y(ii,1)=Centroid(2);
+		T.drainage_area(ii,1)=drainage_area;
+		T.outlet_elevation(ii,1)=out_el;
+		T.mean_el(ii,1)=Zc_stats(1);
+		T.max_el(ii,1)=Zc_stats(5);
 		switch uncertainty
 		case 'se'
-			T.se_el(ii)=Zc_stats(2);
+			T.se_el(ii,1)=Zc_stats(2);
 		case 'std'
-			T.std_el(ii)=Zc_stats(3);
+			T.std_el(ii,1)=Zc_stats(3);
 		case 'both'
-			T.se_el(ii)=Zc_stats(2);
-			T.std_el(ii)=Zc_stats(3);
+			T.se_el(ii,1)=Zc_stats(2);
+			T.std_el(ii,1)=Zc_stats(3);
 		end
 
-		T.mean_ksn(ii)=KSNc_stats(1);
+		T.mean_ksn(ii,1)=KSNc_stats(1);
 		switch uncertainty
 		case 'se'
-			T.se_ksn(ii)=KSNc_stats(2);
+			T.se_ksn(ii,1)=KSNc_stats(2);
 		case 'std'
-			T.std_ksn(ii)=KSNc_stats(3);
+			T.std_ksn(ii,1)=KSNc_stats(3);
 		case 'both'
-			T.se_ksn(ii)=KSNc_stats(2);
-			T.std_ksn(ii)=KSNc_stats(3);
+			T.se_ksn(ii,1)=KSNc_stats(2);
+			T.std_ksn(ii,1)=KSNc_stats(3);
 		end
 
-		T.mean_gradient(ii)=Gc_stats(1);
+		T.mean_gradient(ii,1)=Gc_stats(1);
 		switch uncertainty
 		case 'se'
-			T.se_gradient(ii)=Gc_stats(2);
+			T.se_gradient(ii,1)=Gc_stats(2);
 		case 'std'
-			T.std_gradient(ii)=Gc_stats(3);
+			T.std_gradient(ii,1)=Gc_stats(3);
 		case 'both'
-			T.se_gradient(ii)=Gc_stats(2);
-			T.std_gradient(ii)=Gc_stats(3);
+			T.se_gradient(ii,1)=Gc_stats(2);
+			T.std_gradient(ii,1)=Gc_stats(3);
 		end
 
 		% Check for additional grids within the process river basins output
@@ -237,20 +237,20 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 
 			for kk=1:num_grids
 				mean_prop_name=['mean_' AGc{kk,2}];		
-				T.(mean_prop_name)(ii)=double(AGc_stats(kk,1));
+				T.(mean_prop_name)(ii,1)=double(AGc_stats(kk,1));
 
 				switch uncertainty
 				case 'se'
 					se_prop_name=['se_' AGc{kk,2}];
-					T.(se_prop_name)(ii)=double(AGc_stats(kk,2));
+					T.(se_prop_name)(ii,1)=double(AGc_stats(kk,2));
 				case 'std'
 					std_prop_name=['std_' AGc{kk,2}];
-					T.(std_prop_name)(ii)=double(AGc_stats(kk,3));
+					T.(std_prop_name)(ii,1)=double(AGc_stats(kk,3));
 				case 'both'
 					se_prop_name=['se_' AGc{kk,2}];
-					T.(se_prop_name)(ii)=double(AGc_stats(kk,2));
+					T.(se_prop_name)(ii,1)=double(AGc_stats(kk,2));
 					std_prop_name=['std_' AGc{kk,2}];
-					T.(std_prop_name)(ii)=double(AGc_stats(kk,3));
+					T.(std_prop_name)(ii,1)=double(AGc_stats(kk,3));
 				end
 			end
 		end		
@@ -262,20 +262,20 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 
 			for kk=1:num_grids
 				mean_prop_name=['mean_rlf' num2str(rlf{kk,2})];
-				T.(mean_prop_name)(ii)=double(rlf_stats(kk,1));
+				T.(mean_prop_name)(ii,1)=double(rlf_stats(kk,1));
 
 				switch uncertainty
 				case 'se'
 					se_prop_name=['se_rlf' num2str(rlf{kk,2})];
-					T.(se_prop_name)(ii)=double(rlf_stats(kk,2));
+					T.(se_prop_name)(ii,1)=double(rlf_stats(kk,2));
 				case 'std'
 					std_prop_name=['std_rlf' num2str(rlf{kk,2})];
-					T.(std_prop_name)(ii)=double(rlf_stats(kk,3));
+					T.(std_prop_name)(ii,1)=double(rlf_stats(kk,3));
 				case 'both'
 					se_prop_name=['se_rlf' num2str(rlf{kk,2})];
-					T.(se_prop_name)(ii)=double(rlf_stats(kk,2));
+					T.(se_prop_name)(ii,1)=double(rlf_stats(kk,2));
 					std_prop_name=['std_rlf' num2str(rlf{kk,2})];
-					T.(std_prop_name)(ii)=double(rlf_stats(kk,3));
+					T.(std_prop_name)(ii,1)=double(rlf_stats(kk,3));
 				end
 			end
 		end		
@@ -307,26 +307,26 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 			% Apply filter
 			load(FileName,'DEMoc','Goc','MSNc');
 
-			T.mean_el_f(ii)=nanmean(DEMoc.Z(F.Z));
+			T.mean_el_f(ii,1)=nanmean(DEMoc.Z(F.Z));
 			switch uncertainty
 			case 'se'
-				T.se_el_f(ii)=nanstd(DEMoc.Z(F.Z))/sqrt(sum(~isnan(DEMoc.Z(F.Z))));
+				T.se_el_f(ii,1)=nanstd(DEMoc.Z(F.Z))/sqrt(sum(~isnan(DEMoc.Z(F.Z))));
 			case 'std'
-				T.std_el_f(ii)=nanstd(DEMoc.Z(F.Z));
+				T.std_el_f(ii,1)=nanstd(DEMoc.Z(F.Z));
 			case 'both'
-				T.se_el_f(ii)=nanstd(DEMoc.Z(F.Z))/sqrt(sum(~isnan(DEMoc.Z(F.Z))));
-				T.std_el_f(ii)=nanstd(DEMoc.Z(F.Z));
+				T.se_el_f(ii,1)=nanstd(DEMoc.Z(F.Z))/sqrt(sum(~isnan(DEMoc.Z(F.Z))));
+				T.std_el_f(ii,1)=nanstd(DEMoc.Z(F.Z));
 			end
 
-			T.mean_gradient_f(ii)=nanmean(Goc.Z(F.Z));
+			T.mean_gradient_f(ii,1)=nanmean(Goc.Z(F.Z));
 			switch uncertainty
 			case 'se'
-				T.se_gradient_f(ii)=nanstd(Goc.Z(F.Z))/sqrt(sum(~isnan(Goc.Z(F.Z))));
+				T.se_gradient_f(ii,1)=nanstd(Goc.Z(F.Z))/sqrt(sum(~isnan(Goc.Z(F.Z))));
 			case 'std'
-				T.std_gradient_f(ii)=nanstd(Goc.Z(F.Z));
+				T.std_gradient_f(ii,1)=nanstd(Goc.Z(F.Z));
 			case 'both'
-				T.se_gradient_f(ii)=nanstd(Goc.Z(F.Z))/sqrt(sum(~isnan(Goc.Z(F.Z))));
-				T.std_gradient_f(ii)=nanstd(Goc.Z(F.Z));
+				T.se_gradient_f(ii,1)=nanstd(Goc.Z(F.Z))/sqrt(sum(~isnan(Goc.Z(F.Z))));
+				T.std_gradient_f(ii,1)=nanstd(Goc.Z(F.Z));
 			end
 
 			KSNG=GRIDobj(CG);
@@ -336,35 +336,35 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 				KSNG.Z(ix)=MSNc(kk).ksn;
 			end
 
-			T.mean_ksn_f(ii)=nanmean(KSNG.Z(F.Z));
+			T.mean_ksn_f(ii,1)=nanmean(KSNG.Z(F.Z));
 			switch uncertainty
 			case 'se'
-				T.se_ksn_f(ii)=nanstd(KSNG.Z(F.Z))/sqrt(sum(~isnan(KSNG.Z(F.Z))));
+				T.se_ksn_f(ii,1)=nanstd(KSNG.Z(F.Z))/sqrt(sum(~isnan(KSNG.Z(F.Z))));
 			case 'std'
-				T.std_ksn_f(ii)=nanstd(KSNG.Z(F.Z));
+				T.std_ksn_f(ii,1)=nanstd(KSNG.Z(F.Z));
 			case 'both'
-				T.se_ksn_f(ii)=nanstd(KSNG.Z(F.Z))/sqrt(sum(~isnan(KSNG.Z(F.Z))));
-				T.std_ksn_f(ii)=nanstd(KSNG.Z(F.Z));
+				T.se_ksn_f(ii,1)=nanstd(KSNG.Z(F.Z))/sqrt(sum(~isnan(KSNG.Z(F.Z))));
+				T.std_ksn_f(ii,1)=nanstd(KSNG.Z(F.Z));
 			end
 
 			ag_grids=size(AGc,1);
 			for kk=1:ag_grids
 				agG=AGc{kk,1};
 				mean_prop_name=['mean_' AGc{kk,2} '_f'];		
-				T.(mean_prop_name)(ii)=nanmean(agG.Z(F.Z));
+				T.(mean_prop_name)(ii,1)=nanmean(agG.Z(F.Z));
 
 				switch uncertainty
 				case 'se'
 					se_prop_name=['se_' AGc{kk,2} '_f'];
-					T.(se_prop_name)(ii)=nanstd(agG.Z(F.Z))/sqrt(sum(~isnan(agG.Z(F.Z))));
+					T.(se_prop_name)(ii,1)=nanstd(agG.Z(F.Z))/sqrt(sum(~isnan(agG.Z(F.Z))));
 				case 'std'
 					std_prop_name=['std_' AGc{kk,2} '_f'];
-					T.(std_prop_name)(ii)=nanstd(agG.Z(F.Z));
+					T.(std_prop_name)(ii,1)=nanstd(agG.Z(F.Z));
 				case 'both'
 					se_prop_name=['se_' AGc{kk,2} '_f'];
-					T.(se_prop_name)(ii)=nanstd(agG.Z(F.Z))/sqrt(sum(~isnan(agG.Z(F.Z))));
+					T.(se_prop_name)(ii,1)=nanstd(agG.Z(F.Z))/sqrt(sum(~isnan(agG.Z(F.Z))));
 					std_prop_name=['std_' AGc{kk,2} '_f'];
-					T.(std_prop_name)(ii)=nanstd(agG.Z(F.Z));
+					T.(std_prop_name)(ii,1)=nanstd(agG.Z(F.Z));
 				end
 			end
 
@@ -372,29 +372,29 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 			for kk=1:rlf_grids
 				rlfG=rlf{kk,1};
 				mean_prop_name=['mean_rlf' num2str(rlf{kk,2}) '_f'];
-				T.(mean_prop_name)(ii)=nanmean(rlfG.Z(F.Z));
+				T.(mean_prop_name)(ii,1)=nanmean(rlfG.Z(F.Z));
 
 				switch uncertainty
 				case 'se'
 					se_prop_name=['se_rlf' num2str(rlf{kk,2}) '_f'];
-					T.(se_prop_name)(ii)=nanstd(rlfG.Z(F.Z))/sqrt(sum(~isnan(rlfG.Z(F.Z))));
+					T.(se_prop_name)(ii,1)=nanstd(rlfG.Z(F.Z))/sqrt(sum(~isnan(rlfG.Z(F.Z))));
 				case 'std'
 					std_prop_name=['std_rlf' num2str(rlf{kk,2}) '_f'];
-					T.(std_prop_name)(ii)=nanstd(rlfG.Z(F.Z));
+					T.(std_prop_name)(ii,1)=nanstd(rlfG.Z(F.Z));
 				case 'both'
 					se_prop_name=['se_rlf' num2str(rlf{kk,2}) '_f'];
-					T.(se_prop_name)(ii)=nanstd(rlfG.Z(F.Z))/sqrt(sum(~isnan(rlfG.Z(F.Z))));
+					T.(se_prop_name)(ii,1)=nanstd(rlfG.Z(F.Z))/sqrt(sum(~isnan(rlfG.Z(F.Z))));
 					std_prop_name=['std_rlf' num2str(rlf{kk,2})];
-					T.(std_prop_name)(ii)=nanstd(rlfG.Z(F.Z));
+					T.(std_prop_name)(ii,1)=nanstd(rlfG.Z(F.Z));
 				end
 			end
 			% Generate column to record filter
 			if ~strcmp(ft,'mode')
 				filt_name=join(cgv);
 				filt_name=filt_name{1};
-				T.filter{ii}=[ft ' ' filt_name];
+				T.filter{ii,1}=[ft ' ' filt_name];
 			else
-				T.filter{ii}=[cgn ' mode'];
+				T.filter{ii,1}=[cgn ' mode'];
 			end
 
 		elseif fbc & isempty(AcgInd)
@@ -416,9 +416,9 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 					field_value=efvOI{kk};
 					% Check to see if field value is a number or string
 					if ischar(field_value)
-						T.(field_name)(ii)=field_value;
+						T.(field_name)(ii,1)=field_value;
 					elseif isnumeric(field_value)
-						T.(field_name)(ii)=double(field_value);
+						T.(field_name)(ii,1)=double(field_value);
 					else
 						error(['Extra field value provided for ' field_name ' is neither numeric or a character']);
 					end
@@ -438,9 +438,9 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 				mode_prop_name=['mode_' ACGc{kk,3}];
 				perc_prop_name=['mode_' ACGc{kk,3} '_percent'];
 				ix=find(ACGc{kk,2}.Numbers==ACGc_stats(kk,1),1);
-				T.(mode_prop_name){ii}=ACGc{kk,2}.Categories{ix};
+				T.(mode_prop_name){ii,1}=ACGc{kk,2}.Categories{ix};
 				total_nodes=sum(ACGc{kk,2}.Counts);				
-				T.(perc_prop_name)(ii)=double((ACGc{kk,2}.Counts(ix)/total_nodes)*100);
+				T.(perc_prop_name)(ii,1)=double((ACGc{kk,2}.Counts(ix)/total_nodes)*100);
 
 				if pc
 					ACG_T=ACGc{kk,2};
@@ -448,7 +448,7 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 					for ll=1:numel(ACG_T.Categories)
 						cat_name=matlab.lang.makeValidName(ACG_T.Categories{ll});
 						cat_name=[ACGc{kk,3} '_perc_' cat_name];
-						T.(cat_name)(ii)=double((ACG_T.Counts(ll)/total_nodes)*100);
+						T.(cat_name)(ii,1)=double((ACG_T.Counts(ll)/total_nodes)*100);
 					end
 				end
 
@@ -478,25 +478,25 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 									KSNG.Z(ix)=MSNc(oo).ksn;
 								end
 								cat_nameN=['mksn_' cat_name];
-								T.(cat_nameN)(ii)=nanmean(KSNG.Z(IDX.Z));
+								T.(cat_nameN)(ii,1)=nanmean(KSNG.Z(IDX.Z));
 							elseif strcmp(dgOI,'gradient')
 								load(FileName,'Goc');
 								cat_nameN=['mgrad_' cat_name];
-								T.(cat_nameN)(ii)=nanmean(Goc.Z(IDX.Z));
+								T.(cat_nameN)(ii,1)=nanmean(Goc.Z(IDX.Z));
 							elseif regexp(dgOI,regexptranslate('wildcard','rlf*'))
 								rlfval=str2num(strrep(dgOI,'rlf',''));
 								rlfix=find(cell2mat(rlf(:,2))==rlfval);
 								if ~isempty(rlfix)
 									Rg=rlf{rlfix,1};
 									cat_nameN=['mr' num2str(rlfval) '_' cat_name];
-									T.(cat_nameN)(ii)=nanmean(Rg.Z(IDX.Z));	
+									T.(cat_nameN)(ii,1)=nanmean(Rg.Z(IDX.Z));	
 								end								
 							else 
 								try
 									dgix=find(strcmp(AGc(:,2),dgOI));
 									AGcOI=AGc{dgix,1};
 									cat_nameN=['m' AGc{dgix,2} '_' cat_name];
-									T.(cat_nameN)(ii)=nanmean(AGcOI.Z(IDX.Z));
+									T.(cat_nameN)(ii,1)=nanmean(AGcOI.Z(IDX.Z));
 								catch
 									warn_flag=true;
 								end

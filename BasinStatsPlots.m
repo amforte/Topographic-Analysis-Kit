@@ -112,6 +112,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		end
 
 		f1=figure(1);
+		set(f1,'Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
 		hold on 
 
 		if ~strcmp(uncertainty,'none')
@@ -167,6 +168,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		end
 
 		f1=figure(1);
+		set(f1,'Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
 		clf
 		hold on 
 
@@ -223,6 +225,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		end
 
 		f1=figure(1);
+		set(f1,'Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
 		clf
 		hold on 
 
@@ -278,6 +281,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			end
 
 			figure(ii)
+			set(gcf,'Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
 			clf
 			hold on
 			scatter(T.(fN),T.(N),30,'k','filled');
@@ -342,6 +346,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 
 			if ~isempty(vals)
 				figure(ii);
+				set(gcf,'Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
 				clf
 				hold on
 				histogram(vals,100);
@@ -453,6 +458,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 
 			if ~isempty(vals1) & ~isempty(vals2)
 				figure(ii);
+				set(gcf,'Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
 				clf
 				hold on
 				scatter(vals1,vals2,30,'k','filled');
@@ -502,6 +508,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		end
 
 		f1=figure(1);
+		set(f1,'Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
 		clf
 		hold on 
 
