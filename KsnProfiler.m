@@ -38,6 +38,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%		'auto' - function finds a best fit concavity for each selected stream, if used in conjunction with 'junction_method','check'
 	%			this means that short sections of streams picked will auto fit concavity that may differ from downstream portions of the same
 	%			streams
+	%	min_elev [] - minimum elevation below which the code stops extracting channel information
+	%	max_area [] - maximum drainage area above which the code stops extracting channel information (in square map units)
 	%	plot_type ['native'] - expects either 'native' or 'downsample', default is 'native'. Controls whether all streams are drawn as individual lines ('native') or if
 	%		   the stream network is plotted as a grid and downsampled ('downsample'). The 'downsample' option is much faster on large datasets, 
 	%			but can result in inaccurate channel head selection. The 'native' option is easier to see, but can be very slow to load and interact with on large datasets.
@@ -49,7 +51,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%			the already fit portion of the stream will not be displayed or refit (recommended)
 	%		'ignore' - each stream will be displayed from its head to mouth independent of whether portions of the same stream network have 
 	%			been fit
-	%	ref_concavity [0.45] - refrence concavity used if 'theta_method' is set to 'ksn'
+	%	ref_concavity [0.50] - refrence concavity used if 'theta_method' is set to 'ksn'
 	%	max_ksn [250] - maximum  ksn used for the color scale, will not effect actual results, for display purposes only
 	%	threshold_area [1e6] - used to redraw downsampled stream network if 'plot_type' is set to 'downsample' 
 	%	interp_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a conditioned DEM)
@@ -59,7 +61,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%		reference concavity, best fit concavity, gradient, and an identifying number. Note that if using the code in 'theta_method','auto' mode then the
 	%		reference concavity and best fit concavity columns will be the same.
 	%	ksn_master - identical to knl but as a cell array where individual cells are individual selected channels
-	%	bnd_list - n x 3 matrix of selected bounds for fitting ksn, columns are x coordinate, y coordinate, and the stream identifying number
+	%	bnd_list - n x 4 matrix of selected bounds for fitting ksn, columns are x coordinate, y coordinate, elevation, and the stream identifying number (this could be
+	%		thought of as a list of knickpoints), also output as a seperate shapefile.
 	%	Sc - STREAMobj of selected streams
 	%
 	% Examples:
@@ -67,7 +70,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%	[knl,ksn_master,Sc]=KSN_Profiler(DEM,FD,A,S,'junction_method','ignore','ref_concavity',0.65,'max_ksn',500);
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Winter 2017 %
+	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Parse Inputs
@@ -83,8 +86,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	addParamValue(p,'theta_method','ref',@(x) ischar(validatestring(x,{'ref','auto'})));
 	addParamValue(p,'pick_method','chi',@(x) ischar(validatestring(x,{'chi','stream'})));
 	addParamValue(p,'junction_method','check',@(x) ischar(validatestring(x,{'check','ignore'})));	
-	addParamValue(p,'ref_concavity',0.45,@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'max_ksn',250,@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'min_elev',[],@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'max_area',[],@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'plot_type','native',@(x) ischar(validatestring(x,{'native','downsample'})));
 	addParamValue(p,'threshold_area',1e6,@(x) isnumeric(x));
 	addParamValue(p,'input_method','interactive',@(x) ischar(validatestring(x,{'interactive','channel_heads','all_streams'})));
@@ -112,6 +117,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	min_channel_length=p.Results.min_channel_length;
 	iv=p.Results.interp_value;
 	DEMc=p.Results.conditioned_DEM;
+	min_elev=p.Results.min_elev;
+	max_area=p.Results.max_area;
 
 	% Max Ksn for color scaling
 	mksn=p.Results.max_ksn;
@@ -120,13 +127,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	[ch]=streampoi(S,'channelheads','xy');
 
 	% Create master KSN colormap
-	try
-		ksnCT=cbrewer('div','RdYlGn',10);
-		KSN_col=flipud(ksnCT);
-	catch 
-		% Use jet if colorbrewer is not available
-		KSN_col=jet(10);
-	end
+	KSN_col=KsnColor(100);
 
 	% Perform some checks and reassign values as needed
 	if strcmp(input_method,'channel_heads')
@@ -154,6 +155,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		input_method='preselected';
 	end
 
+	if ~isempty(min_elev) && ~isempty(max_area)
+		error('Providing values to both "min_elev" and "max_area" is not permitted, please only provide values for one of these parameters')
+	end
+
 	% Hydrologically condition dem
 	if isempty(DEMc)
 		zc=mincosthydrocon(S,DEM,'interp',iv);
@@ -164,6 +169,24 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 	% Make gradient
 	G=gradient8(DEMc);
+
+	% Modify provided stream network if minimum elevation or maximum drainage area options are included
+	if ~isempty(min_elev)
+		zel=getnal(S,DEMc);
+		idx=zel>min_elev;
+		new_ix=S.IXgrid(idx);
+		W=GRIDobj(DEMc,'logical');
+		W.Z(new_ix)=true;
+		S=STREAMobj(FD,W);
+	elseif ~isempty(max_area)
+		DA=A.*(A.cellsize^2);
+		zda=getnal(S,DA);
+		idx=zda<max_area;
+		new_ix=S.IXgrid(idx);
+		W=GRIDobj(DEMc,'logical');
+		W.Z(new_ix)=true;
+		S=STREAMobj(FD,W);		
+	end
 
 
 	switch plot_type
@@ -188,12 +211,12 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		% Turn it into a grid
 		SG=STREAMobj2GRIDobj(Sr);
 
-		% Generate hillshade and stream grid
-		HS=hillshade(DEMr,'altitude',25);
-		[hs,X,Y]=GRIDobj2mat(HS);
-		hsi=real2rgb(hs,'gray');
-		[sg,~,~]=GRIDobj2mat(SG);
-		sgi=real2rgb(sg,'gray');
+		% % Generate hillshade and stream grid
+		% HS=hillshade(DEMr,'altitude',25);
+		% [hs,X,Y]=GRIDobj2mat(HS);
+		% hsi=real2rgb(hs,'gray');
+		% [sg,~,~]=GRIDobj2mat(SG);
+		% sgi=real2rgb(sg,'gray');
 
 		% Initiate Map Figure
 		close all
@@ -201,12 +224,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		f1=figure(1);
 		set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
 		hold on
+		[RGB]=imageschs(DEM,SG,'colormap','gray');
+		[~,R]=GRIDobj2im(DEM);
+		imshow(flipud(RGB),R);
+		axis xy
 		colormap(KSN_col);
-		imagesc(DEM);
-		image(X,Y,hsi);
-		i1=image(X,Y,sgi);
-		alpha(i1,0.50);
-		axis equal
 		caxis([0 mksn])
 		c1=colorbar;
 		ylabel(c1,'Channel Steepness')
@@ -214,22 +236,25 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 	case 'native'
 
-		% Generate hillshade
-		HS=hillshade(DEM,'altitude',25);
-		[hs,X,Y]=GRIDobj2mat(HS);
-		hsi=real2rgb(hs,'gray');
+		% % Generate hillshade
+		% HS=hillshade(DEM,'altitude',25);
+		% [hs,X,Y]=GRIDobj2mat(HS);
+		% hsi=real2rgb(hs,'gray');
 
 		% Initiate Map Figure
 		close all
 
 		f1=figure(1);
 		set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
+
+		[RGB]=imageschs(DEM,DEM,'colormap','gray');
+		[~,R]=GRIDobj2im(DEM);
+
+		imshow(flipud(RGB),R);
+		axis xy
 		hold on
 		colormap(KSN_col);
-		imagesc(DEM);
-		image(X,Y,hsi);
-		plot(S,'-k');
-		axis equal
+		plot(S,'-w');
 		caxis([0 mksn])
 		c1=colorbar;
 		ylabel(c1,'Channel Steepness')
@@ -4331,8 +4356,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 	% % Convert bound list
 	bndl=[vertcat(bnd_master{:,1}) vertcat(bnd_master{:,2})];
+	bnd_z=DEM.Z(bndl(:,1));
 	[bnd_x,bnd_y]=ind2coord(DEM,bndl(:,1));
-	bnd_list=[bnd_x bnd_y bndl(:,2)];
+	bnd_list=[bnd_x bnd_y bnd_z bndl(:,2)];
 
 	% Add Gradient to node list and clear NaNs
 	for jj=1:numel(ksn_master)
@@ -4360,9 +4386,20 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	KSN=STREAMobj2mapstruct(S,'seglength',smooth_distance,'attributes',...
 		{'ksn' ksnR @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'theta' thetaR @mean 'seg_theta' segthetaR @mean});
 
+	% Create knickpoint map structure
+	KNK=struct;
+	for jj=1:numel(bnd_z);
+		KNK(jj,1).Geometry='Point';
+		KNK(jj,1).X=double(bnd_x(jj));
+		KNK(jj,1).Y=double(bnd_y(jj));
+		KNK(jj,1).Elev=double(bnd_z(jj));
+		KNK(jj,1).StrNum=double(bnd_list(jj,4));
+	end
 
 	out_shape_name=[shape_name '.shp'];
 	shapewrite(KSN,out_shape_name);
+	out_knick_name=[shape_name '_knicks.shp'];
+	shapewrite(KNK,out_knick_name);
 
 % Main Function End
 end

@@ -11,6 +11,9 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 	%
 	% Optional Inputs
 	% 	theta_ref [0.5] - reference concavity for chi calculation
+	%	save_mat [true] - logical flag to save output mat file containing the KnickPoints array. The name of the file will 
+	%		be 'Knicks_NUM.mat' where NUM is the river number. Do not change the file name if you want to plot knickpoints
+	%		using 'MakeCombinedSwath'.
 	%	shape_name [] - character string to name output shapefile (without .shp), if no input is provided then
 	%		no shapefile is output
 	%
@@ -30,9 +33,9 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 	addRequired(p,'plot_result',@(x) islogical(x));
 
 	addParamValue(p,'theta_ref',0.5,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'output_shape',[],@(x) ischar(x));
+	addParamValue(p,'shape_name',[],@(x) ischar(x));
 
-	parse(p,Basin_Data_File,plot_results,varargin{:});
+	parse(p,Basin_Data_File,plot_result,varargin{:});
 	Basin_Data_File=p.Results.Basin_Data_File;
 	plot_result=p.Results.plot_result;
 
@@ -43,8 +46,12 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 	load(Basin_Data_File);
     
 	% De-Densify Network
-	S=modify(Sc,'streamorder','>1');
-	if isempty(S.x)
+	if drainage_area>20
+		S=modify(Sc,'streamorder','>1');
+		if isempty(S.x)
+			S=Sc;
+		end
+	else
 		S=Sc;
 	end
 
@@ -150,7 +157,8 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 		hold on
 		[RGB]=imageschs(DEMoc,DEMoc,'colormap','gray');
 		[~,R]=GRIDobj2im(DEMoc);
-		imshow(RGB,R);
+		imshow(flipud(RGB),R);
+		axis xy
 		colormap(jet);
         caxis([0 max(KnickPoints(:,3))]);
 		plot(S,'-w');
@@ -166,6 +174,10 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 		c1=colorbar;
 		ylabel(c1,'Knickpoint Elevation (m)');
 		hold off
+	end
+
+	if save_mat
+		save(['Knicks_' num2str(RiverMouth(:,3)) '.mat'],'KnickPoints');
 	end
 
 	if ~isempty(shape_name)

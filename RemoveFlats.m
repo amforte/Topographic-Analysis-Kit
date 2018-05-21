@@ -1,10 +1,12 @@
-function [DEMn,MASK]=RemoveFlats(DEM,strength)
-	% Function takes DEM and attempts a semi-automated routine to remove flat areas with some input from
-	% the user to select areas considred to be flat. This function sometimes works reliably, but will never
-	% produce as clean a result as manually clipping out flat areas.
+function [DEMn,MASK]=RemoveFlats(dem,strength)
+	% Function takes DEM and attempts a semi-automated routine to remove flat areas with some input from 
+	% 	the user to select areas considred to be flat. This function sometimes works reliably, but will 
+	% 	never produce as clean a result as manually clipping out flat areas in gis software (but it's
+	%	a lot faster!)
 	%
 	% Required Inputs:
-	% 		DEM - GRIDobj of the digital elevation model of your area loaded into the workspace
+	% 	dem - either full path of dem file as either an ascii text file or geotiff OR 
+	%			the name of a GRIDobj of a DEM stored in the workspace
 	%		strength - integer value between 1 and 4 that controls how aggressively the function defines
 	%			flat areas, specifically related to the size of the neighborhood the function uses to
 	%			connect ares of similar elevation. A strength of 1 = a 3x3 neighborhood, 2=5x5, 3=7x7, and 
@@ -24,11 +26,11 @@ function [DEMn,MASK]=RemoveFlats(DEM,strength)
 	% Parse Inputs
 	p = inputParser;
 	p.FunctionName = 'RemoveFlats';
-	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
+	addRequired(p,'dem',@(x) isa(x,'GRIDobj') | ischar(x));
 	addRequired(p,'strength',@(x) isnumeric(x) && x<=4 && mod(x,1)==0);
 
-	parse(p,DEM,strength);
-	DEM=p.Results.DEM;
+	parse(p,dem,strength);
+	dem=p.Results.dem;
 	strength=p.Results.strength;	
 
 	disp('Preparing Grids...')
@@ -47,6 +49,16 @@ function [DEMn,MASK]=RemoveFlats(DEM,strength)
 		error('Input to "strength" is not recognized, must be an integer between 1 and 4')
 	end
 
+	% Check type of input
+	if isa(dem,'GRIDobj');
+		DEM=dem;
+	elseif ischar(dem);
+		disp('Loading DEM')
+		DEM=GRIDobj(dem);
+	else
+		error('Input for dem not recognized as either a GRIDobj or character')
+	end
+
 	% Fill sinks
 	[DEMs]=fillsinks(DEM);
 
@@ -60,11 +72,15 @@ function [DEMn,MASK]=RemoveFlats(DEM,strength)
 	[xdim,ydim]=getcoordinates(DEM);
 	L=GRIDobj(xdim,ydim,L);
 
+	% Generate gradient for visualizing
+	G=gradient8(DEM);
+
 	disp('Select areas that you consider sinks and then press enter')
 	% Prompt user to choose sinks
 	f1=figure(1);
 	hold on 
-	imagesc(DEM);
+	title('Gradient of DEM')
+	imageschs(DEM,G,'colormap','jet','caxis',[0 1]);
 	hold off
 	[x,y]=ginput;
 	close(f1)
@@ -84,4 +100,10 @@ function [DEMn,MASK]=RemoveFlats(DEM,strength)
 	% Produce new DEM
 	DEMn=DEM;
 	DEMn.Z(MASK.Z)=nan;
+
+	% Generate output to test results
+	f1=figure(1);
+	hold on
+	imageschs(DEMn,MASK);
+	hold off
 end

@@ -13,7 +13,17 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	% Optional Inputs:
 	%	file_name [] - name for matfile containing the DEM, FD, A, and S and the shapfile of the stream network.
 	%		If file_name is not provided, the function assumes the user does not wish to save the results to a
-	%		mat file (results will still appear in the workspace).
+	%		mat file (results will still appear in the workspace) or shapefile.
+	%	no_data_exp [] - input to define no data conditions. Expects a string that defines a valid equality using
+	%		the variable DEM OR 'auto'. E.g. if you wish to define that any elevation less that or equal to 0 should 
+	%		be set to no data, you would provide 'DEM<=0' or if you wanted to set elevations less than 500 and greater  
+	%		than 1000 ot no data, you would provide 'DEM<500 | DEM>1000'. If the expression is not valid the user will be
+	%		warned, but the code will continue and ignore this continue. If you provide 'auto' the code will use the log 
+	%		of the gradient to identify true connected flats and set these to nan. If you want more control on removing flat 
+	%		ares that are at multiple elevations (e.g. internally drained basins), consider using 'RemoveFlats'. 
+	%	min_flat_area [1e5] - minimum area (in m^2) for a portion of the DEM to be identified as flat (and set to nan) if 'no_data_exp'
+	%		is set to 'auto'. If 'no_data_exp' is not called or a valid logical expression is provided, the input to 'min_flat_area'
+	%		is ignored.
 	%	resample_grid [false] - flag to resample the grid. If no input is provided for new_cellsize, then the
 	%		grid will be resampled to the nearest whole number of the native cellsize.
 	%	new_cellsize [] - value (in map units) for new cellsize.
@@ -25,9 +35,13 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	% 	S - STREAMobj derived from the DEM
 	% 
 	%
-	% examples [DEM,FD,A,S]=MakeStreams('/Users/forte/topo/dem.tif',1e6);
-	%		   [DEM,FD,A,S]=MakeStreams('/Users/forte/topo/dem.tif',1e6,'file_name','AreaFiles');
-	%		   [DEM,FD,A,S]=MakeStreams(DEMgrid,1e6,'resample_grid',true); %Where DEMgrid is a GRIDobj	
+	% Examples: 
+	%	[DEM,FD,A,S]=MakeStreams('/Users/forte/topo/dem.tif',1e6);
+	%	[DEM,FD,A,S]=MakeStreams('/Users/forte/topo/dem.tif',1e6,'file_name','AreaFiles');
+	%	[DEM,FD,A,S]=MakeStreams(DEMgrid,1e6,'resample_grid',true); %Where DEMgrid is a GRIDobj	
+	%	[DEM,FD,A,S]=MakeStreams('/Users/forte/topo/dem.tif',1e6,'no_data_exp','DEM<=-100 | DEM>10000'); %Set elevations
+	%		below -100m or above 10,000m to nan
+	% 
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
@@ -40,6 +54,8 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	addRequired(p,'threshold_area', @(x) isscalar(x));
 
 	addParamValue(p,'file_name',[],@(x) ischar(x));
+	addParamValue(p,'no_data_exp',[],@(x) ischar(x));
+	addParamValue(p,'min_flat_area',1e5,@(x) isnumeric(x) && isscalar(x));
 	addParamValue(p,'resample_grid',false,@(x) isscalar(x) && islogical(x));
 	addParamValue(p,'new_cellsize',[],@(x) isscalar(x) && isnumeric(x));
 
@@ -48,6 +64,8 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	threshold_area=p.Results.threshold_area;
 
 	file_name=p.Results.file_name;
+	no_data_exp=p.Results.no_data_exp;
+	min_flat_area=p.Results.min_flat_area;
 	resample_grid=p.Results.resample_grid;
 	new_cellsize=p.Results.new_cellsize;
 
@@ -83,12 +101,24 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 		warning('Grid Cellsize is not a whole number, this may cause problems in some TopoToolbox functions, consider using resample_grid option')
 	end
 
-	% Clippin gout NaNs, max and min elev set arbitrarily large but below (or above) the (-)32,768 internal NaN value.
+	% Optional cleaning step depending on user input
 	disp('Cleaning Up DEM')
-	max_elev=10000;
-	min_elev=-1000;
-	IDX=DEM<max_elev & DEM>min_elev;
-	DEM=crop(DEM,IDX,nan);
+	if ~isempty(no_data_exp) & ~strcmp(no_data_exp,'auto')
+		try 
+			IDX=eval(no_data_exp);
+			DEM.Z(IDX.Z)=nan;
+			% Remove any borders of nans
+			DEM=crop(DEM);
+		catch
+			warning('Provided "no_data_exp" was not a valid expression, proceeding without this no data condition');
+		end
+	elseif strcmp(no_data_exp,'auto')
+		[DEM]=AutoFlat(DEM,min_flat_area);
+	else
+		% Remove any borders of nans
+		DEM=crop(DEM);
+	end
+
 
 	if save_output
         fileNameBase=file_name;
@@ -118,5 +148,26 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 		MS=STREAMobj2mapstruct(S);
 		shapewrite(MS,ShpFileName);
 	end
+
+end
+
+function [DEMn] = AutoFlat(DEM,min_area)
+
+    num_pix=round(min_area/(DEM.cellsize^2));
+
+    LG=log10(gradient8(DEM));
+    BW=isnan(LG.Z) | isinf(LG.Z);
+    CC=bwconncomp(BW);
+    FLATS=GRIDobj(DEM,'logical');
+
+    for ii=1:numel(CC.PixelIdxList)
+        if numel(CC.PixelIdxList{ii})>=num_pix
+            idx=CC.PixelIdxList{ii};
+            FLATS.Z(idx)=true;
+        end
+    end
+
+    DEMn=DEM;
+    DEMn.Z(FLATS.Z)=nan;
 
 end

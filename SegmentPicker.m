@@ -26,7 +26,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	%			 given, the user must also supply an input for the 'picks' input (see below)
 	%	plot_style ['refresh'] - expects either 'refresh' or 'keep', default is 'refresh' if no input is provided. If 'refresh' is given, the plots reset
 	%			after each new stream pick, but if 'keep' is given, all selected streams remain on both the map (as thick red lines) and the
-	%			chi-z/longitudinal profile plots.
+	%			chi-z/longitudinal profile/slope-area plots.
 	%	plot_type ['native'] - expects either 'native' or 'downsample', default is 'native'. Controls whether all streams are drawn as individual lines ('native') or if
 	%		   the stream network is plotted as a grid and downsampled ('downsample'). The 'downsample' option is much faster with large datasets, 
 	%			but can result in inaccurate choices. The 'native' option is easier to see, but can be very slow to load and interact with.
@@ -157,6 +157,8 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 		DA.Z(DA.Z<threshold_area)=0;
 		LA=log10(DA);
 	end
+
+	colcol=colorcube(10);
 	
 	switch method
 	case 'new_picks'
@@ -171,8 +173,8 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 			close all
 			f1=figure(1);
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
-			while strcmp(str2,'Y')==1;
-				while strcmp(str1,'N')==1;	
+			while strcmp(str2,'Y') | strcmp(str2,'Y') | strcmp(str2,'y')        
+				while strcmp(str1,'N') | strcmp(str2,'n');     	
 					
 					% Reset short circuit switch
 					short_circ=0;
@@ -333,34 +335,52 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				f2=figure(2);
 				set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
 
-				subplot(2,1,1);
+				subplot(3,1,1);
 				hold on
-				plot(C.chi,C.elev);
+				plot(C.chi,C.elev,'Color',colcol(mod(ii,10)+1,:));
 				xlabel('Chi')
 				ylabel('Elevation (m)')
 				title('Chi - Z')
 				hold off
 
-				subplot(2,1,2);
+				subplot(3,1,2);
 				hold on
 				if isempty(p.Results.min_elev) && isempty(p.Results.max_area) 
 					plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-					plotdz(Sn,DEMc,'dunit','km','Color','k');
+					plotdz(Sn,DEMc,'dunit','km','Color',colcol(mod(ii,10)+1,:));
 				elseif ~isempty(p.Results.min_elev) | ~isempty(p.Results.max_area) && p.Results.recalc
 					plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-					plotdz(Sn,DEMc,'dunit','km','Color','k');
+					plotdz(Sn,DEMc,'dunit','km','Color',colcol(mod(ii,10)+1,:));
 				elseif short_circ==1;
 					plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-					plotdz(Sn,DEMc,'dunit','km','Color','k');
+					plotdz(Sn,DEMc,'dunit','km','Color',colcol(mod(ii,10)+1,:));
 				elseif ~isempty(p.Results.min_elev) | ~isempty(p.Results.max_area) && p.Results.recalc==0
 					Cu=chiplot(Sn_t,DEM,A,'a0',1,'mn',theta_ref,'plot',false);
 					plot((Cu.distance(ix3))./1000,Cu.elev(ix3),'Color',[0.5 0.5 0.5]);
-					plot(C.distance./1000,C.elev,'-k');
+					% plot(C.distance./1000,C.elev,'-k');
+					plot(C.distance./1000,C.elev,'Color',colcol(mod(ii,10)+1,:));
 				end
 				xlabel('Distance from Mouth (km)')
 				ylabel('Elevation (m)')
-				legend('Unconditioned DEM','Conditioned DEM','location','best');
+				% legend('Unconditioned DEM','Conditioned DEM','location','best');
 				title('Long Profile')
+				hold off
+
+				saax=subplot(3,1,3);
+				hold on
+				if isempty(p.Results.min_elev) && isempty(p.Results.max_area) 
+					[bs,ba]=sa(DEMc,Sn,A);
+				elseif ~isempty(p.Results.min_elev) | ~isempty(p.Results.max_area) && p.Results.recalc								
+					[bs,ba]=sa(DEMc,Sn,A);
+				elseif short_circ==1;
+					[bs,ba]=sa(DEMc,Sn,A);
+				elseif ~isempty(p.Results.min_elev) | ~isempty(p.Results.max_area) && p.Results.recalc==0
+					[bs,ba]=sa(DEMc,Sn_t,A);
+				end
+				scatter(ba,bs,10,colcol(mod(ii,10)+1,:));
+				set(saax,'Xscale','log','Yscale','log');
+				xlabel('Log Drainage Area');
+				ylabel('Log Slope');	
 				hold off
 
 				StreamSgmnts{ii}=Sn;
@@ -377,7 +397,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 					str2 = 'N';
 				end
 
-				if strcmp(str2,'Y');
+				if strcmp(str2,'Y') | strcmp(str2,'y')   
 					str1='N';
 				end
 			end
@@ -395,8 +415,8 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 			close all
 			f1=figure(1);
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
-			while strcmp(str2,'Y')==1;
-				while strcmp(str1,'N')==1;	
+			while strcmp(str2,'Y') | strcmp(str2,'Y') | strcmp(str2,'y')        
+				while strcmp(str1,'N') | strcmp(str2,'n');     	
 
 
 					switch plot_type
@@ -450,7 +470,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				f2=figure(2);
 				set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
 
-				subplot(2,1,1);
+				subplot(3,1,1);
 				hold on
 				plot(C.chi,C.elev);
 				xlabel('Chi')
@@ -458,12 +478,21 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				title('Chi - Z')
 				hold off
 
-				subplot(2,1,2);
+				subplot(3,1,2);
 				hold on
 				plotdz(Sn,DEMc,'dunit','km');
 				xlabel('Distance from Mouth (km)')
 				ylabel('Elevation (m)')
 				title('Long Profile')
+				hold off
+
+				saax=subplot(3,1,3);
+				hold on
+				[bs,ba]=sa(DEMc,Sn,A);
+				scatter(ba,bs,'filled');
+				set(saax,'Xscale','log','Yscale','log');
+				xlabel('Log Drainage Area');
+				ylabel('Log Slope');	
 				hold off
 
 				StreamSgmnts{ii}=Sn;
@@ -480,7 +509,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 					str2 = 'N';
 				end
 
-				if strcmp(str2,'Y');
+				if strcmp(str2,'Y') | strcmp(str2,'y')   
 					str1='N';
 				end
 			end
@@ -495,8 +524,8 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 			ii=1;
 
-			while strcmp(str2,'Y')==1;
-				while strcmp(str1,'N')==1;	
+			while strcmp(str2,'Y') | strcmp(str2,'Y') | strcmp(str2,'y')        
+				while strcmp(str1,'N') | strcmp(str2,'n');     	
 					close all
 					% Reset short circuit switch
 					short_circ=0;
@@ -654,7 +683,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				f2=figure(2);
 				set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
 
-				subplot(2,1,1);
+				subplot(3,1,1);
 				hold on
 				plot(C.chi,C.elev,'-k');
 				xlabel('Chi')
@@ -662,7 +691,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				title('Chi - Z')
 				hold off
 
-				subplot(2,1,2);
+				subplot(3,1,2);
 				hold on
 				if isempty(p.Results.min_elev) && isempty(p.Results.max_area) 
 					plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
@@ -684,6 +713,24 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				title('Long Profile')
 				hold off
 
+
+				saax=subplot(3,1,3);
+				hold on
+				if isempty(p.Results.min_elev) && isempty(p.Results.max_area) 
+					[bs,ba]=sa(DEMc,Sn,A);
+				elseif ~isempty(p.Results.min_elev) | ~isempty(p.Results.max_area) && p.Results.recalc								
+					[bs,ba]=sa(DEMc,Sn,A);
+				elseif short_circ==1;
+					[bs,ba]=sa(DEMc,Sn,A);
+				elseif ~isempty(p.Results.min_elev) | ~isempty(p.Results.max_area) && p.Results.recalc==0
+					[bs,ba]=sa(DEMc,Sn_t,A);
+				end
+				scatter(ba,bs,10,'k','filled');
+				set(saax,'Xscale','log','Yscale','log');
+				xlabel('Log Drainage Area');
+				ylabel('Log Slope');	
+				hold off								
+
 				StreamSgmnts{ii}=Sn;
 				ChiSgmnts{ii}=C;
 				Heads(ii,1)=ii;
@@ -698,7 +745,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 					str2 = 'N';
 				end
 
-				if strcmp(str2,'Y');
+				if strcmp(str2,'Y') | strcmp(str2,'y')   
 					str1='N';
 					close figure 2
 				end
@@ -715,8 +762,8 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 			ii=1;
 
-			while strcmp(str2,'Y')==1;
-				while strcmp(str1,'N')==1;	
+			while strcmp(str2,'Y') | strcmp(str2,'Y') | strcmp(str2,'y')        
+				while strcmp(str1,'N') | strcmp(str2,'n');     	
 					close all
 					f1=figure(1);
 					set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
@@ -765,7 +812,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				f2=figure(2);
 				set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
-				subplot(2,1,1);
+				subplot(3,1,1);
 				hold on
 				plot(C.chi,C.elev,'-k');
 				xlabel('Chi')
@@ -773,12 +820,21 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				title('Chi - Z')
 				hold off
 
-				subplot(2,1,2);
+				subplot(3,1,2);
 				hold on
 				plotdz(Sn,DEMc,'dunit','km','Color','k');
 				xlabel('Distance from Mouth (km)')
 				ylabel('Elevation (m)')
 				title('Long Profile')
+				hold off
+
+				saax=subplot(3,1,3);
+				hold on
+				[bs,ba]=sa(DEMc,Sn,A);
+				scatter(ba,bs,10,'k','filled');
+				set(saax,'Xscale','log','Yscale','log');
+				xlabel('Log Drainage Area');
+				ylabel('Log Slope');	
 				hold off
 
 				StreamSgmnts{ii}=Sn;
@@ -795,7 +851,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 					str2 = 'N';
 				end
 
-				if strcmp(str2,'Y');
+				if strcmp(str2,'Y') | strcmp(str2,'y')   
 					str1='N';
 					close figure 2
 				end
@@ -969,5 +1025,34 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 			save(fileOut,'StreamSgmnts','ChiSgmnts','Outlets');
 		end
 	end
-% Function End
+% Main Function End
 end
+
+function [bs,ba]=sa(DEM,S,A)
+	% Stripped down and tweaked version of 'slopearea' function
+
+	numbins=100;
+
+	a=getnal(S,A.*A.cellsize^2);
+	z=getnal(S,DEM);
+	g=gradient(S,z,'unit','tangent'); % Already a conditioned DEM
+
+	mina=min(a);
+	maxa=max(a);
+
+    edges = logspace(log10(mina-0.1),log10(maxa+1),numbins+1);
+    try
+    	% histc is deprecated
+    	[ix]=discretize(a,edges);
+    catch
+	    [~,ix] = histc(a,edges);
+	end
+
+	ba=accumarray(ix,a,[numbins 1],@median,nan);
+	bs=accumarray(ix,g,[numbins 1],@(x) mean(x(~isnan(x))),nan);
+end
+
+
+
+
+

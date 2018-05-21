@@ -1,5 +1,5 @@
 function [ds,db]=ProjectOntoSwath(SW,x,y)
-	% Function projects points on a SWATHobj and finds distance along (ds) and 
+	% Function projects points on a SWATHobj (SW) and finds distance along (ds) and 
 	%	from center line (db) of the SWATHobj, used in 'MakeCombinedSwath'
 	% 
 	% Values for points that do not project onto swath are set to NaN
@@ -8,6 +8,10 @@ function [ds,db]=ProjectOntoSwath(SW,x,y)
 	xypoints=SW.xy;
 	swdist=SW.distx;
 	xy0=SW.xy0;
+
+	for kk=1:numel(SW.xy0(:,1))
+		[~,bend_ix(kk,1)]=min(pdist2(SW.xy,SW.xy0(kk,:)));
+	end
 
 	% Extract bend points, find number of segments, and find bend distances
 	swxB=xy0(:,1); swyB=xy0(:,2);
@@ -23,16 +27,13 @@ function [ds,db]=ProjectOntoSwath(SW,x,y)
 			xx=x1-x0;
 			yy=y1-y0;
 			dist_to_bend(kk,1)=sqrt((xx^2)+(yy^2));
-			[~,bend_ix(kk,1)]=min(abs(dist_to_bend(kk,1)-swdist));
 			kk=kk+1;
 		end
 		dist_to_bend=vertcat(0,dist_to_bend);
 		bends=cumsum(dist_to_bend);
-		bend_ix=vertcat(1,bend_ix);
 	else
 		bends=[0;max(swdist)];
 		dist_to_bend=bends;
-		bend_ix=[1;numel(swdist)];
 	end
 
 	% All points along swath line
@@ -51,12 +52,13 @@ function [ds,db]=ProjectOntoSwath(SW,x,y)
 		y_dist=swy-swy0;
 		seg_dist=sqrt((x_dist.^2)+(y_dist.^2));
 		if ii>1 & ii<num_segs
-			seg_dist([1:bend_ix(ii);bend_ix(ii+1)+1:end])=NaN;
+			seg_dist([1:bend_ix(ii) bend_ix(ii+1)+1:end])=NaN;
 		elseif ii==1
 			seg_dist(bend_ix(ii+1)+1:end)=NaN;
 		else
 			seg_dist(1:bend_ix(ii))=NaN;
 		end
+
 
 		% Find angle of segment
 		sw_angle=-1*atan((swy1-swy0)/(swx1-swx0));
@@ -102,6 +104,10 @@ function [ds,db]=ProjectOntoSwath(SW,x,y)
 	ix=sub2ind(size(dist_from_base),r,c);
 	ds=dist_in_swath(ix);
 
+	% Set any points greater than the total swath distance to NaN;
+	idx=ds>max(swdist);
+	db(idx)=NaN;
+	ds(idx)=NaN;
 end
 
 function [n_x,n_y]=RotCoord(x,y,theta,x0,y0)

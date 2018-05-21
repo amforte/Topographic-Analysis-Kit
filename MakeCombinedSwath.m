@@ -27,6 +27,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	%					accepts optional input to 'basin_scale'. Will place point for basin at mean elevation and projected  
 	%					location of the basin centroid, will color by value provided to 'basin_value' and will optionall scale  
 	%					the point by the value provided to 'basin_scale'
+	%		'basin_knicks' - will plot swath through knickpoints as chosen by 'FindBasinKnicks'. For 'data' provide name of folder 
+	%					(or file path) where to find knickpoint files saved as a result of running 'FindBasinKnicks' on a series of  
+	%					basins selected from 'ProcessRiverBasins'
 	%	data - input data, form varies depending on choice of data_type
 	% 	data_width - width in map units of swath through provided data. Values greater than data_width/2 from the center line 
 	%					of the toposwath will not be plotted
@@ -40,6 +43,8 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	%				you wish to color points by
 	%	basin_scale [] - optional input for option 'basin_stats', name (as it appears in the provided table provided to 'data') of the 
 	%				value you wish to scale points by
+	%	basin_knicks_loc [] - optional input for option 'basin_knicks', name of folder (or file path) where to find knickpoint files
+	%				saved as a result of running 'FindBasinKnicks' on a series of basins selected from 'ProcessRiverBasins'
 	%	plot_map [true] - logical flag to plot a map displaying the location of the topographic swath and the additional data included 
 	%				in the swath (red dots) and those not (white dots) based on the provided data_width parameter.
 	%
@@ -315,9 +320,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 
 			% Filter based on provided data width
 			if isempty(bs)
-				idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
-			else
 				idx=outData(:,4)<=(data_width/2) & ~isnan(ds);
+			else
+				idx=outData(:,5)<=(data_width/2) & ~isnan(ds);
 			end
 
 			% Plot Swath
@@ -444,6 +449,58 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			xlim([0 max(swdist)]);
 			hold off
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		case 'basin_knicks'
+
+			if ~isdir(data)
+				error('For "basin_knicks" you must provide a valid directory to "data" that contains "Knicks_*.mat" files')
+			end
+
+			current=pwd;
+			cd(data);
+
+			fileList=dir('Knicks_*.mat');
+			if isempty(fileList)
+				error('For "basin_knicks" you must provide a valid directory to "data" that contains "Knicks_*.mat" files')
+			end
+			knps=cell(numel(fileList),1);
+			for jj=1:numel(fileList)
+				load(fileList(jj,1).name);
+				knps{jj}=KnickPoints(:,[1:3]);
+			end
+
+			knps=vertcat(knps{:});
+
+			x_coord=knps(:,1);
+			y_coord=knps(:,2);
+			z=knps(:,3);
+
+			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord);
+			outData=[ds z db x_coord y_coord];
+			idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
+
+			% Plot Swath
+			f1=figure(1);
+			clf 
+			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
+
+			hold on
+			plot(swdist,min_elevs,'-b');
+			plot(swdist,max_elevs,'-b');
+			plot(swdist,mean_elevs,'-k');
+
+			daspect([vex 1 1])
+
+			yl=ylim;
+			for jj=1:numel(bends)
+				plot([bends(jj),bends(jj)],yl,'-k');
+			end
+
+			scatter(outData(idx,1),outData(idx,2),20,'k','filled');
+
+			xlabel('Distance along swath (m)');
+			ylabel('Elevation (m)');
+			xlim([0 max(swdist)]);
+			hold off
 	end
 
 if plot_map
