@@ -44,6 +44,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%			streams
 	%	ref_concavity [0.50] - refrence concavity used if 'theta_method' is set to 'ref'
 	%	smooth_distance [1000] - distance in map units over which to smooth ksn measures when converting to shapefile
+	%	display_slope_area [false] - logical flag to display slope area plots. Some people love slope area plots (like one of the authors of
+	%			the supporting paper), some people hate slope area plots (like the other author of the supporting paper), so you can either 
+	%			not draw them at all (false - default) or include them (true).
 	%	min_channel_length [] - minimum channel length for consideration when using the 'all_streams' method of input, provide in map units.
 	%	channel_head_list [] - m x 2 array of x and y coordinates of channel heads, required when using 'channel_heads' method of input, 
 	%			must be in the same coordinate system as the input DEM etc. The code will attempt to find the nearest channel head to the 
@@ -96,6 +99,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	addParamValue(p,'pick_method','chi',@(x) ischar(validatestring(x,{'chi','stream'})));
 	addParamValue(p,'junction_method','check',@(x) ischar(validatestring(x,{'check','ignore'})));	
 	addParamValue(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'display_slope_area',false,@(x) isscalar(x) && islogical(x));
 	addParamValue(p,'max_ksn',250,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'min_elev',[],@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'max_area',[],@(x) isscalar(x) && isnumeric(x));
@@ -120,6 +124,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	pick_method=p.Results.pick_method;
 	junction_method=p.Results.junction_method;
 	ref_theta=p.Results.ref_concavity;
+	display_slope_area=p.Results.display_slope_area;
 	plot_type=p.Results.plot_type;
 	threshold_area=p.Results.threshold_area;
 	input_method=p.Results.input_method;
@@ -387,38 +392,88 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 				%% Main swith for different pick methods
 				if strcmp(pick_method,'chi')
-					ax3=subplot(3,1,3);
-					hold on
-					plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-					plotdz(Sn,DEMc,'dunit','km','Color','k');
-					scatter((C.distance)./1000,C.elev,5,C.chi,'filled')
-					xlabel('Distance from Mouth (km)')
-					ylabel('Elevation (m)')
-					legend('Unconditioned DEM','Conditioned DEM','Chi','location','best');
-					title('Long Profile')
-					hold off
 
-					ax2=subplot(3,1,2);
-					hold on
-					scatter(CAvg,KsnAvg,20,CAvg,'filled');
-					xlabel('Chi')
-					ylabel('Auto k_{sn}');
-					title('Chi - Auto k_{sn}');
-					hold off
+					if display_slope_area
+						[bs,ba,bc,bd]=sa(DEMc,Sn,A,C.chi,smooth_distance);
 
-					ax1=subplot(3,1,1);
-					hold on
-					plot(C.chi,C.elev,'-k');
-					scatter(C.chi,C.elev,10,C.chi,'filled');
-					xlabel('Chi')
-					ylabel('Elevation (m)')
-					title(['Chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments'],'Color','r')
-					ax1.XColor='Red';
-					ax1.YColor='Red';
-					hold off
+						ax4=subplot(4,1,4);
+						hold on
+						scatter(ba,bs,20,bc,'filled','MarkerEdgeColor','k');
+						xlabel('Log Area');
+						ylabel('Log Gradient');
+						title('Slope-Area');
+						set(ax4,'YScale','log','XScale','log','XDir','reverse');
+						hold off
 
-					linkaxes([ax1,ax2],'x');
-					colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet');		
+						ax3=subplot(4,1,3);
+						hold on
+						plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+						plotdz(Sn,DEMc,'dunit','km','Color','k');
+						scatter((C.distance)./1000,C.elev,5,C.chi,'filled');
+						xlabel('Distance from Mouth (km)')
+						ylabel('Elevation (m)')
+						legend('Unconditioned DEM','Conditioned DEM','Chi','location','best');
+						title('Long Profile')
+						hold off
+
+						ax2=subplot(4,1,2);
+						hold on
+						scatter(CAvg,KsnAvg,20,CAvg,'filled','MarkerEdgeColor','k');
+						xlabel('Chi')
+						ylabel('Auto k_{sn}');
+						title('Chi - Auto k_{sn}');
+						hold off
+
+						ax1=subplot(4,1,1);
+						hold on
+						plot(C.chi,C.elev,'-k');
+						scatter(C.chi,C.elev,10,C.chi,'filled');
+						xlabel('Chi')
+						ylabel('Elevation (m)')
+						title(['Chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments'],'Color','r')
+						ax1.XColor='Red';
+						ax1.YColor='Red';
+						hold off
+
+						linkaxes([ax1,ax2],'x');
+						colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet'); colormap(ax4,'jet');
+
+					else
+						ax3=subplot(3,1,3);
+						hold on
+						plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+						plotdz(Sn,DEMc,'dunit','km','Color','k');
+						scatter((C.distance)./1000,C.elev,5,C.chi,'filled')
+						xlabel('Distance from Mouth (km)')
+						ylabel('Elevation (m)')
+						legend('Unconditioned DEM','Conditioned DEM','Chi','location','best');
+						title('Long Profile')
+						hold off
+
+						ax2=subplot(3,1,2);
+						hold on
+						scatter(CAvg,KsnAvg,20,CAvg,'filled','MarkerEdgeColor','k');
+						xlabel('Chi')
+						ylabel('Auto k_{sn}');
+						title('Chi - Auto k_{sn}');
+						hold off
+
+						ax1=subplot(3,1,1);
+						hold on
+						plot(C.chi,C.elev,'-k');
+						scatter(C.chi,C.elev,10,C.chi,'filled');
+						xlabel('Chi')
+						ylabel('Elevation (m)')
+						title(['Chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments'],'Color','r')
+						ax1.XColor='Red';
+						ax1.YColor='Red';
+						hold off
+
+						linkaxes([ax1,ax2],'x');
+						colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet');
+					end	
+
+
 					disp('    Select bounds for calculating channel steepnesses and press enter when completed')
 					[cv,e]=ginput;
 
@@ -451,16 +506,30 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 						[~,lbix]=min(C.chi);
 						elbl=C.elev(lbix);
-						figure(f2)
-						subplot(3,1,1);
-						hold on
-						plot(C.chi,C.pred+elbl,'-k','LineWidth',2);
-						hold off
 
-						subplot(3,1,3);
-						hold on
-						plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
-						hold off
+						if display_slope_area
+							figure(f2)
+							subplot(4,1,1);
+							hold on
+							plot(C.chi,C.pred+elbl,'-k','LineWidth',2);
+							hold off
+
+							subplot(4,1,3);
+							hold on
+							plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
+							hold off
+						else
+							figure(f2)
+							subplot(3,1,1);
+							hold on
+							plot(C.chi,C.pred+elbl,'-k','LineWidth',2);
+							hold off
+
+							subplot(3,1,3);
+							hold on
+							plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
+							hold off
+						end
 
 						res_list=[C.chi C.res];
 						bnd_ix=[];
@@ -543,17 +612,31 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							[~,lbix]=min(Cseg.chi);
 							elbl=Cseg.elev(lbix);
 
-							figure(f2)
-							subplot(3,1,1);
-							hold on
-							plot(segChi,(seg0Chi.*ksn_val)+elbl,'-k','LineWidth',2);
-							hold off
+							if display_slope_area
+								figure(f2)
+								subplot(4,1,1);
+								hold on
+								plot(segChi,(seg0Chi.*ksn_val)+elbl,'-k','LineWidth',2);
+								hold off
 
-							seg_st=rd(lb_chidist==min(lb_chidist));
-							subplot(3,1,3);
-							hold on
-							plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
-							hold off
+								seg_st=rd(lb_chidist==min(lb_chidist));
+								subplot(4,1,3);
+								hold on
+								plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								hold off
+							else								
+								figure(f2)
+								subplot(3,1,1);
+								hold on
+								plot(segChi,(seg0Chi.*ksn_val)+elbl,'-k','LineWidth',2);
+								hold off
+
+								seg_st=rd(lb_chidist==min(lb_chidist));
+								subplot(3,1,3);
+								hold on
+								plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								hold off
+							end
 
 							res_list{jj,1}=[Cseg.chi+lchi Cseg.res];	
 
@@ -596,39 +679,86 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					hold off				
 
 
-				elseif strcmp(pick_method,'stream')		
-					ax1=subplot(3,1,1);
-					hold on
-					plot(C.chi,C.elev,'Color',[0.5 0.5 0.5]);
-					scatter(C.chi,C.elev,10,(C.distance)./1000,'filled');
-					xlabel('Chi')
-					ylabel('Elevation (m)')
-					title(['Chi - Z : \theta = ' num2str(C.mn)])
-					hold off
+				elseif strcmp(pick_method,'stream')	
 
-					ax2=subplot(3,1,2);
-					hold on
-					scatter(DAvg./1000,KsnAvg,20,DAvg./1000,'filled');
-					xlabel('Distance (km)')
-					ylabel('Auto k_{sn}');
-					title('Distance - Auto k_{sn}');
-					hold off
+					if display_slope_area
+						[bs,ba,bc,bd]=sa(DEMc,Sn,A,C.chi,smooth_distance);	
 
-					ax3=subplot(3,1,3);
-					hold on
-					plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-					plotdz(Sn,DEMc,'dunit','km','Color','k');
-					scatter((C.distance)./1000,C.elev,5,(C.distance)./1000,'filled');
-					xlabel('Distance from Mouth (km)')
-					ylabel('Elevation (m)')
-					legend('Unconditioned DEM','Conditioned DEM','Stream Distance','location','best');
-					title('Long Profile : Pick Segments','Color','r')
-					ax3.XColor='Red';
-					ax3.YColor='Red';
-					hold off
+						ax4=subplot(4,1,4);
+						hold on
+						scatter(ba,bs,20,bd./1000,'filled','MarkerEdgeColor','k');
+						xlabel('Log Area');
+						ylabel('Log Gradient');
+						title('Slope-Area');
+						set(ax4,'XScale','log','YScale','log','XDir','reverse');
+						hold off
 
-					linkaxes([ax2,ax3],'x');
-					colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet');		
+						ax1=subplot(4,1,1);
+						hold on
+						plot(C.chi,C.elev,'Color',[0.5 0.5 0.5]);
+						scatter(C.chi,C.elev,10,(C.distance)./1000,'filled');
+						xlabel('Chi')
+						ylabel('Elevation (m)')
+						title(['Chi - Z : \theta = ' num2str(C.mn)])
+						hold off
+
+						ax2=subplot(4,1,2);
+						hold on
+						scatter(DAvg./1000,KsnAvg,20,DAvg./1000,'filled','MarkerEdgeColor','k');
+						xlabel('Distance (km)')
+						ylabel('Auto k_{sn}');
+						title('Distance - Auto k_{sn}');
+						hold off
+
+						ax3=subplot(4,1,3);
+						hold on
+						plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+						plotdz(Sn,DEMc,'dunit','km','Color','k');
+						scatter((C.distance)./1000,C.elev,5,(C.distance)./1000,'filled');
+						xlabel('Distance from Mouth (km)')
+						ylabel('Elevation (m)')
+						legend('Unconditioned DEM','Conditioned DEM','Stream Distance','location','best');
+						title('Long Profile : Pick Segments','Color','r')
+						ax3.XColor='Red';
+						ax3.YColor='Red';
+						hold off
+
+						linkaxes([ax2,ax3],'x');
+						colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet'); colormap(ax4,'jet')
+					else
+						ax1=subplot(3,1,1);
+						hold on
+						plot(C.chi,C.elev,'Color',[0.5 0.5 0.5]);
+						scatter(C.chi,C.elev,10,(C.distance)./1000,'filled');
+						xlabel('Chi')
+						ylabel('Elevation (m)')
+						title(['Chi - Z : \theta = ' num2str(C.mn)])
+						hold off
+
+						ax2=subplot(3,1,2);
+						hold on
+						scatter(DAvg./1000,KsnAvg,20,DAvg./1000,'filled','MarkerEdgeColor','k');
+						xlabel('Distance (km)')
+						ylabel('Auto k_{sn}');
+						title('Distance - Auto k_{sn}');
+						hold off
+
+						ax3=subplot(3,1,3);
+						hold on
+						plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+						plotdz(Sn,DEMc,'dunit','km','Color','k');
+						scatter((C.distance)./1000,C.elev,5,(C.distance)./1000,'filled');
+						xlabel('Distance from Mouth (km)')
+						ylabel('Elevation (m)')
+						legend('Unconditioned DEM','Conditioned DEM','Stream Distance','location','best');
+						title('Long Profile : Pick Segments','Color','r')
+						ax3.XColor='Red';
+						ax3.YColor='Red';
+						hold off
+
+						linkaxes([ax2,ax3],'x');
+						colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet');	
+					end	
 
 					disp('    Select bounds for calculating channel steepnesses and press enter when completed')
 					[d,e]=ginput;
@@ -663,16 +793,29 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 						[~,lbix]=min(C.chi);
 						elbl=C.elev(lbix);
-						figure(f2)
-						subplot(3,1,1);
-						hold on
-						plot(C.chi,C.pred+elbl,'-k','LineWidth',2);
-						hold off
+						if display_slope_area
+							figure(f2)
+							subplot(4,1,1);
+							hold on
+							plot(C.chi,C.pred+elbl,'-k','LineWidth',2);
+							hold off
 
-						subplot(3,1,3);
-						hold on
-						plot((C.distance)./1000,C.pred+elbl,'-k','LineWidth',2);
-						hold off
+							subplot(4,1,3);
+							hold on
+							plot((C.distance)./1000,C.pred+elbl,'-k','LineWidth',2);
+							hold off							
+						else
+							figure(f2)
+							subplot(3,1,1);
+							hold on
+							plot(C.chi,C.pred+elbl,'-k','LineWidth',2);
+							hold off
+
+							subplot(3,1,3);
+							hold on
+							plot((C.distance)./1000,C.pred+elbl,'-k','LineWidth',2);
+							hold off
+						end
 
 						res_list=[C.chi C.res];
 						bnd_ix=[];
@@ -755,18 +898,31 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							seg0Chi=linspace(0,max(Cseg.chi),numel(Cseg.chi));
 							[~,lbix]=min(Cseg.chi);
 							elbl=Cseg.elev(lbix);
+							if display_slope_area
+								figure(f2)
+								subplot(4,1,1);
+								hold on
+								plot(segChi,(seg0Chi.*ksn_val)+elbl,'-k','LineWidth',2);
+								hold off
 
-							figure(f2)
-							subplot(3,1,1);
-							hold on
-							plot(segChi,(seg0Chi.*ksn_val)+elbl,'-k','LineWidth',2);
-							hold off
+								seg_st=rd(lb_dist==min(lb_dist));
+								subplot(4,1,3);
+								hold on
+								plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								hold off									
+							else
+								figure(f2)
+								subplot(3,1,1);
+								hold on
+								plot(segChi,(seg0Chi.*ksn_val)+elbl,'-k','LineWidth',2);
+								hold off
 
-							seg_st=rd(lb_dist==min(lb_dist));
-							subplot(3,1,3);
-							hold on
-							plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
-							hold off							
+								seg_st=rd(lb_dist==min(lb_dist));
+								subplot(3,1,3);
+								hold on
+								plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								hold off	
+							end						
 
 							res_list{jj,1}=[Cseg.distance+ld Cseg.res];
 						end
@@ -916,38 +1072,87 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 				%% Main swith for different pick methods
 				if strcmp(pick_method,'chi')
-					ax3=subplot(3,1,3);
-					hold on
-					plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-					plotdz(Sn,DEMc,'dunit','km','Color','k');
-					scatter((C.distance)./1000,C.elev,5,C.chi,'filled')
-					xlabel('Distance from Mouth (km)')
-					ylabel('Elevation (m)')
-					legend('Unconditioned DEM','Conditioned DEM','Chi','location','best');
-					title('Long Profile')
-					hold off
 
-					ax2=subplot(3,1,2);
-					hold on
-					scatter(CAvg,KsnAvg,20,CAvg,'filled');
-					xlabel('Chi')
-					ylabel('Auto k_{sn}');
-					title('Chi - Auto k_{sn}');
-					hold off
+					if display_slope_area
+						[bs,ba,bc,bd]=sa(DEMc,Sn,A,C.chi,smooth_distance);
 
-					ax1=subplot(3,1,1);
-					hold on
-					plot(C.chi,C.elev,'-k');
-					scatter(C.chi,C.elev,10,C.chi,'filled');
-					xlabel('Chi')
-					ylabel('Elevation (m)')
-					title(['Chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments'],'Color','r')
-					ax1.XColor='Red';
-					ax1.YColor='Red';
-					hold off
+						ax4=subplot(4,1,4);
+						hold on
+						scatter(ba,bs,20,bc,'filled','MarkerEdgeColor','k');
+						xlabel('Log Area');
+						ylabel('Log Gradient');
+						title('Slope-Area');
+						set(ax4,'YScale','log','XScale','log','XDir','reverse');
+						hold off
 
-					linkaxes([ax1,ax2],'x');
-					colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet');	
+						ax3=subplot(4,1,3);
+						hold on
+						plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+						plotdz(Sn,DEMc,'dunit','km','Color','k');
+						scatter((C.distance)./1000,C.elev,5,C.chi,'filled');
+						xlabel('Distance from Mouth (km)')
+						ylabel('Elevation (m)')
+						legend('Unconditioned DEM','Conditioned DEM','Chi','location','best');
+						title('Long Profile')
+						hold off
+
+						ax2=subplot(4,1,2);
+						hold on
+						scatter(CAvg,KsnAvg,20,CAvg,'filled','MarkerEdgeColor','k');
+						xlabel('Chi')
+						ylabel('Auto k_{sn}');
+						title('Chi - Auto k_{sn}');
+						hold off
+
+						ax1=subplot(4,1,1);
+						hold on
+						plot(C.chi,C.elev,'-k');
+						scatter(C.chi,C.elev,10,C.chi,'filled');
+						xlabel('Chi')
+						ylabel('Elevation (m)')
+						title(['Chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments'],'Color','r')
+						ax1.XColor='Red';
+						ax1.YColor='Red';
+						hold off
+
+						linkaxes([ax1,ax2],'x');
+						colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet'); colormap(ax4,'jet');
+
+					else
+						ax3=subplot(3,1,3);
+						hold on
+						plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+						plotdz(Sn,DEMc,'dunit','km','Color','k');
+						scatter((C.distance)./1000,C.elev,5,C.chi,'filled')
+						xlabel('Distance from Mouth (km)')
+						ylabel('Elevation (m)')
+						legend('Unconditioned DEM','Conditioned DEM','Chi','location','best');
+						title('Long Profile')
+						hold off
+
+						ax2=subplot(3,1,2);
+						hold on
+						scatter(CAvg,KsnAvg,20,CAvg,'filled','MarkerEdgeColor','k');
+						xlabel('Chi')
+						ylabel('Auto k_{sn}');
+						title('Chi - Auto k_{sn}');
+						hold off
+
+						ax1=subplot(3,1,1);
+						hold on
+						plot(C.chi,C.elev,'-k');
+						scatter(C.chi,C.elev,10,C.chi,'filled');
+						xlabel('Chi')
+						ylabel('Elevation (m)')
+						title(['Chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments'],'Color','r')
+						ax1.XColor='Red';
+						ax1.YColor='Red';
+						hold off
+
+						linkaxes([ax1,ax2],'x');
+						colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet');
+					end	
+
 					disp('    Select bounds for calculating channel steepnesses and press enter when completed')
 					[cv,e]=ginput;
 
@@ -966,16 +1171,29 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 						[~,lbix]=min(C.chi);
 						elbl=C.elev(lbix);
-						figure(f2)
-						subplot(3,1,1);
-						hold on
-						plot(C.chi,C.pred+elbl,'-k','LineWidth',2);
-						hold off
+						if display_slope_area
+							figure(f2)
+							subplot(4,1,1);
+							hold on
+							plot(C.chi,C.pred+elbl,'-k','LineWidth',2);
+							hold off
 
-						subplot(3,1,3);
-						hold on
-						plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
-						hold off
+							subplot(4,1,3);
+							hold on
+							plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
+							hold off
+						else
+							figure(f2)
+							subplot(3,1,1);
+							hold on
+							plot(C.chi,C.pred+elbl,'-k','LineWidth',2);
+							hold off
+
+							subplot(3,1,3);
+							hold on
+							plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
+							hold off
+						end
 
 						res_list=[C.chi C.res];
 						bnd_ix=[];
@@ -1044,17 +1262,31 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							[~,lbix]=min(Cseg.chi);
 							elbl=Cseg.elev(lbix);
 
-							figure(f2)
-							subplot(3,1,1);
-							hold on
-							plot(segChi,(seg0Chi.*ksn_val)+elbl,'-k','LineWidth',2);
-							hold off
+							if display_slope_area
+								figure(f2)
+								subplot(4,1,1);
+								hold on
+								plot(segChi,(seg0Chi.*ksn_val)+elbl,'-k','LineWidth',2);
+								hold off
 
-							seg_st=rd(lb_chidist==min(lb_chidist));
-							subplot(3,1,3);
-							hold on
-							plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
-							hold off
+								seg_st=rd(lb_chidist==min(lb_chidist));
+								subplot(4,1,3);
+								hold on
+								plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								hold off
+							else
+								figure(f2)
+								subplot(3,1,1);
+								hold on
+								plot(segChi,(seg0Chi.*ksn_val)+elbl,'-k','LineWidth',2);
+								hold off
+
+								seg_st=rd(lb_chidist==min(lb_chidist));
+								subplot(3,1,3);
+								hold on
+								plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								hold off
+							end
 
 							res_list{jj,1}=[Cseg.chi+lchi Cseg.res];	
 
@@ -1098,35 +1330,84 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 
 				elseif strcmp(pick_method,'stream')		
-					ax1=subplot(3,1,1);
-					hold on
-					plot(C.chi,C.elev,'Color',[0.5 0.5 0.5]);
-					scatter(C.chi,C.elev,10,(C.distance)./1000,'filled');
-					xlabel('Chi')
-					ylabel('Elevation (m)')
-					title(['Chi - Z : \theta = ' num2str(C.mn)])
-					hold off
+					if display_slope_area
+						[bs,ba,bc,bd]=sa(DEMc,Sn,A,C.chi,smooth_distance);	
 
-					ax2=subplot(3,1,2);
-					hold on
-					scatter(DAvg./1000,KsnAvg,20,DAvg./1000,'filled');
-					xlabel('Distance (km)')
-					ylabel('Auto k_{sn}');
-					title('Distance - Auto k_{sn}');
-					hold off
+						ax4=subplot(4,1,4);
+						hold on
+						scatter(ba,bs,20,bd./1000,'filled','MarkerEdgeColor','k');
+						xlabel('Log Area');
+						ylabel('Log Gradient');
+						title('Slope-Area');
+						set(ax4,'XScale','log','YScale','log','XDir','reverse');
+						hold off
 
-					ax3=subplot(3,1,3);
-					hold on
-					plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-					plotdz(Sn,DEMc,'dunit','km','Color','k');
-					scatter((C.distance)./1000,C.elev,5,(C.distance)./1000,'filled');
-					xlabel('Distance from Mouth (km)')
-					ylabel('Elevation (m)')
-					legend('Unconditioned DEM','Conditioned DEM','Stream Distance','location','best');
-					title('Long Profile : Pick Segments','Color','r')
-					ax3.XColor='Red';
-					ax3.YColor='Red';
-					hold off
+						ax1=subplot(4,1,1);
+						hold on
+						plot(C.chi,C.elev,'Color',[0.5 0.5 0.5]);
+						scatter(C.chi,C.elev,10,(C.distance)./1000,'filled');
+						xlabel('Chi')
+						ylabel('Elevation (m)')
+						title(['Chi - Z : \theta = ' num2str(C.mn)])
+						hold off
+
+						ax2=subplot(4,1,2);
+						hold on
+						scatter(DAvg./1000,KsnAvg,20,DAvg./1000,'filled','MarkerEdgeColor','k');
+						xlabel('Distance (km)')
+						ylabel('Auto k_{sn}');
+						title('Distance - Auto k_{sn}');
+						hold off
+
+						ax3=subplot(4,1,3);
+						hold on
+						plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+						plotdz(Sn,DEMc,'dunit','km','Color','k');
+						scatter((C.distance)./1000,C.elev,5,(C.distance)./1000,'filled');
+						xlabel('Distance from Mouth (km)')
+						ylabel('Elevation (m)')
+						legend('Unconditioned DEM','Conditioned DEM','Stream Distance','location','best');
+						title('Long Profile : Pick Segments','Color','r')
+						ax3.XColor='Red';
+						ax3.YColor='Red';
+						hold off
+
+						linkaxes([ax2,ax3],'x');
+						colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet'); colormap(ax4,'jet')
+					else
+						ax1=subplot(3,1,1);
+						hold on
+						plot(C.chi,C.elev,'Color',[0.5 0.5 0.5]);
+						scatter(C.chi,C.elev,10,(C.distance)./1000,'filled');
+						xlabel('Chi')
+						ylabel('Elevation (m)')
+						title(['Chi - Z : \theta = ' num2str(C.mn)])
+						hold off
+
+						ax2=subplot(3,1,2);
+						hold on
+						scatter(DAvg./1000,KsnAvg,20,DAvg./1000,'filled','MarkerEdgeColor','k');
+						xlabel('Distance (km)')
+						ylabel('Auto k_{sn}');
+						title('Distance - Auto k_{sn}');
+						hold off
+
+						ax3=subplot(3,1,3);
+						hold on
+						plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+						plotdz(Sn,DEMc,'dunit','km','Color','k');
+						scatter((C.distance)./1000,C.elev,5,(C.distance)./1000,'filled');
+						xlabel('Distance from Mouth (km)')
+						ylabel('Elevation (m)')
+						legend('Unconditioned DEM','Conditioned DEM','Stream Distance','location','best');
+						title('Long Profile : Pick Segments','Color','r')
+						ax3.XColor='Red';
+						ax3.YColor='Red';
+						hold off
+
+						linkaxes([ax2,ax3],'x');
+						colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet');	
+					end	
 
 					linkaxes([ax2,ax3],'x');
 					colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet');
@@ -1150,16 +1431,29 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 						[~,lbix]=min(C.chi);
 						elbl=C.elev(lbix);
-						figure(f2)
-						subplot(3,1,1);
-						hold on
-						plot(C.chi,C.pred+elbl,'-k','LineWidth',2);
-						hold off
+						if display_slope_area
+							figure(f2)
+							subplot(4,1,1);
+							hold on
+							plot(C.chi,C.pred+elbl,'-k','LineWidth',2);
+							hold off
 
-						subplot(3,1,3);
-						hold on
-						plot((C.distance)./1000,C.pred+elbl,'-k','LineWidth',2);
-						hold off
+							subplot(4,1,3);
+							hold on
+							plot((C.distance)./1000,C.pred+elbl,'-k','LineWidth',2);
+							hold off
+						else
+							figure(f2)
+							subplot(3,1,1);
+							hold on
+							plot(C.chi,C.pred+elbl,'-k','LineWidth',2);
+							hold off
+
+							subplot(3,1,3);
+							hold on
+							plot((C.distance)./1000,C.pred+elbl,'-k','LineWidth',2);
+							hold off
+						end
 
 						res_list=[C.chi C.res];
 						bnd_ix=[];
@@ -1229,17 +1523,31 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							[~,lbix]=min(Cseg.chi);
 							elbl=Cseg.elev(lbix);
 
-							figure(f2)
-							subplot(3,1,1);
-							hold on
-							plot(segChi,(seg0Chi.*ksn_val)+elbl,'-k','LineWidth',2);
-							hold off
+							if display_slope_area
+								figure(f2)
+								subplot(4,1,1);
+								hold on
+								plot(segChi,(seg0Chi.*ksn_val)+elbl,'-k','LineWidth',2);
+								hold off
 
-							seg_st=rd(lb_dist==min(lb_dist));
-							subplot(3,1,3);
-							hold on
-							plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
-							hold off
+								seg_st=rd(lb_dist==min(lb_dist));
+								subplot(4,1,3);
+								hold on
+								plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								hold off
+							else
+								figure(f2)
+								subplot(3,1,1);
+								hold on
+								plot(segChi,(seg0Chi.*ksn_val)+elbl,'-k','LineWidth',2);
+								hold off
+
+								seg_st=rd(lb_dist==min(lb_dist));
+								subplot(3,1,3);
+								hold on
+								plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								hold off
+							end
 
 							res_list{jj,1}=[Cseg.distance+ld Cseg.res];
 						end
@@ -1380,8 +1688,6 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 %FUNCTION END
 end
 
-
-
 function [OUT]=ChiCalc(S,DEM,A,a0,varargin)
 	% Modified version of chiplot function by Wolfgang Schwanghart to remove unused options/outputs and 
 	% to interpolate chi-z relationship so that chi values are equally spaced to avoid biasing of ksn fit
@@ -1486,7 +1792,6 @@ function z = netcumtrapz(x,y,ix,ixc)
 	end
 end
 
-
 function [Xavg,Yavg]=BinAverage(X,Y,bin_size);
 
 	ix=~isnan(X);
@@ -1519,11 +1824,43 @@ function [ksn]=KSN_Quick(DEM,A,S,theta_ref)
 	
 end
 
+function [bs,ba,bc,bd]=sa(DEM,S,A,C,bin_size)
+	% Modified slope area function that uses the smooth length to
+	%	to determine the number of bins and uses those same bins
+	%	to find mean values of chi and distance for plotting
+	%	purposes
 
+	minX=min(S.distance);
+	maxX=max(S.distance);
+	b=[minX:bin_size:maxX+bin_size];
 
+	numbins=round(max([numel(b) numel(S.IXgrid)/10]));
 
+	an=getnal(S,A.*A.cellsize^2);
+	z=getnal(S,DEM);
+	gn=gradient(S,z,'unit','tangent'); % Already a conditioned DEM
 
+	% Run through STREAMobj2XY so chi and everything else are same size
+	[~,~,a,g,d]=STREAMobj2XY(S,an,gn,S.distance);
+	% Remove NaNs
+	a(isnan(a))=[];
+	g(isnan(g))=[];
+	d(isnan(d))=[];
+	C(isnan(C))=[];
 
+	mina=min(a);
+	maxa=max(a);
 
+    edges = logspace(log10(mina-0.1),log10(maxa+1),numbins+1);
+    try
+    	% histc is deprecated
+    	[ix]=discretize(a,edges);
+    catch
+	    [~,ix] = histc(a,edges);
+	end
 
-
+	ba=accumarray(ix,a,[numbins 1],@median,nan);
+	bs=accumarray(ix,g,[numbins 1],@(x) mean(x(~isnan(x))),nan);
+	bd=accumarray(ix,d,[numbins 1],@mean,nan);
+	bc=accumarray(ix,C,[numbins 1],@mean,nan);
+end
