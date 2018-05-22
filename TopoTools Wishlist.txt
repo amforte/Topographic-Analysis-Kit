@@ -1,10 +1,11 @@
 TopoTools is currently undergoing a rennovation, below is a running list of changes that will be (or have been) implemented.
 Also, TopoTools is being renamed to Topographic Analysis Kit (TAK) to avoid confusion with TopoToolbox itself
 
-KsnProfiler: add slope-area plot option (option to include it, not replace chi-z) with option to pick segments on this
+KsnProfiler: add slope-area plot option (option to include it, not replace chi-z?) with option to pick segments on this
 KsnProfiler: display mean values ksn values above ksn vs chi (with uncertainty maybe)
 KsnProfiler: add fits on slope-area plot and ksn vs distance?
 KsnProfiler: Way to convert/link between chi and slope area (shared scale? coloring?)
+
 ALL: build compiler friendly versions
 ALL: compile all for Windows/Mac
 ALL: check functionality with new version of TopoToolbox

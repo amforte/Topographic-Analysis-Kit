@@ -1,12 +1,13 @@
 function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	% Function to interactively select channel heads and define segements over which to calculate channel steepness values.
-	% 	This function is designed to be similar to the operation of Profiler_51. Function will display map with the stream network and
-	% 	expects the user to select a location near a channel head of interest. The user will be then prompted to confirm that the defined
-	% 	stream is the desired choice. Finally, displays of the chi-z and longitudinal profile of the selected river will appear and the user
-	% 	is expected to define (with mouse clicks) any obvious segments with different channel steepness (or concavity) on either the chi-z plot
-	%	or the stream profile (see 'pick_method' option). When done selecting press enter/return. The user will be prompted whether they wish to
-	%	continue picking streams or if they are done. When done picking streams, the function will output three different products (see below) 
-	%	and produce a shapefile of the selected streams with ksn, concavity, area, and gradient.
+	% 	This function is designed to be similar to the operation of Profiler_51, with some improvements. Function will display map
+	%	with the stream network and expects the user to select a location near a channel head of interest. The user will be then 
+	%	prompted to confirm that the defined stream is the desired choice. Finally, displays of the chi-z and longitudinal profile 
+	%	of the selected river will appear and the user is expected to define (with mouse clicks) any obvious segments with different 
+	%	channel steepness (or concavity) on either the chi-z plot or the stream profile (see 'pick_method' option). When done selecting 
+	%	press enter/return. The user will be prompted whether they wish to continue picking streams or if they are done. When done 
+	%	picking streams, the function will output three different products (see below) and produce a shapefile of the selected streams 
+	%	with ksn, concavity, area, and gradient.
 	%	
 	% Required Inputs:
 	%	DEM - Digital Elevation as a GRIDobj, assumes unconditioned DEM (e.g. DEMoc from ProcessRiverBasins)
@@ -15,59 +16,62 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%	A - Flow accumulation GRIDobj
 	%
 	% Optional Inputs:
-	%	conditioned_DEM [] - option to provide a hydrologically conditioned DEM for use in this function (do not provide a conditoned DEM
-	%		for the main required DEM input!) which will be used for extracting elevations. See 'ConditionDEM' function for options for making a 
-	%		hydrological conditioned DEM. If no input is provided the code defaults to using the mincosthydrocon function.
-	%	shape_name ['ksn'] - name for the shapefile to be export, must have no spaces to be a valid name for ArcGIS and should NOT include the '.shp'
-	% 	input_method ['interactive'] - parameter which controls how streams of interest are supplied, expects either 'interactive', 'all_streams', or 'channel_heads'.
+	% 	input_method ['interactive'] - parameter which controls how streams of interest are supplied:
 	%		'interactive' - user picks streams of interest by selecting channelheads on a map, this option will also iteratively build a 
 	%			channel steepness map as the user picks more streams.
-	%		'all_streams' - will use the supplied STREAMobj and iterate through all channel heads. There is an internal parameter to avoid selecting streams that are too
-	%			short to properly fit (mostly relevant if 'junction method' is set to 'check'). The default value is ~4 * the DEM cellisze, the user can change this value 
-	%			by providing an input for the optional parameter 'min_channel_length', input should be in map units and greater than the default. You can use a code like
-	%			'SegmentPicker' to select portions of a STREAMobj
-	%		'channel_heads' - will use a supplied list of coordinates of channel heads to select and iterate through streams of interest. If this option is used, the user
-	%			must provide an input for the optional 'channel_head_list' parameter.
-	%	min_channel_length [] - minimum channel length for consideration when using the 'all_streams' method of input, provide in map units.
-	%	channel_head_list [] - m x 2 array of x and y coordinates of channel heads, required when using 'channel_heads' method of input, must be in the same coordinate 
-	%		system as the input DEM etc. The code will attempt to find the nearest channel head to the coordinates you provided, so the closer the provided user coordinates
-	%		are to channel heads, the more accurate this selection method will be.
-	%	smooth_distance [1000] - distance in map units over which to smooth ksn measures when converting to shapefile
-	%	theta_method ['ksn']- options for concavity
-	%		'ref' - uses a reference concavity, the user can specify this value with the reference concavity option (see below)
-	%		'auto' - function finds a best fit concavity for each selected stream, if used in conjunction with 'junction_method','check'
-	%			this means that short sections of streams picked will auto fit concavity that may differ from downstream portions of the same
-	%			streams
-	%	min_elev [] - minimum elevation below which the code stops extracting channel information
-	%	max_area [] - maximum drainage area above which the code stops extracting channel information (in square map units)
-	%	plot_type ['native'] - expects either 'native' or 'downsample', default is 'native'. Controls whether all streams are drawn as individual lines ('native') or if
-	%		   the stream network is plotted as a grid and downsampled ('downsample'). The 'downsample' option is much faster on large datasets, 
-	%			but can result in inaccurate channel head selection. The 'native' option is easier to see, but can be very slow to load and interact with on large datasets.
+	%		'all_streams' - will use the supplied STREAMobj and iterate through all channel heads. There is an internal parameter to avoid 
+	%			selecting streams that are too short to properly fit (mostly relevant if 'junction method' is set to 'check'). The default 
+	%			value is ~4 * the DEM cellisze, the user can change this value by providing an input for the optional parameter 'min_channel_length',
+	%			input should be in map units and greater than the default. You can use a code like 'SegmentPicker' to select portions of a STREAMobj
+	%		'channel_heads' - will use a supplied list of coordinates of channel heads to select and iterate through streams of interest. If this
+	%			option is used, the user must provide an input for the optional 'channel_head_list' parameter.
 	%	pick_method ['chi'] - choice of how you want to pick stream segments:
 	%		'chi' - select segments on a chi - z plot (recommended)
 	%		'stream' - select segments on a longitudinal profile
 	%	junction_method ['check'] - choice of how to deal with stream junctions:
 	%		'check' - after each choice, will check whether downstream portions of the selected stream have already been fit, and if it has,
-	%			the already fit portion of the stream will not be displayed or refit (recommended)
+	%			the already fit portion of the stream will not be displayed or refit
 	%		'ignore' - each stream will be displayed from its head to mouth independent of whether portions of the same stream network have 
 	%			been fit
-	%	ref_concavity [0.50] - refrence concavity used if 'theta_method' is set to 'ksn'
+	%	theta_method ['ref']- options for concavity:
+	%		'ref' - uses a reference concavity, the user can specify this value with the reference concavity option (see below)
+	%		'auto' - function finds a best fit concavity for each selected stream, if used in conjunction with 'junction_method','check'
+	%			this means that short sections of streams picked will auto fit concavity that may differ from downstream portions of the same
+	%			streams
+	%	ref_concavity [0.50] - refrence concavity used if 'theta_method' is set to 'ref'
+	%	smooth_distance [1000] - distance in map units over which to smooth ksn measures when converting to shapefile
+	%	min_channel_length [] - minimum channel length for consideration when using the 'all_streams' method of input, provide in map units.
+	%	channel_head_list [] - m x 2 array of x and y coordinates of channel heads, required when using 'channel_heads' method of input, 
+	%			must be in the same coordinate system as the input DEM etc. The code will attempt to find the nearest channel head to the 
+	%			coordinates you provided, so the closer the provided user coordinates are to channel heads, the more accurate this selection
+	%			method will be.
+	%	min_elev [] - minimum elevation below which the code stops extracting channel information
+	%	max_area [] - maximum drainage area above which the code stops extracting channel information (in square map units)
+	%	plot_type ['vector'] - expects either 'vector' or 'grid', default is 'vector'. Controls whether all streams are drawn as individual 
+	%			lines ('vector') or if the stream network is plotted as a grid and downsampled ('grid'). The 'grid' option is much faster on 
+	%			large datasets, but can result in inaccurate channel head selection. The 'vector' option is easier to see, but can be very 
+	%			slow to load and interact with on large datasets.	
 	%	max_ksn [250] - maximum  ksn used for the color scale, will not effect actual results, for display purposes only
 	%	threshold_area [1e6] - used to redraw downsampled stream network if 'plot_type' is set to 'downsample' 
-	%	interp_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a conditioned DEM)
+	%	shape_name ['ksn'] - name for the shapefile to be export, must have no spaces to be a valid name for ArcGIS and should NOT include the '.shp'
+	%	conditioned_DEM [] - option to provide a hydrologically conditioned DEM for use in this function (do not provide a conditoned DEM
+	%			for the main required DEM input!) which will be used for extracting elevations. See 'ConditionDEM' function for options 
+	%			for making a hydrological conditioned DEM. If no input is provided the code defaults to using the mincosthydrocon function.
+	%	interp_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a 
+	%			conditioned DEM)
 	%		
 	% Outputs:
 	%	knl - n x 8 matrix of node list for selected stream segments, columns are x coordinate, y coordinate, drainage area, ksn,
 	%		reference concavity, best fit concavity, gradient, and an identifying number. Note that if using the code in 'theta_method','auto' mode then the
 	%		reference concavity and best fit concavity columns will be the same.
 	%	ksn_master - identical to knl but as a cell array where individual cells are individual selected channels
-	%	bnd_list - n x 4 matrix of selected bounds for fitting ksn, columns are x coordinate, y coordinate, elevation, and the stream identifying number (this could be
-	%		thought of as a list of knickpoints), also output as a seperate shapefile.
+	%	bnd_list - n x 4 matrix of selected bounds for fitting ksn, columns are x coordinate, y coordinate, elevation, and the stream identifying number 
+	%		(this could be thought of as a list of knickpoints), also output as a seperate shapefile.
 	%	Sc - STREAMobj of selected streams
 	%
 	% Examples:
-	%	[knl,ksn_master,Sc]=KSN_Profiler(DEM,FD,A,S);
-	%	[knl,ksn_master,Sc]=KSN_Profiler(DEM,FD,A,S,'junction_method','ignore','ref_concavity',0.65,'max_ksn',500);
+	%	[knl,ksn_master,bnd_list,Sc]=KSN_Profiler(DEM,FD,A,S);
+	%	[knl,ksn_master,bnd_list,Sc]=KSN_Profiler(DEM,FD,A,S,'junction_method','ignore','ref_concavity',0.65,'max_ksn',500);
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
@@ -90,7 +94,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	addParamValue(p,'max_ksn',250,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'min_elev',[],@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'max_area',[],@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'plot_type','native',@(x) ischar(validatestring(x,{'native','downsample'})));
+	addParamValue(p,'plot_type','vector',@(x) ischar(validatestring(x,{'vector','grid'})));
 	addParamValue(p,'threshold_area',1e6,@(x) isnumeric(x));
 	addParamValue(p,'input_method','interactive',@(x) ischar(validatestring(x,{'interactive','channel_heads','all_streams'})));
 	addParamValue(p,'channel_head_list',[],@(x) isnumeric(x) & size(x,2)==2);
@@ -188,9 +192,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		S=STREAMobj(FD,W);		
 	end
 
-
+	% Generate Map Figures for interactive picking
 	switch plot_type
-	case 'downsample'	
+	case 'grid'	
 
 		disp('Downsampling datasets for display purposes')
 		% Redo flow direction	
@@ -234,7 +238,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		ylabel(c1,'Channel Steepness')
 		hold off
 
-	case 'native'
+	case 'vector'
 
 		% % Generate hillshade
 		% HS=hillshade(DEM,'altitude',25);
@@ -271,13 +275,13 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		str1='N';
 		str2='Y';
 		ii=1;
-		if strcmp(theta_method,'ref')==1 && strcmp(pick_method,'chi')==1 && strcmp(junction_method,'check')==1
+		if strcmp(theta_method,'ref') && strcmp(pick_method,'chi') && strcmp(junction_method,'check')
 		
 			% Autocalculate ksn for comparison purposes
 			[auto_ksn]=KSN_Quick(DEM,A,S,ref_theta);
 
-			while strcmp(str2,'Y')==1;
-				while strcmp(str1,'N')==1;	
+			while strcmpi(str2,'Y');
+				while strcmpi(str1,'N');	
 					str3='R'; %Reset redo flag
 		            disp('Zoom or pan to area of interest and then press enter');
 		            pause();
@@ -324,7 +328,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					if isempty(str1)
 						str1 = 'Y';
 						Sc=Sct;
-					elseif strcmp(str1,'Y')==1; 
+					elseif strcmpi(str1,'Y'); 
 						Sc=Sct;
 					else
 						delete(p1);
@@ -338,7 +342,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				[DAvg,KsnAvg]=BinAverage(Sn.distance,ak,smooth_distance);
 				[~,CAvg]=BinAverage(C.distance,C.chi,smooth_distance);
 
-				while strcmp(str3,'R');
+				while strcmpi(str3,'R');
 					f2=figure(2);
 					set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
 
@@ -534,20 +538,20 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
 						ii=ii+1;
-					elseif strcmp(str2,'Y');
+					elseif strcmpi(str2,'Y');
 						str1 = 'N';
 						str3 = 'C';
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
 						ii=ii+1;
-					elseif strcmp(str2,'N');
+					elseif strcmpi(str2,'N');
 						str1 = 'N';
 						str3 = 'C';
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'R');
+					elseif strcmpi(str2,'R');
 						str3 = 'R';
 						str2 = 'Y';
 						clear ksn_list ksn_nodes res_list bnd_ix;
@@ -558,13 +562,13 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				end
 			end
 
-		elseif strcmp(theta_method,'ref')==1 && strcmp(pick_method,'stream')==1 && strcmp(junction_method,'check')==1
+		elseif strcmp(theta_method,'ref') && strcmp(pick_method,'stream') && strcmp(junction_method,'check')
 
 			% Autocalculate ksn for comparison purposes
 			[auto_ksn]=KSN_Quick(DEM,A,S,ref_theta);
 
-			while strcmp(str2,'Y')==1;
-				while strcmp(str1,'N')==1;	
+			while strcmpi(str2,'Y');
+				while strcmpi(str1,'N');	
 					str3='R';
 		            disp('Zoom or pan to area of interest and then press enter');
 		            pause();
@@ -611,7 +615,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					if isempty(str1)
 						str1 = 'Y';
 						Sc=Sct;
-					elseif strcmp(str1,'Y')==1; 
+					elseif strcmpi(str1,'Y'); 
 						Sc=Sct;
 					else
 						delete(p1);
@@ -622,7 +626,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				C=ChiCalc(Sn,DEMc,A,1,ref_theta);
 				ak=getnal(Sn,auto_ksn);
 				[DAvg,KsnAvg]=BinAverage(Sn.distance,ak,smooth_distance);			
-				while strcmp(str3,'R');
+				while strcmpi(str3,'R');
 					f2=figure(2);
 					set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
 
@@ -821,20 +825,20 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
 						ii=ii+1;
-					elseif strcmp(str2,'Y');
+					elseif strcmpi(str2,'Y');
 						str1 = 'N';
 						str3 = 'C';
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
 						ii=ii+1;
-					elseif strcmp(str2,'N');
+					elseif strcmpi(str2,'N');
 						str1 = 'N';
 						str3 = 'C';
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'R');
+					elseif strcmpi(str2,'R');
 						str3 = 'R';
 						str2 = 'Y';
 						clear ksn_list ksn_nodes res_list bnd_ix;
@@ -845,13 +849,13 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				end
 			end
 
-		elseif strcmp(theta_method,'ref')==1 && strcmp(pick_method,'chi')==1 && strcmp(junction_method,'ignore')==1
+		elseif strcmp(theta_method,'ref') && strcmp(pick_method,'chi') && strcmp(junction_method,'ignore')
 
 			% Autocalculate ksn for comparison purposes
 			[auto_ksn]=KSN_Quick(DEM,A,S,ref_theta);
 
-			while strcmp(str2,'Y')==1;
-				while strcmp(str1,'N')==1;	
+			while strcmpi(str2,'Y');
+				while strcmpi(str1,'N');	
 					str3='R'; %Reset redo flag
 		            disp('Zoom or pan to area of interest and then press enter');
 		            pause();
@@ -892,7 +896,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					if isempty(str1)
 						str1 = 'Y';
 						Sc=Sct;
-					elseif strcmp(str1,'Y')==1; 
+					elseif strcmpi(str1,'Y'); 
 						Sc=Sct;
 					else
 						delete(p1);
@@ -904,7 +908,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				ak=getnal(Sn,auto_ksn);
 				[DAvg,KsnAvg]=BinAverage(Sn.distance,ak,smooth_distance);
 				[~,CAvg]=BinAverage(C.distance,C.chi,smooth_distance);
-				while strcmp(str3,'R');
+				while strcmpi(str3,'R');
 					f2=figure(2);
 					set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
 
@@ -1102,20 +1106,20 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
 						ii=ii+1;
-					elseif strcmp(str2,'Y');
+					elseif strcmpi(str2,'Y');
 						str1 = 'N';
 						str3 = 'C';
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
 						ii=ii+1;
-					elseif strcmp(str2,'N');
+					elseif strcmpi(str2,'N');
 						str1 = 'N';
 						str3 = 'C';
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'R');
+					elseif strcmpi(str2,'R');
 						str3 = 'R';
 						str2 = 'Y';
 						clear ksn_list ksn_nodes res_list bnd_ix;
@@ -1126,13 +1130,13 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				end
 			end
 
-		elseif strcmp(theta_method,'ref')==1 && strcmp(pick_method,'stream')==1 && strcmp(junction_method,'ignore')==1
+		elseif strcmp(theta_method,'ref') && strcmp(pick_method,'stream') && strcmp(junction_method,'ignore')
 
 			% Autocalculate ksn for comparison purposes
 			[auto_ksn]=KSN_Quick(DEM,A,S,ref_theta);
 
-			while strcmp(str2,'Y')==1;
-				while strcmp(str1,'N')==1;	
+			while strcmpi(str2,'Y');
+				while strcmpi(str1,'N');	
 					str3='R';
 		            disp('Zoom or pan to area of interest and then press enter');
 		            pause();
@@ -1172,7 +1176,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					if isempty(str1)
 						str1 = 'Y';
 						Sc=Sct;
-					elseif strcmp(str1,'Y')==1; 
+					elseif strcmpi(str1,'Y'); 
 						Sc=Sct;
 					else
 						delete(p1);
@@ -1183,7 +1187,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				C=ChiCalc(Sn,DEMc,A,1,ref_theta);
 				ak=getnal(Sn,auto_ksn);
 				[DAvg,KsnAvg]=BinAverage(Sn.distance,ak,smooth_distance);
-				while strcmp(str3,'R');
+				while strcmpi(str3,'R');
 					f2=figure(2);
 					set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
 
@@ -1383,20 +1387,20 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
 						ii=ii+1;
-					elseif strcmp(str2,'Y');
+					elseif strcmpi(str2,'Y');
 						str1 = 'N';
 						str3 = 'C';
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
 						ii=ii+1;
-					elseif strcmp(str2,'N');
+					elseif strcmpi(str2,'N');
 						str1 = 'N';
 						str3 = 'C';
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'R');
+					elseif strcmpi(str2,'R');
 						str3 = 'R';
 						str2 = 'Y';
 						clear ksn_list ksn_nodes res_list bnd_ix;
@@ -1407,10 +1411,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				end
 			end
 
-		elseif strcmp(theta_method,'auto')==1 && strcmp(pick_method,'chi')==1 && strcmp(junction_method,'check')==1
+		elseif strcmp(theta_method,'auto') && strcmp(pick_method,'chi') && strcmp(junction_method,'check')
 
-			while strcmp(str2,'Y')==1;
-				while strcmp(str1,'N')==1;	
+			while strcmpi(str2,'Y');
+				while strcmpi(str1,'N');	
 					str3='R'; %Reset redo flag
 		            disp('Zoom or pan to area of interest and then press enter');
 		            pause();
@@ -1457,7 +1461,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					if isempty(str1)
 						str1 = 'Y';
 						Sc=Sct;
-					elseif strcmp(str1,'Y')==1; 
+					elseif strcmpi(str1,'Y'); 
 						Sc=Sct;
 					else
 						delete(p1);
@@ -1472,7 +1476,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				[DAvg,KsnAvg]=BinAverage(Sn.distance,ak,smooth_distance);
 				[~,CAvg]=BinAverage(C.distance,C.chi,smooth_distance);
 
-				while strcmp(str3,'R');
+				while strcmpi(str3,'R');
 					f2=figure(2);
 					set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
 
@@ -1668,20 +1672,20 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
 						ii=ii+1;
-					elseif strcmp(str2,'Y');
+					elseif strcmpi(str2,'Y');
 						str1 = 'N';
 						str3 = 'C';
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
 						ii=ii+1;
-					elseif strcmp(str2,'N');
+					elseif strcmpi(str2,'N');
 						str1 = 'N';
 						str3 = 'C';
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'R');
+					elseif strcmpi(str2,'R');
 						str3 = 'R';
 						str2 = 'Y';
 						clear ksn_list ksn_nodes res_list bnd_ix;
@@ -1692,10 +1696,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				end
 			end
 
-		elseif strcmp(theta_method,'auto')==1 && strcmp(pick_method,'stream')==1 && strcmp(junction_method,'check')==1
+		elseif strcmp(theta_method,'auto') && strcmp(pick_method,'stream') && strcmp(junction_method,'check')
 
-			while strcmp(str2,'Y')==1;
-				while strcmp(str1,'N')==1;	
+			while strcmpi(str2,'Y');
+				while strcmpi(str1,'N');	
 					str3='R';
 		            disp('Zoom or pan to area of interest and then press enter');
 		            pause();
@@ -1742,7 +1746,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					if isempty(str1)
 						str1 = 'Y';
 						Sc=Sct;
-					elseif strcmp(str1,'Y')==1; 
+					elseif strcmpi(str1,'Y'); 
 						Sc=Sct;
 					else
 						delete(p1);
@@ -1755,7 +1759,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				[auto_ksn]=KSN_Quick(DEM,A,S,C.mn);
 				ak=getnal(Sn,auto_ksn);
 				[DAvg,KsnAvg]=BinAverage(Sn.distance,ak,smooth_distance);			
-				while strcmp(str3,'R');
+				while strcmpi(str3,'R');
 					f2=figure(2);
 					set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
 
@@ -1953,20 +1957,20 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
 						ii=ii+1;
-					elseif strcmp(str2,'Y');
+					elseif strcmpi(str2,'Y');
 						str1 = 'N';
 						str3 = 'C';
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
 						ii=ii+1;
-					elseif strcmp(str2,'N');
+					elseif strcmpi(str2,'N');
 						str1 = 'N';
 						str3 = 'C';
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'R');
+					elseif strcmpi(str2,'R');
 						str3 = 'R';
 						str2 = 'Y';
 						clear ksn_list ksn_nodes res_list bnd_ix;
@@ -1977,10 +1981,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				end
 			end
 
-		elseif strcmp(theta_method,'auto')==1 && strcmp(pick_method,'chi')==1 && strcmp(junction_method,'ignore')==1
+		elseif strcmp(theta_method,'auto') && strcmp(pick_method,'chi') && strcmp(junction_method,'ignore')
 
-			while strcmp(str2,'Y')==1;
-				while strcmp(str1,'N')==1;	
+			while strcmpi(str2,'Y');
+				while strcmpi(str1,'N');	
 					str3='R'; %Reset redo flag
 		            disp('Zoom or pan to area of interest and then press enter');
 		            pause();
@@ -2021,7 +2025,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					if isempty(str1)
 						str1 = 'Y';
 						Sc=Sct;
-					elseif strcmp(str1,'Y')==1; 
+					elseif strcmpi(str1,'Y'); 
 						Sc=Sct;
 					else
 						delete(p1);
@@ -2035,7 +2039,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				ak=getnal(Sn,auto_ksn);
 				[DAvg,KsnAvg]=BinAverage(Sn.distance,ak,smooth_distance);
 				[~,CAvg]=BinAverage(C.distance,C.chi,smooth_distance);
-				while strcmp(str3,'R');
+				while strcmpi(str3,'R');
 					f2=figure(2);
 					set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
 
@@ -2231,20 +2235,20 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
 						ii=ii+1;
-					elseif strcmp(str2,'Y');
+					elseif strcmpi(str2,'Y');
 						str1 = 'N';
 						str3 = 'C';
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
 						ii=ii+1;
-					elseif strcmp(str2,'N');
+					elseif strcmpi(str2,'N');
 						str1 = 'N';
 						str3 = 'C';
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'R');
+					elseif strcmpi(str2,'R');
 						str3 = 'R';
 						str2 = 'Y';
 						clear ksn_list ksn_nodes res_list bnd_ix;
@@ -2255,10 +2259,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				end
 			end
 
-		elseif strcmp(theta_method,'auto')==1 && strcmp(pick_method,'stream')==1 && strcmp(junction_method,'ignore')==1
+		elseif strcmp(theta_method,'auto') && strcmp(pick_method,'stream') && strcmp(junction_method,'ignore')
 
-			while strcmp(str2,'Y')==1;
-				while strcmp(str1,'N')==1;	
+			while strcmpi(str2,'Y');
+				while strcmpi(str1,'N');	
 					str3='R';
 		            disp('Zoom or pan to area of interest and then press enter');
 		            pause();
@@ -2298,7 +2302,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					if isempty(str1)
 						str1 = 'Y';
 						Sc=Sct;
-					elseif strcmp(str1,'Y')==1; 
+					elseif strcmpi(str1,'Y'); 
 						Sc=Sct;
 					else
 						delete(p1);
@@ -2311,7 +2315,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				[auto_ksn]=KSN_Quick(DEM,A,S,C.mn);
 				ak=getnal(Sn,auto_ksn);
 				[DAvg,KsnAvg]=BinAverage(Sn.distance,ak,smooth_distance);
-				while strcmp(str3,'R');
+				while strcmpi(str3,'R');
 					f2=figure(2);
 					set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
 
@@ -2510,20 +2514,20 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
 						ii=ii+1;
-					elseif strcmp(str2,'Y');
+					elseif strcmpi(str2,'Y');
 						str1 = 'N';
 						str3 = 'C';
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
 						ii=ii+1;
-					elseif strcmp(str2,'N');
+					elseif strcmpi(str2,'N');
 						str1 = 'N';
 						str3 = 'C';
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'R');
+					elseif strcmpi(str2,'R');
 						str3 = 'R';
 						str2 = 'Y';
 						clear ksn_list ksn_nodes res_list bnd_ix;
@@ -2540,13 +2544,13 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		end
 	case 'preselected'
 		str1='R';
-		if strcmp(theta_method,'ref')==1 && strcmp(pick_method,'chi')==1 && strcmp(junction_method,'check')==1
+		if strcmp(theta_method,'ref') && strcmp(pick_method,'chi') && strcmp(junction_method,'check')
 		
 			% Autocalculate ksn for comparison purposes
 			[auto_ksn]=KSN_Quick(DEM,A,S,ref_theta);
 			for ii=1:num_ch
 	
-				while strcmp(str1,'R')==1;
+				while strcmpi(str1,'R');
 		            
 					chOI=s_ch(ii,:);
 
@@ -2750,13 +2754,13 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						bnd_master{ii,1}=bnd_ix;
 						Sc=Sct;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'Y');
+					elseif strcmpi(str2,'Y');
 						str1=[];
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						Sc=Sct;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'R');
+					elseif strcmpi(str2,'R');
 						str1 = 'R';
 						clear ksn_list ksn_nodes res_list bnd_ix;
 					end
@@ -2769,13 +2773,13 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				str1='R';
 			end
 
-		elseif strcmp(theta_method,'ref')==1 && strcmp(pick_method,'stream')==1 && strcmp(junction_method,'check')==1
+		elseif strcmp(theta_method,'ref') && strcmp(pick_method,'stream') && strcmp(junction_method,'check')
 
 			% Autocalculate ksn for comparison purposes
 			[auto_ksn]=KSN_Quick(DEM,A,S,ref_theta);
 
 			for ii=1:num_ch
-				while strcmp(str1,'R')==1;
+				while strcmpi(str1,'R');
 					
 					chOI=s_ch(ii,:);
 
@@ -2981,13 +2985,13 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						bnd_master{ii,1}=bnd_ix;
 						Sc=Sct;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'Y');
+					elseif strcmpi(str2,'Y');
 						str1=[];
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						Sc=Sct;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'R');
+					elseif strcmpi(str2,'R');
 						str1 = 'R';
 						clear ksn_list ksn_nodes res_list bnd_ix;
 					end
@@ -3000,13 +3004,13 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				str1='R';
 			end
 
-		elseif strcmp(theta_method,'ref')==1 && strcmp(pick_method,'chi')==1 && strcmp(junction_method,'ignore')==1
+		elseif strcmp(theta_method,'ref') && strcmp(pick_method,'chi') && strcmp(junction_method,'ignore')
 
 			% Autocalculate ksn for comparison purposes
 			[auto_ksn]=KSN_Quick(DEM,A,S,ref_theta);
 
 			for ii=1:num_ch
-				while strcmp(str1,'R')==1;	
+				while strcmpi(str1,'R');	
 
 					chOI=s_ch(ii,:);
 
@@ -3199,13 +3203,13 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						bnd_master{ii,1}=bnd_ix;
 						Sc=Sct;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'Y');
+					elseif strcmpi(str2,'Y');
 						str1=[];
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						Sc=Sct;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'R');
+					elseif strcmpi(str2,'R');
 						str1 = 'R';
 						clear ksn_list ksn_nodes res_list bnd_ix;
 					end
@@ -3218,14 +3222,14 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				str1='R';
 			end
 
-		elseif strcmp(theta_method,'ref')==1 && strcmp(pick_method,'stream')==1 && strcmp(junction_method,'ignore')==1
+		elseif strcmp(theta_method,'ref') && strcmp(pick_method,'stream') && strcmp(junction_method,'ignore')
 
 			% Autocalculate ksn for comparison purposes
 			[auto_ksn]=KSN_Quick(DEM,A,S,ref_theta);
 
 			for ii=1:num_ch
 
-				while strcmp(str1,'R')==1;	
+				while strcmpi(str1,'R');	
 
 					chOI=s_ch(ii,:);
 
@@ -3418,13 +3422,13 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						bnd_master{ii,1}=bnd_ix;
 						Sc=Sct;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'Y');
+					elseif strcmpi(str2,'Y');
 						str1=[];
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						Sc=Sct;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'R');
+					elseif strcmpi(str2,'R');
 						str1 = 'R';
 						clear ksn_list ksn_nodes res_list bnd_ix;
 					end
@@ -3437,11 +3441,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				str1='R';
 			end
 
-		elseif strcmp(theta_method,'auto')==1 && strcmp(pick_method,'chi')==1 && strcmp(junction_method,'check')==1
+		elseif strcmp(theta_method,'auto') && strcmp(pick_method,'chi') && strcmp(junction_method,'check')
 
 			for ii=1:num_ch
 
-				while strcmp(str1,'R')==1;	
+				while strcmpi(str1,'R');	
 					
 					chOI=s_ch(ii,:);
 
@@ -3647,13 +3651,13 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						bnd_master{ii,1}=bnd_ix;
 						Sc=Sct;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'Y');
+					elseif strcmpi(str2,'Y');
 						str1=[];
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						Sc=Sct;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'R');
+					elseif strcmpi(str2,'R');
 						str1 = 'R';
 						clear ksn_list ksn_nodes res_list bnd_ix;
 					end
@@ -3666,11 +3670,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				str1='R';
 			end
 
-		elseif strcmp(theta_method,'auto')==1 && strcmp(pick_method,'stream')==1 && strcmp(junction_method,'check')==1
+		elseif strcmp(theta_method,'auto') && strcmp(pick_method,'stream') && strcmp(junction_method,'check')
 
 			for ii=1:num_ch
 
-				while strcmp(str1,'R')==1;	
+				while strcmpi(str1,'R');	
 					
 					chOI=s_ch(ii,:);
 
@@ -3877,13 +3881,13 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						bnd_master{ii,1}=bnd_ix;
 						Sc=Sct;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'Y');
+					elseif strcmpi(str2,'Y');
 						str1=[];
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						Sc=Sct;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'R');
+					elseif strcmpi(str2,'R');
 						str1 = 'R';
 						clear ksn_list ksn_nodes res_list bnd_ix;
 					end
@@ -3896,11 +3900,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				str1='R';
 			end
 
-		elseif strcmp(theta_method,'auto')==1 && strcmp(pick_method,'chi')==1 && strcmp(junction_method,'ignore')==1
+		elseif strcmp(theta_method,'auto') && strcmp(pick_method,'chi') && strcmp(junction_method,'ignore')
 
 			for ii=1:num_ch
 
-				while strcmp(str1,'R')==1;	
+				while strcmpi(str1,'R');	
 					
 					chOI=s_ch(ii,:);
 
@@ -4092,13 +4096,13 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						bnd_master{ii,1}=bnd_ix;
 						Sc=Sct;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'Y');
+					elseif strcmpi(str2,'Y');
 						str1=[];
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						Sc=Sct;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'R');
+					elseif strcmpi(str2,'R');
 						str1 = 'R';
 						clear ksn_list ksn_nodes res_list bnd_ix;
 					end
@@ -4111,11 +4115,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				str1='R';
 			end
 
-		elseif strcmp(theta_method,'auto')==1 && strcmp(pick_method,'stream')==1 && strcmp(junction_method,'ignore')==1
+		elseif strcmp(theta_method,'auto') && strcmp(pick_method,'stream') && strcmp(junction_method,'ignore')
 
 			for ii=1:num_ch
 
-				while strcmp(str1,'R')==1;	
+				while strcmpi(str1,'R');	
 					
 					chOI=s_ch(ii,:);
 
@@ -4311,13 +4315,13 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						bnd_master{ii,1}=bnd_ix;
 						Sc=Sct;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'Y');
+					elseif strcmpi(str2,'Y');
 						str1=[];
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
 						Sc=Sct;
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					elseif strcmp(str2,'R');
+					elseif strcmpi(str2,'R');
 						str1 = 'R';
 						clear ksn_list ksn_nodes res_list bnd_ix;
 					end
@@ -4341,7 +4345,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	% Bundle, plot, and export %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	switch input_method
-	case 'interative'
+	case 'interactive'
 		close figure 1
 	end
 
@@ -4524,7 +4528,7 @@ function [Xavg,Yavg]=BinAverage(X,Y,bin_size);
 	b=[minX:bin_size:maxX+bin_size];
 
 	try
-		[~,~,idx]=histcounts(X,b);
+		[idx]=discretize(X,b);
 	catch
 		[~,idx]=histc(X,b);
 	end
