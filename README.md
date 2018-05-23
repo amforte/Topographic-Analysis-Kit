@@ -1,5 +1,8 @@
-# TopoTools
-These are a series of matlab functions written by Adam M. Forte (aforte 'at' asu.edu) that build upon the functionality of TopoToolbox (https://topotoolbox.wordpress.com/). Each function contains a header with basic functionality info along with expected inputs and possible outputs. This readme compiles some of that information and lays out possible workflows. Discussions of workflows and tools assume a basic familiarity with the TopoToolbox data classes and Matlab functions. At present there are two semi-permanent branches of the code, the 'master' which contains versions of the code that I'm (reasonably) sure are stable and work properly and the 'development' which are the bleeding edge versions that I'm tinkering with. These may have new functionality, but they also may be broken, so use with caution.
+## Topographic Analyis Kit for TopoToolbox ##
+## (As of 5/23/18 Master and Development have been merged) ##
+## A major rewrite of the code is complete in preparation for release, but README has not been updated yet ##
+
+These are a series of matlab functions written by Adam M. Forte (aforte8 'at' lsu.edu) that build upon the functionality of TopoToolbox (https://topotoolbox.wordpress.com/). Each function contains a header with basic functionality info along with expected inputs and possible outputs. This readme compiles some of that information and lays out possible workflows. Discussions of workflows and tools assume a basic familiarity with the TopoToolbox data classes and Matlab functions. At present there are two semi-permanent branches of the code, the 'master' which contains versions of the code that I'm (reasonably) sure are stable and work properly and the 'development' which are the bleeding edge versions that I'm tinkering with. These may have new functionality, but they also may be broken, so use with caution. 
 
 # Getting Started
 The first step in most processing workflows is going to the 'MakeStreams' function, which takes a georeferenced DEM file as either a GeoTiff or ascii and produces the basic TopoToolbox datasets (DEM as a GRIDobj, flow direction as FLOWobj, flow accumulation as GRIDobj, and stream network as STREAMobj). All other functions require outputs from this function.
@@ -24,6 +27,3 @@ Several functions are designed to allow interactive selection of river profiles 
 
 # Other Functions
 There are several other functions in the folder, many of these are helper functions used by some of the above functions (i.e. put the whole folder and all of its subfolders on your path or things will break!). There is a folder called 'SwathTools' which contains some functions that wrap TopoToolbox's existing and (powerful) SWATHobj functions.
-
-# Dependencies
-These codes make use of several other Matlab toolboxes, which are freely available from the Matlab file exchange but I have not included here as a courtesy to the developers of those toolboxes. These are the toolboxes: 'hline and vline', 'real2rgb', and 'cbrewer'.
