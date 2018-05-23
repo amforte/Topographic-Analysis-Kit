@@ -20,12 +20,22 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
     %       S - STREAMobj derived from the DEM
     %
     % Optional Inputs:
-    %       theta_ref [0.45]- reference concavity for chi-Z plots
-    %       rlf_radius [2500] - radius in map units for calculating local relief
-    %       plot_type ['native'] - expects either 'native' or 'downsample', default is 'native'. Controls whether all streams are drawn as individual lines ('native') or if
-    %           the stream network is plotted as a grid and downsampled ('downsample'). The 'downsample' option is much faster for large datasets, 
-    %           but can result in inaccurate site selections. The 'native' option is easier to see, but can be very slow to load and interact with.
-    %       threshold_area [1e6] - used to redraw downsampled stream network if 'plot_type' is set to 'downsample'
+    %       theta_ref [0.50]- reference concavity for chi-Z plots
+    %       rlf_radius [2500] - radius in map units for calculating local relief OR
+    %       rlf_grid [] - if you already have a local relief grid that you've calculated, you can provide it with 'rlf_grid', it must be a GRIDobj and must be the same
+    %           coordinates and dimensions as the provided DEM.
+    %       extra_grid [] - sometimes it can be useful to also view an additional grid (e.g. georeferenced road map, precipitation grid, etc) along with the DEM and relief.
+    %           This grid can be a different size or have a different cellsize than the underlying dem (but still must be the same projection and coordinates system!), it will be
+    %           resampled to match the provided DEM.  
+    %       conditioned_DEM [] - option to provide a hydrologically conditioned DEM for use in this function (do not provide a conditoned DEM
+    %           for the main required DEM input!) which will be used for extracting elevations. See 'ConditionDEM' function for options for making a 
+    %           hydrological conditioned DEM. If no input is provided the code defaults to using the mincosthydrocon function.
+    %       interp_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a conditioned DEM)
+    %       plot_type ['vector'] - expects either 'vector' or 'grid', default is 'vector'. Controls whether all streams are drawn as individual lines ('vector') or if
+    %           the stream network is plotted as a grid and downsampled ('grid'). The 'grid' option is much faster for large datasets, 
+    %           but can result in inaccurate site selections. The 'vector' option is easier to see, but can be very slow to load and interact with.
+    %       threshold_area [1e6] - used to redraw downsampled stream network if 'plot_type' is set to 'grid'
+
     % 
     % Outputs:
     %       Outlets - n x 3 matrix of sample locations with columns basin number, x coordinate, and y coordinate
@@ -33,9 +43,10 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
     % Examples:
     %       [Outs]=DetritalSamplePicker(DEM,FD,A,S);
     %       [Outs]=DetritalSamplePicker(DEM,FD,A,S,'rlf_radius',5000);
+    %       [Outs]=DetritalSamplePicker(DEM,FD,A,S,,'rlf_grid',RLF);
     %  
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Function Written by Adam M. Forte - Last Revised Winter 2017 %
+    % Function Written by Adam M. Forte - Last Revised Spring 2018 %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     % Parse Inputs
@@ -46,10 +57,14 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
     addRequired(p,'A',@(x) isa(x,'GRIDobj'));
     addRequired(p,'S',@(x) isa(x,'STREAMobj'));
 
-    addParamValue(p,'theta_ref',0.45,@(x) isscalar(x) && isnumeric(x));
+    addParamValue(p,'theta_ref',0.5,@(x) isscalar(x) && isnumeric(x));
     addParamValue(p,'rlf_radius',2500,@(x) isscalar(x) && isnumeric(x));
-    addParamValue(p,'plot_type','native',@(x) ischar(validatestring(x,{'native','downsample'})));
+    addParamValue(p,'plot_type','vector',@(x) ischar(validatestring(x,{'vector','grid'})));
     addParamValue(p,'threshold_area',1e6,@(x) isnumeric(x));   
+    addParamValue(p,'rlf_grid',[],@(x) isa(x,'GRIDobj'));
+    addParamValue(p,'extra_grid',[],@(x) isa(x,'GRIDobj'));
+    addParamValue(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
+    addParamValue(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
 
     parse(p,DEM,FD,A,S,varargin{:});
     DEM=p.Results.DEM;
@@ -61,6 +76,11 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
     rlf_radius=p.Results.rlf_radius;
     plot_type=p.Results.plot_type;
     threshold_area=p.Results.threshold_area;
+    RLF=p.Results.rlf_grid;
+    EG=p.Results.extra_grid;
+    DEMf=p.Results.conditioned_DEM;
+    iv=p.Results.interp_value;
+
 
     % Check for outlets file from previous run
     if exist('Outlets.mat','file')==2;
@@ -72,42 +92,88 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
     end
              
     % Hydrologically condition dem
-    zc=mincosthydrocon(S,DEM,'interp',0.1);
-    DEMf=GRIDobj(DEM);
-    DEMf.Z(DEMf.Z==0)=NaN;
-    DEMf.Z(S.IXgrid)=zc;
+    if isempty(DEMf)
+        zc=mincosthydrocon(S,DEM,'interp',iv);
+        DEMf=GRIDobj(DEM);
+        DEMf.Z(DEMf.Z==0)=NaN;
+        DEMf.Z(S.IXgrid)=zc;
+    end
 
     switch plot_type
-    case 'native'
-        disp('Calculating local relief')
-        RLF=localtopography(DEM,rlf_radius);
-          
+    case 'vector'
+
+
+        if isempty(RLF)
+            disp('Calculating local relief')
+            RLF=localtopography(DEM,rlf_radius);
+        end
+
         % Plot main figure
-        f1=figure(1);
-        clf
-        set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8]);
-        
-        ax(2)=subplot(2,1,2);
-        hold on
-        imageschs(DEM,RLF);
-        plot(S,'-k','LineWidth',1.5);
-        scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
-        title('Local Relief')
-        hold off
+        if isempty(EG)
+            f1=figure(1);
+            clf
+            set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8]);        
+
+            ax(2)=subplot(2,1,2);
+            hold on
+            imageschs(DEM,RLF);
+            plot(S,'-k','LineWidth',1.5);
+            scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
+            title('Local Relief')
+            hold off
+                
+            ax(1)=subplot(2,1,1);
+            hold on
+            imageschs(DEM,DEM);
+            plot(S,'-k','LineWidth',1.5);
+            scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
+            title('Elevation')
+            hold off
             
-        ax(1)=subplot(2,1,1);
-        hold on
-        imageschs(DEM,DEM);
-        plot(S,'-k','LineWidth',1.5);
-        scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
-        title('Elevation')
-        hold off
-        
-        linkaxes(ax,'xy');
-    case 'downsample'
+            linkaxes(ax,'xy');
+        else
+
+            if ~validatealignment(EG,DEM);
+                disp('Resampling extra grid');
+                EG=resample(EG,DEM,'bicubic');
+            end
+
+            % Plot main figure
+            f1=figure(1);
+            clf
+            set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8]);
+            
+            ax(3)=subplot(3,1,3);
+            hold on
+            imageschs(DEM,EG)
+            plot(S,'-k','LineWidth',1.5);
+            scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
+            title('User Provided Extra Grid')
+            hold off
+
+            ax(2)=subplot(3,1,2);
+            hold on
+            imageschs(DEM,RLF);
+            plot(S,'-k','LineWidth',1.5);
+            scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
+            title('Local Relief')
+            hold off
+                
+            ax(1)=subplot(3,1,1);
+            hold on
+            imageschs(DEM,DEM);
+            plot(S,'-k','LineWidth',1.5);
+            scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
+            title('Elevation')
+            hold off
+            
+            linkaxes(ax,'xy');
+        end
+
+    case 'grid'
         disp('Downsampling datasets for display purposes')  
         % Redo flow direction   
-        DEMr=resample(DEM,DEM.cellsize*4);
+        DEMr=resample(DEM,DEM.cellsize*4,'bicubic');
         FDr=FLOWobj(DEMr,'preprocess','carve');
         % True outlets
         out_T_xy=streampoi(S,'outlets','xy');
@@ -124,38 +190,79 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
         % Turn it into a grid
         SG=STREAMobj2GRIDobj(Sr);
         % Redo local relief
-        RLFr=localtopography(DEMr,rlf_radius);
+        if isempty(RLF)
+            RLFr=localtopography(DEMr,rlf_radius);
+        else
+            RLFr=resample(RLF,DEMr,'bicubic');
+        end
 
-        % Plot main figure
-        f1=figure(1);
-        clf
-        set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8]);
-        
-        ax(2)=subplot(2,1,2);
-        hold on
-        imageschs(DEMr,RLFr);
-        plot(Sr,'-k','LineWidth',1.5);
-        scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
-        title('Local Relief')
-        hold off
+        if isempty(EG)
+            % Plot main figure
+            f1=figure(1);
+            clf
+            set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8]);
             
-        ax(1)=subplot(2,1,1);
-        hold on
-        imageschs(DEMr,DEMr);
-        plot(Sr,'-k','LineWidth',1.5);
-        scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
-        title('Elevation')
-        hold off
-        
-        linkaxes(ax,'xy');
+            ax(2)=subplot(2,1,2);
+            hold on
+            imageschs(DEMr,RLFr);
+            plot(Sr,'-k','LineWidth',1.5);
+            scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
+            title('Local Relief')
+            hold off
+                
+            ax(1)=subplot(2,1,1);
+            hold on
+            imageschs(DEMr,DEMr);
+            plot(Sr,'-k','LineWidth',1.5);
+            scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
+            title('Elevation')
+            hold off
+            
+            linkaxes(ax,'xy');
+        else
+
+            EGr=resample(EG,DEMr,'bicubic');
+
+            % Plot main figure
+            f1=figure(1);
+            clf
+            set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8]);
+            
+            ax(3)=subplot(3,1,3);
+            hold on
+            imageschs(DEMr,EGr)
+            plot(S,'-k','LineWidth',1.5);
+            scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
+            title('User Provided Extra Grid')
+            hold off
+
+            ax(2)=subplot(3,1,2);
+            hold on
+            imageschs(DEMr,RLFr);
+            plot(Sr,'-k','LineWidth',1.5);
+            scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
+            title('Local Relief')
+            hold off
+                
+            ax(1)=subplot(3,1,1);
+            hold on
+            imageschs(DEMr,DEMr);
+            plot(Sr,'-k','LineWidth',1.5);
+            scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
+            title('Elevation')
+            hold off
+            
+            linkaxes(ax,'xy');
+        end
+
     end
     
     % Start sample selection process
     str1='N';
     str2='Y';
 
-    while strcmp(str2,'Y')==1;
-        while strcmp(str1,'N')==1;	
+    while strcmpi(str2,'Y');
+        while strcmpi(str1,'N');	
             
             disp('Zoom and pan to area of interest and press "return/enter" when ready to pick');
             pause()
@@ -167,11 +274,8 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
             % Build logical raster
             [xn,yn]=snap2stream(S,x,y);
             ix=coord2ind(DEM,xn,yn);
-            IX=GRIDobj(DEM);
-            IX.Z(ix)=1;
-            [ixmat,X,Y]=GRIDobj2mat(IX);
-            ixmat=logical(ixmat);
-            IX=GRIDobj(X,Y,ixmat);
+            IX=GRIDobj(DEM,'logical');
+            IX.Z(ix)=true;
 
             % Clip out stream network
             Sn=modify(S,'upstreamto',IX);
@@ -197,9 +301,9 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
 
             prompt='    Is this the stream segment you wanted? Y/N [Y]: ';
             str5=input(prompt,'s');
-            if isempty(str5) | strcmp(str5,'Y')==1;
+            if isempty(str5) | strcmpi(str5,'Y');
                 str1 = 'Y';
-            elseif strcmp(str5,'N')
+            elseif strcmpi(str5,'N')
                 str1='N';
             end
             close figure 2
@@ -229,30 +333,50 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
        
         prompt='    Keep this stream? Y/N [Y]: ';
         str2=input(prompt,'s');
-        if isempty(str2) | strcmp(str2,'Y')==1;
+        if isempty(str2) | strcmpi(str2,'Y');
             Outlets(ii,3)=ii;
             Outlets(ii,1)=xn;
             Outlets(ii,2)=yn;
             ii=ii+1;
             
             % Plot selected point on figures
-            figure(1);
-            subplot(2,1,2);
-            hold on
-            scatter(xn,yn,20,'w','filled');
-            hold off
-                      
-            subplot(2,1,1);
-            hold on
-            scatter(xn,yn,20,'w','filled');
-            hold off
+
+            if isempty(EG)
+                figure(1);
+                subplot(2,1,2);
+                hold on
+                scatter(xn,yn,20,'w','filled');
+                hold off
+                          
+                subplot(2,1,1);
+                hold on
+                scatter(xn,yn,20,'w','filled');
+                hold off
+            else
+                figure(1);
+
+                subplot(3,1,3);
+                hold on
+                scatter(xn,yn,20,'w','filled');
+                hold off
+
+                subplot(3,1,2);
+                hold on
+                scatter(xn,yn,20,'w','filled');
+                hold off
+                          
+                subplot(3,1,1);
+                hold on
+                scatter(xn,yn,20,'w','filled');
+                hold off
+            end
             
             save('Outlets.mat','Outlets');
         end
         
         prompt='    Keep picking streams? Y/N [Y]: ';
         str3=input(prompt,'s');
-        if isempty(str3) | strcmp(str3,'Y')==1;
+        if isempty(str3) | strcmpi(str3,'Y');
            str2 = 'Y';
            str1 = 'N';
         end
