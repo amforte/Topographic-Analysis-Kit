@@ -67,6 +67,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%			for making a hydrological conditioned DEM. If no input is provided the code defaults to using the mincosthydrocon function.
 	%	interp_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a 
 	%			conditioned DEM)
+	%	save_figures [false] - logical flag to either save figures showing ksn fits (true) or to not (false - default)
 	%		
 	% Outputs:
 	%	knl - n x 8 matrix of node list for selected stream segments, columns are x coordinate, y coordinate, drainage area, ksn,
@@ -111,6 +112,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	addParamValue(p,'min_channel_length',[],@(x) isnumeric(x) && isscalar(x));
 	addParamValue(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
 	addParamValue(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
+	addParamValue(p,'save_figures',false,@(x) isscalar(x) && islogical(x));
 
 	parse(p,DEM,FD,A,S,varargin{:});
 	DEM=p.Results.DEM;
@@ -135,6 +137,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	DEMc=p.Results.conditioned_DEM;
 	min_elev=p.Results.min_elev;
 	max_area=p.Results.max_area;
+	save_figures=p.Results.save_figures;
 
 	% Max Ksn for color scaling
 	mksn=p.Results.max_ksn;
@@ -518,6 +521,12 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							hold on
 							plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
 							hold off
+
+							subplot(4,1,4);
+							hold on
+							plot(C.area,ksn_val.*C.area.^(-C.mn),'-k','LineWidth',2);
+							hold off
+
 						else
 							figure(f2)
 							subplot(3,1,1);
@@ -624,6 +633,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 								hold on
 								plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
 								hold off
+
+								subplot(4,1,4);
+								hold on
+								plot(Cseg.area,ksn_val.*Cseg.area.^(-1*Cseg.mn),'-k','LineWidth',2);
+								hold off
 							else								
 								figure(f2)
 								subplot(3,1,1);
@@ -647,6 +661,20 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					end
 
 					%% Plot result figure
+					if display_slope_area
+						figure(f2)
+						subplot(4,1,2)
+						hold on
+						plot(res_list(:,1),ksn_list(:,4),'-k','LineWidth',2);
+						hold off
+					else
+						figure(f2)
+						subplot(3,1,2)
+						hold on
+						plot(res_list(:,1),ksn_list(:,4),'-k','LineWidth',2);
+						hold off
+					end
+
 					f3=figure(3);
 					set(f3,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
 
@@ -803,6 +831,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							subplot(4,1,3);
 							hold on
 							plot((C.distance)./1000,C.pred+elbl,'-k','LineWidth',2);
+							hold off
+
+							subplot(4,1,4);
+							hold on
+							plot(C.area,ksn_val.*C.area.^(-C.mn),'-k','LineWidth',2);
 							hold off							
 						else
 							figure(f2)
@@ -909,6 +942,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 								subplot(4,1,3);
 								hold on
 								plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								hold off
+
+								subplot(4,1,4);
+								hold on
+								plot(Cseg.area,ksn_val.*Cseg.area.^(-Cseg.mn),'-k','LineWidth',2);
 								hold off									
 							else
 								figure(f2)
@@ -932,6 +970,20 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					end
 
 					%% Plot fit result
+					if display_slope_area
+						figure(f2)
+						subplot(4,1,2)
+						hold on
+						plot(res_list(:,1)./1000,ksn_list(:,4),'-k','LineWidth',2);
+						hold off
+					else
+						figure(f2)
+						subplot(3,1,2)
+						hold on
+						plot(res_list(:,1)./1000,ksn_list(:,4),'-k','LineWidth',2);
+						hold off
+					end
+
 					f3=figure(3);
 					set(f3,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
 
@@ -972,6 +1024,12 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					str3 = 'C';
 					ksn_master{ii,1}=ksn_list;
 					bnd_master{ii,1}=bnd_ix;
+					if save_figures
+						f2_name=['StreamFits_' num2str(ii) '.pdf'];
+						f3_name=['StreamRsds_' num2str(ii) '.pdf'];
+						print(f2,f2_name,'-dpdf','-fillpage');
+						print(f3,f3_name,'-dpdf','-fillpage');
+					end
 					clear ksn_list ksn_nodes res_list bnd_ix;
 					ii=ii+1;
 				elseif strcmpi(str2,'Y');
@@ -979,6 +1037,12 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					str3 = 'C';
 					ksn_master{ii,1}=ksn_list;
 					bnd_master{ii,1}=bnd_ix;
+					if save_figures
+						f2_name=['StreamFits_' num2str(ii) '.pdf'];
+						f3_name=['StreamRsds_' num2str(ii) '.pdf'];
+						print(f2,f2_name,'-dpdf','-fillpage');
+						print(f3,f3_name,'-dpdf','-fillpage');
+					end
 					clear ksn_list ksn_nodes res_list bnd_ix;
 					ii=ii+1;
 				elseif strcmpi(str2,'N');
@@ -986,6 +1050,12 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					str3 = 'C';
 					ksn_master{ii,1}=ksn_list;
 					bnd_master{ii,1}=bnd_ix;
+					if save_figures
+						f2_name=['StreamFits_' num2str(ii) '.pdf'];
+						f3_name=['StreamRsds_' num2str(ii) '.pdf'];
+						print(f2,f2_name,'-dpdf','-fillpage');
+						print(f3,f3_name,'-dpdf','-fillpage');
+					end
 					clear ksn_list ksn_nodes res_list bnd_ix;
 				elseif strcmpi(str2,'R');
 					str3 = 'R';
@@ -1182,6 +1252,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							hold on
 							plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
 							hold off
+
+							subplot(4,1,4);
+							hold on
+							plot(C.area,ksn_val.*C.area.^(-C.mn),'-k','LineWidth',2);
+							hold off
 						else
 							figure(f2)
 							subplot(3,1,1);
@@ -1274,6 +1349,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 								hold on
 								plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
 								hold off
+
+								subplot(4,1,4);
+								hold on
+								plot(Cseg.area,ksn_val.*Cseg.area.^(-Cseg.mn),'-k','LineWidth',2);
+								hold off
 							else
 								figure(f2)
 								subplot(3,1,1);
@@ -1297,6 +1377,20 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					end
 
 					%% Plot result figure
+					if display_slope_area
+						figure(f2)
+						subplot(4,1,2)
+						hold on
+						plot(res_list(:,1),ksn_list(:,4),'-k','LineWidth',2);
+						hold off
+					else
+						figure(f2)
+						subplot(3,1,2)
+						hold on
+						plot(res_list(:,1),ksn_list(:,4),'-k','LineWidth',2);
+						hold off
+					end
+
 					f3=figure(3);
 					set(f3,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
 
@@ -1442,6 +1536,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							hold on
 							plot((C.distance)./1000,C.pred+elbl,'-k','LineWidth',2);
 							hold off
+
+							subplot(4,1,4);
+							hold on
+							plot(C.area,ksn_val.*C.area.^(-C.mn),'-k','LineWidth',2);
+							hold off							
 						else
 							figure(f2)
 							subplot(3,1,1);
@@ -1535,6 +1634,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 								hold on
 								plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
 								hold off
+
+								subplot(4,1,4);
+								hold on
+								plot(Cseg.area,ksn_val.*Cseg.area.^(-Cseg.mn),'-k','LineWidth',2);
+								hold off
 							else
 								figure(f2)
 								subplot(3,1,1);
@@ -1557,6 +1661,20 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					end
 
 					%% Plot fit result
+					if display_slope_area
+						figure(f2)
+						subplot(4,1,2)
+						hold on
+						plot(res_list(:,1)./1000,ksn_list(:,4),'-k','LineWidth',2);
+						hold off
+					else
+						figure(f2)
+						subplot(3,1,2)
+						hold on
+						plot(res_list(:,1)./1000,ksn_list(:,4),'-k','LineWidth',2);
+						hold off
+					end
+
 					f3=figure(3);
 					set(f3,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
 
@@ -1595,11 +1713,23 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					ksn_master{ii,1}=ksn_list;
 					bnd_master{ii,1}=bnd_ix;
 					Sc=Sct;
+					if save_figures
+						f2_name=['StreamFits_' num2str(ii) '.pdf'];
+						f3_name=['StreamRsds_' num2str(ii) '.pdf'];
+						print(f2,f2_name,'-dpdf','-fillpage');
+						print(f3,f3_name,'-dpdf','-fillpage');
+					end
 					clear ksn_list ksn_nodes res_list bnd_ix;
 				elseif strcmpi(str2,'Y');
 					str1=[];
 					ksn_master{ii,1}=ksn_list;
 					bnd_master{ii,1}=bnd_ix;
+					if save_figures
+						f2_name=['StreamFits_' num2str(ii) '.pdf'];
+						f3_name=['StreamRsds_' num2str(ii) '.pdf'];
+						print(f2,f2_name,'-dpdf','-fillpage');
+						print(f3,f3_name,'-dpdf','-fillpage');
+					end
 					Sc=Sct;
 					clear ksn_list ksn_nodes res_list bnd_ix;
 				elseif strcmpi(str2,'R');
