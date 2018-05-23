@@ -29,9 +29,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%			by providing an input for the optional parameter 'min_channel_length', input should be in map units and greater than the default.
 	%		'channel_heads' - will use a supplied list of coordinates of channel heads to select and iterate through streams of interest. If this
 	%			option is used, the user must provide an input for the optional 'channel_head_list' parameter.
-	%	pick_method ['chi'] - choice of how you want to pick stream segments:
-	%		'chi' - select segments on a chi - z plot (recommended)
+	%	pick_method ['chi'] - choice of how you want to pick stream segments. The diagram within which to pick based on your selection will be 
+	%			outline in red. Valid inputs are:
+	%		'chi' - select segments on a chi - z plot (recommended and default)
 	%		'stream' - select segments on a longitudinal profile
+	%		'slope_area' - select segments on a slope area plot
 	%	junction_method ['check'] - choice of how to deal with stream junctions:
 	%		'check' - after each choice, will check whether downstream portions of the selected stream have already been fit, and if it has,
 	%			the already fit portion of the stream will not be displayed or refit
@@ -46,7 +48,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%	smooth_distance [1000] - distance in map units over which to smooth ksn measures when converting to shapefile
 	%	display_slope_area [false] - logical flag to display slope area plots. Some people love slope area plots (like one of the authors of
 	%			the supporting paper), some people hate slope area plots (like the other author of the supporting paper), so you can either 
-	%			not draw them at all (false - default) or include them (true).
+	%			not draw them at all (false - default) or include them (true). This will automatically be set to true if you select 'slope_area'
+	%			as the 'pick_method'.
 	%	min_channel_length [] - minimum channel length for consideration when using the 'all_streams' method of input, provide in map units.
 	%	channel_head_list [] - m x 2 array of x and y coordinates of channel heads, required when using 'channel_heads' method of input, 
 	%			must be in the same coordinate system as the input DEM etc. The code will attempt to find the nearest channel head to the 
@@ -75,12 +78,16 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%		reference concavity and best fit concavity columns will be the same.
 	%	ksn_master - identical to knl but as a cell array where individual cells are individual selected channels
 	%	bnd_list - n x 4 matrix of selected bounds for fitting ksn, columns are x coordinate, y coordinate, elevation, and the stream identifying number 
-	%		(this could be thought of as a list of knickpoints), also output as a seperate shapefile.
+	%		(this could be thought of as a list of knickpoints), also output as a seperate shapefile. If x y and z values appear as NaN, this indicates
+	%		that bounds for this stream were not selected. 
 	%	Sc - STREAMobj of selected streams
 	%
 	% Examples:
 	%	[knl,ksn_master,bnd_list,Sc]=KSN_Profiler(DEM,FD,A,S);
 	%	[knl,ksn_master,bnd_list,Sc]=KSN_Profiler(DEM,FD,A,S,'junction_method','ignore','ref_concavity',0.65,'max_ksn',500);
+	%
+	% Note:
+	%	-If no boundaries/knickpoints are selected for any of the streams selected, then a '_knicks.shp' shapefile will not be produced.
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
@@ -97,7 +104,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	addParamValue(p,'shape_name','ksn',@(x) ischar(x));
 	addParamValue(p,'smooth_distance',1000,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'theta_method','ref',@(x) ischar(validatestring(x,{'ref','auto'})));
-	addParamValue(p,'pick_method','chi',@(x) ischar(validatestring(x,{'chi','stream'})));
+	addParamValue(p,'pick_method','chi',@(x) ischar(validatestring(x,{'chi','stream','slope_area'})));
 	addParamValue(p,'junction_method','check',@(x) ischar(validatestring(x,{'check','ignore'})));	
 	addParamValue(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'display_slope_area',false,@(x) isscalar(x) && islogical(x));
@@ -194,6 +201,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		end
 		plot_type='none';
 		input_method='preselected';
+	end
+
+	if strcmp(pick_method,'slope_area')
+		display_slope_area=true;
 	end
 
 	if ~isempty(min_elev) && ~isempty(max_area)
@@ -483,10 +494,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					if isempty(cv)
 						if strcmp(theta_method,'ref')
 							Cbf=ChiCalc(Sn,DEMc,A,1);
-							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*Cseg.ks_pos ...
+							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
 								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn];
 						elseif strcmp(theta_method,'auto')
-							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*Cseg.ks_pos ...
+							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
 								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn];
 						end
 
@@ -541,7 +552,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						end
 
 						res_list=[C.chi C.res];
-						bnd_ix=[];
+						bnd_ix=NaN;;
 
 					else
 						% Sort knickpoint list and construct bounds list
@@ -710,7 +721,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				elseif strcmp(pick_method,'stream')	
 
 					if display_slope_area
-						[bs,ba,bc,bd]=sa(DEMc,Sn,A,C.chi,smooth_distance);	
+						[bs,ba,bc,bd,bk]=sa_ksn(DEMc,Sn,A,C.chi,ak,smooth_distance);	
 
 						ax4=subplot(4,1,4);
 						hold on
@@ -795,10 +806,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					if isempty(d)
 						if strcmp(theta_method,'ref')
 							Cbf=ChiCalc(Sn,DEMc,A,1);
-							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*Cseg.ks_pos ...
+							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
 								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn];
 						elseif strcmp(theta_method,'auto')
-							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*Cseg.ks_pos ...
+							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
 								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn];
 						end
 
@@ -851,7 +862,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						end
 
 						res_list=[C.chi C.res];
-						bnd_ix=[];
+						bnd_ix=NaN;;
 
 					else
 						% Sort knickpoint list and construct bounds list
@@ -1014,6 +1025,259 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					ylabel('Residual (m)')
 					title('Residual on k_{sn} fit')
 					hold off
+
+				elseif strcmp(pick_method,'slope_area')
+
+					[bs,ba,bc,bd,bk]=sa_ksn(DEMc,Sn,A,C.chi,ak,smooth_distance);
+
+					ax3=subplot(4,1,3);
+					hold on
+					plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+					plotdz(Sn,DEMc,'dunit','km','Color','k');
+					scatter((C.distance)./1000,C.elev,5,log10(C.area),'filled');
+					xlabel('Distance from Mouth (km)')
+					ylabel('Elevation (m)')
+					legend('Unconditioned DEM','Conditioned DEM','Log Drainage Area','location','best');
+					title('Long Profile')
+					hold off
+
+					ax2=subplot(4,1,2);
+					hold on
+					scatter(ba,bk,20,log10(ba),'filled','MarkerEdgeColor','k');
+					xlabel('Log Area')
+					ylabel('Auto k_{sn}');
+					title('Log Area - Auto k_{sn}');
+					set(ax2,'XScale','log','XDir','reverse');
+					hold off
+
+					ax1=subplot(4,1,1);
+					hold on
+					plot(C.chi,C.elev,'-k');
+					scatter(C.chi,C.elev,10,log10(C.area),'filled');
+					xlabel('Chi')
+					ylabel('Elevation (m)')
+					title('Chi - Z')
+					hold off
+
+					ax4=subplot(4,1,4);
+					hold on
+					scatter(ba,bs,20,log10(ba),'filled','MarkerEdgeColor','k');
+					xlabel('Log Area');
+					ylabel('Log Gradient');
+					title(['Slope-Area: \theta = ' num2str(C.mn) ' : Pick Segments'],'Color','r');
+					set(ax4,'YScale','log','XScale','log','XDir','reverse');
+					ax4.XColor='Red';
+					ax4.YColor='Red';
+					hold off
+
+					linkaxes([ax4,ax2],'x');
+					colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet'); colormap(ax4,'jet');
+
+					disp('    Select bounds for calculating channel steepnesses and press enter when completed')
+					[av,~]=ginput;
+
+					if isempty(av)
+						if strcmp(theta_method,'ref')
+							Cbf=ChiCalc(Sn,DEMc,A,1);
+							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn];
+						elseif strcmp(theta_method,'auto')
+							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn];
+						end
+
+						% Determine where ksn value fits into color scale and plot
+						ksn_val=C.ks;
+
+						if ksn_val > mksn;
+							figure(f1)
+							hold on
+							plot(Sn,'Color',KSN_col(end,:),'LineWidth',2);
+							hold off
+						else
+							edges=linspace(0,mksn,10);
+							n=histc(ksn_val,edges);
+							figure(f1)
+							hold on
+							plot(Sn,'Color',KSN_col(logical(n),:),'LineWidth',2);
+							hold off	
+						end
+
+						[~,lbix]=min(C.chi);
+						elbl=C.elev(lbix);
+
+						figure(f2)
+						subplot(4,1,1);
+						hold on
+						plot(C.chi,C.pred+elbl,'-k','LineWidth',2);
+						hold off
+
+						subplot(4,1,3);
+						hold on
+						plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
+						hold off
+
+						subplot(4,1,4);
+						hold on
+						plot(C.area,ksn_val.*C.area.^(-C.mn),'-k','LineWidth',2);
+						hold off
+
+						res_list=[C.area C.res];
+						bnd_ix=NaN;;
+
+					else
+						% Sort knickpoint list and construct bounds list
+						avs=sortrows(av,'descend');
+						bnds=vertcat(nanmax(C.area),avs,nanmin(C.area));
+
+						num_bnds=numel(bnds);
+						rc=C.chi;
+						rx=C.x;
+						ry=C.y;
+						rd=C.distance;
+						ra=C.area;
+						for jj=1:num_bnds-1
+							% Extract bounds
+							lb=bnds(jj);
+							rb=bnds(jj+1);
+
+							% Clip out stream segment
+							lb_dadist=sqrt(sum(bsxfun(@minus, ra, lb).^2,2));
+							rb_dadist=sqrt(sum(bsxfun(@minus, ra, rb).^2,2));
+
+							lbx=rx(lb_dadist==min(lb_dadist));
+							lby=ry(lb_dadist==min(lb_dadist));
+
+							rbx=rx(rb_dadist==min(rb_dadist));
+							rby=ry(rb_dadist==min(rb_dadist));	
+
+							lix=coord2ind(DEM,lbx,lby);
+							LIX=GRIDobj(DEM,'logical');
+							LIX.Z(lix)=true;	
+
+							rix=coord2ind(DEM,rbx,rby);
+							RIX=GRIDobj(DEM,'logical');
+							RIX.Z(rix)=true;	
+
+							Seg=modify(Sn,'downstreamto',RIX);
+							Seg=modify(Seg,'upstreamto',LIX);
+
+							% Construct bound list
+							if jj<num_bnds-1
+								bnd_ix(jj,1)=rix;
+							end
+
+							% Calculate chi to find ksn and bestfit concavity 
+							if strcmp(theta_method,'ref')
+								Cseg=ChiCalc(Seg,DEMc,A,1,ref_theta);
+							elseif strcmp(theta_method,'auto')
+								Cseg=ChiCalc(Seg,DEMc,A,1,C.mn);
+							end
+							Cbfseg=ChiCalc(Seg,DEMc,A,1);								
+
+							% Determine where ksn value fits into color scale and plot
+							ksn_val=Cseg.ks;
+
+							if ksn_val > mksn;
+								figure(f1)
+								hold on
+								plot(Seg,'Color',KSN_col(end,:),'LineWidth',2);
+								hold off
+							else
+								edges=linspace(0,mksn,10);
+								n=histc(ksn_val,edges);
+								figure(f1)
+								hold on
+								plot(Seg,'Color',KSN_col(logical(n),:),'LineWidth',2);
+								hold off	
+							end
+
+							ksn_nodes{jj,1}=[Cseg.x Cseg.y Cseg.area ones(numel(Cseg.x),1)*Cseg.ks ones(numel(Cseg.x),1)*Cseg.ks_neg ones(numel(Cseg.x),1)*Cseg.ks_pos ...
+								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn];
+
+							% Plot linear fits	
+							rchi=rc(rb_dadist==min(rb_dadist));
+							lchi=rc(lb_dadist==min(lb_dadist));
+							segChi=linspace(lchi,rchi,numel(Cseg.chi));
+							seg0Chi=linspace(0,max(Cseg.chi),numel(Cseg.chi));
+							[~,lbix]=min(Cseg.chi);
+							elbl=Cseg.elev(lbix);
+
+							figure(f2)
+							subplot(4,1,1);
+							hold on
+							plot(segChi,(seg0Chi.*ksn_val)+elbl,'-k','LineWidth',2);
+							hold off
+
+							seg_st=rd(lb_dadist==min(lb_dadist));
+							subplot(4,1,3);
+							hold on
+							plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+							hold off
+
+							subplot(4,1,4);
+							hold on
+							plot(Cseg.area,ksn_val.*Cseg.area.^(-1*Cseg.mn),'-k','LineWidth',2);
+							hold off
+
+
+							res_list{jj,1}=[Cseg.area Cseg.res];
+
+
+						end
+
+						ksn_list=vertcat(ksn_nodes{:});
+						res_list=vertcat(res_list{:});
+					end
+
+
+					%% Plot result figure
+					if display_slope_area
+						figure(f2)
+						subplot(4,1,2)
+						hold on
+						plot(res_list(:,1),ksn_list(:,4),'-k','LineWidth',2);
+						hold off
+					else
+						figure(f2)
+						subplot(3,1,2)
+						hold on
+						plot(res_list(:,1),ksn_list(:,4),'-k','LineWidth',2);
+						hold off
+					end
+
+					f3=figure(3);
+					set(f3,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
+					clf
+					ax31=subplot(2,1,2);
+					hold on
+					s1=scatter(log10(ba),bk,20,'k','filled');
+					p1=plot(log10(res_list(:,1)),ksn_list(:,4)-ksn_list(:,5),':k');
+					plot(log10(res_list(:,1)),ksn_list(:,4)+ksn_list(:,6),':k');
+					p2=plot(log10(res_list(:,1)),ksn_list(:,4),'-k','LineWidth',2);
+					[ksn_vals,~,ksn_ix]=unique(ksn_list(:,4));
+					a_means=accumarray(ksn_ix,res_list(:,1),[],@nanmean);
+					for kk=1:numel(ksn_vals)
+						text(log10(a_means(kk)),ksn_vals(kk),['k_{sn} = ' num2str(ksn_vals(kk))],...
+							'VerticalAlignment','bottom','HorizontalAlignment','center');
+					end
+					xlabel('Log Area')
+					ylabel('k_{sn}')
+					title('k_{sn} - Log Area')
+					legend([s1 p1 p2],{'Auto k_{sn}','k_{sn} uncertainty','k_{sn} of fit segments'},'location','best');
+					set(ax31,'XScale','log','XDir','reverse');
+					hold off
+
+					ax32=subplot(2,1,1);
+					hold on
+					plot([log10(min(res_list(:,1))) log10(max(res_list(:,1)))],[0 0],'-k');
+					scatter(log10(res_list(:,1)),res_list(:,2),10,'k','filled');
+					xlabel('Log Area')
+					ylabel('Residual (m)')
+					title('Residual on k_{sn} fit')
+					set(ax32,'XScale','log','XDir','Reverse');
+					hold off
+
 				end
 			
 				prompt='    Continue picking (Y), stop picking (N), or redo fit on this stream (R)? [Y]: ';
@@ -1229,10 +1493,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					if isempty(cv)
 						if strcmp(theta_method,'ref')
 							Cbf=ChiCalc(Sn,DEMc,A,1);
-							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*Cseg.ks_pos ...
+							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
 								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn];
 						elseif strcmp(theta_method,'auto')
-							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*Cseg.ks_pos ...
+							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
 								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn];
 						end
 
@@ -1271,7 +1535,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						end
 
 						res_list=[C.chi C.res];
-						bnd_ix=[];
+						bnd_ix=NaN;;
 
 					else
 						% Sort knickpoint list and construct bounds list
@@ -1422,8 +1686,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					title('Residual on k_{sn} fit')
 					hold off				
 
+				elseif strcmp(pick_method,'stream')	
 
-				elseif strcmp(pick_method,'stream')		
 					if display_slope_area
 						[bs,ba,bc,bd]=sa(DEMc,Sn,A,C.chi,smooth_distance);	
 
@@ -1513,10 +1777,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					if isempty(d)
 						if strcmp(theta_method,'ref')
 							Cbf=ChiCalc(Sn,DEMc,A,1);
-							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*Cseg.ks_pos ...
+							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
 								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn];
 						elseif strcmp(theta_method,'auto')
-							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*Cseg.ks_pos ...
+							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
 								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn];
 						end
 
@@ -1555,7 +1819,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						end
 
 						res_list=[C.chi C.res];
-						bnd_ix=[];
+						bnd_ix=NaN;;
 
 					else
 						% Sort knickpoint list and construct bounds list
@@ -1705,7 +1969,233 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					ylabel('Residual (m)')
 					title('Residual on k_{sn} fit')
 					hold off
+
+				elseif strcmp(pick_method,'slope_area')
+
+					[bs,ba,bc,bd,bk]=sa_ksn(DEMc,Sn,A,C.chi,ak,smooth_distance);
+
+					ax3=subplot(4,1,3);
+					hold on
+					plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+					plotdz(Sn,DEMc,'dunit','km','Color','k');
+					scatter((C.distance)./1000,C.elev,5,log10(C.area),'filled');
+					xlabel('Distance from Mouth (km)')
+					ylabel('Elevation (m)')
+					legend('Unconditioned DEM','Conditioned DEM','Log Drainage Area','location','best');
+					title('Long Profile')
+					hold off
+
+					ax2=subplot(4,1,2);
+					hold on
+					scatter(ba,bk,20,log10(ba),'filled','MarkerEdgeColor','k');
+					xlabel('Log Area')
+					ylabel('Auto k_{sn}');
+					title('Log Area - Auto k_{sn}');
+					set(ax2,'XScale','log','XDir','reverse');
+					hold off
+
+					ax1=subplot(4,1,1);
+					hold on
+					plot(C.chi,C.elev,'-k');
+					scatter(C.chi,C.elev,10,log10(C.area),'filled');
+					xlabel('Chi')
+					ylabel('Elevation (m)')
+					title('Chi - Z')
+					hold off
+
+					ax4=subplot(4,1,4);
+					hold on
+					scatter(ba,bs,20,log10(ba),'filled','MarkerEdgeColor','k');
+					xlabel('Log Area');
+					ylabel('Log Gradient');
+					title(['Slope-Area: \theta = ' num2str(C.mn) ' : Pick Segments'],'Color','r');
+					set(ax4,'YScale','log','XScale','log','XDir','reverse');
+					ax4.XColor='Red';
+					ax4.YColor='Red';
+					hold off
+
+					linkaxes([ax4,ax2],'x');
+					colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet'); colormap(ax4,'jet');
+
+					disp('    Select bounds for calculating channel steepnesses and press enter when completed')
+					[av,~]=ginput;
+
+					if isempty(av)
+						if strcmp(theta_method,'ref')
+							Cbf=ChiCalc(Sn,DEMc,A,1);
+							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn];
+						elseif strcmp(theta_method,'auto')
+							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn];
+						end
+
+						% Determine where ksn value fits into color scale and plot
+						ksn_val=C.ks;
+
+						[~,lbix]=min(C.chi);
+						elbl=C.elev(lbix);
+
+						figure(f2)
+						subplot(4,1,1);
+						hold on
+						plot(C.chi,C.pred+elbl,'-k','LineWidth',2);
+						hold off
+
+						subplot(4,1,3);
+						hold on
+						plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
+						hold off
+
+						subplot(4,1,4);
+						hold on
+						plot(C.area,ksn_val.*C.area.^(-C.mn),'-k','LineWidth',2);
+						hold off
+
+						res_list=[C.area C.res];
+						bnd_ix=NaN;;
+
+					else
+						% Sort knickpoint list and construct bounds list
+						avs=sortrows(av,'descend');
+						bnds=vertcat(nanmax(C.area),avs,nanmin(C.area));
+
+						num_bnds=numel(bnds);
+						rc=C.chi;
+						rx=C.x;
+						ry=C.y;
+						rd=C.distance;
+						ra=C.area;
+						for jj=1:num_bnds-1
+							% Extract bounds
+							lb=bnds(jj);
+							rb=bnds(jj+1);
+
+							% Clip out stream segment
+							lb_dadist=sqrt(sum(bsxfun(@minus, ra, lb).^2,2));
+							rb_dadist=sqrt(sum(bsxfun(@minus, ra, rb).^2,2));
+
+							lbx=rx(lb_dadist==min(lb_dadist));
+							lby=ry(lb_dadist==min(lb_dadist));
+
+							rbx=rx(rb_dadist==min(rb_dadist));
+							rby=ry(rb_dadist==min(rb_dadist));	
+
+							lix=coord2ind(DEM,lbx,lby);
+							LIX=GRIDobj(DEM,'logical');
+							LIX.Z(lix)=true;	
+
+							rix=coord2ind(DEM,rbx,rby);
+							RIX=GRIDobj(DEM,'logical');
+							RIX.Z(rix)=true;	
+
+							Seg=modify(Sn,'downstreamto',RIX);
+							Seg=modify(Seg,'upstreamto',LIX);
+
+							% Construct bound list
+							if jj<num_bnds-1
+								bnd_ix(jj,1)=rix;
+							end
+
+							% Calculate chi to find ksn and bestfit concavity 
+							if strcmp(theta_method,'ref')
+								Cseg=ChiCalc(Seg,DEMc,A,1,ref_theta);
+							elseif strcmp(theta_method,'auto')
+								Cseg=ChiCalc(Seg,DEMc,A,1,C.mn);
+							end
+							Cbfseg=ChiCalc(Seg,DEMc,A,1);								
+
+							% Determine where ksn value fits into color scale and plot
+							ksn_val=Cseg.ks;
+
+							ksn_nodes{jj,1}=[Cseg.x Cseg.y Cseg.area ones(numel(Cseg.x),1)*Cseg.ks ones(numel(Cseg.x),1)*Cseg.ks_neg ones(numel(Cseg.x),1)*Cseg.ks_pos ...
+								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn];
+
+							% Plot linear fits	
+							rchi=rc(rb_dadist==min(rb_dadist));
+							lchi=rc(lb_dadist==min(lb_dadist));
+							segChi=linspace(lchi,rchi,numel(Cseg.chi));
+							seg0Chi=linspace(0,max(Cseg.chi),numel(Cseg.chi));
+							[~,lbix]=min(Cseg.chi);
+							elbl=Cseg.elev(lbix);
+
+							figure(f2)
+							subplot(4,1,1);
+							hold on
+							plot(segChi,(seg0Chi.*ksn_val)+elbl,'-k','LineWidth',2);
+							hold off
+
+							seg_st=rd(lb_dadist==min(lb_dadist));
+							subplot(4,1,3);
+							hold on
+							plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+							hold off
+
+							subplot(4,1,4);
+							hold on
+							plot(Cseg.area,ksn_val.*Cseg.area.^(-1*Cseg.mn),'-k','LineWidth',2);
+							hold off
+
+
+							res_list{jj,1}=[Cseg.area Cseg.res];
+
+
+						end
+
+						ksn_list=vertcat(ksn_nodes{:});
+						res_list=vertcat(res_list{:});
+					end
+
+
+					%% Plot result figure
+					if display_slope_area
+						figure(f2)
+						subplot(4,1,2)
+						hold on
+						plot(res_list(:,1),ksn_list(:,4),'-k','LineWidth',2);
+						hold off
+					else
+						figure(f2)
+						subplot(3,1,2)
+						hold on
+						plot(res_list(:,1),ksn_list(:,4),'-k','LineWidth',2);
+						hold off
+					end
+
+					f3=figure(3);
+					set(f3,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
+					clf
+					ax31=subplot(2,1,2);
+					hold on
+					s1=scatter(log10(ba),bk,20,'k','filled');
+					p1=plot(log10(res_list(:,1)),ksn_list(:,4)-ksn_list(:,5),':k');
+					plot(log10(res_list(:,1)),ksn_list(:,4)+ksn_list(:,6),':k');
+					p2=plot(log10(res_list(:,1)),ksn_list(:,4),'-k','LineWidth',2);
+					[ksn_vals,~,ksn_ix]=unique(ksn_list(:,4));
+					a_means=accumarray(ksn_ix,res_list(:,1),[],@nanmean);
+					for kk=1:numel(ksn_vals)
+						text(log10(a_means(kk)),ksn_vals(kk),['k_{sn} = ' num2str(ksn_vals(kk))],...
+							'VerticalAlignment','bottom','HorizontalAlignment','center');
+					end
+					xlabel('Log Area')
+					ylabel('k_{sn}')
+					title('k_{sn} - Log Area')
+					legend([s1 p1 p2],{'Auto k_{sn}','k_{sn} uncertainty','k_{sn} of fit segments'},'location','best');
+					set(ax31,'XScale','log','XDir','reverse');
+					hold off
+
+					ax32=subplot(2,1,1);
+					hold on
+					plot([log10(min(res_list(:,1))) log10(max(res_list(:,1)))],[0 0],'-k');
+					scatter(log10(res_list(:,1)),res_list(:,2),10,'k','filled');
+					xlabel('Log Area')
+					ylabel('Residual (m)')
+					title('Residual on k_{sn} fit')
+					set(ax32,'XScale','log','XDir','Reverse');
+					hold off
+				% End pick method switch	
 				end
+
 				prompt='    Continue picking (Y) or redo fit on this stream (R)? [Y]: ';
 				str2=input(prompt,'s');
 				if isempty(str2)
@@ -1756,19 +2246,40 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	end
 
 	disp('Cleaning up and generating outputs...')
-	% Add stream numbers to bound list
+	% Add stream numbers to bound list and convert bound list
+	bnd_list=cell(numel(bnd_master),1);
 	for jj=1:numel(bnd_master);
 		bnd=bnd_master{jj,1};
-		if ~isempty(bnd)
-			bnd_master{jj,2}=ones(size(bnd)).*jj;
+		if ~isnan(bnd)
+			% Extract elevations
+			bz=DEM.Z(bnd);
+			% Find X Y
+			[bx,by]=ind2coord(DEM,bnd);
+			% Preserve linear index for later indexing
+			bix=bnd;
+			% Add River Number
+			brm=ones(size(bnd)).*jj;
+			% Compile and store
+			bnd_list{jj,1}=[bx by bz brm bix];
+		else
+			bnd_list{jj,1}=[0 0 0 jj bnd];
 		end
 	end
 
-	% % Convert bound list
-	bndl=[vertcat(bnd_master{:,1}) vertcat(bnd_master{:,2})];
-	bnd_z=DEM.Z(bndl(:,1));
-	[bnd_x,bnd_y]=ind2coord(DEM,bndl(:,1));
-	bnd_list=[bnd_x bnd_y bnd_z bndl(:,2)];
+	% Collapse bnd_list
+	bnd_list=vertcat(bnd_list{:});
+
+	% % % Convert bound list
+	% if ~isempty(bnd_master{:,1})
+	% 	bndl=[vertcat(bnd_master{:,1}) vertcat(bnd_master{:,2})];
+	% 	bnd_z=DEM.Z(bndl(:,1));
+	% 	[bnd_x,bnd_y]=ind2coord(DEM,bndl(:,1));
+	% 	bnd_list=[bnd_x bnd_y bnd_z bndl(:,2)];
+	% else
+	% 	bndl=bnd_master{:,2};
+	% 	bnd_list=[0 0 0 bndl];
+	% end
+
 
 	% Add Gradient to node list and clear NaNs
 	for jj=1:numel(ksn_master)
@@ -1800,20 +2311,28 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	KSN=STREAMobj2mapstruct(S,'seglength',smooth_distance,'attributes',...
 		{'ksn' ksnR @mean 'ksn_neg' ksnRn @mean 'ksn_pos' ksnRp @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'theta' thetaR @mean 'seg_theta' segthetaR @mean});
 
-	% Create knickpoint map structure
-	KNK=struct;
-	for jj=1:numel(bnd_z);
-		KNK(jj,1).Geometry='Point';
-		KNK(jj,1).X=double(bnd_x(jj));
-		KNK(jj,1).Y=double(bnd_y(jj));
-		KNK(jj,1).Elev=double(bnd_z(jj));
-		KNK(jj,1).StrNum=double(bnd_list(jj,4));
+	% Create knickpoint map structure and prepare bound output
+	idx=~isnan(bnd_list(:,5));
+	bnd_strc=bnd_list(idx,:);
+	bnd_list(~idx,1)=NaN; bnd_list(~idx,2)=NaN; bnd_list(~idx,3)=NaN;
+	bnd_list=bnd_list(:,[1:4]);
+
+	if ~isempty(bnd_strc)
+		KNK=struct;
+		for jj=1:numel(bnd_strc(:,1));
+			KNK(jj,1).Geometry='Point';
+			KNK(jj,1).X=double(bnd_strc(jj,1));
+			KNK(jj,1).Y=double(bnd_strc(jj,2));
+			KNK(jj,1).Elev=double(bnd_strc(jj,3));
+			KNK(jj,1).StrNum=double(bnd_strc(jj,4));
+		end
+		out_knick_name=[shape_name '_knicks.shp'];
+		shapewrite(KNK,out_knick_name);
 	end
 
 	out_shape_name=[shape_name '.shp'];
 	shapewrite(KSN,out_shape_name);
-	out_knick_name=[shape_name '_knicks.shp'];
-	shapewrite(KNK,out_knick_name);
+
 
 %FUNCTION END
 end
@@ -1994,3 +2513,47 @@ function [bs,ba,bc,bd]=sa(DEM,S,A,C,bin_size)
 	bd=accumarray(ix,d,[numbins 1],@mean,nan);
 	bc=accumarray(ix,C,[numbins 1],@mean,nan);
 end
+
+function [bs,ba,bc,bd,bk]=sa_ksn(DEM,S,A,C,ak,bin_size);
+	% Modified slope area function that uses the smooth length to
+	%	to determine the number of bins and uses those same bins
+	%	to find mean values of chi and distance for plotting
+	%	purposes
+
+	minX=min(S.distance);
+	maxX=max(S.distance);
+	b=[minX:bin_size:maxX+bin_size];
+
+	numbins=round(max([numel(b) numel(S.IXgrid)/10]));
+
+	an=getnal(S,A.*A.cellsize^2);
+	z=getnal(S,DEM);
+	gn=gradient(S,z,'unit','tangent'); % Already a conditioned DEM
+
+	% Run through STREAMobj2XY so chi and everything else are same size
+	[~,~,a,g,d,k]=STREAMobj2XY(S,an,gn,S.distance,ak);
+	% Remove NaNs
+	a(isnan(a))=[];
+	g(isnan(g))=[];
+	d(isnan(d))=[];
+	C(isnan(C))=[];
+	k(isnan(k))=[];
+
+	mina=min(a);
+	maxa=max(a);
+
+    edges = logspace(log10(mina-0.1),log10(maxa+1),numbins+1);
+    try
+    	% histc is deprecated
+    	[ix]=discretize(a,edges);
+    catch
+	    [~,ix] = histc(a,edges);
+	end
+
+	ba=accumarray(ix,a,[numbins 1],@median,nan);
+	bs=accumarray(ix,g,[numbins 1],@(x) mean(x(~isnan(x))),nan);
+	bd=accumarray(ix,d,[numbins 1],@mean,nan);
+	bc=accumarray(ix,C,[numbins 1],@mean,nan);
+	bk=accumarray(ix,k,[numbins 1],@mean,nan);
+end
+
