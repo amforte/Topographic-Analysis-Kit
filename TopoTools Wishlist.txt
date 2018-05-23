@@ -1,8 +1,6 @@
 TopoTools is currently undergoing a rennovation, below is a running list of changes that will be (or have been) implemented.
 Also, TopoTools is being renamed to Topographic Analysis Kit (TAK) to avoid confusion with TopoToolbox itself
 
-KsnProfiler: Add option to pick segments on slope area plots
-
 ALL: build compiler friendly versions
 ALL: compile all for Windows/Mac
 ALL: check functionality with new version of TopoToolbox
@@ -27,3 +25,4 @@ ALL: check interoperability / similarity between parameter names and inputs
 ***DONE: KsnProfiler: Add Uncertainties
 ***DONE: KsnProfiler: add option to save figures
 ***DONE: KsnProfiler: add slope-area plot option
+***DONE: KsnProfiler: Add option to pick segments on slope area plots
