@@ -1,48 +1,113 @@
-function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,sample,smooth,data_type,data,data_width)
-	% Function requires TopoToolbox to run
+function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_type,data,data_width,varargin)
+	% Function to plot various additional data onto a swath profile.
 	%
 	% Required Inputs:
-	% DEM - DEM Grid Object with which to make topo swath
-	% points - n x 2 matrix containing x,y points for swath, minimum are two points (start and end points).
-	%	First row contains starting point and proceeds down rows, additional points besides a start and end are
-	%	treated as bends in the swath. Coordinates for points must be in the same coordinate system as DEM and must
-	%	lie within the DEM (cannot be coordinates on the very edge of the DEM)
-	% width - width of swath in map units
-	% sample - resampling distance along swath in map units, provide DEM.cellsize for no resampling, where DEM is the name of the 
-	%	DEM GRIDobj.
-	% smooth - smoothing distance, width of filter in map units over which to smooth values, provie 0 if no smoothing is desired
-	% data_type - the type of additional data you are providing to plot along with the swath, supported inputs are:
+	% 	DEM - DEM Grid Object with which to make topo swath
+	% 	points - n x 2 matrix containing x,y points for swath, minimum are two points (start and end points).
+	%		First row contains starting point and proceeds down rows, additional points besides a start and end are
+	%		treated as bends in the swath. Coordinates for points must be in the same coordinate system as DEM and must
+	%		lie within the DEM (cannot be coordinates on the very edge of the DEM)
+	% 	width - width of swath in map units
+	% 	data_type - the type of additional data you are providing to plot along with the swath, supported inputs are:
 	%		'points3' - generic point dataset, expects a n x 3 matrix with values of x, y, and z
-	%		'points4' - generic point dataset, expects a n x 4 matrix with values of x, y, z, and extra value. Dots will be sclaed by this extra value
-	%		'eqs' - earthquakes, expects a n x 4 matrix with x, y, depth, and magnitude. Points will be scaled by magnitude and colored by distance from swath line
-	%		'ksn_chandata' - will plot swath through ksn values, expects a chandata file from Profiler
-	%		'ksn_TT' - will plot swath through ksn values, expects output from KSN_TT function
-	%		'chi_TT' - will plot swath through chi values, expects output of TopoToolbox chiplot function
-	% data_width - width in map units of swath through provided data. Values greater than data_width/2 from the center line of the toposwath will be removed
+	%		'points4' - generic point dataset, expects a n x 4 matrix with values of x, y, z, and extra value. Dots will 
+	%					be sclaed by this extra value
+	%		'eqs' - earthquakes, expects a n x 4 matrix with x, y, depth, and magnitude. Points will be scaled by magnitude 
+	%					and colored by distance from swath line. Expects depth to be positive.
+	%		'STREAMobj' - will project portions of selected stream profiles (as points) onto a swath. Expects a STREAMobj 
+	%					that was generated from the provided DEM.
+	%		'ksn_chandata' - will plot swath through ksn values, expects a chandata file as output from old Profiler51 code 
+	%					(just in case you have some sitting around)
+	%		'ksn_batch' - will plot swath through ksn values, expects the map structure output from 'KsnChiBatch' function 
+	%					(i.e. run 'KsnChiBatch' with product set to 'ksn' and 'output' set to true, and provide the second 
+	%					output here as 'data') 
+	%		'ksn_profiler' - will plot swath through ksn values, expects the 'knl' output from 'KsnProfiler' function
+	%		'basin_stats' - will plot swath through selected mean basin values as calculated from 'ProcessRiverBasins', 
+	%					expects output from 'CompileBasinStats' and requires an entry to optional input 'basin_value' and  
+	%					accepts optional input to 'basin_scale'. Will place point for basin at mean elevation and projected  
+	%					location of the basin centroid, will color by value provided to 'basin_value' and will optionall scale  
+	%					the point by the value provided to 'basin_scale'
+	%		'basin_knicks' - will plot swath through knickpoints as chosen by 'FindBasinKnicks'. For 'data' provide name of folder 
+	%					(or file path) where to find knickpoint files saved as a result of running 'FindBasinKnicks' on a series of  
+	%					basins selected from 'ProcessRiverBasins'
+	%	data - input data, form varies depending on choice of data_type
+	% 	data_width - width in map units of swath through provided data. Values greater than data_width/2 from the center line 
+	%					of the toposwath will not be plotted
+	%
+	% Optional Inputs:
+	% 	sample [] - resampling distance along topographic swath in map units, if no input is provided, code will use the cellsize 
+	%				of the DEM which results in no resampling.
+	% 	smooth [0] - smoothing distance, width of filter in map units over which to smooth values, default (0) results in no smoothing
+	%	vex [10] - vertical exaggeration for displaying plot.
+	%	basin_value [] - required for option 'basin_stats', name (as it appears in the provided table provided to 'data') of the value 
+	%				you wish to color points by
+	%	basin_scale [] - optional input for option 'basin_stats', name (as it appears in the provided table provided to 'data') of the 
+	%				value you wish to scale points by
+	%	basin_knicks_loc [] - optional input for option 'basin_knicks', name of folder (or file path) where to find knickpoint files
+	%				saved as a result of running 'FindBasinKnicks' on a series of basins selected from 'ProcessRiverBasins'
+	%	plot_map [true] - logical flag to plot a map displaying the location of the topographic swath and the additional data included 
+	%				in the swath (red dots) and those not (white dots) based on the provided data_width parameter.
 	%
 	% Outputs:
-	% SW - TopoToolbox Swath object, contains various information as a structure. Can plot path and box of swath with plot(SW) and
-	%	plot version of swath profile with plotdz(SW);
-	% SwathMat - n x 4 matrix containing distance along the swath, min elevation, mean elevation, max elevation
-	% xypoints - n x 2 matrix containing x,y points of each swath sample point, along swath center line
-	% outData - data for plotting the swath through the provided data, form of output depends on data_type:
-	%		'points3' - distances, elev, distance from base line, x coordinate, y coordinate, transformed x coordinate, transformed y coordinate
-	%		'points4' - distances, elev, value, distance from base line, x coordinate, y coordinate, transformed x coordinate, transformed y coordinate
-	%		'eqs' - distances, depth, magnitude, distance from base line, x coordinate, y coordinate, transformed x coordinate, transformed y coordinate
-	%		'ksn_chandata' - distances, elev, ksn, distance from base line, x coordinate, y coordinate, transformed x coordinate, transformed y coordinate
-	%		'ksn_TT' - distances, ksn, distance from base line, x coordinate, y coordinate, transformed x coordinate, transformed y coordinate
-	%		'chi_TT' - distances, chi, distance from base line, x coordinate, y coordinate, transformed x coordinate, transformed y coordinate
+	%	SW - TopoToolbox Swath object, contains various information as a structure. Can plot path and box of swath with plot(SW) and
+	%		plot version of swath profile with plotdz(SW);
+	% 	SwathMat - n x 4 matrix containing distance along the swath, min elevation, mean elevation, max elevation
+	% 	xypoints - n x 2 matrix containing x,y points of each swath sample point, along swath center line
+	% 	outData - data for plotting the swath through the provided data, distances that area 'NaN' indicate those data do not
+	%			fall on the swath line provided. Form of output depends on data_type:
+	%		'points3' - distances, elevation, distance from base line, x coordinate, y coordinate
+	%		'points4' - distances, elevation, value, distance from base line, x coordinate, y coordinate
+	%		'eqs' - distances, depth, magnitude, distance from base line, x coordinate, y coordinate
+	%		'STREAMobj' - distances, elevation, distance from base line, x coordinate, y coordinate
+	%		'ksn_chandata' - distances, elevation, ksn, distance from base line, x coordinate, y coordinate
+	%		'ksn_batch' - distances, ksn, distance from base line, x coordinate, y coordinate
+	%		'ksn_profiler' - distances, ksn, distance from base line, x coordinate, y coordinate
+	%		'basin_stats' - distances, mean basin elevation, 'basin_value', 'basin_scale' (if provided), distance from base line, 
+	%						x coordinate, y coordinate
 	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Fall 2015 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+	% Parse Inputs
+	p = inputParser;
+	p.FunctionName = 'MakeCombinedSwath';
+	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
+	addRequired(p,'points',@(x) isnumeric(x) && size(x,1)>=2 && size(x,2)==2);
+	addRequired(p,'width',@(x) isscalar(x) && isnumeric(x));
+	addRequired(p,'data_type',@(x) ischar(validatestring(x,{'points3','points4','eqs','STREAMobj','ksn_chandata','ksn_batch','ksn_profiler','basin_stats'})));
+	addRequired(p,'data');
+	addRequired(p,'data_width',@(x) isnumeric(x) && isscalar(x));
+
+	addParamValue(p,'sample',[],@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'smooth',0,@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'vex',10,@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'basin_value',[],@(x) ischar(x));
+	addParamValue(p,'basin_scale',[],@(x) ischar(x));
+	addParamValue(p,'plot_map',true,@(x) isscalar(x) && isnumeric(x));
+
+
+	parse(p,DEM,points,width,data_type,data,data_width,varargin{:});
+	DEM=p.Results.DEM;
+	points=p.Results.points;
+	wdth=p.Results.width;
+	data_type=p.Results.data_type;
+	data=p.Results.data;
+	data_width=p.Results.data_width;
+
+	sample=p.Results.sample;
+	smth=p.Results.smooth;
+	vex=p.Results.vex;
+	bv=p.Results.basin_value;
+	bs=p.Results.basin_scale;
+	plot_map=p.Results.plot_map;
+
+	if isempty(sample)
+		sample=DEM.cellsize;
+	end
 
 	% Produce topo swath and associated datasets
-	[SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,sample,smooth,'false');
-
-	sw_y=xypoints(:,2);
-	sw_x=xypoints(:,1);
-	[nsw_x,nsw_y]=ReFrameRot(SW,sw_x,sw_y);
+	[SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,wdth,'sample',sample,'smooth',smth);
 	swdist=SwathMat(:,1);
 	min_elevs=SwathMat(:,2);
 	mean_elevs=SwathMat(:,3);
@@ -56,44 +121,28 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,sampl
 			y_coord=data(:,2);
 			z=data(:,3);
 
-			% Transform data
-			[n_x,n_y]=ReFrameRot(SW,x_coord,y_coord);
-
-			% Find distances along swath profile of each point
-			num_points=numel(x_coord);
-			point_distances=zeros(num_points,1);
-			DistFromBaseLine=zeros(num_points,1);
-			for ii=1:num_points
-				xoi=n_x(ii);
-
-				distances=nsw_x-xoi;
-				[~,I]=min(abs(distances));
-				point_distances(ii)=swdist(I);
-
-				baseLine=nsw_y(I);
-				DistFromBaseLine(ii)=abs(baseLine-n_y(ii));
-			end
-			outData=[point_distances z DistFromBaseLine x_coord y_coord n_x n_y];
-
-			% Filter out any data points outside of provided width
-			idx=DistFromBaseLine<=(data_width/2);
-			outData=outData(idx,:);
+			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord);
+			outData=[ds z db x_coord y_coord];
+			idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
 
 			% Plot Swath
 			f1=figure(1);
 			clf 
-			set(f1,'Units','inches','Position',[1.0 1.5 16 4],'renderer','painters','PaperSize',[16 4],'PaperOrientation','portrait','PaperPositionMode','auto');
+			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
 			hold on
 			plot(swdist,min_elevs,'-b');
 			plot(swdist,max_elevs,'-b');
 			plot(swdist,mean_elevs,'-k');
 
+			daspect([vex 1 1])
+
+			yl=ylim;
 			for jj=1:numel(bends)
-				vline(bends(jj),'k','bend');
+				plot([bends(jj),bends(jj)],yl,'-k');
 			end
 
-			scatter(outData(:,1),outData(:,2),20,'k','filled');
+			scatter(outData(idx,1),outData(idx,2),20,'k','filled');
 
 			xlabel('Distance along swath (m)');
 			ylabel('Elevation (m)');
@@ -104,46 +153,30 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,sampl
 			x_coord=data(:,1);
 			y_coord=data(:,2);
 			z=data(:,3);
-			scale=data(:,4);
+			scle=data(:,4);
 
-			% Transform data
-			[n_x,n_y]=ReFrameRot(SW,x_coord,y_coord);
-
-			% Find distances along swath profile of each point
-			num_points=numel(x_coord);
-			point_distances=zeros(num_points,1);
-			DistFromBaseLine=zeros(num_points,1);
-			for ii=1:num_points
-				xoi=n_x(ii);
-
-				distances=nsw_x-xoi;
-				[~,I]=min(abs(distances));
-				point_distances(ii)=swdist(I);
-
-				baseLine=nsw_y(I);
-				DistFromBaseLine(ii)=abs(baseLine-n_y(ii));
-			end
-			outData=[point_distances z scale DistFromBaseLine x_coord y_coord n_x n_y];
-
-			% Filter out any data points outside of provided width
-			idx=DistFromBaseLine<=(data_width/2);
-			outData=outData(idx,:);
+			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord);
+			outData=[ds z scle db x_coord y_coord];
+			idx=outData(:,4)<=(data_width/2) & ~isnan(ds);
 
 			% Plot Swath
 			f1=figure(1);
 			clf 
-			set(f1,'Units','inches','Position',[1.0 1.5 16 4],'renderer','painters','PaperSize',[16 4],'PaperOrientation','portrait','PaperPositionMode','auto');
+			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
 			hold on
 			plot(swdist,min_elevs,'-b');
 			plot(swdist,max_elevs,'-b');
 			plot(swdist,mean_elevs,'-k');
 
+			daspect([vex 1 1])
+
+			yl=ylim;
 			for jj=1:numel(bends)
-				vline(bends(jj),'k','bend');
+				plot([bends(jj),bends(jj)],yl,'-k');
 			end
 
-			scatter(outData(:,1),outData(:,2),outData(:,3),'k','filled');
+			scatter(outData(idx,1),outData(idx,2),outData(idx,3),'k','filled');
 
 			xlabel('Distance along swath (m)');
 			ylabel('Elevation (m)');
@@ -156,44 +189,67 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,sampl
 			depth=data(:,3);
 			magnitude=data(:,4);
 
-			% Transform data
-			[n_x,n_y]=ReFrameRot(SW,x_coord,y_coord);
-
-			% Find distances along swath profile of each point
-			num_points=numel(x_coord);
-			point_distances=zeros(num_points,1);
-			DistFromBaseLine=zeros(num_points,1);
-			for ii=1:num_points
-				xoi=n_x(ii);
-
-				distances=nsw_x-xoi;
-				[~,I]=min(abs(distances));
-				point_distances(ii)=swdist(I);
-
-				baseLine=nsw_y(I);
-				DistFromBaseLine(ii)=abs(baseLine-n_y(ii));
-			end
-			outData=[point_distances depth magnitude DistFromBaseLine x_coord y_coord n_x n_y];
-
-			% Filter out any data points outside of provided width
-			idx=DistFromBaseLine<=(data_width/2);
-			outData=outData(idx,:);
+			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord);
+			outData=[ds depth magnitude db x_coord y_coord];
+			idx=outData(:,4)<=(data_width/2) & ~isnan(ds);
 
 			% Plot Swath
 			f1=figure(1);
 			clf 
-			set(f1,'Units','inches','Position',[1.0 1.5 16 6],'renderer','painters','PaperSize',[16 6],'PaperOrientation','portrait','PaperPositionMode','auto');
+			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
+
+			ax1=subplot(2,1,1);
+			hold on
+			plot(swdist,min_elevs,'-b');
+			plot(swdist,max_elevs,'-b');
+			plot(swdist,mean_elevs,'-k');
+
+			daspect([vex 1 1])
+
+			yl=ylim;
+			for jj=1:numel(bends)
+				plot([bends(jj),bends(jj)],yl,'-k');
+			end
+			ylabel('Elevation (m)');
+			xlim([0 max(swdist)]);
+			hold off
+
+			ax2=subplot(2,1,2);
+			hold on
+			scatter(outData(idx,1),outData(idx,2),outData(idx,3)*10,outData(idx,4),'filled');
+			xlabel('Distance along swath (m)');
+			ylabel('Depth (km')
+			hold off
+			set(ax2,'YDir','reverse')
+			linkaxes([ax1,ax2],'x')
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		case 'STREAMobj'
+			x_coord=data.x;
+			y_coord=data.y;
+			z=getnal(data,DEM);
+
+			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord);
+			outData=[ds z db x_coord y_coord];
+			idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
+
+			% Plot Swath
+			f1=figure(1);
+			clf 
+			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
 			hold on
 			plot(swdist,min_elevs,'-b');
 			plot(swdist,max_elevs,'-b');
 			plot(swdist,mean_elevs,'-k');
 
+			daspect([vex 1 1])
+
+			yl=ylim;
 			for jj=1:numel(bends)
-				vline(bends(jj),'k','bend');
+				plot([bends(jj),bends(jj)],yl,'-k');
 			end
 
-			scatter(outData(:,1),outData(:,2),outData(:,3),outData(:,4),'filled');
+			scatter(outData(idx,1),outData(idx,2),5,'k','filled');
 
 			xlabel('Distance along swath (m)');
 			ylabel('Elevation (m)');
@@ -206,33 +262,14 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,sampl
 			ksn=data(:,8);
 			elev=data(:,4);
 
-			% Transform data
-			[n_x,n_y]=ReFrameRot(SW,x_coord,y_coord);
-
-			% Find distances along swath profile of each point
-			num_points=numel(x_coord);
-			point_distances=zeros(num_points,1);
-			DistFromBaseLine=zeros(num_points,1);
-			for ii=1:num_points
-				xoi=n_x(ii);
-
-				distances=nsw_x-xoi;
-				[~,I]=min(abs(distances));
-				point_distances(ii)=swdist(I);
-
-				baseLine=nsw_y(I);
-				DistFromBaseLine(ii)=abs(baseLine-n_y(ii));
-			end
-			outData=[point_distances elev ksn DistFromBaseLine x_coord y_coord n_x n_y];
-
-			% Filter out any data points outside of provided width
-			idx=DistFromBaseLine<=(data_width/2);
-			outData=outData(idx,:);
+			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord);
+			outData=[ds elev ksn db x_coord y_coord];
+			idx=outData(:,4)<=(data_width/2) & ~isnan(ds);
 
 			% Plot Swath
 			f1=figure(1);
 			clf 
-			set(f1,'Units','inches','Position',[1.0 1.5 16 8],'renderer','painters','PaperSize',[16 8],'PaperOrientation','portrait','PaperPositionMode','auto');
+			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
 			subplot(2,1,1);
 			hold on
@@ -241,8 +278,11 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,sampl
 			plot(swdist,max_elevs,'-b');
 			plot(swdist,mean_elevs,'-k');
 
+			daspect([vex 1 1])
+
+			yl=ylim;
 			for jj=1:numel(bends)
-				vline(bends(jj),'k','bend');
+				plot([bends(jj),bends(jj)],yl,'-k');
 			end
 
 			xlabel('Distance along swath (m)');
@@ -252,13 +292,71 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,sampl
 
 			subplot(2,1,2);
 			hold on
-			scatter(outData(:,1),outData(:,3),20,'k','filled');
+			scatter(outData(idx,1),outData(idx,3),20,'k','filled');
 			xlabel('Distance along swath (m)');
 			ylabel('KSN');
 			xlim([0 max(swdist)]);
 			hold off
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-		case 'ksn_TT'
+		case 'basin_stats'
+			x_coord=data.center_x;
+			y_coord=data.center_y;
+			z=data.mean_el;
+			col=data.(bv);
+			if ~isempty(bs)
+				scl=data.(bs);
+			end
+
+			% Transform Data
+			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord);
+			outData=[ds z db x_coord y_coord];
+
+			% Assemble outData
+			if isempty(bs)
+				outData=[ds z col db x_coord y_coord];
+			else 
+				outData=[ds z col scl db x_coord y_coord];	
+			end			
+
+			% Filter based on provided data width
+			if isempty(bs)
+				idx=outData(:,4)<=(data_width/2) & ~isnan(ds);
+			else
+				idx=outData(:,5)<=(data_width/2) & ~isnan(ds);
+			end
+
+			% Plot Swath
+			f1=figure(1);
+			clf 
+			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
+
+			hold on
+			plot(swdist,min_elevs,'-b');
+			plot(swdist,max_elevs,'-b');
+			plot(swdist,mean_elevs,'-k');
+
+			daspect([vex 1 1])
+
+			yl=ylim;
+			for jj=1:numel(bends)
+				plot([bends(jj),bends(jj)],yl,'-k');
+			end
+
+			if isempty(bs)
+				scatter(outData(idx,1),outData(idx,2),20,outData(idx,3),'filled');
+			else
+				scatter(outData(idx,1),outData(idx,2),outData(idx,4),outData(idx,3),'filled');
+			end
+
+			c1=colorbar;
+			ylabel(c1,bv);
+
+			xlabel('Distance along swath (m)');
+			ylabel('Elevation (m)');
+			xlim([0 max(swdist)]);
+			hold off
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		case 'ksn_batch'
 			% Find number of segments in provided KSN map structure	
 			numSegs=numel(data);
 			% Loop through stream segments to extract x,y,ksn
@@ -274,33 +372,14 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,sampl
 			y_coord=streamData(:,2);
 			ksn=streamData(:,3);
 
-			% Transform data
-			[n_x,n_y]=ReFrameRot(SW,x_coord,y_coord);
-
-			% Find distances along swath profile of each point
-			num_points=numel(x_coord);
-			point_distances=zeros(num_points,1);
-			DistFromBaseLine=zeros(num_points,1);
-			for ii=1:num_points
-				xoi=n_x(ii);
-
-				distances=nsw_x-xoi;
-				[~,I]=min(abs(distances));
-				point_distances(ii)=swdist(I);
-
-				baseLine=nsw_y(I);
-				DistFromBaseLine(ii)=abs(baseLine-n_y(ii));
-			end
-			outData=[point_distances ksn DistFromBaseLine x_coord y_coord n_x n_y];
-
-			% Filter out any data points outside of provided width
-			idx=DistFromBaseLine<=(data_width/2);
-			outData=outData(idx,:);
+			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord);
+			outData=[ds ksn db x_coord y_coord];
+			idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
 
 			% Plot Swath
 			f1=figure(1);
 			clf 
-			set(f1,'Units','inches','Position',[1.0 1.5 16 8],'renderer','painters','PaperSize',[16 8],'PaperOrientation','portrait','PaperPositionMode','auto');
+			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
 			subplot(2,1,1);
 			hold on
@@ -309,8 +388,11 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,sampl
 			plot(swdist,max_elevs,'-b');
 			plot(swdist,mean_elevs,'-k');
 
+			daspect([vex 1 1])
+
+			yl=ylim;
 			for jj=1:numel(bends)
-				vline(bends(jj),'k','bend');
+				plot([bends(jj),bends(jj)],yl,'-k');
 			end
 
 			xlabel('Distance along swath (m)');
@@ -320,45 +402,25 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,sampl
 
 			subplot(2,1,2);
 			hold on
-			scatter(outData(:,1),outData(:,2),20,'k','filled');
+			scatter(outData(idx,1),outData(idx,2),20,'k','filled');
 			xlabel('Distance along swath (m)');
 			ylabel('KSN');
 			xlim([0 max(swdist)]);
 			hold off
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%			
-		case 'chi_TT'
-			% Extract values of interest
-			x_coord=data.x;
-			y_coord=data.y;
-			chi=data.chi;
+		case 'ksn_profiler'
+			x_coord=data(:,1);
+			y_coord=data(:,2);
+			ksn=data(:,4);
 
-			% Transform data
-			[n_x,n_y]=ReFrameRot(SW,x_coord,y_coord);
-
-			% Find distances along swath profile of each point
-			num_points=numel(x_coord);
-			point_distances=zeros(num_points,1);
-			DistFromBaseLine=zeros(num_points,1);
-			for ii=1:num_points
-				xoi=n_x(ii);
-
-				distances=nsw_x-xoi;
-				[~,I]=min(abs(distances));
-				point_distances(ii)=swdist(I);
-
-				baseLine=nsw_y(I);
-				DistFromBaseLine(ii)=abs(baseLine-n_y(ii));
-			end
-			outData=[point_distances chi DistFromBaseLine x_coord y_coord n_x n_y];
-
-			% Filter out any data points outside of provided width
-			idx=DistFromBaseLine<=(data_width/2);
-			outData=outData(idx,:);
+			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord);
+			outData=[ds ksn db x_coord y_coord];
+			idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
 
 			% Plot Swath
 			f1=figure(1);
 			clf 
-			set(f1,'Units','inches','Position',[1.0 1.5 16 8],'renderer','painters','PaperSize',[16 8],'PaperOrientation','portrait','PaperPositionMode','auto');
+			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
 			subplot(2,1,1);
 			hold on
@@ -367,8 +429,11 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,sampl
 			plot(swdist,max_elevs,'-b');
 			plot(swdist,mean_elevs,'-k');
 
+			daspect([vex 1 1])
+
+			yl=ylim;
 			for jj=1:numel(bends)
-				vline(bends(jj),'k','bend');
+				plot([bends(jj),bends(jj)],yl,'-k');
 			end
 
 			xlabel('Distance along swath (m)');
@@ -378,74 +443,76 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,sampl
 
 			subplot(2,1,2);
 			hold on
-			scatter(outData(:,1),outData(:,2),20,'k','filled');
+			scatter(outData(idx,1),outData(idx,2),20,'k','filled');
 			xlabel('Distance along swath (m)');
-			ylabel('Chi');
+			ylabel('KSN');
 			xlim([0 max(swdist)]);
 			hold off
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%				
-		case 'points3_err'
-			x_coord=data(:,1);
-			y_coord=data(:,2);
-			z=data(:,3);
-			err=data(:,4);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		case 'basin_knicks'
 
-			% Transform data
-			[n_x,n_y]=ReFrameRot(SW,x_coord,y_coord);
-
-			% Find distances along swath profile of each point
-			num_points=numel(x_coord);
-			point_distances=zeros(num_points,1);
-			DistFromBaseLine=zeros(num_points,1);
-			for ii=1:num_points
-				xoi=n_x(ii);
-
-				distances=nsw_x-xoi;
-				[~,I]=min(abs(distances));
-				point_distances(ii)=swdist(I);
-
-				baseLine=nsw_y(I);
-				DistFromBaseLine(ii)=abs(baseLine-n_y(ii));
+			if ~isdir(data)
+				error('For "basin_knicks" you must provide a valid directory to "data" that contains "Knicks_*.mat" files')
 			end
-			outData=[point_distances z err DistFromBaseLine x_coord y_coord n_x n_y];
 
-			% Filter out any data points outside of provided width
-			idx=DistFromBaseLine<=(data_width/2);
-			outData=outData(idx,:);
+			current=pwd;
+			cd(data);
+
+			fileList=dir('Knicks_*.mat');
+			if isempty(fileList)
+				error('For "basin_knicks" you must provide a valid directory to "data" that contains "Knicks_*.mat" files')
+			end
+			knps=cell(numel(fileList),1);
+			for jj=1:numel(fileList)
+				load(fileList(jj,1).name);
+				knps{jj}=KnickPoints(:,[1:3]);
+			end
+
+			knps=vertcat(knps{:});
+
+			x_coord=knps(:,1);
+			y_coord=knps(:,2);
+			z=knps(:,3);
+
+			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord);
+			outData=[ds z db x_coord y_coord];
+			idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
 
 			% Plot Swath
 			f1=figure(1);
 			clf 
-			set(f1,'Units','inches','Position',[1.0 5.5 16 4],'renderer','painters','PaperSize',[16 4],'PaperOrientation','portrait','PaperPositionMode','auto');
+			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
 			hold on
 			plot(swdist,min_elevs,'-b');
 			plot(swdist,max_elevs,'-b');
 			plot(swdist,mean_elevs,'-k');
 
+			daspect([vex 1 1])
+
+			yl=ylim;
 			for jj=1:numel(bends)
-				vline(bends(jj),'k','bend');
+				plot([bends(jj),bends(jj)],yl,'-k');
 			end
 
-			xlabel('Distance along swath (m)');
-			ylabel('Elevation (m)');
-			xlim([0 max(swdist)]);
-			hold off
-
-			% Plot Swath
-			f2=figure(2);
-			clf 
-			set(f2,'Units','inches','Position',[1.0 1.5 16 4],'renderer','painters','PaperSize',[16 4],'PaperOrientation','portrait','PaperPositionMode','auto');
-			hold on
-			errbar(outData(:,1),outData(:,2),outData(:,3),'-r')
-			scatter(outData(:,1),outData(:,2),20,'k','filled');
+			scatter(outData(idx,1),outData(idx,2),20,'k','filled');
 
 			xlabel('Distance along swath (m)');
 			ylabel('Elevation (m)');
 			xlim([0 max(swdist)]);
 			hold off
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	end
+
+if plot_map
+	f2=figure(2);
+	set(f2,'Units','normalized','Position',[0.05 0.1 0.6 0.6]);
+	hold on
+	imageschs(DEM,DEM,'colormap','gray');
+	plot(SW,'legend',false);
+	scatter(x_coord(idx),y_coord(idx),20,'r','filled');
+	scatter(x_coord(~idx),y_coord(~idx),20,'w','filled');
+	hold off
+end
 
 % Function End
 end
