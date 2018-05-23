@@ -117,11 +117,6 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,basin_dir,varargin)
 	iv=p.Results.interp_value;
 	DEMhc=p.Results.conditioned_DEM;
 
-	% Clippin gout NaNs, max elev set arbitrarily large but below the 32,768 internal NaN value.
-	max_elev=10000;
-	min_elev=-200;
-	IDX=DEM<max_elev & DEM>min_elev;
-	DEM=crop(DEM,IDX,nan);
 
 	% Set redo_flag
 	redo_flag=false;
