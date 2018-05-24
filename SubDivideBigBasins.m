@@ -20,9 +20,11 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 	% 		theta_ref [0.5] - reference concavity for calculating ksn
 	% 		write_arc_files [false] - set value to true to output a ascii's of various grids and a shapefile of the ksn, false to not output arc files
 	%		s_order [3] - stream order for defining stream outlets for subdividing if 'divide_method' is 'order' (lower number will result in more sub-basins)
-	%		min_basins_size [10] - minimum basin size for auto-selecting sub basins. If 'divide_method' is 'filtered_confluences' this value is
+	%		min_basin_size [10] - minimum basin size for auto-selecting sub basins. If 'divide_method' is 'filtered_confluences' this value is
 	%			interpreted as a minimum drainage area in km^2. If 'divide_method' is 'p_filtered_confluences', this value is interpreted as
 	%			the percentage of the input basin drainage area to use as a minimum drainage area, enter a value between 0 and 100 in this case.
+	%		no_nested [false] - logical flag that when used in conjunction with either 'filtered_confluences' or 'p_filtered_confluences' will only extract
+	%			subbasins if they are the lowest order basin that meets the drainage area requirements (this is to avoid producing nested basins)
 	%		DEM_original [] - original DEM input to 'ProcessRiverBasins' (required if clip_method was set to 'segment' in 'ProcessRiverBasins')
 	%		FD_original [] - original FD input to 'ProcessRiverBasins' (required if clip_method was set to 'segment' in 'ProcessRiverBasins')
 	%		S_original [] - original S input to 'ProcessRiverBasins' (required if clip_method was set to 'segment' in 'ProcessRiverBasins')
@@ -31,8 +33,12 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 	%		SubdivideBigBasins('/Users/JoeBlow/Project',100,'confluences');
 	%		SubdivideBigBasins('/Users/JoeBlow/Project',100,'order','s_order',2,'threshold_area',1e5,'write_arc_files',true);
 	%
+	% Notes:
+	%	-Only the 'order' divide method will not produce nested subbasins. Using the 'order' method, there will be biasing depending on the value of
+	%		's_order', i.e. small stream orders will tend to produce small subbasins at higher elevations within the main basin.
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Winter 2017 %
+	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Parse Inputs
@@ -48,6 +54,7 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 	addParamValue(p,'write_arc_files',false,@(x) isscalar(x));
 	addParamValue(p,'s_order',[3],@(x) isscalar(x));
 	addParamValue(p,'min_basin_size',[10],@(x) isnumeric(x) & isscalar(x));
+	addParamValue(p,'no_nested',false,@(x) isscalar(x) && islogical(x));
 	addParamValue(p,'DEM_Original',[],@(x) isa(x,'GRIDobj'));
 	addParamValue(p,'FD_Original',[],@(x) isa(x,'FLOWobj'));
 	addParamValue(p,'S_Original',[],@(x) isa(x,'STREAMobj'));
@@ -63,6 +70,7 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 	write_arc_files=p.Results.write_arc_files;
 	s_order=p.Results.s_order;
 	min_basin_size=p.Results.min_basin_size;
+	no_nested=p.Results.no_nested;
 	DEM0=p.Results.DEM_Original;
 	FD0=p.Results.FD_Original;
 	S0=p.Results.S_Original;
@@ -72,7 +80,6 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 
 	FileList=dir('*Data.mat');
 	num_files=numel(FileList);
-
 
 	% Load first file to grab clip method
 	load(FileList(1,1).name,'clip_method');
@@ -91,6 +98,11 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 		DEMcon.Z(DEMcon.Z==0)=NaN;
 		DEMcon.Z(S0.IXgrid)=zcon;
 	end
+
+	if strcmp(divide_method,'p_filtered_confluences') & min_basin_size>100 | min_basin_size<=0
+		error('For divide_method "p_filtered_confluences" the entry to "min_basin_size" must be between 0 and 100')
+	end
+
 
 	% Begin main file loop
 	w1=waitbar(0,'Subdividing basins');
@@ -121,12 +133,28 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 			
 			switch divide_method
 			case 'order'
-				% Extract 'outlets' of 3rd order streams
-				Se=modify(S,'streamorder',s_order);
-				outs=streampoi(Se,'outlets','xy');
-				x=outs(:,1);
-				y=outs(:,2);
-				num_new_basins=numel(x);
+				so=streamorder(S);
+				if s_order<max(so) 
+					Se=modify(S,'streamorder',s_order);
+					outs=streampoi(Se,'outlets','xy');
+					x=outs(:,1);
+					y=outs(:,2);
+					num_new_basins=numel(x);
+				elseif s_order>=max(so) & max(so)>1
+					s_order=s_order-1;
+					Se=modify(S,'streamorder',s_order);
+					outs=streampoi(Se,'outlets','xy');
+					x=outs(:,1);
+					y=outs(:,2);
+					num_new_basins=numel(x);	
+				else
+					s_order=max(so);
+					Se=modify(S,'streamorder',s_order);
+					outs=streampoi(Se,'outlets','xy');
+					x=outs(:,1);
+					y=outs(:,2);
+					num_new_basins=numel(x);
+				end			
 			case 'confluences'
 				cons=streampoi(S,'confluences','xy');
 				x=cons(:,1);
@@ -138,37 +166,70 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 				y=cons(:,2);
 				num_new_basins=numel(x);
 			case 'filtered_confluences'
-				cons_ix=streampoi(S,'confluences','ix');
-				cons=streampoi(S,'confluences','xy');
-				if strcmp(clip_method,'clip')
-					DAG=A.*(A.cellsize^2);
-				elseif strcmp(clip_method,'segment')
-					DAG=A0.*(A0.cellsize^2);
+				if no_nested
+					cons_ix=streampoi(S,'bconfluences','ix');
+					if strcmp(clip_method,'clip')
+						DAG=A.*(A.cellsize^2);
+					elseif strcmp(clip_method,'segment')
+						DAG=A0.*(A0.cellsize^2);
+					end
+					da_cons=(DAG.Z(cons_ix))/1e6;
+					da_idx=da_cons>=min_basin_size;
+					if strcmp(clip_method,'clip')
+						[x,y]=CheckUpstream(DEM,FD,cons_ix(da_idx));
+					elseif strcmp(clip_method,'segment')
+						[x,y]=CheckUpstream(DEM0,FD0,cons_ix(da_idx));
+					end
+					num_new_basins=numel(x);
+				else
+					cons_ix=streampoi(S,'confluences','ix');
+					cons=streampoi(S,'confluences','xy');
+					if strcmp(clip_method,'clip')
+						DAG=A.*(A.cellsize^2);
+					elseif strcmp(clip_method,'segment')
+						DAG=A0.*(A0.cellsize^2);
+					end
+					da_cons=(DAG.Z(cons_ix))/1e6;
+					da_idx=da_cons>=min_basin_size;
+					cons=cons(da_idx,:);
+					x=cons(:,1);
+					y=cons(:,2);
+					num_new_basins=numel(x);
 				end
-				da_cons=(DAG.Z(cons_ix))/1e6;
-				da_idx=da_cons>=min_basin_size;
-				cons=cons(da_idx,:);
-				x=cons(:,1);
-				y=cons(:,2);
-				num_new_basins=numel(x);
 			case 'p_filtered_confluences'
-				cons_ix=streampoi(S,'confluences','ix');
-				cons=streampoi(S,'confluences','xy');
-				if strcmp(clip_method,'clip')
-					DAG=A.*(A.cellsize^2);
-				elseif strcmp(clip_method,'segment')
-					DAG=A0.*(A0.cellsize^2);
+				if no_nested
+					cons_ix=streampoi(S,'bconfluences','ix');
+					if strcmp(clip_method,'clip')
+						DAG=A.*(A.cellsize^2);
+					elseif strcmp(clip_method,'segment')
+						DAG=A0.*(A0.cellsize^2);
+					end
+					da_cons=(DAG.Z(cons_ix))/1e6;
+					mbz=DA*(min_basin_size/100);
+					da_idx=da_cons>=mbz;
+					if strcmp(clip_method,'clip')
+						[x,y]=CheckUpstream(DEM,FD,cons_ix(da_idx));
+					elseif strcmp(clip_method,'segment')
+						[x,y]=CheckUpstream(DEM0,FD0,cons_ix(da_idx));
+					end
+					num_new_basins=numel(x);
+				else
+					cons_ix=streampoi(S,'confluences','ix');
+					cons=streampoi(S,'confluences','xy');
+					if strcmp(clip_method,'clip')
+						DAG=A.*(A.cellsize^2);
+					elseif strcmp(clip_method,'segment')
+						DAG=A0.*(A0.cellsize^2);
+					end
+					da_cons=(DAG.Z(cons_ix))/1e6;
+					mbz=DA*(min_basin_size/100);
+					da_idx=da_cons>=mbz;
+					cons=cons(da_idx,:);
+					x=cons(:,1);
+					y=cons(:,2);
+					num_new_basins=numel(x);
 				end
-				da_cons=(DAG.Z(cons_ix))/1e6;
-				mbz=DA*(min_basin_size/100);
-				da_idx=da_cons>=mbz;
-				cons=cons(da_idx,:);
-				x=cons(:,1);
-				y=cons(:,2);
-				num_new_basins=numel(x);
 			end
-
-
 
 			switch clip_method
 			case 'clip'
@@ -767,4 +828,29 @@ function [KSNGrid] = KsnInt(DEM,ksn_ms)
     KSNGrid=GRIDobj(xx,yy,ksn_int);
     IDX=isnan(DEM);
     KSNGrid.Z(IDX.Z)=NaN;
+end
+
+function [x,y] = CheckUpstream(DEM,FD,ix)
+	% Build cell of influence list
+	inflcs=cell(numel(ix),1);
+	for ii=1:numel(ix)
+	    IX=influencemap(FD,ix(ii));
+	    inflcs{ii}=find(IX.Z);
+	end
+	    
+	% Build index
+	idx=zeros(numel(ix),1);
+	idx=logical(idx);
+	for ii=1:numel(ix)
+	    inflcs_temp=inflcs;
+	    inflcs_temp{ii}=[0];
+	    up_member=cellfun(@(x) ismember(ix(ii),x),inflcs_temp);
+	    if any(up_member)
+	        idx(ii)=false;
+	    else
+	        idx(ii)=true;
+	    end
+	end
+
+	[x,y]=ind2coord(DEM,ix(idx));
 end
