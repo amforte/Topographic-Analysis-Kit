@@ -15,6 +15,8 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 	%				with the optional 'min_basin_size'
 	%
 	% Optional Inputs:
+	%		SBFiles_Dir ['SubBasins'] - name of folder (within the main Basins folder) to store the subbasin files. Subbasin files are now stored in
+	%			a separate folder to aid in the creation of different sets of subbasins based on different requirements. 
 	% 		threshold_area [1e6] - minimum accumulation area to define streams in meters squared
 	% 		segment_length [1000] - smoothing distance in meters for averaging along ksn, suggested value is 1000 meters
 	% 		theta_ref [0.5] - reference concavity for calculating ksn
@@ -48,6 +50,7 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 	addRequired(p,'max_basin_size',@(x) isnumeric(x));
 	addRequired(p,'divide_method',@(x) ischar(validatestring(x,{'order','confluences','up_confluences','filtered_confluences','p_filtered_confluences'})));
 
+	addParamValue(p,'SBFiles_Dir','SubBasins',@(x) ischar(x));
 	addParamValue(p,'theta_ref',0.5,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'threshold_area',1e6,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'segment_length',1000,@(x) isscalar(x) && isnumeric(x));
@@ -64,6 +67,7 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 	max_basin_size=p.Results.max_basin_size;
 	divide_method=p.Results.divide_method;
 
+	SBFiles_Dir=p.Results.SBFiles_Dir;
 	theta_ref=p.Results.theta_ref;
 	threshold_area=p.Results.threshold_area;
 	segment_length=p.Results.segment_length;
@@ -80,6 +84,11 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 
 	FileList=dir('*Data.mat');
 	num_files=numel(FileList);
+
+	% Make Subbasin Directory if it doesn't exist
+	if ~isdir(SBFiles_Dir)
+		mkdir(SBFiles_Dir);
+	end
 
 	% Load first file to grab clip method
 	load(FileList(1,1).name,'clip_method');
@@ -337,7 +346,7 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 					out_ix=coord2ind(DEMoc,xx,yy);
 					out_el=double(DEMoc.Z(out_ix));
 
-					SubFileName=['Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '.mat'];
+					SubFileName=[SBFiles_Dir '/Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '.mat'];
 					save(SubFileName,'RiverMouth','DEMcc','DEMoc','out_el','drainage_area','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','KsnOBJc','ChiOBJc','ksn_method','clip_method');
 
 					VarList=whos('-file',FileName);
@@ -414,30 +423,30 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 						DEMoc_temp=DEMoc;
 						DEMoc_temp.Z(Didx)=-32768;
 
-						DEMFileName=['Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '_DEM.txt'];
+						DEMFileName=[SBFiles_Dir '/Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '_DEM.txt'];
 						GRIDobj2ascii(DEMoc_temp,DEMFileName);
-						CHIFileName=['Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '_CHI.txt'];
+						CHIFileName=[SBFiles_Dir '/Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '_CHI.txt'];
 						GRIDobj2ascii(ChiOBJc,CHIFileName);
-						KSNFileName=['Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '_KSN.shp'];
+						KSNFileName=[SBFiles_Dir '/Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '_KSN.shp'];
 						shapewrite(MSNc,KSNFileName);
 
 						if calc_relief
 							for kk=1:num_rlf
-								RLFFileName=['Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '_RLF_' num2str(rlf{kk,2}) '.txt'];
+								RLFFileName=[SBFiles_Dir '/Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '_RLF_' num2str(rlf{kk,2}) '.txt'];
 								GRIDobj2ascii(rlf{kk,1},RLFFileName);
 							end
 						end
 
 						if ~isempty(AG);
 							for kk=1:num_grids
-								AGcFileName=['Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '_' AGc{kk,2} '.txt'];
+								AGcFileName=[SBFiles_Dir '/Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '_' AGc{kk,2} '.txt'];
 								GRIDobj2ascii(AGc{kk,1},AGcFileName);
 							end
 						end
 
 						if ~isempty(ACG);
 							for jj=1:num_grids
-								ACGcFileName=['Basin_' num2str(basin_num) '_' ACGc{jj,3} '.txt'];
+								ACGcFileName=[SBFiles_Dir '/Basin_' num2str(basin_num) '_' ACGc{jj,3} '.txt'];
 								GRIDobj2ascii(ACGc{jj,1},ACGcFileName);
 							end
 						end
@@ -545,7 +554,7 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 					out_ix=coord2ind(DEMoc,xx,yy);
 					out_el=double(DEMoc.Z(out_ix));
 
-					SubFileName=['Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '.mat'];
+					SubFileName=[SBFiles_Dir '/Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '.mat'];
 					save(SubFileName,'RiverMouth','DEMoc','out_el','drainage_area','Sc','SAc','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','KsnOBJc','ChiOBJc','ksn_method','clip_method');
 
 					VarList=whos('-file',FileName);
@@ -622,30 +631,30 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 						DEMoc_temp=DEMoc;
 						DEMoc_temp.Z(Didx)=-32768;
 
-						DEMFileName=['Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '_DEM.txt'];
+						DEMFileName=[SBFiles_Dir '/Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '_DEM.txt'];
 						GRIDobj2ascii(DEMoc_temp,DEMFileName);
-						CHIFileName=['Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '_CHI.txt'];
+						CHIFileName=[SBFiles_Dir '/Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '_CHI.txt'];
 						GRIDobj2ascii(ChiOBJc,CHIFileName);
-						KSNFileName=['Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '_KSN.shp'];
+						KSNFileName=[SBFiles_Dir '/Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '_KSN.shp'];
 						shapewrite(MSNc,KSNFileName);
 
 						if calc_relief
 							for kk=1:num_rlf
-								RLFFileName=['Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '_RLF_' num2str(rlf{kk,2}) '.txt'];
+								RLFFileName=[SBFiles_Dir '/Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '_RLF_' num2str(rlf{kk,2}) '.txt'];
 								GRIDobj2ascii(rlf{kk,1},RLFFileName);
 							end
 						end
 
 						if ~isempty(AG);
 							for kk=1:num_grids
-								AGcFileName=['Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '_' AGc{kk,2} '.txt'];
+								AGcFileName=[SBFiles_Dir '/Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '_' AGc{kk,2} '.txt'];
 								GRIDobj2ascii(AGc{kk,1},AGcFileName);
 							end
 						end
 
 						if ~isempty(ACG);
 							for jj=1:num_grids
-								ACGcFileName=['Basin_' num2str(basin_num) '_' ACGc{jj,3} '.txt'];
+								ACGcFileName=[SBFiles_Dir '/Basin_' num2str(basin_num) '_' ACGc{jj,3} '.txt'];
 								GRIDobj2ascii(ACGc{jj,1},ACGcFileName);
 							end
 						end

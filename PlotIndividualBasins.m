@@ -1,12 +1,28 @@
-function PlotIndividualBasins(location_of_data_files)
+function PlotIndividualBasins(location_of_data_files,varargin)
 	% Function takes outputs from 'ProcessRiverBasins' function and makes and saves plots for each basin with stream profiles, chi-z, and slope area
 	%
-	%Inputs:
-	% location_of_data_files - full path of folder which contains the mat files from 'ProcessRiverBasins'
+	% Required Inputs:
+	% 	location_of_data_files - full path of folder which contains the mat files from 'ProcessRiverBasins'
+	%
+	% Optional Inputs:
+	%	location_of_subbasins ['SubBasins'] - name of folder that contains subbasins of interest (if you created subbasins using
+	%		"SubDivideBigBasins"), expected to be within the main Basin folder provided with "location_of_data_files"
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+	% Parse Inputs
+	p = inputParser;
+	p.FunctionName = 'PlotIndividualBasins';
+	addRequired(p,'location_of_data_files',@(x) isdir(x));
+
+	addParamValue(p,'location_of_subbasins','SubBasins',@(x) ischar(x));
+
+	parse(p,location_of_data_files,varargin{:});
+	location_of_data_files=p.Results.location_of_data_files;
+
+	location_of_subbasins=p.Results.location_of_subbasins;
 
 	current=pwd;
 	cd(location_of_data_files);
@@ -25,7 +41,7 @@ function PlotIndividualBasins(location_of_data_files)
 	for kk=1:num_basins
 		basin_num=basin_nums(kk);
 		SearchAllString=['*_' num2str(basin_num) '_Data.mat'];
-		SearchSubString=['*_' num2str(basin_num) '_DataSubset*.mat'];
+		SearchSubString=[location_of_subbasins '/*_' num2str(basin_num) '_DataSubset*.mat'];
 
 		if numel(dir(SearchSubString))>0
 			Files=dir(SearchSubString);
@@ -40,11 +56,13 @@ function PlotIndividualBasins(location_of_data_files)
 
 	for ii=1:num_files
 
-		vI=who('-file',fileList(ii,1).name);
+		FileName=[FileList(ii,1).folder '/' FileList(ii,1).name];
+
+		vI=who('-file',FileName);
 		if ismember('SAc',vI)
-			load(fileList(ii,1).name,'DEMcc','ChiOBJc','Sc','SAc','RiverMouth','drainage_area');
+			load(FileName,'DEMcc','ChiOBJc','Sc','SAc','RiverMouth','drainage_area');
 		else
-			load(fileList(ii,1).name,'DEMcc','ChiOBJc','Sc','Ac','RiverMouth','drainage_area');
+			load(FileName,'DEMcc','ChiOBJc','Sc','Ac','RiverMouth','drainage_area');
 			SAc=slopearea(Sc,DEMcc,Ac,'plot',false);
 		end
 

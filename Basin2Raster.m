@@ -18,7 +18,9 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 	%	location_of_data_files - full path of folder which contains the mat files from 'ProcessRiverBasins' as a string
 	%
 	% Optional Inputs:
-	%	file_name_prefix ['batch'] - prefix for outputs, will automatically append the type of output, i.e. 'ksn', 'elevation', etc
+	%	file_name_prefix ['basins'] - prefix for outputs, will automatically append the type of output, i.e. 'ksn', 'elevation', etc
+	%	location_of_subbasins ['SubBasins'] - name of folder that contains subbasins of interest (if you created subbasins using
+	%		"SubDivideBigBasins"), expected to be within the main Basin folder provided with "location_of_data_files".
 	%	method ['subdivided'] - method used for subdividing watersheds. If you used 'ProcessRiversBasins' and then
 	%		'SubDivideBigBasins' or if you only used 'ProcessRiverBasins' but did not pick any nested catchments, i.e.
 	%		none of the river mouths supplied to 'ProcessRiverBasins' were within the catchment boundaries of other 
@@ -36,9 +38,10 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 	p.FunctionName = 'Basin2Raster';
 	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
 	addRequired(p,'valueOI',@(x) ischar(x));
-	addRequired(p,'location_of_data_files',@(x) ischar(x));
+	addRequired(p,'location_of_data_files',@(x) isdir(x));
 
-	addParamValue(p,'file_name_prefix','basins',@(x) ischar(x));
+	addParamValue(p,'location_of_subbasins','SubBasins',@(x) ischar(x));
+	addParamValue(p,'file_name_prefix','basins','SubBasins',@(x) ischar(x));
 	addParamValue(p,'method','subdivided',@(x) ischar(validatestring(x,{'subdivided','nested'})));
 
 	parse(p,DEM,valueOI,location_of_data_files,varargin{:});
@@ -46,6 +49,7 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 	valueOI=p.Results.valueOI;
 	location_of_data_files=p.Results.location_of_data_files;
 
+	location_of_subbasins=p.Results.location_of_subbasins;
 	file_name_prefix=p.Results.file_name_prefix;
 	method=p.Results.method;
 
@@ -71,7 +75,7 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 		for kk=1:num_basins
 			basin_num=basin_nums(kk);
 			SearchAllString=['*_' num2str(basin_num) '_Data.mat'];
-			SearchSubString=['*_' num2str(basin_num) '_DataSubset*.mat'];
+			SearchSubString=[location_of_subbasins '/*_' num2str(basin_num) '_DataSubset*.mat'];
 
 			if numel(dir(SearchSubString))>0
 				Files=dir(SearchSubString);
@@ -86,7 +90,7 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 
 		for ii=1:num_files;
 			disp(['Working on ' num2str(ii) ' of ' num2str(num_files)]);
-			FileName=fileList(ii,1).name;
+			FileName=[FileList(ii,1).folder '/' FileList(ii,1).name];
 			switch valueOI
 			case 'ksn'
 				load(FileName,'DEMoc','KSNc_stats');

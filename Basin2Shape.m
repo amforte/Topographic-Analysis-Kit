@@ -11,6 +11,10 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	% 		location_of_data_files - full path of folder which contains the mat files from 'ProcessRiverBasins'
 	%
 	% Optional Inputs:
+	%		location_of_subbasins ['SubBasins'] - name of folder that contains subbasins of interest (if you created subbasins using
+	%			"SubDivideBigBasins"), expected to be within the main Basin folder provided with "location_of_data_files". Note that if you do not provide
+	%			the correct directory name for the location of the subbasins, subbasin values will not be included in the output regardless of your choice
+	%			for the "include" parameter.
 	%		shape_name ['basins'] - name for the shapefile to be export, must have no spaces to be a valid name for ArcGIS and should NOT include the '.shp';
 	%		include ['all'] - parameter to specify which basins to include in building the shapfile. The default 'all' will include all basin mat files in the 
 	%			folder you specify. Providing 'subdivided' will check to see if a given main basin was subdivided using 'SubdivideBigBasins' and then only include 
@@ -58,6 +62,7 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
 	addRequired(p,'location_of_data_files',@(x) isdir(x));
 
+	addParamValue(p,'location_of_subbasins','SubBasins',@(x) ischar(x));
 	addParamValue(p,'shape_name','basins',@(x) ischar(x));
 	addParamValue(p,'include','all',@(x) ischar(validatestring(x,{'all','subdivided','bigonly'})));
 	addParamValue(p,'extra_field_values',[],@(x) isa(x,'cell'));
@@ -70,6 +75,7 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	DEM=p.Results.DEM;
 	location_of_data_files=p.Results.location_of_data_files;
 
+	location_of_subbasins=p.Results.location_of_subbasins;
 	shape_name=p.Results.shape_name;
 	include=p.Results.include;
 	efv=p.Results.extra_field_values;
@@ -84,7 +90,9 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	% Switch for which basins to include
 	switch include
 	case 'all'
-		FileList=dir('Basin*.mat');
+		FileList1=dir('*_Data.mat');
+		FileList2=dir([location_of_subbasins '/*_DataSubset*.mat']);
+		FileList=vertcat(FileList1,FileList2);
 		num_files=numel(FileList);
 	case 'bigonly'
 		FileList=dir('*_Data.mat');
@@ -102,7 +110,7 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 		for kk=1:num_basins
 			basin_num=basin_nums(kk);
 			SearchAllString=['*_' num2str(basin_num) '_Data.mat'];
-			SearchSubString=['*_' num2str(basin_num) '_DataSubset*.mat'];
+			SearchSubString=[location_of_subbasins '/*_' num2str(basin_num) '_DataSubset*.mat'];
 
 			if numel(dir(SearchSubString))>0
 				Files=dir(SearchSubString);
@@ -121,7 +129,7 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 
 	w1=waitbar(0,'Building polygons');
 	for ii=1:num_files;
-		FileName=FileList(ii,1).name;
+		FileName=[FileList(ii,1).folder '/' FileList(ii,1).name];
 		DB=GRIDobj(DEM);
 
 		load(FileName,'DEMoc','RiverMouth','drainage_area','out_el','KSNc_stats','Zc_stats','Gc_stats','Centroid');
