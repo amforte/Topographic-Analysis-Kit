@@ -80,13 +80,13 @@ function [ds,db]=ProjectOntoSwath(SW,x,y)
 				distances=n_swx-xoi;
 				[~,I]=min(abs(distances)); 
 				pd_in_seg(jj)=seg_dist(I);
+				% Find distance from the baseline
+				BaseLine=n_swy(I);
+				DistFromBaseLine(jj)=abs(BaseLine-n_y(jj));
 			else 
 				pd_in_seg(jj)=NaN;
+				DistFromBaseLine(jj)=NaN;
 			end
-
-			% Find distance from the baseline
-			BaseLine=n_swy(I);
-			DistFromBaseLine(jj)=abs(BaseLine-n_y(jj));
 		end
 
 		% Index for points that project to segment
@@ -105,7 +105,7 @@ function [ds,db]=ProjectOntoSwath(SW,x,y)
 	ds=dist_in_swath(ix);
 
 	% Set any points greater than the total swath distance to NaN;
-	idx=ds>max(swdist);
+	idx=ds>=max(swdist);
 	db(idx)=NaN;
 	ds(idx)=NaN;
 end
