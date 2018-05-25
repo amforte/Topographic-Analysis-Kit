@@ -105,7 +105,7 @@ function [ds,db]=ProjectOntoSwath(SW,x,y)
 	ds=dist_in_swath(ix);
 
 	% Set any points greater than the total swath distance to NaN;
-	idx=ds>=max(swdist);
+	idx=single(ds)>=max(swdist);
 	db(idx)=NaN;
 	ds(idx)=NaN;
 end
