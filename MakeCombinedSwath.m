@@ -43,10 +43,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	%				you wish to color points by
 	%	basin_scale [] - optional input for option 'basin_stats', name (as it appears in the provided table provided to 'data') of the 
 	%				value you wish to scale points by
-	%	basin_knicks_loc [] - optional input for option 'basin_knicks', name of folder (or file path) where to find knickpoint files
-	%				saved as a result of running 'FindBasinKnicks' on a series of basins selected from 'ProcessRiverBasins'
 	%	plot_map [true] - logical flag to plot a map displaying the location of the topographic swath and the additional data included 
 	%				in the swath (red dots) and those not (white dots) based on the provided data_width parameter.
+	%	cmap ['parula'] - valid name of colormap (e.g. 'jet') or a nx3 colormap array to use to color points.
 	%
 	% Outputs:
 	%	SW - TopoToolbox Swath object, contains various information as a structure. Can plot path and box of swath with plot(SW) and
@@ -85,6 +84,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	addParamValue(p,'basin_value',[],@(x) ischar(x));
 	addParamValue(p,'basin_scale',[],@(x) ischar(x));
 	addParamValue(p,'plot_map',true,@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'cmap','parula',@(x) ischar(x) || isnumeric(x) & size(x,2)==3);
 
 
 	parse(p,DEM,points,width,data_type,data,data_width,varargin{:});
@@ -101,6 +101,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	bv=p.Results.basin_value;
 	bs=p.Results.basin_scale;
 	plot_map=p.Results.plot_map;
+	cmap=p.Results.cmap;
 
 	if isempty(sample)
 		sample=DEM.cellsize;
@@ -112,6 +113,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	min_elevs=SwathMat(:,2);
 	mean_elevs=SwathMat(:,3);
 	max_elevs=SwathMat(:,4);
+
+	% Set colormap
+	colormap(cmap);
 
 	% Perform different procedures depending on the type of data provided
 
@@ -216,9 +220,23 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 
 			ax2=subplot(2,1,2);
 			hold on
-			scatter(outData(idx,1),outData(idx,2),outData(idx,3)*10,outData(idx,4),'filled');
+
+			% Scale size vector
+			sz_val=outData(idx,3);
+			sz=(sz_val/max(sz_val))*100;
+			% Create size legend
+			sz_sizes=linspace(min(sz),max(sz),5);
+			sz_val_scale=(sz_sizes/100)*max(sz_val);
+			for ii=1:5
+				sz_leg(ii)=plot(0,0,'ko','MarkerSize',sqrt(sz_sizes(ii)),'MarkerFaceColor','k','LineStyle','none');
+				set(sz_leg(ii),'visible','off');
+				leg_ent{ii}=num2str(sz_val_scale(ii));
+			end		
+
+			scatter(outData(idx,1),outData(idx,2),sz,outData(idx,4),'filled');
 			xlabel('Distance along swath (m)');
 			ylabel('Depth (km')
+			legend(sz_leg,leg_ent);
 			hold off
 			set(ax2,'YDir','reverse')
 			linkaxes([ax1,ax2],'x')
@@ -345,7 +363,19 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			if isempty(bs)
 				scatter(outData(idx,1),outData(idx,2),20,outData(idx,3),'filled');
 			else
-				scatter(outData(idx,1),outData(idx,2),outData(idx,4),outData(idx,3),'filled');
+				% Scale size vector
+				sz_val=outData(idx,4);
+				sz=(sz_val/max(sz_val))*100;
+				% Create size legend
+				sz_sizes=linspace(min(sz),max(sz),5);
+				sz_val_scale=(sz_sizes/100)*max(sz_val);
+				for ii=1:5
+					sz_leg(ii)=plot(0,0,'ko','MarkerSize',sqrt(sz_sizes(ii)),'MarkerFaceColor','k','LineStyle','none');
+					set(sz_leg(ii),'visible','off');
+					leg_ent{ii}=num2str(sz_val_scale(ii));
+				end
+				scatter(outData(idx,1),outData(idx,2),sz,outData(idx,3),'filled');
+				legend(sz_leg,leg_ent);
 			end
 
 			c1=colorbar;
