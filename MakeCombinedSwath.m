@@ -38,7 +38,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	% 	sample [] - resampling distance along topographic swath in map units, if no input is provided, code will use the cellsize 
 	%				of the DEM which results in no resampling.
 	% 	smooth [0] - smoothing distance, width of filter in map units over which to smooth values, default (0) results in no smoothing
-	%	vex [10] - vertical exaggeration for displaying plot.
+	%	vex [10] - vertical exaggeration for the topographic swath. Note that because matlabs controls on physical axis dimensions are
+	%				problematic, the vertical exaggeration controls don't work on plots that have two panels (e.g. 'ksn_batch', 'ksn_profiler',
+	%				'ksn_chandata', and 'eqs')
 	%	basin_value [] - required for option 'basin_stats', name (as it appears in the provided table provided to 'data') of the value 
 	%				you wish to color points by
 	%	basin_scale [] - optional input for option 'basin_stats', name (as it appears in the provided table provided to 'data') of the 
@@ -114,6 +116,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	mean_elevs=SwathMat(:,3);
 	max_elevs=SwathMat(:,4);
 
+	% Get extents of DEM
+	[demx,demy]=getoutline(DEM,true);	
+
 	% Set colormap
 	colormap(cmap);
 
@@ -124,6 +129,10 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			x_coord=data(:,1);
 			y_coord=data(:,2);
 			z=data(:,3);
+
+			% Remove any points beyond the extent of the provided DEM
+			[demix]=inpolygon(x_coord,y_coord,demx,demy);	
+			x_coord=x_coord(demix); y_coord=y_coord(demix); z=z(demix);
 
 			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
 			outData=[ds z db x_coord y_coord];
@@ -159,6 +168,10 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			z=data(:,3);
 			scle=data(:,4);
 
+			% Remove any points beyond the extent of the provided DEM
+			[demix]=inpolygon(x_coord,y_coord,demx,demy);	
+			x_coord=x_coord(demix); y_coord=y_coord(demix); z=z(demix); scle=scle(demix);
+
 			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
 			outData=[ds z scle db x_coord y_coord];
 			idx=outData(:,4)<=(data_width/2) & ~isnan(ds);
@@ -193,6 +206,10 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			depth=data(:,3);
 			magnitude=data(:,4);
 
+			% Remove any points beyond the extent of the provided DEM
+			[demix]=inpolygon(x_coord,y_coord,demx,demy);	
+			x_coord=x_coord(demix); y_coord=y_coord(demix); depth=depth(demix); magnitude=magnitude(demix);
+
 			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
 			outData=[ds depth magnitude db x_coord y_coord];
 			idx=outData(:,4)<=(data_width/2) & ~isnan(ds);
@@ -208,8 +225,6 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			plot(swdist,max_elevs,'-b');
 			plot(swdist,mean_elevs,'-k');
 
-			daspect([vex 1 1])
-
 			yl=ylim;
 			for jj=1:numel(bends)
 				plot([bends(jj),bends(jj)],yl,'-k');
@@ -220,7 +235,6 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 
 			ax2=subplot(2,1,2);
 			hold on
-
 			% Scale size vector
 			sz_val=outData(idx,3);
 			sz=(sz_val/max(sz_val))*100;
@@ -237,14 +251,22 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			xlabel('Distance along swath (m)');
 			ylabel('Depth (km')
 			legend(sz_leg,leg_ent);
+			xlim([0 max(swdist)]);
+			c1=colorbar(ax2,'southoutside');
+			xlabel(c1,'Distance from Swath Line')
 			hold off
-			set(ax2,'YDir','reverse')
+
+			set(ax2,'YDir','reverse');
 			linkaxes([ax1,ax2],'x')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		case 'STREAMobj'
 			x_coord=data.x;
 			y_coord=data.y;
 			z=getnal(data,DEM);
+
+			% Remove any points beyond the extent of the provided DEM
+			[demix]=inpolygon(x_coord,y_coord,demx,demy);	
+			x_coord=x_coord(demix); y_coord=y_coord(demix); z=z(demix);
 
 			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
 			outData=[ds z db x_coord y_coord];
@@ -280,6 +302,10 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			ksn=data(:,8);
 			elev=data(:,4);
 
+			% Remove any points beyond the extent of the provided DEM
+			[demix]=inpolygon(x_coord,y_coord,demx,demy);	
+			x_coord=x_coord(demix); y_coord=y_coord(demix); ksn=ksn(demix); elev=elev(demix);
+
 			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
 			outData=[ds elev ksn db x_coord y_coord];
 			idx=outData(:,4)<=(data_width/2) & ~isnan(ds);
@@ -295,8 +321,6 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			plot(swdist,min_elevs,'-b');
 			plot(swdist,max_elevs,'-b');
 			plot(swdist,mean_elevs,'-k');
-
-			daspect([vex 1 1])
 
 			yl=ylim;
 			for jj=1:numel(bends)
@@ -323,6 +347,13 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			col=data.(bv);
 			if ~isempty(bs)
 				scl=data.(bs);
+			end
+
+			% Remove any points beyond the extent of the provided DEM
+			[demix]=inpolygon(x_coord,y_coord,demx,demy);	
+			x_coord=x_coord(demix); y_coord=y_coord(demix); z=z(demix); col=col(demix);
+			if ~isempty(bs)
+				scl=scl(demix);
 			end
 
 			% Transform Data
@@ -402,6 +433,10 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			y_coord=streamData(:,2);
 			ksn=streamData(:,3);
 
+			% Remove any points beyond the extent of the provided DEM
+			[demix]=inpolygon(x_coord,y_coord,demx,demy);	
+			x_coord=x_coord(demix); y_coord=y_coord(demix); ksn=ksn(demix);
+
 			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
 			outData=[ds ksn db x_coord y_coord];
 			idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
@@ -417,8 +452,6 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			plot(swdist,min_elevs,'-b');
 			plot(swdist,max_elevs,'-b');
 			plot(swdist,mean_elevs,'-k');
-
-			daspect([vex 1 1])
 
 			yl=ylim;
 			for jj=1:numel(bends)
@@ -443,6 +476,10 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			y_coord=data(:,2);
 			ksn=data(:,4);
 
+			% Remove any points beyond the extent of the provided DEM
+			[demix]=inpolygon(x_coord,y_coord,demx,demy);	
+			x_coord=x_coord(demix); y_coord=y_coord(demix); ksn=ksn(demix);			
+
 			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
 			outData=[ds ksn db x_coord y_coord];
 			idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
@@ -458,8 +495,6 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			plot(swdist,min_elevs,'-b');
 			plot(swdist,max_elevs,'-b');
 			plot(swdist,mean_elevs,'-k');
-
-			daspect([vex 1 1])
 
 			yl=ylim;
 			for jj=1:numel(bends)
@@ -503,6 +538,10 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			x_coord=knps(:,1);
 			y_coord=knps(:,2);
 			z=knps(:,3);
+
+			% Remove any points beyond the extent of the provided DEM
+			[demix]=inpolygon(x_coord,y_coord,demx,demy);	
+			x_coord=x_coord(demix); y_coord=y_coord(demix); z=z(demix);
 
 			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
 			outData=[ds z db x_coord y_coord];
