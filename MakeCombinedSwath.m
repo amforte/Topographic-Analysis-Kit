@@ -125,7 +125,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			y_coord=data(:,2);
 			z=data(:,3);
 
-			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord);
+			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
 			outData=[ds z db x_coord y_coord];
 			idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
 
@@ -159,7 +159,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			z=data(:,3);
 			scle=data(:,4);
 
-			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord);
+			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
 			outData=[ds z scle db x_coord y_coord];
 			idx=outData(:,4)<=(data_width/2) & ~isnan(ds);
 
@@ -193,7 +193,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			depth=data(:,3);
 			magnitude=data(:,4);
 
-			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord);
+			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
 			outData=[ds depth magnitude db x_coord y_coord];
 			idx=outData(:,4)<=(data_width/2) & ~isnan(ds);
 
@@ -246,7 +246,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			y_coord=data.y;
 			z=getnal(data,DEM);
 
-			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord);
+			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
 			outData=[ds z db x_coord y_coord];
 			idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
 
@@ -280,7 +280,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			ksn=data(:,8);
 			elev=data(:,4);
 
-			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord);
+			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
 			outData=[ds elev ksn db x_coord y_coord];
 			idx=outData(:,4)<=(data_width/2) & ~isnan(ds);
 
@@ -326,7 +326,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			end
 
 			% Transform Data
-			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord);
+			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
 			outData=[ds z db x_coord y_coord];
 
 			% Assemble outData
@@ -402,7 +402,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			y_coord=streamData(:,2);
 			ksn=streamData(:,3);
 
-			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord);
+			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
 			outData=[ds ksn db x_coord y_coord];
 			idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
 
@@ -443,7 +443,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			y_coord=data(:,2);
 			ksn=data(:,4);
 
-			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord);
+			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
 			outData=[ds ksn db x_coord y_coord];
 			idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
 
@@ -504,7 +504,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			y_coord=knps(:,2);
 			z=knps(:,3);
 
-			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord);
+			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
 			outData=[ds z db x_coord y_coord];
 			idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
 

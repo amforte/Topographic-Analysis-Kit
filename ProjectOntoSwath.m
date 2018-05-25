@@ -1,4 +1,4 @@
-function [ds,db]=ProjectOntoSwath(SW,x,y)
+function [ds,db]=ProjectOntoSwath(SW,x,y,data_width)
 	% Function projects points on a SWATHobj (SW) and finds distance along (ds) and 
 	%	from center line (db) of the SWATHobj, used in 'MakeCombinedSwath'
 	% 
@@ -59,6 +59,10 @@ function [ds,db]=ProjectOntoSwath(SW,x,y)
 			seg_dist(1:bend_ix(ii))=NaN;
 		end
 
+		% Find distances of points from end node
+		xn_dist=x-swx1;
+		yn_dist=y-swy1;
+		n_dist=sqrt((xn_dist.^2)+(yn_dist.^2));
 
 		% Find angle of segment
 		sw_angle=-1*atan((swy1-swy0)/(swx1-swx0));
@@ -87,6 +91,13 @@ function [ds,db]=ProjectOntoSwath(SW,x,y)
 				pd_in_seg(jj)=NaN;
 				DistFromBaseLine(jj)=NaN;
 			end
+
+			% Control for points that are within bend overlaps
+			if isnan(pd_in_seg(jj)) & n_dist(jj)<=data_width & ii~=num_segs
+				pd_in_seg(jj)=seg_dist(bend_ix(ii+1));
+				DistFromBaseLine(jj)=n_dist(jj);
+			end 
+
 		end
 
 		% Index for points that project to segment
