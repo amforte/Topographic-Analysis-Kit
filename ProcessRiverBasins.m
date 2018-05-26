@@ -450,7 +450,7 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,basin_dir,varargin)
 		if isempty(DEMhc)
 			zc=mincosthydrocon(S,DEM,'interp',iv);
 			DEMcon=GRIDobj(DEM);
-			DEMcon.Z(DEMc.Z==0)=NaN;
+			DEMcon.Z(DEMcon.Z==0)=NaN;
 			DEMcon.Z(S.IXgrid)=zc;
 		else
 			DEMcon=DEMhc;
