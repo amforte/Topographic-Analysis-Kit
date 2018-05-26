@@ -20,7 +20,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	%		hydrological conditioned DEM. If no input is provided the code defaults to using the mincosthydrocon function.
 	%	file_name_prefix ['batch'] - prefix for outputs, will append the type of output, i.e. 'ksn', 'chimap', etc
 	% 	segment_length [1000] - length of segments in map units for smoothing ksn values, equivalent to smoothing in Profiler
-	% 	theta_ref [0.45] - reference concavity (as a positive value) for calculating ksn
+	% 	theta_ref [0.50] - reference concavity (as a positive value) for calculating ksn
 	% 	output [false]- switch to either output matlab files to the workspace (true) or to not only save the specified files
 	%		without any workspace output (false)
 	%	ksn_method [quick] - switch between method to calculate ksn values, options are 'quick' and 'trib', the 'trib' method takes 3-4 times longer 
@@ -60,7 +60,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 
 	addParamValue(p,'file_name_prefix','batch',@(x) ischar(x));
 	addParamValue(p,'segment_length',1000,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'theta_ref',0.45,@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'theta_ref',0.50,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'output',false,@(x) isscalar(x) && islogical(x));
 	addParamValue(p,'ksn_method','quick',@(x) ischar(validatestring(x,{'quick','trib'})));
 	addParamValue(p,'output_level_method',[],@(x) ischar(validatestring(x,{'elevation','max_out_elevation'})));
