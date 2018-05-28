@@ -25,14 +25,6 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,basin_dir,varargin)
 	%			than the 'quick' method. In most cases, the 'quick' method works well, but if values near tributary junctions are important, then 'trib'
 	%			may be better as this calculates ksn values for individual channel segments individually
 	% 		write_arc_files [false] - set value to true to output a ascii's of various grids and a shapefile of the ksn, false to not output arc files
-	%		clip_method ['clip'] - flag to determine how the code clips out stream networks, expects either 'clip' or 'segment'. The 'clip' option 
-	%			(default) will clip out DEMs and rerun the flow algorithm on this clipped DEM and proceed from there to get a new stream network. 
-	%			The 'segment' option clips out the DEM the same but then segments the original, full stream network based on the input river mouth,
-	%			i.e. a new flow routing algorithm is not run on the clipped DEM. This 'segment' option should be tried if you are encountering errors
-	%			with the 'clip' method, specifically warnings that STREAMobjs contain 0 connected components. This error often results if selected 
-	%			watersheds are small and the DEMs are noisy, flow routing on the clipped DEMs in this case sometimes will route streams differently, 
-	%			e.g. routing streams out the side of the basin. It is strongly recommended that you use the default 'clip' method as opposed to the 'segment'
-	%			method, only using the 'segment' method if the clip method fails.
 	%		add_grids [] - option to provide a cell array of additional grids to clip by selected river basins. The expected input is a nx2 cell array,
 	%			where the first column is a GRIDobj and the second column is a string identifying what this grid is (so you can remember what these grids
 	%			are when looking at outputs later, but also used as the name of field values if you use 'Basin2Shape' on the output basins so these should be short 
@@ -84,7 +76,6 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,basin_dir,varargin)
 	addParamValue(p,'threshold_area',1e6,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'segment_length',1000,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'write_arc_files',false,@(x) isscalar(x));
-	addParamValue(p,'clip_method','clip',@(x) ischar(validatestring(x,{'clip','segment'})));
 	addParamValue(p,'ksn_method','quick',@(x) ischar(validatestring(x,{'quick','trib'})));
 	addParamValue(p,'add_grids',[],@(x) isa(x,'cell') && size(x,2)==2);
 	addParamValue(p,'add_cat_grids',[],@(x) isa(x,'cell') && size(x,2)==3);
@@ -106,7 +97,6 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,basin_dir,varargin)
 	threshold_area=p.Results.threshold_area;
 	segment_length=p.Results.segment_length;
 	write_arc_files=p.Results.write_arc_files;
-	clip_method=p.Results.clip_method;
 	ksn_method=p.Results.ksn_method;
 	AG=p.Results.add_grids;
 	ACG=p.Results.add_cat_grids;
@@ -224,446 +214,225 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,basin_dir,varargin)
 	end
 
 
-	switch clip_method
-	case 'clip'
-		w1=waitbar(0,['Working on Basin Number 1 of ' num2str(num_basins) ' total basins']);
-		for ii=1:num_basins
-			xx=RM(ii,1);
-			yy=RM(ii,2);
-			basin_num=RM(ii,3);
+	w1=waitbar(0,['Working on Basin Number 1 of ' num2str(num_basins) ' total basins']);
+	for ii=1:num_basins
+		xx=RM(ii,1);
+		yy=RM(ii,2);
+		basin_num=RM(ii,3);
 
-			RiverMouth=[xx yy basin_num];
+		RiverMouth=[xx yy basin_num];
 
-			% Build dependenc map and clip out drainage basins
-			I=dependencemap(FD,xx,yy);
-			DEMoc=crop(DEM,I,nan);
+		% Build dependence map and clip out drainage basins
+		I=dependencemap(FD,xx,yy);
+		DEMoc=crop(DEM,I,nan);
+		FDc=crop(FD,I);
 
-			% Calculate drainage area
-			dep_map=GRIDobj2mat(I);
-			num_pix=sum(sum(dep_map));
-			drainage_area=(num_pix*DEMoc.cellsize*DEMoc.cellsize)/(1e6);
+		% Calculate drainage area
+		dep_map=GRIDobj2mat(I);
+		num_pix=sum(sum(dep_map));
+		drainage_area=(num_pix*DEMoc.cellsize*DEMoc.cellsize)/(1e6);
 
-			% Find weighted centroid of drainage basin
-			[Cx,Cy]=FindCentroid(DEMoc);
-			Centroid=[Cx Cy];
+		% Find weighted centroid of drainage basin
+		[Cx,Cy]=FindCentroid(DEMoc);
+		Centroid=[Cx Cy];
 
-			% Generate new stream map
-			FDc=FLOWobj(DEMoc,'preprocess','carve');
-			Ac=flowacc(FDc);
-			Sc=STREAMobj(FDc,'minarea',threshold_area,'unit','mapunits');
+		% Generate new stream map
+		Ac=flowacc(FDc);
+		Sc=STREAMobj(FDc,'minarea',threshold_area,'unit','mapunits');
 
-			% Check to make sure the stream object isn't empty
-			if isempty(Sc.x)
-				warning(['Input threshold drainage area is too large for basin ' num2str(basin_num) ' decreasing threshold area for this basin']);
-				new_thresh=threshold_area;
-				while isempty(Sc.x)
-					new_thresh=new_thresh/2;
-					Sc=STREAMobj(FDc,'minarea',new_thresh,'unit','mapunits');
-				end
+		% Check to make sure the stream object isn't empty, this shouldn't occur anymore unless a bad pour point was provided...
+		if isempty(Sc.x)
+			warning(['Input threshold drainage area is too large for basin ' num2str(basin_num) ' decreasing threshold area for this basin']);
+			new_thresh=threshold_area;
+			while isempty(Sc.x)
+				new_thresh=new_thresh/2;
+				Sc=STREAMobj(FDc,'minarea',new_thresh,'unit','mapunits');
 			end
+		end
 
-			% Calculate chi and create chi map
-			Cc=chitransform(Sc,Ac,'a0',1,'mn',theta_ref);
-			ChiOBJc=GRIDobj(DEMoc);
-			ChiOBJc.Z(Sc.IXgrid)=Cc;
+		% Calculate chi and create chi map
+		Cc=chitransform(Sc,Ac,'a0',1,'mn',theta_ref);
+		ChiOBJc=GRIDobj(DEMoc);
+		ChiOBJc.Z(Sc.IXgrid)=Cc;
 
-			% Calculate gradient
-			switch gradient_method
-			case 'gradient8'
-				Goc=gradient8(DEMoc);
-			case 'arcslope'
-				Goc=arcslope(DEMoc);
-			end
+		% Calculate gradient
+		switch gradient_method
+		case 'gradient8'
+			Goc=gradient8(DEMoc);
+		case 'arcslope'
+			Goc=arcslope(DEMoc);
+		end
 
-			% Find best fit concavity
-			SLc=klargestconncomps(Sc,1);
-			if isempty(DEMhc)
-				zcon=mincosthydrocon(SLc,DEMoc,'interp',iv);
+		% Hydrologically Condition DEM
+		if isempty(DEMhc)
+			zcon=mincosthydrocon(Sc,DEMoc,'interp',iv);
+		else
+			zcon=getnal(Sc,DEMhc);
+		end
+		DEMcc=GRIDobj(DEMoc);
+		DEMcc.Z(DEMcc.Z==0)=NaN;
+		DEMcc.Z(Sc.IXgrid)=zcon;
+
+		% Find best fit concavity	
+		SLc=klargestconncomps(Sc,1);	
+		Chic=chiplot(SLc,DEMcc,Ac,'a0',1,'plot',false);
+
+		% Calculate ksn
+		switch ksn_method
+		case 'quick'
+			[MSc]=KSN_Quick(DEMoc,DEMcc,Ac,Sc,Chic.mn,segment_length);
+			[MSNc]=KSN_Quick(DEMoc,DEMcc,Ac,Sc,theta_ref,segment_length);
+		case 'trib'
+			% Overide choice if very small basin as KSN_Trib will fail for small basins
+			if drainage_area>2.5
+				[MSc]=KSN_Trib(DEMoc,DEMcc,FDc,Ac,Sc,Chic.mn,segment_length);
+				[MSNc]=KSN_Trib(DEMoc,DEMcc,FDc,Ac,Sc,theta_ref,segment_length);
 			else
-				zcon=getnal(SLc,DEMhc);
-			end
-			DEMcc=GRIDobj(DEMoc);
-			DEMcc.Z(DEMcc.Z==0)=NaN;
-			DEMcc.Z(SLc.IXgrid)=zcon;
-			Chic=chiplot(SLc,DEMcc,Ac,'a0',1,'plot',false);
-
-			% Calculate ksn
-			switch ksn_method
-			case 'quick'
 				[MSc]=KSN_Quick(DEMoc,DEMcc,Ac,Sc,Chic.mn,segment_length);
 				[MSNc]=KSN_Quick(DEMoc,DEMcc,Ac,Sc,theta_ref,segment_length);
-			case 'trib'
-				% Overide choice if very small basin as KSN_Trib will fail for small basins
-				if drainage_area>2.5
-					[MSc]=KSN_Trib(DEMoc,DEMcc,FDc,Ac,Sc,Chic.mn,segment_length);
-					[MSNc]=KSN_Trib(DEMoc,DEMcc,FDc,Ac,Sc,theta_ref,segment_length);
-				else
-					[MSc]=KSN_Quick(DEMoc,DEMcc,Ac,Sc,Chic.mn,segment_length);
-					[MSNc]=KSN_Quick(DEMoc,DEMcc,Ac,Sc,theta_ref,segment_length);
-				end
 			end
+		end
 
-			% Calculate basin wide ksn statistics
-			min_ksn=nanmin([MSNc.ksn]);
-			mean_ksn=nanmean([MSNc.ksn]);
-			max_ksn=nanmax([MSNc.ksn]);
-			std_ksn=nanstd([MSNc.ksn]);
-			se_ksn=std_ksn/sqrt(numel(MSNc)); % Standard error
+		% Calculate basin wide ksn statistics
+		min_ksn=nanmin([MSNc.ksn]);
+		mean_ksn=nanmean([MSNc.ksn]);
+		max_ksn=nanmax([MSNc.ksn]);
+		std_ksn=nanstd([MSNc.ksn]);
+		se_ksn=std_ksn/sqrt(numel(MSNc)); % Standard error
 
-			% Calculate basin wide gradient statistics
-			min_grad=nanmin(Goc.Z(:));
-			mean_grad=nanmean(Goc.Z(:));
-			max_grad=nanmax(Goc.Z(:));
-			std_grad=nanstd(Goc.Z(:));
-			se_grad=std_grad/sqrt(sum(~isnan(Goc.Z(:)))); % Standard error
+		% Calculate basin wide gradient statistics
+		min_grad=nanmin(Goc.Z(:));
+		mean_grad=nanmean(Goc.Z(:));
+		max_grad=nanmax(Goc.Z(:));
+		std_grad=nanstd(Goc.Z(:));
+		se_grad=std_grad/sqrt(sum(~isnan(Goc.Z(:)))); % Standard error
 
-			% Calculate basin wide elevation statistics
-			min_z=nanmin(DEMoc.Z(:));
-			mean_z=nanmean(DEMoc.Z(:));
-			max_z=nanmax(DEMoc.Z(:));
-			std_z=nanstd(DEMoc.Z(:));
-			se_z=std_z/sqrt(sum(~isnan(DEMoc.Z(:)))); % Standard error
+		% Calculate basin wide elevation statistics
+		min_z=nanmin(DEMoc.Z(:));
+		mean_z=nanmean(DEMoc.Z(:));
+		max_z=nanmax(DEMoc.Z(:));
+		std_z=nanstd(DEMoc.Z(:));
+		se_z=std_z/sqrt(sum(~isnan(DEMoc.Z(:)))); % Standard error
 
-			KSNc_stats=[mean_ksn se_ksn std_ksn min_ksn max_ksn];
-			Gc_stats=double([mean_grad se_grad std_grad min_grad max_grad]);
-			Zc_stats=double([mean_z se_z std_z min_z max_z]);
+		KSNc_stats=[mean_ksn se_ksn std_ksn min_ksn max_ksn];
+		Gc_stats=double([mean_grad se_grad std_grad min_grad max_grad]);
+		Zc_stats=double([mean_z se_z std_z min_z max_z]);
 
-			% Find outlet elevation
-			out_ix=coord2ind(DEMoc,xx,yy);
-			out_el=double(DEMoc.Z(out_ix));
+		% Find outlet elevation
+		out_ix=coord2ind(DEMoc,xx,yy);
+		out_el=double(DEMoc.Z(out_ix));
 
-			% Save base file
-			FileName=['Basin_' num2str(basin_num) '_Data.mat'];
-			save(FileName,'RiverMouth','DEMcc','DEMoc','out_el','drainage_area','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method','gradient_method','clip_method');
-			
-			% Make interpolated ksn grid
-			try 
-				[KsnOBJc] = KsnInt(DEMoc,MSNc);
-				save(FileName,'KsnOBJc','-append');
-			catch
-				warning(['Interpolation of KSN grid failed for basin ' num2str(RiverMouth(:,3))]);
+		% Save base file
+		FileName=['Basin_' num2str(basin_num) '_Data.mat'];
+		save(FileName,'RiverMouth','DEMcc','DEMoc','out_el','drainage_area','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method','gradient_method');
+		
+		% Make interpolated ksn grid
+		try 
+			[KsnOBJc] = KsnInt(DEMoc,MSNc);
+			save(FileName,'KsnOBJc','-append');
+		catch
+			warning(['Interpolation of KSN grid failed for basin ' num2str(RiverMouth(:,3))]);
+		end
+
+		% If additional grids are present, append them to the mat file
+		if ~isempty(AG)
+			num_grids=size(AG,1);
+			AGc=cell(size(AG));
+			for jj=1:num_grids
+				AGcOI=crop(AG{jj,1},I,nan);
+				AGc{jj,1}=AGcOI;
+				AGc{jj,2}=AG{jj,2};
+				mean_AGc=nanmean(AGcOI.Z(:));
+				min_AGc=nanmin(AGcOI.Z(:));
+				max_AGc=nanmax(AGcOI.Z(:));
+				std_AGc=nanstd(AGcOI.Z(:));
+				se_AGc=std_AGc/sqrt(sum(~isnan(AGcOI.Z(:))));
+				AGc_stats(jj,:)=[mean_AGc se_AGc std_AGc min_AGc max_AGc];
 			end
+			save(FileName,'AGc','AGc_stats','-append');				
+		end
 
-			% If additional grids are present, append them to the mat file
-			if ~isempty(AG)
-				num_grids=size(AG,1);
-				AGc=cell(size(AG));
-				for jj=1:num_grids
-					AGcOI=crop(AG{jj,1},I,nan);
-					AGc{jj,1}=AGcOI;
-					AGc{jj,2}=AG{jj,2};
-					mean_AGc=nanmean(AGcOI.Z(:));
-					min_AGc=nanmin(AGcOI.Z(:));
-					max_AGc=nanmax(AGcOI.Z(:));
-					std_AGc=nanstd(AGcOI.Z(:));
-					se_AGc=std_AGc/sqrt(sum(~isnan(AGcOI.Z(:))));
-					AGc_stats(jj,:)=[mean_AGc se_AGc std_AGc min_AGc max_AGc];
-				end
-				save(FileName,'AGc','AGc_stats','-append');				
+		if ~isempty(ACG)
+			num_grids=size(ACG,1);
+			ACGc=cell(size(ACG));
+			for jj=1:num_grids
+				ACGcOI=crop(ACG{jj,1},I,nan);
+				ACGc{jj,1}=ACGcOI;
+				ACGc{jj,3}=ACG{jj,3};
+				edg=ACG{jj,2}.Numbers;
+				edg=edg+0.5;
+				edg=vertcat(0.5,edg);
+				[N,~]=histcounts(ACGcOI.Z(:),edg);
+				T=ACG{jj,2};
+				T.Counts=N';
+				ACGc{jj,2}=T;
+				ACGc_stats(jj,1)=[mode(ACGcOI.Z(:))];
 			end
+			save(FileName,'ACGc','ACGc_stats','-append');	
+		end				
 
-			if ~isempty(ACG)
-				num_grids=size(ACG,1);
-				ACGc=cell(size(ACG));
-				for jj=1:num_grids
-					ACGcOI=crop(ACG{jj,1},I,nan);
-					ACGc{jj,1}=ACGcOI;
-					ACGc{jj,3}=ACG{jj,3};
-					edg=ACG{jj,2}.Numbers;
-					edg=edg+0.5;
-					edg=vertcat(0.5,edg);
-					[N,~]=histcounts(ACGcOI.Z(:),edg);
-					T=ACG{jj,2};
-					T.Counts=N';
-					ACGc{jj,2}=T;
-					ACGc_stats(jj,1)=[mode(ACGcOI.Z(:))];
-				end
-				save(FileName,'ACGc','ACGc_stats','-append');	
-			end				
+		if calc_relief
+			num_rlf=numel(relief_radii);
+			rlf=cell(num_rlf,2);
+			rlf_stats=zeros(num_rlf,6);
+			for jj=1:num_rlf
+				% Calculate relief
+				radOI=relief_radii(jj);
+				rlf{jj,2}=radOI;
+				rlfOI=localtopography(DEMoc,radOI);
+				rlf{jj,1}=rlfOI;
+				% Calculate stats
+				mean_rlf=nanmean(rlfOI.Z(:));
+				min_rlf=nanmin(rlfOI.Z(:));
+				max_rlf=nanmax(rlfOI.Z(:));
+				std_rlf=nanstd(rlfOI.Z(:));
+				se_rlf=std_rlf/sqrt(sum(~isnan(rlfOI.Z(:))));
+				rlf_stats(jj,:)=[mean_rlf se_rlf std_rlf min_rlf max_rlf radOI];
+			end
+			save(FileName,'rlf','rlf_stats','-append');
+		end
+
+		if write_arc_files
+			% Replace NaNs in DEM with -32768
+			Didx=isnan(DEMoc.Z);
+			DEMoc_temp=DEMoc;
+			DEMoc_temp.Z(Didx)=-32768;
+
+			DEMFileName=['Basin_' num2str(basin_num) '_DEM.txt'];
+			GRIDobj2ascii(DEMoc_temp,DEMFileName);
+			CHIFileName=['Basin_' num2str(basin_num) '_CHI.txt'];
+			GRIDobj2ascii(ChiOBJc,CHIFileName);
+			KSNFileName=['Basin_' num2str(basin_num) '_KSN.shp'];
+			shapewrite(MSNc,KSNFileName);
 
 			if calc_relief
-				num_rlf=numel(relief_radii);
-				rlf=cell(num_rlf,2);
-				rlf_stats=zeros(num_rlf,6);
 				for jj=1:num_rlf
-					% Calculate relief
-					radOI=relief_radii(jj);
-					rlf{jj,2}=radOI;
-					rlfOI=localtopography(DEMoc,radOI);
-					rlf{jj,1}=rlfOI;
-					% Calculate stats
-					mean_rlf=nanmean(rlfOI.Z(:));
-					min_rlf=nanmin(rlfOI.Z(:));
-					max_rlf=nanmax(rlfOI.Z(:));
-					std_rlf=nanstd(rlfOI.Z(:));
-					se_rlf=std_rlf/sqrt(sum(~isnan(rlfOI.Z(:))));
-					rlf_stats(jj,:)=[mean_rlf se_rlf std_rlf min_rlf max_rlf radOI];
-				end
-				save(FileName,'rlf','rlf_stats','-append');
-			end
-
-			if write_arc_files
-				% Replace NaNs in DEM with -32768
-				Didx=isnan(DEMoc.Z);
-				DEMoc_temp=DEMoc;
-				DEMoc_temp.Z(Didx)=-32768;
-
-				DEMFileName=['Basin_' num2str(basin_num) '_DEM.txt'];
-				GRIDobj2ascii(DEMoc_temp,DEMFileName);
-				CHIFileName=['Basin_' num2str(basin_num) '_CHI.txt'];
-				GRIDobj2ascii(ChiOBJc,CHIFileName);
-				KSNFileName=['Basin_' num2str(basin_num) '_KSN.shp'];
-				shapewrite(MSNc,KSNFileName);
-
-				if calc_relief
-					for jj=1:num_rlf
-						RLFFileName=['Basin_' num2str(basin_num) '_RLF_' num2str(rlf{jj,2}) '.txt'];
-						GRIDobj2ascii(rlf{jj,1},RLFFileName);
-					end
-				end
-
-				if ~isempty(AG);
-					for jj=1:num_grids
-						AGcFileName=['Basin_' num2str(basin_num) '_' AGc{jj,2} '.txt'];
-						GRIDobj2ascii(AGc{jj,1},AGcFileName);
-					end
-				end
-
-				if ~isempty(ACG);
-					for jj=1:num_grids
-						ACGcFileName=['Basin_' num2str(basin_num) '_' ACGc{jj,3} '.txt'];
-						GRIDobj2ascii(ACGc{jj,1},ACGcFileName);
-					end
+					RLFFileName=['Basin_' num2str(basin_num) '_RLF_' num2str(rlf{jj,2}) '.txt'];
+					GRIDobj2ascii(rlf{jj,1},RLFFileName);
 				end
 			end
 
-			waitbar(ii/num_basins,w1,['Completed ' num2str(ii) ' of ' num2str(num_basins) ' total basins'])
-		end
-		close(w1)
-
-	case 'segment'
-
-		% Generate flow accumulation and hydrologically conditioned DEM
-		disp('Generating hydrologically conditioned DEM for the entire region')
-		A=flowacc(FD);
-
-		if isempty(DEMhc)
-			zc=mincosthydrocon(S,DEM,'interp',iv);
-			DEMcon=GRIDobj(DEM);
-			DEMcon.Z(DEMcon.Z==0)=NaN;
-			DEMcon.Z(S.IXgrid)=zc;
-		else
-			DEMcon=DEMhc;
-		end
-
-		w1=waitbar(0,['Working on Basin Number 1 of ' num2str(num_basins) ' total basins']);
-		for ii=1:num_basins
-
-			xx=RM(ii,1);
-			yy=RM(ii,2);
-			basin_num=RM(ii,3);
-
-			RiverMouth=[xx yy basin_num];
-
-			% Build dependenc map and clip out drainage basins
-			I=dependencemap(FD,xx,yy);
-			DEMoc=crop(DEM,I,nan);
-			DEMcc=crop(DEMcon,I,nan);
-
-			% Calculate drainage area
-			dep_map=GRIDobj2mat(I);
-			num_pix=sum(sum(dep_map));
-			drainage_area=(num_pix*DEMoc.cellsize*DEMoc.cellsize)/(1e6);
-
-			% Find weighted centroid of drainage basin
-			[Cx,Cy]=FindCentroid(DEMoc);
-			Centroid=[Cx Cy];
-
-			% Generate new stream map by segmenting original full stream network
-			DEM_res=DEM.cellsize;
-			six=coord2ind(DEM,xx,yy);
-			Sc=STREAMobj(FD,'minarea',threshold_area,'unit','mapunits','outlets',six);
-
-			% Check to make sure the stream object isn't empty
-			if isempty(Sc.x)
-				warning(['Input threshold drainage area is too large for basin ' num2str(basin_num) ' decreasing threshold area for this basin']);
-				new_thresh=threshold_area;
-				while isempty(Sc.x)
-					new_thresh=new_thresh/2;
-					Sc=STREAMobj(FD,'minarea',new_thresh,'unit','mapunits','outlets',six);
-				end
-			end
-
-			% Calculate chi and create chi map
-			Cc=chitransform(Sc,A,'a0',1,'mn',theta_ref);
-			ChiOBJc=GRIDobj(DEMoc);
-			ScIX=coord2ind(DEMoc,Sc.x,Sc.y);
-			ChiOBJc.Z(ScIX)=Cc;
-
-			% Calculate slope area
-			SAc=slopearea(Sc,DEM,A,'plot',false);
-			% Calculate gradient
-			switch gradient_method
-			case 'gradient8'
-				Goc=gradient8(DEMoc);
-			case 'arcslope'
-				Goc=arcslope(DEMoc);
-			end
-
-			% Calculate ksn
-			switch ksn_method
-			case 'quick'
-				[MSc]=KSN_Quick(DEM,DEMcon,A,Sc,-1*(SAc.theta),segment_length);
-				[MSNc]=KSN_Quick(DEM,DEMcon,A,Sc,theta_ref,segment_length);
-			case 'trib'
-				% Overide choice if very small basin as KSN_Trib will fail for small basins
-				if drainage_area>2.5
-					[MSc]=KSN_Trib(DEM,DEMcon,FD,A,Sc,-1*(SAc.theta),segment_length);
-					[MSNc]=KSN_Trib(DEM,DEMcon,FD,A,Sc,theta_ref,segment_length);
-				else
-					[MSc]=KSN_Quick(DEM,DEMcon,A,Sc,-1*(SAc.theta),segment_length);
-					[MSNc]=KSN_Quick(DEM,DEMcon,A,Sc,theta_ref,segment_length);				
-				end
-			end
-
-			% Calculate basin wide ksn statistics
-			min_ksn=nanmin([MSNc.ksn]);
-			mean_ksn=nanmean([MSNc.ksn]);
-			max_ksn=nanmax([MSNc.ksn]);
-			std_ksn=nanstd([MSNc.ksn]);
-			se_ksn=std_ksn/sqrt(numel(MSNc)); % Standard error
-
-			% Calculate basin wide gradient statistics
-			min_grad=nanmin(Goc.Z(:));
-			mean_grad=nanmean(Goc.Z(:));
-			max_grad=nanmax(Goc.Z(:));
-			std_grad=nanstd(Goc.Z(:));
-			se_grad=std_grad/sqrt(sum(~isnan(Goc.Z(:)))); % Standard error
-
-			% Calculate basin wide elevation statistics
-			min_z=nanmin(DEMoc.Z(:));
-			mean_z=nanmean(DEMoc.Z(:));
-			max_z=nanmax(DEMoc.Z(:));
-			std_z=nanstd(DEMoc.Z(:));
-			se_z=std_z/sqrt(sum(~isnan(DEMoc.Z(:)))); % Standard error
-
-			KSNc_stats=[mean_ksn se_ksn std_ksn min_ksn max_ksn];
-			Gc_stats=double([mean_grad se_grad std_grad min_grad max_grad]);
-			Zc_stats=double([mean_z se_z std_z min_z max_z]);
-
-			% Find outlet elevation
-			out_ix=coord2ind(DEMoc,xx,yy);
-			out_el=double(DEMoc.Z(out_ix));
-
-			% Save base file
-			FileName=['Basin_' num2str(basin_num) '_Data.mat'];
-			save(FileName,'RiverMouth','DEMoc','DEMcc','out_el','drainage_area','Sc','SAc','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method','gradient_method','clip_method');
-			
-			% Make interpolated ksn grid
-			try 
-				[KsnOBJc] = KsnInt(DEMoc,MSNc);
-				save(FileName,'KsnOBJc','-append');
-			catch
-				warning(['Interpolation of KSN grid failed for basin ' num2str(RiverMouth(:,3))]);
-			end
-
-			% If additional grids are present, append these to the existing mat file
-			if ~isempty(AG)
-				num_grids=size(AG,1);
-				AGc=cell(size(AG));
+			if ~isempty(AG);
 				for jj=1:num_grids
-					AGcOI=crop(AG{jj,1},I,nan);
-					AGc{jj,1}=AGcOI;
-					AGc{jj,2}=AG{jj,2};
-					mean_AGc=nanmean(AGcOI.Z(:));
-					min_AGc=nanmin(AGcOI.Z(:));
-					max_AGc=nanmax(AGcOI.Z(:));
-					std_AGc=nanstd(AGcOI.Z(:));
-					se_AGc=std_AGc/sqrt(sum(~isnan(AGcOI.Z(:))));
-					AGc_stats(jj,:)=[mean_AGc se_AGc std_AGc min_AGc max_AGc];
+					AGcFileName=['Basin_' num2str(basin_num) '_' AGc{jj,2} '.txt'];
+					GRIDobj2ascii(AGc{jj,1},AGcFileName);
 				end
-				save(FileName,'AGc','AGc_stats','-append');				
 			end
 
-			if ~isempty(ACG)
-				num_grids=size(ACG,1);
-				ACGc=cell(size(ACG));
+			if ~isempty(ACG);
 				for jj=1:num_grids
-					ACGcOI=crop(ACG{jj,1},I,nan);
-					ACGc{jj,1}=ACGcOI;
-					ACGc{jj,3}=ACG{jj,3};
-					edg=ACG{jj,2}.Numbers;
-					edg=edg+0.5;
-					edg=vertcat(0.5,edg);
-					[N,~]=histcounts(ACGcOI.Z(:),edg);
-					T=ACG{jj,2};
-					T.Counts=N';
-					ACGc{jj,2}=T;
-					ACGc_stats(jj,1)=[mode(ACGcOI.Z(:))];
-				end
-				save(FileName,'ACGc','ACGc_stats','-append');	
-			end	
-
-			if calc_relief
-				num_rlf=numel(relief_radii);
-				rlf=cell(num_rlf,2);
-				rlf_stats=zeros(num_rlf,6);
-				for jj=1:num_rlf
-					% Calculate relief
-					radOI=relief_radii(jj);
-					rlf{jj,2}=radOI;
-					rlfOI=localtopography(DEMoc,radOI);
-					rlf{jj,1}=rlfOI;
-					% Calculate stats
-					mean_rlf=nanmean(rlfOI.Z(:));
-					min_rlf=nanmin(rlfOI.Z(:));
-					max_rlf=nanmax(rlfOI.Z(:));
-					std_rlf=nanstd(rlfOI.Z(:));
-					se_rlf=std_rlf/sqrt(sum(~isnan(rlfOI.Z(:))));
-					rlf_stats(jj,:)=[mean_rlf se_rlf std_rlf min_rlf max_rlf radOI];
-				end
-				save(FileName,'rlf','rlf_stats','-append');
-			end
-
-			if write_arc_files
-				% Replace NaNs in DEM with -32768
-				Didx=isnan(DEMoc.Z);
-				DEMoc_temp=DEMoc;
-				DEMoc_temp.Z(Didx)=-32768;
-
-				DEMFileName=['Basin_' num2str(basin_num) '_DEM.txt'];
-				GRIDobj2ascii(DEMoc_temp,DEMFileName);
-				CHIFileName=['Basin_' num2str(basin_num) '_CHI.txt'];
-				GRIDobj2ascii(ChiOBJc,CHIFileName);
-				KSNFileName=['Basin_' num2str(basin_num) '_KSN.shp'];
-				shapewrite(MSNc,KSNFileName);
-
-				if calc_relief
-					for jj=1:num_rlf
-						RLFFileName=['Basin_' num2str(basin_num) '_RLF_' num2str(rlf{jj,2}) '.txt'];
-						GRIDobj2ascii(rlf{jj,1},RLFFileName);
-					end
-				end
-
-				if ~isempty(AG);
-					for jj=1:num_grids
-						AGcFileName=['Basin_' num2str(basin_num) '_' AGc{jj,2} '.txt'];
-						GRIDobj2ascii(AGc{jj,1},AGcFileName);
-					end
-				end
-
-				if ~isempty(ACG);
-					for jj=1:num_grids
-						ACGcFileName=['Basin_' num2str(basin_num) '_' ACGc{jj,3} '.txt'];
-						GRIDobj2ascii(ACGc{jj,1},ACGcFileName);
-					end
+					ACGcFileName=['Basin_' num2str(basin_num) '_' ACGc{jj,3} '.txt'];
+					GRIDobj2ascii(ACGc{jj,1},ACGcFileName);
 				end
 			end
-
-			waitbar(ii/num_basins,w1,['Completed ' num2str(ii) ' of ' num2str(num_basins) ' total basins'])
 		end
-		close(w1)
+
+		waitbar(ii/num_basins,w1,['Completed ' num2str(ii) ' of ' num2str(num_basins) ' total basins'])
 	end
+
+
+	close(w1)
+	
 	cd(current);
 end
 
