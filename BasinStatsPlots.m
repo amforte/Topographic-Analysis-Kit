@@ -13,7 +13,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	%		'compare_filtered' - plot comparing mean values vs filtered mean values if you ran 'CompileBasinStats' and filtered by a category
 	%		'category_mean_hist' - if you calculated 'means_by_category' when running 'CompileBasinStats', you can plot distributions of the
 	%					means by category as histograms using this option. Requires an input to 'cat_mean1'
-	%		'category_mean_compare' -f you calculated 'means_by_category' for more than one value (e.g. both gradient and ksn), you can compare
+	%		'category_mean_compare' -if you calculated 'means_by_category' for more than one value (e.g. both gradient and ksn), you can compare
 	%					the mean values by category using this plot. Requires inputs to both 'cat_mean1' (value that will be plotted on x axis) 
 	%					and 'cat_mean2' (value that will be plotted on y axis)
 	%		'xy' - generic plot, requires entries to optional 'xval' and 'yval' inputs
@@ -34,6 +34,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	%	cat_mean2 [] - category to use for plotting, 'category_mean_compare' , valid inputs are 'ksn', 'rlf', 'gradient', or the name of an additional grid 
 	%		provided to ProcessRiverMeans.
 	%	only_positive [false] - filter out negative values when using either 'category_mean_hist' or 'category_mean_compare'	
+	%	save_figure [false] - logical flag to save pdfs of all figures produced
 	%
 	% Examples:
 	%	% Plot of mean basin gradient vs 2500 m^2 relief using default relief radius
@@ -73,7 +74,8 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	addParamValue(p,'rlf_radius',2500,@(x) isnumeric(x) && isscalar(x));
 	addParamValue(p,'cat_mean1',[],@(x) ischar(x));
 	addParamValue(p,'cat_mean2',[],@(x) ischar(x));
-	addParamValue(p,'only_positive',false,@(x) isscalar(x) && islogical(x))
+	addParamValue(p,'only_positive',false,@(x) isscalar(x) && islogical(x));
+	addParamValue(p,'save_figure',false,@(x) isscalar(x) && islogical(x));
 
 	parse(p,basin_table,plots,varargin{:});
 	T=p.Results.basin_table;
@@ -88,6 +90,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	cm1=p.Results.cat_mean1;
 	cm2=p.Results.cat_mean2;
 	op=p.Results.only_positive;
+	save_figure=p.Results.save_figure;
 
 
 	% Generate Plots
@@ -111,8 +114,8 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			sg=T.se_gradient;
 		end
 
-		f1=figure(1);
-		set(f1,'Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
+		f=figure(1);
+		set(f,'Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
 		hold on 
 
 		if ~strcmp(uncertainty,'none')
@@ -167,8 +170,8 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			sg=T.se_gradient;
 		end
 
-		f1=figure(1);
-		set(f1,'Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
+		f=figure(1);
+		set(f,'Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
 		clf
 		hold on 
 
@@ -191,7 +194,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			color_by_label=strrep(color_by,'_',' ');
 			ylabel(cb,color_by_label);
 		else
-			scatter(k,g,30,'k','filled');
+			scatter(r,g,30,'k','filled');
 		end
 
 		xlabel(['Mean Basin ' num2str(rr) ' m^2 Relief']);
@@ -224,8 +227,8 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			sr=T.(se_rlfN);
 		end
 
-		f1=figure(1);
-		set(f1,'Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
+		f=figure(1);
+		set(f,'Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
 		clf
 		hold on 
 
@@ -280,18 +283,29 @@ function BasinStatsPlots(basin_table,plots,varargin)
 				t=['Mean ' strrep(N,'mean_','')];
 			end
 
-			figure(ii)
+			max_val=max([max(T.(fN)) max(T.(N))]);
+			max_vec=[0 max_val];
+
+			slp=round(T.(N)./T.(fN),1);
+
+			idx1=slp==1;
+			idx2=slp<1;
+			idx3=slp>1;
+
+			f(ii)=figure(ii);
 			set(gcf,'Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
 			clf
 			hold on
-			scatter(T.(fN),T.(N),30,'k','filled');
+			plot(max_vec,max_vec,'-k');
+			sp(1)=scatter(T.(fN)(idx1),T.(N)(idx1),30,'k','filled');
+			sp(2)=scatter(T.(fN)(idx2),T.(N)(idx2),30,'r','filled');
+			sp(3)=scatter(T.(fN)(idx3),T.(N)(idx3),30,'b','filled');
+			legend(sp,{'Filtered = Unfiltered','Filtered > Unfiltered','Filtered < Unfiltered'},'location','northwest')
 			xlabel('Filtered Means');
 			ylabel('Unfiltered Means');
 			title(t);
 			hold off
 		end
-
-
 
 	case 'category_mean_hist'
 
@@ -345,11 +359,25 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			end
 
 			if ~isempty(vals)
-				figure(ii);
+				val_list{ii,1}=vals;
+			end
+		end
+		val_list=vertcat(val_list{:});
+		[~,edges]=discretize(val_list,100);
+
+		for ii=1:numel(VNoi)
+			vals=T.(VNoi{ii});
+			vals(isnan(vals))=[];
+			if op
+				vals(vals<0)=[];
+			end
+
+			if ~isempty(vals)
+				f(ii)=figure(ii);
 				set(gcf,'Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
 				clf
 				hold on
-				histogram(vals,100);
+				histogram(vals,edges);
 				title([Main_Title Cat_Names{ii}]);
 				hold off
 			end
@@ -441,6 +469,8 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			axis2=['Mean ' cm2 ' within '];
 		end	
 
+		rng_v1=zeros(numel(VNoi1),2);
+		rng_v2=zeros(numel(VNoi1),2);		
 
 		for ii=1:numel(VNoi1)
 			vals1=T.(VNoi1{ii});
@@ -457,11 +487,38 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			end
 
 			if ~isempty(vals1) & ~isempty(vals2)
-				figure(ii);
+				rng_v1(ii,1)=nanmin(vals1);
+				rng_v2(ii,1)=nanmin(vals2);
+				rng_v1(ii,2)=nanmax(vals1);
+				rng_v2(ii,2)=nanmax(vals2);				
+			end
+		end
+
+		rng_v1=[nanmin(rng_v1(:,1)) nanmax(rng_v1(:,2))];
+		rng_v2=[nanmin(rng_v2(:,1)) nanmax(rng_v2(:,2))];
+
+		for ii=1:numel(VNoi1)
+			vals1=T.(VNoi1{ii});
+			vals2=T.(VNoi2{ii});
+
+			idx=~isnan(vals1) & ~isnan(vals2);
+			vals1=vals1(idx);
+			vals2=vals2(idx);
+
+			if op
+				idx= vals1>=0 & vals2>=0;
+				vals1=vals1(idx);
+				vals2=vals2(idx);
+			end
+
+			if ~isempty(vals1) & ~isempty(vals2)
+				f(ii)=figure(ii);
 				set(gcf,'Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
 				clf
 				hold on
 				scatter(vals1,vals2,30,'k','filled');
+				xlim(rng_v1);
+				ylim(rng_v2);
 				xlabel([axis1 Cat_Names{ii}])
 				ylabel([axis2 Cat_Names{ii}])
 				hold off
@@ -507,8 +564,8 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			sy=[];
 		end
 
-		f1=figure(1);
-		set(f1,'Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
+		f=figure(1);
+		set(f,'Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
 		clf
 		hold on 
 
@@ -541,4 +598,14 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		xlabel(['Mean ' sxN]);
 		ylabel(['Mean ' syN]);
 		hold off
+	end
+
+
+	if save_figure
+		num_figs=numel(f);
+
+		for ii=1:num_figs
+			orient(f(ii),'landscape');
+			print(f(ii),'-dpdf','-fillpage',['Figure_' num2str(ii) '.pdf']);
+		end
 	end

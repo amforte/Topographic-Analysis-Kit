@@ -6,7 +6,9 @@ function [DEMc]=ConditionDEM(DEM,FD,S,method,varargin)
 	%	conditioned DEM to provide a quick method of evaluating the result. These methods vary in their complexity and processing
 	%	times so it is recommended you understand your choice. Using the 'mincost' method is a good starting place before
 	%	exploring some of the more complicated methods. Note that the majority of methods (other than 'mincost' and 'mingrad')
-	%	require the Optimization Toolbox to run.
+	%	require the Optimization Toolbox to run and will also process more quickly if you have the Parallel Processing Toolbox.
+	%	If you do not have access to the Optimization Toolbox, consider using the compiled version of this function and converting
+	%	the ascii output to a GRIDobj.
 	%
 	% Required Inputs:
 	%	DEM - Digital Elevation as a GRIDobj, assumes unconditioned DEM (e.g. DEMoc from ProcessRiverBasins)
