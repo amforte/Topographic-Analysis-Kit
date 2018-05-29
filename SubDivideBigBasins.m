@@ -92,9 +92,6 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 		mkdir(SBFiles_Dir);
 	end
 
-	% Load first file to grab clip method
-	load(FileList(1,1).name,'clip_method');
-
 
 	if strcmp(divide_method,'p_filtered_confluences') | strcmp(divide_method,'p_filtered_trunk') & min_basin_size>100 | min_basin_size<=0
 		error('For divide_method "p_filtered_confluences" the entry to "min_basin_size" must be between 0 and 100')
@@ -121,6 +118,8 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 			A=Ac;
 			RM=RiverMouth;	
 			basin_num=RM(:,3);
+
+			DAG=(A.*(A.cellsize^2))/1e6;
 
 			switch divide_method
 			case 'order'
@@ -161,28 +160,14 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 			case 'filtered_confluences'
 				if no_nested
 					cons_ix=streampoi(S,'bconfluences','ix');
-					if strcmp(clip_method,'clip')
-						DAG=A.*(A.cellsize^2);
-					elseif strcmp(clip_method,'segment')
-						DAG=A0.*(A0.cellsize^2);
-					end
-					da_cons=(DAG.Z(cons_ix))/1e6;
+					da_cons=DAG.Z(cons_ix);
 					da_idx=da_cons>=min_basin_size;
-					if strcmp(clip_method,'clip')
-						[x,y]=CheckUpstream(DEM,FD,cons_ix(da_idx));
-					elseif strcmp(clip_method,'segment')
-						[x,y]=CheckUpstream(DEM0,FD0,cons_ix(da_idx));
-					end
+					[x,y]=CheckUpstream(DEM,FD,cons_ix(da_idx));
 					num_new_basins=numel(x);
 				else
 					cons_ix=streampoi(S,'confluences','ix');
 					cons=streampoi(S,'confluences','xy');
-					if strcmp(clip_method,'clip')
-						DAG=A.*(A.cellsize^2);
-					elseif strcmp(clip_method,'segment')
-						DAG=A0.*(A0.cellsize^2);
-					end
-					da_cons=(DAG.Z(cons_ix))/1e6;
+					da_cons=DAG.Z(cons_ix);
 					da_idx=da_cons>=min_basin_size;
 					cons=cons(da_idx,:);
 					x=cons(:,1);
@@ -192,29 +177,15 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 			case 'p_filtered_confluences'
 				if no_nested
 					cons_ix=streampoi(S,'bconfluences','ix');
-					if strcmp(clip_method,'clip')
-						DAG=A.*(A.cellsize^2);
-					elseif strcmp(clip_method,'segment')
-						DAG=A0.*(A0.cellsize^2);
-					end
-					da_cons=(DAG.Z(cons_ix))/1e6;
+					da_cons=DAG.Z(cons_ix);
 					mbz=DA*(min_basin_size/100);
 					da_idx=da_cons>=mbz;
-					if strcmp(clip_method,'clip')
-						[x,y]=CheckUpstream(DEM,FD,cons_ix(da_idx));
-					elseif strcmp(clip_method,'segment')
-						[x,y]=CheckUpstream(DEM0,FD0,cons_ix(da_idx));
-					end
+					[x,y]=CheckUpstream(DEM,FD,cons_ix(da_idx));
 					num_new_basins=numel(x);
 				else
 					cons_ix=streampoi(S,'confluences','ix');
 					cons=streampoi(S,'confluences','xy');
-					if strcmp(clip_method,'clip')
-						DAG=A.*(A.cellsize^2);
-					elseif strcmp(clip_method,'segment')
-						DAG=A0.*(A0.cellsize^2);
-					end
-					da_cons=(DAG.Z(cons_ix))/1e6;
+					da_cons=DAG.Z(cons_ix);
 					mbz=DA*(min_basin_size/100);
 					da_idx=da_cons>=mbz;
 					cons=cons(da_idx,:);
@@ -235,12 +206,7 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 				SupT=modify(S,'tributaryto',ST);				
 				cons_ix=streampoi(SupT,'outlets','ix');
 				cons=streampoi(SupT,'outlets','xy');
-				if strcmp(clip_method,'clip')
-					DAG=A.*(A.cellsize^2);
-				elseif strcmp(clip_method,'segment')
-					DAG=A0.*(A0.cellsize^2);
-				end
-				da_cons=(DAG.Z(cons_ix))/1e6;
+				da_cons=DAG.Z(cons_ix);
 				mbz=DA*(min_basin_size/100);
 				da_idx=da_cons>=mbz;
 				cons=cons(da_idx,:);
@@ -252,12 +218,7 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 				SupT=modify(S,'tributaryto',ST);
 				cons_ix=streampoi(SupT,'confluences','ix');
 				cons=streampoi(SupT,'confluences','xy');
-				if strcmp(clip_method,'clip')
-					DAG=A.*(A.cellsize^2);
-				elseif strcmp(clip_method,'segment')
-					DAG=A0.*(A0.cellsize^2);
-				end
-				da_cons=(DAG.Z(cons_ix))/1e6;
+				da_cons=DAG.Z(cons_ix);
 				mbz=DA*(min_basin_size/100);
 				da_idx=da_cons>=mbz;
 				cons=cons(da_idx,:);
