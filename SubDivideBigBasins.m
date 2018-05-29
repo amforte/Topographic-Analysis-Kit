@@ -161,7 +161,8 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 					cons_ix=streampoi(S,'bconfluences','ix');
 					da_cons=DAG.Z(cons_ix);
 					da_idx=da_cons>=min_basin_size;
-					[x,y]=CheckUpstream(DEM,FD,cons_ix(da_idx));
+					cons_ix=cons_ix(da_idx);
+					[x,y]=CheckUpstream(DEM,FD,cons_ix);
 					num_new_basins=numel(x);
 				else
 					cons_ix=streampoi(S,'confluences','ix');
@@ -194,36 +195,141 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 				end
 			case 'trunk'
 				ST=trunk(S);
+				S=removeshortstreams(S,DEM.cellsize*10);
+				tix=streampoi(S,'bconfluences','ix');
+				tix=ismember(ST.IXgrid,tix);
+				tix=find(tix,1,'last');
 				SupT=modify(S,'tributaryto',ST);
-				SupT=removeshortstreams(SupT,DEM.cellsize*10);	
 				cons=streampoi(SupT,'outlets','xy');
-				x=cons(:,1);
-				y=cons(:,2);
+				cons_ix=streampoi(SupT,'outlets','ix');
+				cons_ix=vertcat(cons_ix,ST.IXgrid(tix));
+				x=cons(:,1); x=vertcat(x,ST.x(tix));
+				y=cons(:,2); y=vertcat(y,ST.y(tix));
 				num_new_basins=numel(x);
+
+				% One pass to check if any selected basins are greater than original divide threshold
+				da_cons=DAG.Z(cons_ix);
+				nidx=da_cons>=max_basin_size;
+				if any(nidx)
+					x(nidx)=[];
+					y(nidx)=[];
+					ixs=cons_ix(nidx);
+					for jj=1:numel(ixs)
+						TIX=GRIDobj(DEM,'logical');
+						TIX.Z(ixs(jj))=true;
+						S_sub=modify(S,'upstreamto',TIX);
+						S_sub=removeshortstreams(S_sub,DEM.cellsize*10);
+						ST_sub=trunk(S_sub);
+						tix=streampoi(S_sub,'bconfluences','ix');
+						tix=ismember(ST.IXgrid,tix);
+						tix=find(tix,1,'last');
+						SupT_sub=modify(S_sub,'tributaryto',ST_sub);
+						cons=streampoi(SupT_sub,'outlets','xy');
+						cons_ix=streampoi(SupT_sub,'outlets','ix');
+						cons_ix=vertcat(cons_ix,ST.IXgrid(tix));
+						xx=cons(:,1); xx=vertcat(xx,ST.x(tix));
+						yy=cons(:,2); yy=vertcat(yy,ST.y(tix));
+						x=vertcat(x,xx);
+						y=vertcat(y,yy);
+					end
+				end
+				num_new_basins=numel(x);
+
 			case 'filtered_trunk'
 				ST=trunk(S);
+				S=removeshortstreams(S,DEM.cellsize*10);
+				tix=streampoi(S,'bconfluences','ix');
+				tix=ismember(ST.IXgrid,tix);
+				tix=find(tix,1,'last');				
 				SupT=modify(S,'tributaryto',ST);				
 				cons_ix=streampoi(SupT,'outlets','ix');
+				cons_ix=vertcat(cons_ix,ST.IXgrid(tix));
 				cons=streampoi(SupT,'outlets','xy');
+				cons=vertcat(cons,[ST.x(tix) ST.y(tix)]);
 				da_cons=DAG.Z(cons_ix);
-				mbz=DA*(min_basin_size/100);
-				da_idx=da_cons>=mbz;
+				da_idx=da_cons>=min_basin_size;
 				cons=cons(da_idx,:);
-				x=cons(:,1);
-				y=cons(:,2);
-				num_new_basins=numel(x);	
-			case 'p_filtered_trunk'
-				ST=trunk(S);
-				SupT=modify(S,'tributaryto',ST);
-				cons_ix=streampoi(SupT,'confluences','ix');
-				cons=streampoi(SupT,'confluences','xy');
-				da_cons=DAG.Z(cons_ix);
-				mbz=DA*(min_basin_size/100);
-				da_idx=da_cons>=mbz;
-				cons=cons(da_idx,:);
+				cons_ix=cons_ix(da_idx);
 				x=cons(:,1);
 				y=cons(:,2);
 				num_new_basins=numel(x);
+
+				% One pass to check if any selected basins are greater than original divide threshold
+				da_cons=DAG.Z(cons_ix);
+				nidx=da_cons>=max_basin_size;
+				if any(nidx)
+					x(nidx)=[];
+					y(nidx)=[];
+					ixs=cons_ix(nidx);
+					for jj=1:numel(ixs)
+						TIX=GRIDobj(DEM,'logical');
+						TIX.Z(ixs(jj))=true;
+						S_sub=modify(S,'upstreamto',TIX);
+						S_sub=removeshortstreams(S_sub,DEM.cellsize*10);
+						ST_sub=trunk(S_sub);
+						tix=streampoi(S_sub,'bconfluences','ix');
+						tix=ismember(ST.IXgrid,tix);
+						tix=find(tix,1,'last');
+						SupT_sub=modify(S_sub,'tributaryto',ST_sub);
+						cons=streampoi(SupT_sub,'outlets','xy');
+						cons_ix=streampoi(SupT_sub,'outlets','ix');
+						cons_ix=vertcat(cons_ix,ST.IXgrid(tix));
+						xx=cons(:,1); xx=vertcat(xx,ST.x(tix));
+						yy=cons(:,2); yy=vertcat(yy,ST.y(tix));
+						x=vertcat(x,xx);
+						y=vertcat(y,yy);
+					end
+				end
+				num_new_basins=numel(x);
+
+			case 'p_filtered_trunk'
+				ST=trunk(S);
+				S=removeshortstreams(S,DEM.cellsize*10);				
+				tix=streampoi(S,'bconfluences','ix');
+				tix=ismember(ST.IXgrid,tix);
+				tix=find(tix,1,'last');	
+				SupT=modify(S,'tributaryto',ST);
+				cons_ix=streampoi(SupT,'confluences','ix');
+				cons_ix=vertcat(cons_ix,ST.IXgrid(tix));
+				cons=streampoi(SupT,'confluences','xy');
+				cons=vertcat(cons,[ST.x(tix) ST.y(tix)]);
+				da_cons=DAG.Z(cons_ix);
+				mbz=DA*(min_basin_size/100);
+				da_idx=da_cons>=mbz;
+				cons=cons(da_idx,:);
+				cons_ix=cons_ix(da_idx);
+				x=cons(:,1);
+				y=cons(:,2);
+				num_new_basins=numel(x);
+
+				% One pass to check if any selected basins are greater than original divide threshold
+				da_cons=DAG.Z(cons_ix);
+				nidx=da_cons>=max_basin_size;
+				if any(nidx)
+					x(nidx)=[];
+					y(nidx)=[];
+					ixs=cons_ix(nidx);
+					for jj=1:numel(ixs)
+						TIX=GRIDobj(DEM,'logical');
+						TIX.Z(ixs(jj))=true;
+						S_sub=modify(S,'upstreamto',TIX);
+						S_sub=removeshortstreams(S_sub,DEM.cellsize*10);
+						ST_sub=trunk(S_sub);
+						tix=streampoi(S_sub,'bconfluences','ix');
+						tix=ismember(ST.IXgrid,tix);
+						tix=find(tix,1,'last');
+						SupT_sub=modify(S_sub,'tributaryto',ST_sub);
+						cons=streampoi(SupT_sub,'outlets','xy');
+						cons_ix=streampoi(SupT_sub,'outlets','ix');
+						cons_ix=vertcat(cons_ix,ST.IXgrid(tix));
+						xx=cons(:,1); xx=vertcat(xx,ST.x(tix));
+						yy=cons(:,2); yy=vertcat(yy,ST.y(tix));
+						x=vertcat(x,xx);
+						y=vertcat(y,yy);
+					end
+				end
+				num_new_basins=numel(x);
+
 			end
 
 			for jj=1:num_new_basins
@@ -249,7 +355,6 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 				Centroid=[Cx Cy];
 
 				% Generate new stream map
-				% FDc=FLOWobj(DEMoc,'preprocess','carve');
 				Ac=flowacc(FDc);
 				Sc=STREAMobj(FDc,'minarea',threshold_area,'unit','mapunits');
 
@@ -327,8 +432,8 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 
 				SubFileName=[SBFiles_Dir '/Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '.mat'];
 
-				save(SubFileName,'RiverMouth','DEMcc','DEMoc','out_el','drainage_area','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','KsnOBJc','ChiOBJc','ksn_method');
-
+				save(SubFileName,'RiverMouth','DEMcc','DEMoc','out_el','drainage_area','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method');
+				
 				% Make interpolated ksn grid
 				try 
 					[KsnOBJc] = KsnInt(DEMoc,MSNc);
