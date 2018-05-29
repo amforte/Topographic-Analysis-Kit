@@ -39,13 +39,12 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 	%		SubdivideBigBasins('/Users/JoeBlow/Project',100,'order','s_order',2,'threshold_area',1e5,'write_arc_files',true);
 	%
 	% Notes:
-	%	-Only the 'order' and 'trunk' divide methods will not produce nested subbasins. Using the 'order' method, there will be biasing depending on the value of
-	%		's_order', i.e. small stream orders will tend to produce small subbasins at higher elevations within the main basin.
+	%	-Only the 'order' and 'trunk' divide methods will not produce nested subbasins.
 	% 	-The interpolation necessary to produce a continous ksn grid will fail on extremely small basins. This will not cause the code to fail, but will result in
 	%		no 'KsnOBJc' being saved for these basins.
 	%	-Methods 'confluences', 'up_confluences', and 'trunk' can result in attempts to extract very small basins. There is an internal check on this that attempts to remove 
-	%		these very small basins but it is not always effective. Generally, the filtered versions of these methods will be more stable (providing the user does not
-	%		provide an extremely small value for 'min_basin_size')
+	%		these very small basins but it is not always effective and can occassionally result in errors. If you are encountering errors try running the drainage area
+	%		filtered versions
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
@@ -446,8 +445,6 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 	close(w1);
 	cd(current);
 end % Main Function End
-
-
 
 function [ksn_ms]=KSN_Quick(DEM,A,S,theta_ref,segment_length)
 
