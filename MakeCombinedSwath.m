@@ -48,6 +48,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	%	plot_map [true] - logical flag to plot a map displaying the location of the topographic swath and the additional data included 
 	%				in the swath (red dots) and those not (white dots) based on the provided data_width parameter.
 	%	cmap ['parula'] - valid name of colormap (e.g. 'jet') or a nx3 colormap array to use to color points.
+	%	save_figure [false] - logical flag to save the swath figure as a pdf
 	%
 	% Outputs:
 	%	SW - TopoToolbox Swath object, contains various information as a structure. Can plot path and box of swath with plot(SW) and
@@ -85,8 +86,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	addParamValue(p,'vex',10,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'basin_value',[],@(x) ischar(x));
 	addParamValue(p,'basin_scale',[],@(x) ischar(x));
-	addParamValue(p,'plot_map',true,@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'plot_map',true,@(x) isscalar(x) && islogical(x));
 	addParamValue(p,'cmap','parula',@(x) ischar(x) || isnumeric(x) & size(x,2)==3);
+	addParamValue(p,'save_figure',false,@(x) isscalar(x) && islogical(x));
 
 
 	parse(p,DEM,points,width,data_type,data,data_width,varargin{:});
@@ -104,6 +106,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	bs=p.Results.basin_scale;
 	plot_map=p.Results.plot_map;
 	cmap=p.Results.cmap;
+	save_figure=p.Results.save_figure;
 
 	if isempty(sample)
 		sample=DEM.cellsize;
@@ -144,9 +147,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
 			hold on
-			plot(swdist,min_elevs,'-b');
-			plot(swdist,max_elevs,'-b');
-			plot(swdist,mean_elevs,'-k');
+			plot(swdist,min_elevs,'-k');
+			plot(swdist,max_elevs,'-k');
+			plot(swdist,mean_elevs,'-k','LineWidth',2);
 
 			daspect([vex 1 1])
 
@@ -155,7 +158,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 				plot([bends(jj),bends(jj)],yl,'-k');
 			end
 
-			scatter(outData(idx,1),outData(idx,2),20,'k','filled');
+			scatter(outData(idx,1),outData(idx,2),30,'k','filled');
 
 			xlabel('Distance along swath (m)');
 			ylabel('Elevation (m)');
@@ -182,9 +185,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
 			hold on
-			plot(swdist,min_elevs,'-b');
-			plot(swdist,max_elevs,'-b');
-			plot(swdist,mean_elevs,'-k');
+			plot(swdist,min_elevs,'-k');
+			plot(swdist,max_elevs,'-k');
+			plot(swdist,mean_elevs,'-k','LineWidth',2);
 
 			daspect([vex 1 1])
 
@@ -221,9 +224,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 
 			ax1=subplot(2,1,1);
 			hold on
-			plot(swdist,min_elevs,'-b');
-			plot(swdist,max_elevs,'-b');
-			plot(swdist,mean_elevs,'-k');
+			plot(swdist,min_elevs,'-k');
+			plot(swdist,max_elevs,'-k');
+			plot(swdist,mean_elevs,'-k','LineWidth',2);
 
 			yl=ylim;
 			for jj=1:numel(bends)
@@ -278,9 +281,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
 			hold on
-			plot(swdist,min_elevs,'-b');
-			plot(swdist,max_elevs,'-b');
-			plot(swdist,mean_elevs,'-k');
+			plot(swdist,min_elevs,'-k');
+			plot(swdist,max_elevs,'-k');
+			plot(swdist,mean_elevs,'-k','LineWidth',2);
 
 			daspect([vex 1 1])
 
@@ -318,9 +321,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			subplot(2,1,1);
 			hold on
 
-			plot(swdist,min_elevs,'-b');
-			plot(swdist,max_elevs,'-b');
-			plot(swdist,mean_elevs,'-k');
+			plot(swdist,min_elevs,'-k');
+			plot(swdist,max_elevs,'-k');
+			plot(swdist,mean_elevs,'-k','LineWidth',2);
 
 			yl=ylim;
 			for jj=1:numel(bends)
@@ -334,7 +337,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 
 			subplot(2,1,2);
 			hold on
-			scatter(outData(idx,1),outData(idx,3),20,'k','filled');
+			scatter(outData(idx,1),outData(idx,3),30,'k','filled');
 			xlabel('Distance along swath (m)');
 			ylabel('KSN');
 			xlim([0 max(swdist)]);
@@ -347,6 +350,13 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			col=data.(bv);
 			if ~isempty(bs)
 				scl=data.(bs);
+				if ~isnumeric(scl)
+					error('Value to scale points by must be numeric')
+				end
+			end
+
+			if ~isnumeric(col);
+				error('Value to color points by must be numeric')
 			end
 
 			% Remove any points beyond the extent of the provided DEM
@@ -380,9 +390,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
 			hold on
-			plot(swdist,min_elevs,'-b');
-			plot(swdist,max_elevs,'-b');
-			plot(swdist,mean_elevs,'-k');
+			plot(swdist,min_elevs,'-k');
+			plot(swdist,max_elevs,'-k');
+			plot(swdist,mean_elevs,'-k','LineWidth',2);
 
 			daspect([vex 1 1])
 
@@ -392,7 +402,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			end
 
 			if isempty(bs)
-				scatter(outData(idx,1),outData(idx,2),20,outData(idx,3),'filled');
+				scatter(outData(idx,1),outData(idx,2),30,outData(idx,3),'filled');
 			else
 				% Scale size vector
 				sz_val=outData(idx,4);
@@ -407,10 +417,13 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 				end
 				scatter(outData(idx,1),outData(idx,2),sz,outData(idx,3),'filled');
 				legend(sz_leg,leg_ent);
+				bs_n=strrep(bs,'_',' ');
+				title(['Points scaled by ' bs_n]);
 			end
 
 			c1=colorbar;
-			ylabel(c1,bv);
+			bv_n=strrep(bv,'_',' ');
+			ylabel(c1,bv_n);
 
 			xlabel('Distance along swath (m)');
 			ylabel('Elevation (m)');
@@ -449,9 +462,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			subplot(2,1,1);
 			hold on
 
-			plot(swdist,min_elevs,'-b');
-			plot(swdist,max_elevs,'-b');
-			plot(swdist,mean_elevs,'-k');
+			plot(swdist,min_elevs,'-k');
+			plot(swdist,max_elevs,'-k');
+			plot(swdist,mean_elevs,'-k','LineWidth',2);
 
 			yl=ylim;
 			for jj=1:numel(bends)
@@ -492,9 +505,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			subplot(2,1,1);
 			hold on
 
-			plot(swdist,min_elevs,'-b');
-			plot(swdist,max_elevs,'-b');
-			plot(swdist,mean_elevs,'-k');
+			plot(swdist,min_elevs,'-k');
+			plot(swdist,max_elevs,'-k');
+			plot(swdist,mean_elevs,'-k','LineWidth',2);
 
 			yl=ylim;
 			for jj=1:numel(bends)
@@ -553,9 +566,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
 			hold on
-			plot(swdist,min_elevs,'-b');
-			plot(swdist,max_elevs,'-b');
-			plot(swdist,mean_elevs,'-k');
+			plot(swdist,min_elevs,'-k');
+			plot(swdist,max_elevs,'-k');
+			plot(swdist,mean_elevs,'-k','LineWidth',2);
 
 			daspect([vex 1 1])
 
@@ -581,6 +594,11 @@ if plot_map
 	scatter(x_coord(idx),y_coord(idx),20,'r','filled');
 	scatter(x_coord(~idx),y_coord(~idx),20,'w','filled');
 	hold off
+end
+
+if save_figure
+	orient(f1,'Landscape')
+	print(f1,'-dpdf','-bestfit','Swath.pdf');
 end
 
 % Function End

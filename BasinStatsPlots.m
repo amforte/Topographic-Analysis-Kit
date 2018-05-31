@@ -24,6 +24,8 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	%		Providing 'none' indicates you do not want to plot errorbars. Behavior of this option will depend on how you ran ProcessRiverBasins, 
 	%		e.g. if you only calculated standard deviations when running ProcessRiverBasins but supply 'se'	here, the code will ignore your choice
 	%		and use the standard deviation values.
+	%	use_filtered [false] - logical flag to use filtered values for 'grd_ksn', 'grd_rlf', or 'rlf_ksn'. Will only work if you calculated filtered
+	%		values when running 'CompileBasinStats'.
 	%	color_by [] - value to color points by, valid for 'grd_ksn','grd_rlf','rlf_ksn', and 'xy'
 	%	cmap [] - colormap to use if an entry is provided to 'color_by', can be the name of a standard colormap or a nx3 array of rgb values
 	%		to use as a colormap. 
@@ -68,6 +70,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	addRequired(p,'plots',@(x) ischar(validatestring(x,{'grd_ksn','grd_rlf','rlf_ksn','compare_filtered','category_mean_hist','category_mean_compare','xy','stacked_hypsometry'})));
 
 	addParamValue(p,'uncertainty','se',@(x) ischar(validatestring(x,{'se','std','none'})));
+	addParamValue(p,'use_filtered',false,@(x) islogical(x) && isscalar(x));
 	addParamValue(p,'color_by',[],@(x) ischar(x));
 	addParamValue(p,'cmap',[],@(x) ischar(x) || isnumeric(x) & size(x,2)==3);
 	addParamValue(p,'xval',[],@(x) ischar(x));
@@ -83,6 +86,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	plts=p.Results.plots;
 
 	uncertainty=p.Results.uncertainty;
+	use_filtered=p.Results.use_filtered;
 	color_by=p.Results.color_by;
 	cmap=p.Results.cmap;
 	xval=p.Results.xval;
@@ -102,21 +106,42 @@ function BasinStatsPlots(basin_table,plots,varargin)
 
 	switch plts
 	case 'grd_ksn'
-		g=T.mean_gradient;
-		k=T.mean_ksn;
+		if use_filtered
+			g=T.mean_gradient;
+			k=T.mean_ksn;
+		else
+			g=T.mean_gradient_f;
+			k=T.mean_ksn_f;
+		end
 
-		if ismember('std_ksn',T.Properties.VariableNames) & strcmp(uncertainty,'std')
-			sk=T.std_ksn;
-			sg=T.std_gradient;
-		elseif ismember('se_ksn',T.Properties.VariableNames) & strcmp(uncertainty,'se')
-			sk=T.se_ksn;
-			sg=T.se_gradient;
-		elseif ismember('std_ksn',T.Properties.VariableNames) & ~ismember('se_ksn',T.Properties.VariableNames)
-			sk=T.std_ksn;
-			sg=T.std_gradient;
-		elseif ismember('se_ksn',T.Properties.VariableNames) & ~ismember('std_ksn',T.Properties.VariableNames)
-			sk=T.se_ksn;
-			sg=T.se_gradient;
+		if use_filtered
+			if ismember('std_ksn_f',T.Properties.VariableNames) & strcmp(uncertainty,'std')
+				sk=T.std_ksn_f;
+				sg=T.std_gradient_f;
+			elseif ismember('se_ksn_f',T.Properties.VariableNames) & strcmp(uncertainty,'se')
+				sk=T.se_ksn_f;
+				sg=T.se_gradient_f;
+			elseif ismember('std_ksn_f',T.Properties.VariableNames) & ~ismember('se_ksn_f',T.Properties.VariableNames)
+				sk=T.std_ksn_f;
+				sg=T.std_gradient_f;
+			elseif ismember('se_ksn_f',T.Properties.VariableNames) & ~ismember('std_ksn_f',T.Properties.VariableNames)
+				sk=T.se_ksn_f;
+				sg=T.se_gradient_f;
+			end
+		else
+			if ismember('std_ksn',T.Properties.VariableNames) & strcmp(uncertainty,'std')
+				sk=T.std_ksn;
+				sg=T.std_gradient;
+			elseif ismember('se_ksn',T.Properties.VariableNames) & strcmp(uncertainty,'se')
+				sk=T.se_ksn;
+				sg=T.se_gradient;
+			elseif ismember('std_ksn',T.Properties.VariableNames) & ~ismember('se_ksn',T.Properties.VariableNames)
+				sk=T.std_ksn;
+				sg=T.std_gradient;
+			elseif ismember('se_ksn',T.Properties.VariableNames) & ~ismember('std_ksn',T.Properties.VariableNames)
+				sk=T.se_ksn;
+				sg=T.se_gradient;
+			end
 		end
 
 		f=figure(1);
@@ -150,29 +175,58 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		hold off
 	case 'grd_rlf'
 		% Validate Relief Entry
-		m_rlfN=['mean_rlf' num2str(rr)];
-		se_rlfN=['se_rlf' num2str(rr)];
-		std_rlfN=['std_rlf' num2str(rr)];
-		if ismember(m_rlfN,T.Properties.VariableNames)
-			r=T.(m_rlfN);
+		if use_filtered
+			m_rlfN=['mean_rlf' num2str(rr) '_f'];
+			se_rlfN=['se_rlf' num2str(rr) '_f'];
+			std_rlfN=['std_rlf' num2str(rr) '_f'];
+			if ismember(m_rlfN,T.Properties.VariableNames)
+				r=T.(m_rlfN);
+			else
+				error('Relief radius is not recognized, confirm that you calculated local relief at this radius when running "ProcessRiverBasins"')
+			end
+
+			g=T.mean_gradient_f;
 		else
-			error('Relief radius is not recognized, confirm that you calculated local relief at this radius when running "ProcessRiverBasins"')
+			m_rlfN=['mean_rlf' num2str(rr)];
+			se_rlfN=['se_rlf' num2str(rr)];
+			std_rlfN=['std_rlf' num2str(rr)];
+			if ismember(m_rlfN,T.Properties.VariableNames)
+				r=T.(m_rlfN);
+			else
+				error('Relief radius is not recognized, confirm that you calculated local relief at this radius when running "ProcessRiverBasins"')
+			end
+
+			g=T.mean_gradient;
 		end
 
-		g=T.mean_gradient;
-
-		if ismember('std_gradient',T.Properties.VariableNames) & strcmp(uncertainty,'std')
-			sr=T.(std_rlfN);
-			sg=T.std_gradient;
-		elseif ismember('se_gradient',T.Properties.VariableNames) & strcmp(uncertainty,'se')
-			sr=T.(se_rlfN);
-			sg=T.se_gradient;
-		elseif ismember('std_gradient',T.Properties.VariableNames) & ~ismember('se_gradient',T.Properties.VariableNames)
-			sr=T.(std_rlfN);
-			sg=T.std_gradient;
-		elseif ismember('se_gradient',T.Properties.VariableNames) & ~ismember('std_gradient',T.Properties.VariableNames)
-			sr=T.(se_rlfN);
-			sg=T.se_gradient;
+		if use_filtered
+			if ismember('std_gradient_f',T.Properties.VariableNames) & strcmp(uncertainty,'std')
+				sr=T.(std_rlfN);
+				sg=T.std_gradient_f;
+			elseif ismember('se_gradient_f',T.Properties.VariableNames) & strcmp(uncertainty,'se')
+				sr=T.(se_rlfN);
+				sg=T.se_gradient_f;
+			elseif ismember('std_gradient_f',T.Properties.VariableNames) & ~ismember('se_gradient_f',T.Properties.VariableNames)
+				sr=T.(std_rlfN);
+				sg=T.std_gradient_f;
+			elseif ismember('se_gradient_f',T.Properties.VariableNames) & ~ismember('std_gradient_f',T.Properties.VariableNames)
+				sr=T.(se_rlfN);
+				sg=T.se_gradient_f;
+			end
+		else
+			if ismember('std_gradient',T.Properties.VariableNames) & strcmp(uncertainty,'std')
+				sr=T.(std_rlfN);
+				sg=T.std_gradient;
+			elseif ismember('se_gradient',T.Properties.VariableNames) & strcmp(uncertainty,'se')
+				sr=T.(se_rlfN);
+				sg=T.se_gradient;
+			elseif ismember('std_gradient',T.Properties.VariableNames) & ~ismember('se_gradient',T.Properties.VariableNames)
+				sr=T.(std_rlfN);
+				sg=T.std_gradient;
+			elseif ismember('se_gradient',T.Properties.VariableNames) & ~ismember('std_gradient',T.Properties.VariableNames)
+				sr=T.(se_rlfN);
+				sg=T.se_gradient;
+			end
 		end
 
 		f=figure(1);
@@ -206,30 +260,61 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		ylabel('Mean Basin Gradient');
 		hold off
 	case 'rlf_ksn'
-		% Validate Relief Entry
-		m_rlfN=['mean_rlf' num2str(rr)];
-		se_rlfN=['se_rlf' num2str(rr)];
-		std_rlfN=['std_rlf' num2str(rr)];
-		if ismember(m_rlfN,T.Properties.VariableNames)
-			r=T.(m_rlfN);
+
+
+			% Validate Relief Entry
+		if use_filtered
+			m_rlfN=['mean_rlf' num2str(rr) '_f'];
+			se_rlfN=['se_rlf' num2str(rr) '_f'];
+			std_rlfN=['std_rlf' num2str(rr) '_f'];
+			if ismember(m_rlfN,T.Properties.VariableNames)
+				r=T.(m_rlfN);
+			else
+				error('Relief radius is not recognized, confirm that you calculated local relief at this radius when running "ProcessRiverBasins"')
+			end
+
+			k=T.mean_ksn_f;
 		else
-			error('Relief radius is not recognized, confirm that you calculated local relief at this radius when running "ProcessRiverBasins"')
+			m_rlfN=['mean_rlf' num2str(rr)];
+			se_rlfN=['se_rlf' num2str(rr)];
+			std_rlfN=['std_rlf' num2str(rr)];
+			if ismember(m_rlfN,T.Properties.VariableNames)
+				r=T.(m_rlfN);
+			else
+				error('Relief radius is not recognized, confirm that you calculated local relief at this radius when running "ProcessRiverBasins"')
+			end
+
+			k=T.mean_ksn;
 		end
 
-		k=T.mean_ksn;
-
-		if ismember('std_ksn',T.Properties.VariableNames) & strcmp(uncertainty,'std')
-			sk=T.std_ksn;
-			sr=T.(std_rlfN);
-		elseif ismember('se_ksn',T.Properties.VariableNames) & strcmp(uncertainty,'se')
-			sk=T.se_ksn;
-			sr=T.(se_rlfN);
-		elseif ismember('std_ksn',T.Properties.VariableNames) & ~ismember('se_ksn',T.Properties.VariableNames)
-			sk=T.std_ksn;
-			sr=T.(std_rlfN);
-		elseif ismember('se_ksn',T.Properties.VariableNames) & ~ismember('std_ksn',T.Properties.VariableNames)
-			sk=T.se_ksn;
-			sr=T.(se_rlfN);
+		if use_filtered
+			if ismember('std_ksn_f',T.Properties.VariableNames) & strcmp(uncertainty,'std')
+				sk=T.std_ksn_f;
+				sr=T.(std_rlfN);
+			elseif ismember('se_ksn_f',T.Properties.VariableNames) & strcmp(uncertainty,'se')
+				sk=T.se_ksn_f;
+				sr=T.(se_rlfN);
+			elseif ismember('std_ksn_f',T.Properties.VariableNames) & ~ismember('se_ksn_f',T.Properties.VariableNames)
+				sk=T.std_ksn_f;
+				sr=T.(std_rlfN);
+			elseif ismember('se_ksn_f',T.Properties.VariableNames) & ~ismember('std_ksn_f',T.Properties.VariableNames)
+				sk=T.se_ksn_f;
+				sr=T.(se_rlfN);
+			end		
+		else
+			if ismember('std_ksn',T.Properties.VariableNames) & strcmp(uncertainty,'std')
+				sk=T.std_ksn;
+				sr=T.(std_rlfN);
+			elseif ismember('se_ksn',T.Properties.VariableNames) & strcmp(uncertainty,'se')
+				sk=T.se_ksn;
+				sr=T.(se_rlfN);
+			elseif ismember('std_ksn',T.Properties.VariableNames) & ~ismember('se_ksn',T.Properties.VariableNames)
+				sk=T.std_ksn;
+				sr=T.(std_rlfN);
+			elseif ismember('se_ksn',T.Properties.VariableNames) & ~ismember('std_ksn',T.Properties.VariableNames)
+				sk=T.se_ksn;
+				sr=T.(se_rlfN);
+			end
 		end
 
 		f=figure(1);
@@ -773,7 +858,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			color_by_label=strrep(color_by,'_',' ');
 			ylabel(cb,color_by_label);
 		else
-			scatter(k,g,30,'k','filled');
+			scatter(x,y,30,'k','filled');
 		end
 
 		xlabel(['Mean ' sxN]);
