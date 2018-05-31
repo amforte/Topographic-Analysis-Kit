@@ -16,7 +16,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	%		'category_mean_compare' -if you calculated 'means_by_category' for more than one value (e.g. both gradient and ksn), you can compare
 	%					the mean values by category using this plot. Requires inputs to both 'cat_mean1' (value that will be plotted on x axis) 
 	%					and 'cat_mean2' (value that will be plotted on y axis)
-	%		'stacked_hypsometry' - plot all the hypsometries for the basins
+	%		'stacked_hypsometry' - plot hypsometries for the basins
 	%		'xy' - generic plot, requires entries to optional 'xval' and 'yval' inputs
 	%
 	% Optional Inputs:
@@ -25,7 +25,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	%		e.g. if you only calculated standard deviations when running ProcessRiverBasins but supply 'se'	here, the code will ignore your choice
 	%		and use the standard deviation values.
 	%	color_by [] - value to color points by, valid for 'grd_ksn','grd_rlf','rlf_ksn', and 'xy'
-	%	cmap [jet] - colormap to use if an entry is provided to 'color_by', can be the name of a standard colormap or a nx3 array of rgb values
+	%	cmap [] - colormap to use if an entry is provided to 'color_by', can be the name of a standard colormap or a nx3 array of rgb values
 	%		to use as a colormap. 
 	%	xval [] - value to plot on x axis (name of column as it appears in the provided table) for plot type 'xy'
 	%	yval [] - value to plot on y axis (name of column as it appears in the provided table) for plot type 'xy'
@@ -69,7 +69,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 
 	addParamValue(p,'uncertainty','se',@(x) ischar(validatestring(x,{'se','std','none'})));
 	addParamValue(p,'color_by',[],@(x) ischar(x));
-	addParamValue(p,'cmap','jet',@(x) ischar(x) || isnumeric(x) & size(x,2)==3);
+	addParamValue(p,'cmap',[],@(x) ischar(x) || isnumeric(x) & size(x,2)==3);
 	addParamValue(p,'xval',[],@(x) ischar(x));
 	addParamValue(p,'yval',[],@(x) ischar(x));
 	addParamValue(p,'rlf_radius',2500,@(x) isnumeric(x) && isscalar(x));
@@ -92,6 +92,10 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	cm2=p.Results.cat_mean2;
 	op=p.Results.only_positive;
 	save_figure=p.Results.save_figure;
+
+	if isempty(cmap);
+		cmap=jet(50);
+	end
 
 
 	% Generate Plots
@@ -263,35 +267,177 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		hypsCell=T.hypsometry;
 
 		numHyps=numel(hypsCell);
+		normEl=zeros(100,numHyps);
+		normF=zeros(100,numHyps);
 
-		f(1)=figure(1);
-		set(f(1),'Units','normalized','Position',[0.05 0.05 0.4 0.4],'renderer','painters');
-		clf
-		hold on
-		xlabel('Percentage Area');
-		ylabel('Elevation (m)');
-		hold off
+		El=normEl;
+		F=normF;
+		HI=zeros(numHyps,1);
+		for ii=1:numHyps
+			normEl(:,ii)=(hypsCell{ii}(:,2)-min(hypsCell{ii}(:,2)))/(max(hypsCell{ii}(:,2))-min(hypsCell{ii}(:,2)));
+			normF(:,ii)=(hypsCell{ii}(:,1))/100;
 
-		f(2)=figure(2);
-		set(f(2),'Units','normalized','Position',[0.05 0.5 0.4 0.4],'renderer','painters');
-		clf
+			HI(ii)=abs(trapz(normEl(:,ii),normF(:,ii)));
+
+			El(:,ii)=hypsCell{ii}(:,2);
+			F(:,ii)=hypsCell{ii}(:,1);
+		end
+
+		histIm=zeros(100,100);
+		jj=100:-1:1;
+		for ii=1:100
+			[N,~]=histcounts(normF(ii,:),linspace(0,1,101));
+			histIm(jj(ii),:)=log10(N);
+		end
+
+		if ~isempty(color_by) & isnumeric(T.(color_by));
+			col_val=T.(color_by);
+			f(1)=figure(1);
+			set(f(1),'Units','normalized','Position',[0.05 0.5 0.4 0.4],'renderer','painters');
+			clf
+			hold on
+			colormap(cmap);
+			cm=colormap;
+			num_col=size(cm,1);
+			[cix,ed]=discretize(col_val,num_col);
+			for ii=1:num_col
+				idx=cix==ii;
+				plot(normF(:,idx),normEl(:,idx),'Color',cm(ii,:));
+			end
+			caxis([min(ed) max(ed)]);
+			cb=colorbar;
+			% Remove any underscores
+			color_by_label=strrep(color_by,'_',' ');
+			ylabel(cb,color_by_label);
+			axis equal
+			xlabel('Normalized Area');
+			ylabel('Normalized Elevation');
+			xlim([0 1]);
+			ylim([0 1]);
+			hold off			
+		else
+			f(1)=figure(1);
+			set(f(1),'Units','normalized','Position',[0.05 0.5 0.4 0.4],'renderer','painters');
+			clf
+			hold on
+			plot(normF,normEl,'-k');
+			axis equal
+			xlabel('Normalized Area');
+			ylabel('Normalized Elevation');
+			xlim([0 1]);
+			ylim([0 1]);
+			hold off
+		end
+
+
+		if ~isempty(color_by) & isnumeric(T.(color_by));
+			col_val=T.(color_by);
+			f(2)=figure(2);
+			set(f(2),'Units','normalized','Position',[0.05 0.05 0.4 0.4],'renderer','painters');
+			clf
+			hold on
+			colormap(cmap);
+			cm=colormap;
+			num_col=size(cm,1);
+			[cix,ed]=discretize(col_val,num_col);
+			for ii=1:num_col
+				idx=cix==ii;
+				plot(F(:,idx),El(:,idx),'Color',cm(ii,:));
+			end
+			caxis([min(ed) max(ed)]);			
+			cb=colorbar;
+			% Remove any underscores
+			color_by_label=strrep(color_by,'_',' ');
+			ylabel(cb,color_by_label);
+			axis square
+			xlabel('Percentage Area');
+			ylabel('Elevation');
+			hold off
+		else
+			f(2)=figure(2);
+			set(f(2),'Units','normalized','Position',[0.05 0.05 0.4 0.4],'renderer','painters');
+			clf
+			hold on
+			plot(F,El,'-k');
+			axis square
+			xlabel('Percentage Area');
+			ylabel('Elevation');
+			hold off
+		end
+
+		num_bins=20;
+		[hix,hed]=discretize(HI,linspace(0,1,num_bins+1));
+
+		f(3)=figure(3);
+		set(f(3),'Units','normalized','Position',[0.5 0.5 0.4 0.4],'renderer','painters');
+		clf 
+
+		for ii=1:num_bins
+			subplot(4,5,ii)
+			hold on
+			idx=hix==ii;
+			perc(ii,1)=round((nnz(idx)/numel(idx))*100,1);
+			nF=normF(:,idx);
+			nE=normEl(:,idx);
+			mF{ii,1}=mean(nF,2);
+			mE{ii,1}=mean(nE,2);
+			plot(nF,nE,'LineWidth',0.5,'Color',[0.4 0.4 0.4]);
+			plot(mF{ii,1},mE{ii,1},'-r','LineWidth',2);
+			if ii<=num_bins/2
+				text(0.75,0.9,[num2str(perc(ii,1)) '%']);
+			else
+				text(0.1,0.1,[num2str(perc(ii,1)) '%']);
+			end
+			axis equal
+			title(['HI ' num2str(hed(ii)) ' to ' num2str(hed(ii+1))])
+			xlabel('Normalized Area');
+			ylabel('Normalized Elevation');
+			xlim([0 1]);
+			ylim([0 1]);
+			hold off
+		end				
+
+		f(4)=figure(4);
+		set(f(4),'Units','normalized','Position',[0.5 0.05 0.4 0.4]);
+		clf 
+		X=linspace(0,1,100);
+		Y=linspace(0,1,100);
 		hold on
-		xlabel('Percentage Area');
+		colormap(jet);
+		imagesc(X,Y,histIm);
+		axis equal
+		xlabel('Normalized Area');
 		ylabel('Normalized Elevation');
+		xlim([0 1]);
 		ylim([0 1]);
 		hold off
 
-		for ii=1:numHyps
-			figure(1);
-			hold on
-			plot(hypsCell{ii}(:,1),hypsCell{ii}(:,2),'-k');
-			hold off
-
-			figure(2);
-			hold on
-			plot(hypsCell{ii}(:,1),(hypsCell{ii}(:,2))/max(hypsCell{ii}(:,2)),'-k');
-			hold off
+		f(5)=figure(5);
+		set(f(5),'Units','normalized','Position',[0.25 0.25 0.4 0.4],'renderer','painters');
+		clf 
+		hold on
+		colormap(jet);
+		idx=perc>0;
+		pf=perc(idx);
+		jc=jet(100);
+		for ii=1:num_bins
+			ix=round((perc(ii,1)/max(pf))*100);
+			if ix==0
+				cl=[1 1 1];
+			else
+				cl=jc(ix,:);
+			end
+			plot(mF{ii,1},mE{ii,1},'Color',cl,'LineWidth',2);
 		end
+		caxis([min(pf) max(pf)]);
+		cb=colorbar;
+		ylabel(cb,'Percentage of Basins')
+		axis equal
+		xlabel('Normalized Area');
+		ylabel('Normalized Elevation');
+		xlim([0 1]);
+		ylim([0 1]);
+		hold off
 
 	case 'compare_filtered'
 		VN=T.Properties.VariableNames;
