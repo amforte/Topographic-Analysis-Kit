@@ -350,6 +350,10 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 				num_pix=sum(sum(dep_map));
 				drainage_area=(num_pix*DEMoc.cellsize*DEMoc.cellsize)/(1e6);
 
+				% Calculate hypsometry
+				[rb,eb]=hypscurve(DEMoc,100);
+				hyps=[rb eb];
+
 				% Find weighted centroid of drainage basin
 				[Cx,Cy]=FindCentroid(DEMoc);
 				Centroid=[Cx Cy];
@@ -432,7 +436,7 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 
 				SubFileName=[SBFiles_Dir '/Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '.mat'];
 
-				save(SubFileName,'RiverMouth','DEMcc','DEMoc','out_el','drainage_area','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method');
+				save(SubFileName,'RiverMouth','DEMcc','DEMoc','out_el','drainage_area','hyps','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method');
 				
 				% Make interpolated ksn grid
 				try 

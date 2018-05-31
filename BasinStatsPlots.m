@@ -16,6 +16,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	%		'category_mean_compare' -if you calculated 'means_by_category' for more than one value (e.g. both gradient and ksn), you can compare
 	%					the mean values by category using this plot. Requires inputs to both 'cat_mean1' (value that will be plotted on x axis) 
 	%					and 'cat_mean2' (value that will be plotted on y axis)
+	%		'stacked_hypsometry' - plot all the hypsometries for the basins
 	%		'xy' - generic plot, requires entries to optional 'xval' and 'yval' inputs
 	%
 	% Optional Inputs:
@@ -64,7 +65,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	p = inputParser;
 	p.FunctionName = 'BasinStatsPlots';
 	addRequired(p,'basin_table',@(x) isa(x,'table'));
-	addRequired(p,'plots',@(x) ischar(validatestring(x,{'grd_ksn','grd_rlf','rlf_ksn','compare_filtered','category_mean_hist','category_mean_compare','xy'})));
+	addRequired(p,'plots',@(x) ischar(validatestring(x,{'grd_ksn','grd_rlf','rlf_ksn','compare_filtered','category_mean_hist','category_mean_compare','xy','stacked_hypsometry'})));
 
 	addParamValue(p,'uncertainty','se',@(x) ischar(validatestring(x,{'se','std','none'})));
 	addParamValue(p,'color_by',[],@(x) ischar(x));
@@ -257,6 +258,40 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		ylabel(['Mean Basin ' num2str(rr) ' m^2 Relief']);
 		xlabel('Mean Basin k_{sn}');
 		hold off
+
+	case 'stacked_hypsometry'
+		hypsCell=T.hypsometry;
+
+		numHyps=numel(hypsCell);
+
+		f(1)=figure(1);
+		set(f(1),'Units','normalized','Position',[0.05 0.05 0.4 0.4],'renderer','painters');
+		clf
+		hold on
+		xlabel('Percentage Area');
+		ylabel('Elevation (m)');
+		hold off
+
+		f(2)=figure(2);
+		set(f(2),'Units','normalized','Position',[0.05 0.5 0.4 0.4],'renderer','painters');
+		clf
+		hold on
+		xlabel('Percentage Area');
+		ylabel('Normalized Elevation');
+		ylim([0 1]);
+		hold off
+
+		for ii=1:numHyps
+			figure(1);
+			hold on
+			plot(hypsCell{ii}(:,1),hypsCell{ii}(:,2),'-k');
+			hold off
+
+			figure(2);
+			hold on
+			plot(hypsCell{ii}(:,1),(hypsCell{ii}(:,2))/max(hypsCell{ii}(:,2)),'-k');
+			hold off
+		end
 
 	case 'compare_filtered'
 		VN=T.Properties.VariableNames;

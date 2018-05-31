@@ -188,7 +188,7 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	for ii=1:num_files;
 		FileName=[FileList(ii,1).folder '/' FileList(ii,1).name];
 
-		load(FileName,'DEMoc','RiverMouth','drainage_area','out_el','KSNc_stats','Zc_stats','Gc_stats','Centroid');
+		load(FileName,'DEMoc','RiverMouth','drainage_area','out_el','KSNc_stats','Zc_stats','Gc_stats','Centroid','hyps');
 
 		% Populate default fields in Table
 		T.ID(ii,1)=ii;
@@ -232,6 +232,8 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 			T.se_gradient(ii,1)=Gc_stats(2);
 			T.std_gradient(ii,1)=Gc_stats(3);
 		end
+
+		T.hypsometry{ii,1}=hyps;
 
 		% Check for additional grids within the process river basins output
 		VarList=whos('-file',FileName);
