@@ -124,9 +124,20 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 		num_files=numel(FileList);
 	end
 
+	% Sort by drainage area to ensure proper drawing order
+	dalist=zeros(num_files,1);
+	for ii=1:num_files
+		FileName=[FileList(ii,1).folder '/' FileList(ii,1).name];
+		load(FileName,'drainage_area');
+		dalist(ii,1)=drainage_area;
+	end
+	[~,six]=sort(dalist,'descend');
+	FileList=FileList(six);
+
 	% Initiate Map Structure
 	MS=struct;
 
+	% Begin main loop
 	w1=waitbar(0,'Building polygons');
 	for ii=1:num_files;
 		FileName=[FileList(ii,1).folder '/' FileList(ii,1).name];
