@@ -96,7 +96,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 		zc=mincosthydrocon(ST,DEM,'interp',iv);
 		DEMc=GRIDobj(DEM);
 		DEMc.Z(DEMc.Z==0)=NaN;
-		DEMc.Z(S.IXgrid)=zc;
+		DEMc.Z(ST.IXgrid)=zc;
 	end
 
 	% Parse Switches
