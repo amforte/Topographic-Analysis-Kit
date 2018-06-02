@@ -32,7 +32,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	%			but can result in inaccurate choices. The 'native' option is easier to see, but can be very slow to load and interact with.
 	%	picks - expects a m x 3 matrix with columns as an identifying number, x coordinates, and y coordinates OR the name of a point shapefile with a single value column of 
 	%			identifying numbers. Will interpret this input as a list of channel heads if 'direction' is 'down' and a list of channel outlets if 'direction' is 'up'.
-	%	theta_ref [0.45] - reference concavity for calculating Chi-Z, default is 0.45
+	%	ref_concavity [0.50] - reference concavity for calculating Chi-Z, default is 0.50
 	%	min_elev [] - minimum elevation below which the code stops extracting channel information, only used if 'direction'
 	%			   is 'down'
 	%	max_area [] - maximum drainage area above which the code stops extracting channel information, only used if 'direction'
@@ -80,7 +80,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	addParamValue(p,'method','new_picks',@(x) ischar(validatestring(x,{'new_picks','prev_picks'})));
 	addParamValue(p,'plot_type','native',@(x) ischar(validatestring(x,{'native','downsample'})));	
 	addParamValue(p,'plot_style','refresh',@(x) ischar(validatestring(x,{'refresh','keep'})));
-	addParamValue(p,'theta_ref',0.45,@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'min_elev',[],@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'max_area',[],@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'recalc',false,@(x) isscalar(x));
@@ -97,7 +97,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	basin_num=p.Results.basin_num;
 	direction=p.Results.direction;
 	method=p.Results.method;
-	theta_ref=p.Results.theta_ref;
+	theta_ref=p.Results.ref_concavity;
 	plot_type=p.Results.plot_type;
 	plot_style=p.Results.plot_style;
 	threshold_area=p.Results.threshold_area;
@@ -378,7 +378,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 					[bs,ba]=sa(DEMc,Sn_t,A);
 				end
 				scatter(ba,bs,10,colcol(mod(ii,10)+1,:));
-				set(saax,'Xscale','log','Yscale','log');
+				set(saax,'Xscale','log','Yscale','log','XDir','reverse');
 				xlabel('Log Drainage Area');
 				ylabel('Log Slope');	
 				hold off
@@ -490,7 +490,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				hold on
 				[bs,ba]=sa(DEMc,Sn,A);
 				scatter(ba,bs,'filled');
-				set(saax,'Xscale','log','Yscale','log');
+				set(saax,'Xscale','log','Yscale','log','XDir','reverse');
 				xlabel('Log Drainage Area');
 				ylabel('Log Slope');	
 				hold off
@@ -523,10 +523,10 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 			str2='Y';
 
 			ii=1;
-
+			close all
 			while strcmp(str2,'Y') | strcmp(str2,'Y') | strcmp(str2,'y')        
 				while strcmp(str1,'N') | strcmp(str2,'n');     	
-					close all
+					
 					% Reset short circuit switch
 					short_circ=0;
 
@@ -726,7 +726,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 					[bs,ba]=sa(DEMc,Sn_t,A);
 				end
 				scatter(ba,bs,10,'k','filled');
-				set(saax,'Xscale','log','Yscale','log');
+				set(saax,'Xscale','log','Yscale','log','XDir','reverse');
 				xlabel('Log Drainage Area');
 				ylabel('Log Slope');	
 				hold off								
@@ -761,10 +761,10 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 			str2='Y';
 
 			ii=1;
-
+			close all
 			while strcmp(str2,'Y') | strcmp(str2,'Y') | strcmp(str2,'y')        
 				while strcmp(str1,'N') | strcmp(str2,'n');     	
-					close all
+					
 					f1=figure(1);
 					set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
 
@@ -832,7 +832,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				hold on
 				[bs,ba]=sa(DEMc,Sn,A);
 				scatter(ba,bs,10,'k','filled');
-				set(saax,'Xscale','log','Yscale','log');
+				set(saax,'Xscale','log','Yscale','log','XDir','reverse');
 				xlabel('Log Drainage Area');
 				ylabel('Log Slope');	
 				hold off

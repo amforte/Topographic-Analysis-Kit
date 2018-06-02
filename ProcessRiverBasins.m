@@ -21,7 +21,7 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 	%		interp_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a conditioned DEM)
 	% 		threshold_area [1e6] - minimum accumulation area to define streams in meters squared
 	% 		segment_length [1000] - smoothing distance in meters for averaging along ksn, suggested value is 1000 meters
-	% 		theta_ref [0.5] - reference concavity for calculating ksn, suggested value is 0.45
+	% 		ref_concavity [0.5] - reference concavity for calculating ksn, suggested value is 0.45
 	%		ksn_method [quick] - switch between method to calculate ksn values, options are 'quick' and 'trib', the 'trib' method takes 3-4 times longer 
 	%			than the 'quick' method. In most cases, the 'quick' method works well, but if values near tributary junctions are important, then 'trib'
 	%			may be better as this calculates ksn values for individual channel segments individually
@@ -74,7 +74,7 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 	addRequired(p,'river_mouths',@(x) isnumeric(x) && size(x,2)==3 || isnumeric(x) && isscalar(x) || regexp(x,regexptranslate('wildcard','*.shp')));
 	addRequired(p,'basin_dir',@(x) ischar(x));
 
-	addParamValue(p,'theta_ref',0.5,@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'ref_concavity',0.5,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'threshold_area',1e6,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'segment_length',1000,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'write_arc_files',false,@(x) isscalar(x));
@@ -96,7 +96,7 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 	river_mouths=p.Results.river_mouths;
 	basin_dir=p.Results.basin_dir;
 
-	theta_ref=p.Results.theta_ref;
+	theta_ref=p.Results.ref_concavity;
 	threshold_area=p.Results.threshold_area;
 	segment_length=p.Results.segment_length;
 	write_arc_files=p.Results.write_arc_files;

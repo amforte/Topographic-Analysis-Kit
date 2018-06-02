@@ -29,7 +29,7 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 	%			no be included in the output. The 'recursive' check is not implemented for the 'order' method.
 	% 		threshold_area [1e6] - minimum accumulation area to define streams in meters squared
 	% 		segment_length [1000] - smoothing distance in meters for averaging along ksn, suggested value is 1000 meters
-	% 		theta_ref [0.5] - reference concavity for calculating ksn
+	% 		ref_concavity [0.5] - reference concavity for calculating ksn
 	% 		write_arc_files [false] - set value to true to output a ascii's of various grids and a shapefile of the ksn, false to not output arc files
 	%		s_order [3] - stream order for defining stream outlets for subdividing if 'divide_method' is 'order' (lower number will result in more sub-basins)
 	%		min_basin_size [10] - minimum basin size for auto-selecting sub basins. If 'divide_method' is 'filtered_confluences' this value is
@@ -63,7 +63,7 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 
 	addParamValue(p,'SBFiles_Dir','SubBasins',@(x) ischar(x));
 	addParamValue(p,'recursive',true,@(x) isscalar(x) && islogical(x));
-	addParamValue(p,'theta_ref',0.5,@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'ref_concavity',0.5,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'threshold_area',1e6,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'segment_length',1000,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'write_arc_files',false,@(x) isscalar(x));
@@ -78,7 +78,7 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 
 	SBFiles_Dir=p.Results.SBFiles_Dir;
 	recursive=p.Results.recursive;
-	theta_ref=p.Results.theta_ref;
+	theta_ref=p.Results.ref_concavity;
 	threshold_area=p.Results.threshold_area;
 	segment_length=p.Results.segment_length;
 	write_arc_files=p.Results.write_arc_files;

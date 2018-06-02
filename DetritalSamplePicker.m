@@ -20,7 +20,7 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
     %       S - STREAMobj derived from the DEM
     %
     % Optional Inputs:
-    %       theta_ref [0.50]- reference concavity for chi-Z plots
+    %       ref_concavity [0.50]- reference concavity for chi-Z plots
     %       rlf_radius [2500] - radius in map units for calculating local relief OR
     %       rlf_grid [] - if you already have a local relief grid that you've calculated, you can provide it with 'rlf_grid', it must be a GRIDobj and must be the same
     %           coordinates and dimensions as the provided DEM.
@@ -57,7 +57,7 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
     addRequired(p,'A',@(x) isa(x,'GRIDobj'));
     addRequired(p,'S',@(x) isa(x,'STREAMobj'));
 
-    addParamValue(p,'theta_ref',0.5,@(x) isscalar(x) && isnumeric(x));
+    addParamValue(p,'ref_concavity',0.5,@(x) isscalar(x) && isnumeric(x));
     addParamValue(p,'rlf_radius',2500,@(x) isscalar(x) && isnumeric(x));
     addParamValue(p,'plot_type','vector',@(x) ischar(validatestring(x,{'vector','grid'})));
     addParamValue(p,'threshold_area',1e6,@(x) isnumeric(x));   
@@ -72,7 +72,7 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
     S=p.Results.S;
     A=p.Results.A;
 
-    theta_ref=p.Results.theta_ref;
+    theta_ref=p.Results.ref_concavity;
     rlf_radius=p.Results.rlf_radius;
     plot_type=p.Results.plot_type;
     threshold_area=p.Results.threshold_area;
@@ -377,13 +377,14 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
         prompt='    Keep picking streams? Y/N [Y]: ';
         str3=input(prompt,'s');
         if isempty(str3) | strcmpi(str3,'Y');
-           str2 = 'Y';
-           str1 = 'N';
+            str2 = 'Y';
+            str1 = 'N';
+        else
+            str2='N';
         end
         
         close figure 2;
-
     end
-    
+end   
     
     
