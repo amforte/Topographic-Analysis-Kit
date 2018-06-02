@@ -397,6 +397,7 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 				DEMoc=crop(DEM,I,nan);
 				DEMcc=crop(DEMhc,I,nan);
 				FDc=crop(FD,I);
+				Ac=crop(A,I,nan);
 
 				% Calculate drainage area
 				dep_map=GRIDobj2mat(I);
@@ -412,7 +413,6 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 				Centroid=[Cx Cy];
 
 				% Generate new stream map
-				Ac=flowacc(FDc);
 				Sc=STREAMobj(FDc,'minarea',threshold_area,'unit','mapunits');
 
 				% Check to make sure the stream object isn't empty

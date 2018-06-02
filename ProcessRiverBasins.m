@@ -1,10 +1,11 @@
-function ProcessRiverBasins(DEM,FD,S,river_mouths,basin_dir,varargin)
+function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 	% Function takes grid object outputs from MakeStreams script (DEM,FD,A,S), a series of x,y coordinates of river mouths,
 	% and outputs clipped dem, stream network, variout topographic metrics, and river values (ks, ksn, chi)
 	%
 	% Required Inputs:
 	% 		DEM - GRIDobj of the digital elevation model of your area loaded into the workspace
 	% 		FD - FLOWobj of the flow direction of your area loaded into the workspace
+	% 		A - GRID object of flow accumulation of your ara loaded into the workspace
 	% 		S - STREAMobj of the stream network of your area loaded into the workspace	
 	% 		river_mouths - locations of river mouths (i.e. pour points) above which you wish to extract basins, can take one of three forms:
 	%			1) nx3 matrix of river mouths with x, y, and a number identifying the stream/basin of interest (must be same projection as DEM).
@@ -68,6 +69,7 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,basin_dir,varargin)
 	p.FunctionName = 'ProcessRiverBasins';
 	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
 	addRequired(p,'FD',@(x) isa(x,'FLOWobj'));
+	addRequired(p,'A',@(x) isa(x,'GRIDobj'));
 	addRequired(p,'S',@(x) isa(x,'STREAMobj'));
 	addRequired(p,'river_mouths',@(x) isnumeric(x) && size(x,2)==3 || isnumeric(x) && isscalar(x) || regexp(x,regexptranslate('wildcard','*.shp')));
 	addRequired(p,'basin_dir',@(x) ischar(x));
@@ -86,9 +88,10 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,basin_dir,varargin)
 	addParamValue(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
 	addParamValue(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
 
-	parse(p,DEM,FD,S,river_mouths,basin_dir,varargin{:});
+	parse(p,DEM,FD,A,S,river_mouths,basin_dir,varargin{:});
 	DEM=p.Results.DEM;
 	FD=p.Results.FD;
+	A=p.Results.A;
 	S=p.Results.S;
 	river_mouths=p.Results.river_mouths;
 	basin_dir=p.Results.basin_dir;
@@ -226,6 +229,7 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,basin_dir,varargin)
 		I=dependencemap(FD,xx,yy);
 		DEMoc=crop(DEM,I,nan);
 		FDc=crop(FD,I);
+		Ac=crop(A,I,nan);
 
 		% Calculate drainage area
 		dep_map=GRIDobj2mat(I);
@@ -241,7 +245,6 @@ function ProcessRiverBasins(DEM,FD,S,river_mouths,basin_dir,varargin)
 		Centroid=[Cx Cy];
 
 		% Generate new stream map
-		Ac=flowacc(FDc);
 		Sc=STREAMobj(FDc,'minarea',threshold_area,'unit','mapunits');
 
 		% Check to make sure the stream object isn't empty, this shouldn't occur anymore unless a bad pour point was provided...
