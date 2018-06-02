@@ -21,7 +21,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 	%	pick_method ['chi'] - choice of how you want to pick the stream segment to be projected:
 	%		'chi' - select segments on a chi - z plot
 	%		'stream' - select segments on a longitudinal profile
-	%	ref_concavity [0.45] - refrence concavity used if 'theta_method' is set to 'auto'
+	%	ref_concavity [0.50] - refrence concavity used if 'theta_method' is set to 'auto'
 	%	refit_streams [false] - option to recalculate chi based on the concavity of the picked segment (true), useful if you want to try to precisely 
 	%		match the shape of the picked segment of the profile. Only used if 'theta_method' is set to 'auto'
 	%	save_figures [false] - option to save (if set to true) figures at the end of the projection process
@@ -53,7 +53,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 	addParamValue(p,'theta_method','ref',@(x) ischar(validatestring(x,{'ref','auto'})));
 	addParamValue(p,'pick_method','chi',@(x) ischar(validatestring(x,{'chi','stream'})));
 	addParamValue(p,'smooth_distance',1000,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'ref_concavity',0.45,@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'refit_streams',false,@(x) isscalar(x) && islogical(x));
 	addParamValue(p,'save_figures',false,@(x) isscalar(x) && islogical(x));
 	addParamValue(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
@@ -93,7 +93,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 
 	% Hydrologically condition dem
 	if isempty(DEMc)
-		zc=mincosthydrocon(S,DEM,'interp',iv);
+		zc=mincosthydrocon(ST,DEM,'interp',iv);
 		DEMc=GRIDobj(DEM);
 		DEMc.Z(DEMc.Z==0)=NaN;
 		DEMc.Z(S.IXgrid)=zc;

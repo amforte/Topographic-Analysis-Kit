@@ -14,6 +14,10 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	%	file_name [] - name for matfile containing the DEM, FD, A, and S and the shapfile of the stream network.
 	%		If file_name is not provided, the function assumes the user does not wish to save the results to a
 	%		mat file (results will still appear in the workspace) or shapefile.
+	%	precip_grid [] - optional input of a GRIDobj of precipitation. If you provide an argument for this, the code will use
+	%		this to produce a weighted flow accumulation grid.
+	%	rr_grid [] - optional input of a GRIDobj of runoff ratios. If you provide an argument for this, the code will use
+	%		this, along with the input to 'precip_grid' to produce a weighted flow accumulation grid.
 	%	no_data_exp [] - input to define no data conditions. Expects a string that defines a valid equality using
 	%		the variable DEM OR 'auto'. E.g. if you wish to define that any elevation less that or equal to 0 should 
 	%		be set to no data, you would provide 'DEM<=0' or if you wanted to set elevations less than 500 and greater  
@@ -58,6 +62,8 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	addParamValue(p,'min_flat_area',1e5,@(x) isnumeric(x) && isscalar(x));
 	addParamValue(p,'resample_grid',false,@(x) isscalar(x) && islogical(x));
 	addParamValue(p,'new_cellsize',[],@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'precip_grid',[],@(x) isa(x,'GRIDobj'));
+	addParamValue(p,'rr_grid',[],@(x) isa(x,'GRIDobj'));
 
 	parse(p,dem,threshold_area,varargin{:});
 	dem=p.Results.dem;
@@ -68,7 +74,8 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	min_flat_area=p.Results.min_flat_area;
 	resample_grid=p.Results.resample_grid;
 	new_cellsize=p.Results.new_cellsize;
-
+	precip_grid=p.Results.precip_grid;
+	rr_grid=p.Results.rr_grid;
 
 	% Check for filename
 	if isempty(file_name)
@@ -135,7 +142,34 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	end
 
 	disp('Calculating Flow Accumulation')
-	A=flowacc(FD);
+	if isempty(precip_grid)
+		A=flowacc(FD);
+	elseif ~isempty(precip_grid) & isempty(rr_grid)
+		if ~validatealignment(precip_grid,DEM);
+			precip_grid=resample(precip_grid,DEM,'nearest');
+		end
+
+		A=flowacc(FD,precip_grid);
+	elseif isempty(precip_grid) & ~isempty(rr_grid)
+		precip_grid=GRIDobj(DEM);
+		precip_grid.Z=ones(DEM.size);
+
+		if ~validatealignment(rr_grid,DEM);
+			rr_grid=resample(rr_grid,DEM,'nearest');
+		end
+
+		A=flowacc(FD,precip_grid,rr_grid);			
+	elseif ~isempty(precip_grid) & ~isempty(rr_grid)
+		if ~validatealignment(precip_grid,DEM);
+			precip_grid=resample(precip_grid,DEM,'nearest');
+		end
+
+		if ~validatealignment(rr_grid,DEM);
+			rr_grid=resample(rr_grid,DEM,'nearest');
+		end
+
+		A=flowacc(FD,precip_grid,rr_grid);
+	end
 
 	disp('Extracting total stream network')
 	DEM_res=DEM.cellsize;
@@ -144,6 +178,7 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	S=STREAMobj(FD,isstream);
 
 	if save_output
+		disp('Saving outputs')
 		save(MatFileName,'A','S','-append');
 		MS=STREAMobj2mapstruct(S);
 		shapewrite(MS,ShpFileName);
@@ -169,5 +204,4 @@ function [DEMn] = AutoFlat(DEM,min_area)
 
     DEMn=DEM;
     DEMn.Z(FLATS.Z)=nan;
-
 end
