@@ -39,10 +39,12 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%			the already fit portion of the stream will not be displayed or refit
 	%		'ignore' - each stream will be displayed from its head to mouth independent of whether portions of the same stream network have 
 	%			been fit
-	%	theta_method ['ref']- options for concavity:
+	%	concavity_method ['ref']- options for concavity:
 	%		'ref' - uses a reference concavity, the user can specify this value with the reference concavity option (see below)
 	%		'auto' - function finds a best fit concavity for each selected stream, if used in conjunction with 'junction_method','check'
 	%			this means that short sections of streams picked will auto fit concavity that may differ from downstream portions of the same
+	%			streams
+	%	complete_networks_only [false] - if true, the code will filter out portions of the stream network that are incomplete prior to choosing
 	%			streams
 	%	ref_concavity [0.50] - refrence concavity used if 'theta_method' is set to 'ref'
 	%	smooth_distance [1000] - distance in map units over which to smooth ksn measures when converting to shapefile
@@ -103,7 +105,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 	addParamValue(p,'shape_name','ksn',@(x) ischar(x));
 	addParamValue(p,'smooth_distance',1000,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'theta_method','ref',@(x) ischar(validatestring(x,{'ref','auto'})));
+	addParamValue(p,'concavity_method','ref',@(x) ischar(validatestring(x,{'ref','auto'})));
+	addParamValue(p,'complete_networks_only',false,@(x) isscalar(x) && islogical(x));
 	addParamValue(p,'pick_method','chi',@(x) ischar(validatestring(x,{'chi','stream','slope_area'})));
 	addParamValue(p,'junction_method','check',@(x) ischar(validatestring(x,{'check','ignore'})));	
 	addParamValue(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
@@ -129,7 +132,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 	shape_name=p.Results.shape_name;
 	smooth_distance=p.Results.smooth_distance;
-	theta_method=p.Results.theta_method;
+	theta_method=p.Results.concavity_method;
+	cno=p.Results.complete_networks_only;
 	pick_method=p.Results.pick_method;
 	junction_method=p.Results.junction_method;
 	ref_theta=p.Results.ref_concavity;
@@ -148,6 +152,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 	% Max Ksn for color scaling
 	mksn=p.Results.max_ksn;
+
+    % Remove edges if flag is thrown
+    if cno
+    	S=removeedgeeffects(S,FD,DEM);
+    end
 
 	% Find channel heads
 	[ch]=streampoi(S,'channelheads','xy');
