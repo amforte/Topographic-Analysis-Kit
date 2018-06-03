@@ -7,9 +7,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 	% Required Inputs:
 	%	DEM - Digital Elevation as a GRIDobj, assumes unconditioned DEM (e.g. DEMoc from ProcessRiverBasins)
 	%	FD - Flow direction as FLOWobj
+	%	A - Flow accumulation GRIDobj
 	%	Streams - Either a STREAMobj of channels you wish to use or a cell array of selected channels as output from 'SegmentPicker' (default name
 	%		of saved cell array is 'StreamSgmnts')
-	%	A - Flow accumulation GRIDobj
 	%
 	% Optional Inputs:
 	%	conditioned_DEM [] - option to provide a hydrologically conditioned DEM for use in this function (do not provide a conditoned DEM
@@ -31,7 +31,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 	%	Produces a 2 x n cell array with a column for each stream segment provided (or channel head if a network is provided). The first row is the x-y
 	%	coordinate of the channel head for that stream. The second row is a datatable containing the following information about the segment of interest:
 	%	x coordinate, y coordinate, distance from mouth, drainage area, chi, concavity, true elevation, projected elevation, upper bound of projected elevation,
-	%	and lower bound of projected elevation
+	%	and lower bound of projected elevation. This output is also saved in a mat file called 'ProjectedSegments.mat'.
 	%		
 	% Examples:
 	%	[OUT]=StreamProjector(DEM,FD,A,S)
@@ -114,6 +114,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 
 	OUT=cell(2,num_ch);
 
+	% Set string input
+	str1='N';
+
 	switch method
 	case 1
 		% Autocalculate ksn for comparison purposes
@@ -159,33 +162,46 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			xlabel('Chi','Color','r')
 			ylabel('Elevation (m)','Color','r')
 			title(['Chi - Z : \theta = ' num2str(C.mn) ' : Pick Segment to Project'],'Color','r')
+			ax1.XColor='Red';
+			ax1.YColor='Red';
 			hold off
 
 			linkaxes([ax1,ax2],'x');
 
-			disp('    Select bounds of stream segment you want to project')
-			[cv,e]=ginput(2);
+			while strcmpi(str1,'N')
+				disp('    Select bounds of stream segment you want to project')
+				[cv,e]=ginput(2);
 
-			% Sort knickpoint list and construct bounds list
-			cvs=sortrows(cv);
+				% Sort knickpoint list and construct bounds list
+				cvs=sortrows(cv);
 
-			rc=C.chi;
-			rx=C.x;
-			ry=C.y;
-			re=C.elev;
+				rc=C.chi;
+				rx=C.x;
+				ry=C.y;
+				re=C.elev;
 
-			lb=cvs(1);
-			rb=cvs(2);
+				lb=cvs(1);
+				rb=cvs(2);
 
-			% Clip out stream segment
-			lb_chidist=sqrt(sum(bsxfun(@minus, rc, lb).^2,2));
-			rb_chidist=sqrt(sum(bsxfun(@minus, rc, rb).^2,2));
+				% Clip out stream segment
+				lb_chidist=sqrt(sum(bsxfun(@minus, rc, lb).^2,2));
+				rb_chidist=sqrt(sum(bsxfun(@minus, rc, rb).^2,2));
 
-			[~,lbix]=min(lb_chidist);
-			[~,rbix]=min(rb_chidist);
+				[~,lbix]=min(lb_chidist);
+				[~,rbix]=min(rb_chidist);
 
-			rcC=rc(rbix:lbix);
-			reC=re(rbix:lbix);
+				rcC=rc(rbix:lbix);
+				reC=re(rbix:lbix);
+
+				hold on
+				p1=scatter(ax1,rcC,reC,20,'r','filled');
+				hold off
+
+				prompt='Is this the stream segment you wanted? Y/N [Y]: ';
+				str1=input(prompt,'s');
+
+				delete(p1);
+			end
 
 			f=fit(rcC,reC,'poly1');
 			cf=coeffvalues(f);
@@ -248,6 +264,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 				close(f1);
 				close(f2);
 			end
+
+			% Reset string
+			str1='N';
 		end
 	case 2
 		for ii=1:num_ch
@@ -296,32 +315,43 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 
 			linkaxes([ax1,ax2],'x');
 
-			disp('    Select bounds of stream segment you want to project')
-			[cv,e]=ginput(2);
-
-			% Sort knickpoint list and construct bounds list
-			cvs=sortrows(cv);
-
-			rc=C.chi;
-			rx=C.x;
-			ry=C.y;
-			re=C.elev;
-
-			lb=cvs(1);
-			rb=cvs(2);
-
-			% Clip out stream segment
-			lb_chidist=sqrt(sum(bsxfun(@minus, rc, lb).^2,2));
-			rb_chidist=sqrt(sum(bsxfun(@minus, rc, rb).^2,2));
-
-			[~,lbix]=min(lb_chidist);
-			[~,rbix]=min(rb_chidist);
-
 			switch refit_streams
 			case false
 
-				rcC=rc(rbix:lbix);
-				reC=re(rbix:lbix);
+				while strcmpi(str1,'N')
+					disp('    Select bounds of stream segment you want to project')
+					[cv,e]=ginput(2);
+
+					% Sort knickpoint list and construct bounds list
+					cvs=sortrows(cv);
+
+					rc=C.chi;
+					rx=C.x;
+					ry=C.y;
+					re=C.elev;
+
+					lb=cvs(1);
+					rb=cvs(2);
+
+					% Clip out stream segment
+					lb_chidist=sqrt(sum(bsxfun(@minus, rc, lb).^2,2));
+					rb_chidist=sqrt(sum(bsxfun(@minus, rc, rb).^2,2));
+
+					[~,lbix]=min(lb_chidist);
+					[~,rbix]=min(rb_chidist);
+
+					rcC=rc(rbix:lbix);
+					reC=re(rbix:lbix);
+
+					hold on
+					p1=scatter(ax1,rcC,reC,20,'r','filled');
+					hold off
+
+					prompt='Is this the stream segment you wanted? Y/N [Y]: ';
+					str1=input(prompt,'s');
+
+					delete(p1);
+				end
 
 				f=fit(rcC,reC,'poly1');
 				cf=coeffvalues(f);
@@ -374,42 +404,78 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 				OUT{2,ii}=[C.x C.y C.distance C.area C.chi ones(size(C.chi)).*C.mn C.elev pred_el pred_el_u pred_el_l];
 
 			case true
-				% Clip out stream segment
-				lbx=rx(lb_chidist==min(lb_chidist));
-				lby=ry(lb_chidist==min(lb_chidist));
 
-				rbx=rx(rb_chidist==min(rb_chidist));
-				rby=ry(rb_chidist==min(rb_chidist));	
+				while strcmpi(str1,'N')
+					disp('    Select bounds of stream segment you want to project')
+					[cv,e]=ginput(2);
 
-				lix=coord2ind(DEM,lbx,lby);
-				LIX=GRIDobj(DEM);
-				LIX.Z(lix)=1;
-				[lixmat,X,Y]=GRIDobj2mat(LIX);
-				lixmat=logical(lixmat);
-				LIX=GRIDobj(X,Y,lixmat);	
+					% Sort knickpoint list and construct bounds list
+					cvs=sortrows(cv);
 
-				rix=coord2ind(DEM,rbx,rby);
-				RIX=GRIDobj(DEM);
-				RIX.Z(rix)=1;
-				[rixmat,X,Y]=GRIDobj2mat(RIX);
-				rixmat=logical(rixmat);
-				RIX=GRIDobj(X,Y,rixmat);	
+					rc0=C.chi;
+					rx0=C.x;
+					ry0=C.y;
+					re0=C.elev;
 
-				Seg=modify(S,'downstreamto',RIX);
-				Seg=modify(Seg,'upstreamto',LIX);
+					lb=cvs(1);
+					rb=cvs(2);
 
-				% Find stream segment concavity
-				Csegrf=ChiCalc(Seg,DEMc,A,1);
+					% Clip out stream segment
+					lb_chidist=sqrt(sum(bsxfun(@minus, rc0, lb).^2,2));
+					rb_chidist=sqrt(sum(bsxfun(@minus, rc0, rb).^2,2));
 
-				% Recalculate chi over entire stream with new concavity
-				CN=ChiCalc(S,DEMc,A,1,Csegrf.mn);
-				rc=CN.chi;
-				rx=CN.x;
-				ry=CN.y;
-				re=CN.elev;
+					[~,lbix]=min(lb_chidist);
+					[~,rbix]=min(rb_chidist);
 
-				rcC=rc(rbix:lbix);
-				reC=re(rbix:lbix);
+					% Clip out stream segment
+					lbx=rx0(lb_chidist==min(lb_chidist));
+					lby=ry0(lb_chidist==min(lb_chidist));
+
+					rbx=rx0(rb_chidist==min(rb_chidist));
+					rby=ry0(rb_chidist==min(rb_chidist));	
+
+					lix=coord2ind(DEM,lbx,lby);
+					LIX=GRIDobj(DEM);
+					LIX.Z(lix)=1;
+					[lixmat,X,Y]=GRIDobj2mat(LIX);
+					lixmat=logical(lixmat);
+					LIX=GRIDobj(X,Y,lixmat);	
+
+					rix=coord2ind(DEM,rbx,rby);
+					RIX=GRIDobj(DEM);
+					RIX.Z(rix)=1;
+					[rixmat,X,Y]=GRIDobj2mat(RIX);
+					rixmat=logical(rixmat);
+					RIX=GRIDobj(X,Y,rixmat);	
+
+					Seg=modify(S,'downstreamto',RIX);
+					Seg=modify(Seg,'upstreamto',LIX);
+
+					% Find stream segment concavity
+					Csegrf=ChiCalc(Seg,DEMc,A,1);
+
+					% Recalculate chi over entire stream with new concavity
+					CN=ChiCalc(S,DEMc,A,1,Csegrf.mn);
+					rc=CN.chi;
+					rx=CN.x;
+					ry=CN.y;
+					re=CN.elev;
+
+					rcC0=rc0(rbix:lbix);
+					reC0=re0(rbix:lbix);
+
+					rcC=rc(rbix:lbix);
+					reC=re(rbix:lbix);
+
+					hold on
+					p1=scatter(ax1,rcC0,reC0,20,'r','filled');
+					hold off
+
+					prompt='Is this the stream segment you wanted? Y/N [Y]: ';
+					str1=input(prompt,'s');
+
+					delete(p1);
+				end
 
 				% Autocalculate ksn for comparison purposes
 				[auto_ksn]=KSN_Quick(DEM,A,S,Csegrf.mn);
@@ -494,6 +560,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 
 			end
 
+
 			if save_figures
 				print(f1,'-depsc2',['ProjectedProfile_' num2str(ii) '.eps']);
 				print(f2,'-depsc2',['Residual_' num2str(ii) '.eps']);
@@ -505,6 +572,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 				close(f1);
 				close(f2);
 			end
+
+			% Reset output string 1
+			str1='N';
 		end
 	case 3
 		% Autocalculate ksn for comparison purposes
@@ -550,34 +620,48 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			ylabel('Elevation (m)','Color','r')
 			legend('Unconditioned DEM','Conditioned DEM','location','best');
 			title(['Long Profile : \theta = ' num2str(C.mn) ' : Pick Segment to Project'],'Color','r')
+			ax1.XColor='Red';
+			ax1.YColor='Red';
 			hold off
 
 			linkaxes([ax1,ax2],'x');
 
-			disp('    Select bounds of stream segment you want to project')
-			[d,e]=ginput(2);
-			d=d*1000;
+			while strcmpi(str1,'N')
+				disp('    Select bounds of stream segment you want to project')
+				[d,e]=ginput(2);
+				d=d*1000;
 
-			% Sort knickpoint list and construct bounds list
-			ds=sortrows(d);
+				% Sort knickpoint list and construct bounds list
+				ds=sortrows(d);
 
-			rd=C.distance;
-			rx=C.x;
-			ry=C.y;
-			rc=C.chi;
-			re=C.elev;
+				rd=C.distance;
+				rx=C.x;
+				ry=C.y;
+				rc=C.chi;
+				re=C.elev;
 
-			lb=ds(1);
-			rb=ds(2);
+				lb=ds(1);
+				rb=ds(2);
 
-			lb_dist=sqrt(sum(bsxfun(@minus, rd, lb).^2,2));
-			rb_dist=sqrt(sum(bsxfun(@minus, rd, rb).^2,2));
+				lb_dist=sqrt(sum(bsxfun(@minus, rd, lb).^2,2));
+				rb_dist=sqrt(sum(bsxfun(@minus, rd, rb).^2,2));
 
-			[~,lbix]=min(lb_dist);
-			[~,rbix]=min(rb_dist);
+				[~,lbix]=min(lb_dist);
+				[~,rbix]=min(rb_dist);
 
-			rcC=rc(rbix:lbix);
-			reC=re(rbix:lbix);
+				rcC=rc(rbix:lbix);
+				reC=re(rbix:lbix);
+				rdC=rd(rbix:lbix);
+
+				hold on
+				p1=scatter(ax1,rdC/1000,reC,20,'r','filled');
+				hold off
+
+				prompt='Is this the stream segment you wanted? Y/N [Y]: ';
+				str1=input(prompt,'s');
+
+				delete(p1);
+			end				
 
 			f=fit(rcC,reC,'poly1');
 			cf=coeffvalues(f);
@@ -640,6 +724,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 				close(f1);
 				close(f2);
 			end
+
+			% Reset string
+			str1='N';
 		end
 
 	case 4
@@ -689,33 +776,45 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 
 			linkaxes([ax1,ax2],'x');
 
-			disp('    Select bounds of stream segment you want to project')
-			[d,e]=ginput(2);
-			d=d*1000;
-
-			% Sort knickpoint list and construct bounds list
-			ds=sortrows(d);
-
-			rd=C.distance;
-			rx=C.x;
-			ry=C.y;
-			rc=C.chi;
-			re=C.elev;
-
-			lb=ds(1);
-			rb=ds(2);
-
-			lb_dist=sqrt(sum(bsxfun(@minus, rd, lb).^2,2));
-			rb_dist=sqrt(sum(bsxfun(@minus, rd, rb).^2,2));
-
-			[~,lbix]=min(lb_dist);
-			[~,rbix]=min(rb_dist);
-
 			switch refit_streams
 			case false
 
-				rcC=rc(rbix:lbix);
-				reC=re(rbix:lbix);
+				while strcmpi(str1,'N')
+					disp('    Select bounds of stream segment you want to project')
+					[d,e]=ginput(2);
+					d=d*1000;
+
+					% Sort knickpoint list and construct bounds list
+					ds=sortrows(d);
+
+					rd=C.distance;
+					rx=C.x;
+					ry=C.y;
+					rc=C.chi;
+					re=C.elev;
+
+					lb=ds(1);
+					rb=ds(2);
+
+					lb_dist=sqrt(sum(bsxfun(@minus, rd, lb).^2,2));
+					rb_dist=sqrt(sum(bsxfun(@minus, rd, rb).^2,2));
+
+					[~,lbix]=min(lb_dist);
+					[~,rbix]=min(rb_dist);
+
+					rcC=rc(rbix:lbix);
+					reC=re(rbix:lbix);
+					rdC=rd(rbix:lbix);
+
+					hold on
+					p1=scatter(ax1,rdC/1000,reC,20,'r','filled');
+					hold off
+
+					prompt='Is this the stream segment you wanted? Y/N [Y]: ';
+					str1=input(prompt,'s');
+
+					delete(p1);
+				end
 
 				f=fit(rcC,reC,'poly1');
 				cf=coeffvalues(f);
@@ -769,40 +868,74 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 
 			case true
 
-				lbx=rx(lb_dist==min(lb_dist));
-				lby=ry(lb_dist==min(lb_dist));
+				while strcmpi(str1,'N')
+					disp('    Select bounds of stream segment you want to project')
+					[d,e]=ginput(2);
+					d=d*1000;
 
-				rbx=rx(rb_dist==min(rb_dist));
-				rby=ry(rb_dist==min(rb_dist));	
+					% Sort knickpoint list and construct bounds list
+					ds=sortrows(d);
 
-				lix=coord2ind(DEM,lbx,lby);
-				LIX=GRIDobj(DEM);
-				LIX.Z(lix)=1;
-				[lixmat,X,Y]=GRIDobj2mat(LIX);
-				lixmat=logical(lixmat);
-				LIX=GRIDobj(X,Y,lixmat);	
+					rd=C.distance;
+					rx=C.x;
+					ry=C.y;
+					rc=C.chi;
+					re=C.elev;
 
-				rix=coord2ind(DEM,rbx,rby);
-				RIX=GRIDobj(DEM);
-				RIX.Z(rix)=1;
-				[rixmat,X,Y]=GRIDobj2mat(RIX);
-				rixmat=logical(rixmat);
-				RIX=GRIDobj(X,Y,rixmat);	
+					lb=ds(1);
+					rb=ds(2);
 
-				Seg=modify(S,'downstreamto',RIX);
-				Seg=modify(Seg,'upstreamto',LIX);
+					lb_dist=sqrt(sum(bsxfun(@minus, rd, lb).^2,2));
+					rb_dist=sqrt(sum(bsxfun(@minus, rd, rb).^2,2));
 
-				Csegrf=ChiCalc(Seg,DEMc,A,1);
+					[~,lbix]=min(lb_dist);
+					[~,rbix]=min(rb_dist);
 
-				CN=ChiCalc(S,DEMc,A,1,Csegrf.mn);
+					lbx=rx(lb_dist==min(lb_dist));
+					lby=ry(lb_dist==min(lb_dist));
 
-				rc=CN.chi;
-				rx=CN.x;
-				ry=CN.y;
-				re=CN.elev;
+					rbx=rx(rb_dist==min(rb_dist));
+					rby=ry(rb_dist==min(rb_dist));	
 
-				rcC=rc(rbix:lbix);
-				reC=re(rbix:lbix);
+					lix=coord2ind(DEM,lbx,lby);
+					LIX=GRIDobj(DEM);
+					LIX.Z(lix)=1;
+					[lixmat,X,Y]=GRIDobj2mat(LIX);
+					lixmat=logical(lixmat);
+					LIX=GRIDobj(X,Y,lixmat);	
+
+					rix=coord2ind(DEM,rbx,rby);
+					RIX=GRIDobj(DEM);
+					RIX.Z(rix)=1;
+					[rixmat,X,Y]=GRIDobj2mat(RIX);
+					rixmat=logical(rixmat);
+					RIX=GRIDobj(X,Y,rixmat);	
+
+					Seg=modify(S,'downstreamto',RIX);
+					Seg=modify(Seg,'upstreamto',LIX);
+
+					Csegrf=ChiCalc(Seg,DEMc,A,1);
+
+					CN=ChiCalc(S,DEMc,A,1,Csegrf.mn);
+
+					rc=CN.chi;
+					rx=CN.x;
+					ry=CN.y;
+					re=CN.elev;
+
+					rcC=rc(rbix:lbix);
+					reC=re(rbix:lbix);
+					rdC=rd(rbix:lbix);
+
+					hold on
+					p1=scatter(ax1,rdC/1000,reC,20,'r','filled');
+					hold off
+
+					prompt='Is this the stream segment you wanted? Y/N [Y]: ';
+					str1=input(prompt,'s');
+
+					delete(p1);
+				end
 
 				% Autocalculate ksn for comparison purposes
 				[auto_ksn]=KSN_Quick(DEM,A,S,Csegrf.mn);
@@ -897,8 +1030,11 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 				close(f1);
 				close(f2);
 			end
+			str1='N';
 		end
 	end
+
+	save('ProjectedSegments.mat',OUT);
 end
 
 function [OUT]=ChiCalc(S,DEM,A,a0,varargin)

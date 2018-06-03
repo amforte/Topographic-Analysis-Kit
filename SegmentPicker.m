@@ -183,8 +183,8 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 			close all
 			f1=figure(1);
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
-			while strcmp(str2,'Y') | strcmp(str2,'Y') | strcmp(str2,'y')        
-				while strcmp(str1,'N') | strcmp(str2,'n');     	
+			while strcmpi(str2,'Y')         
+				while strcmpi(str1,'N')    	
 					
 					% Reset short circuit switch
 					short_circ=0;
@@ -407,7 +407,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 					str2 = 'N';
 				end
 
-				if strcmp(str2,'Y') | strcmp(str2,'y')   
+				if strcmpi(str2,'Y')   
 					str1='N';
 				end
 			end
@@ -425,8 +425,8 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 			close all
 			f1=figure(1);
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
-			while strcmp(str2,'Y') | strcmp(str2,'Y') | strcmp(str2,'y')        
-				while strcmp(str1,'N') | strcmp(str2,'n');     	
+			while strcmpi(str2,'Y')       
+				while strcmpi(str1,'N')   	
 
 
 					switch plot_type
@@ -519,7 +519,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 					str2 = 'N';
 				end
 
-				if strcmp(str2,'Y') | strcmp(str2,'y')   
+				if strcmpi(str2,'Y')  
 					str1='N';
 				end
 			end
@@ -534,8 +534,8 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 			ii=1;
 			close all
-			while strcmp(str2,'Y') | strcmp(str2,'Y') | strcmp(str2,'y')        
-				while strcmp(str1,'N') | strcmp(str2,'n');     	
+			while strcmpi(str2,'Y')     
+				while strcmpi(str1,'N')    	
 					
 					% Reset short circuit switch
 					short_circ=0;
@@ -755,7 +755,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 					str2 = 'N';
 				end
 
-				if strcmp(str2,'Y') | strcmp(str2,'y')   
+				if strcmpi(str2,'Y')  
 					str1='N';
 					close figure 2
 				end
@@ -772,8 +772,8 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 			ii=1;
 			close all
-			while strcmp(str2,'Y') | strcmp(str2,'Y') | strcmp(str2,'y')        
-				while strcmp(str1,'N') | strcmp(str2,'n');     	
+			while strcmpi(str2,'Y')        
+				while strcmpi(str1,'N')   	
 					
 					f1=figure(1);
 					set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
@@ -861,7 +861,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 					str2 = 'N';
 				end
 
-				if strcmp(str2,'Y') | strcmp(str2,'y')   
+				if strcmpi(str2,'Y') 
 					str1='N';
 					close figure 2
 				end
