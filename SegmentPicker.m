@@ -27,9 +27,11 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	%	plot_style ['refresh'] - expects either 'refresh' or 'keep', default is 'refresh' if no input is provided. If 'refresh' is given, the plots reset
 	%			after each new stream pick, but if 'keep' is given, all selected streams remain on both the map (as thick red lines) and the
 	%			chi-z/longitudinal profile/slope-area plots.
-	%	plot_type ['native'] - expects either 'native' or 'downsample', default is 'native'. Controls whether all streams are drawn as individual lines ('native') or if
-	%		   the stream network is plotted as a grid and downsampled ('downsample'). The 'downsample' option is much faster with large datasets, 
-	%			but can result in inaccurate choices. The 'native' option is easier to see, but can be very slow to load and interact with.
+	%	plot_type ['vector'] - expects either 'vector' or 'grid', default is 'vector'. Controls whether all streams are drawn as individual lines ('vector') or if
+	%		   the stream network is plotted as a grid and downsampled ('grid'). The 'grid' option is much faster with large datasets, 
+	%			but can result in inaccurate choices. The 'vector' option is easier to see, but can be very slow to load and interact with.
+	%	complete_networks_only [false] - if true, the code will filter out portions of the stream network that are incomplete prior to choosing
+	%			streams
 	%	picks - expects a m x 3 matrix with columns as an identifying number, x coordinates, and y coordinates OR the name of a point shapefile with a single value column of 
 	%			identifying numbers. Will interpret this input as a list of channel heads if 'direction' is 'down' and a list of channel outlets if 'direction' is 'up'.
 	%	ref_concavity [0.50] - reference concavity for calculating Chi-Z, default is 0.50
@@ -43,7 +45,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	%			 of the stream if it continued to the edge of the DEM, not where it stops extracting the stream profile). If recalc is true, 
 	%	     	 then chi and distance are recalculated (i.e. the outlet as determined by the min_elev or max_area condition
 	%			 will have a chi value of zero and a distance from mouth value of zero).
-	%	threshold_area [1e6] - used to redraw downsampled stream network if 'plot_type' is set to 'downsample'
+	%	threshold_area [1e6] - used to redraw downsampled stream network if 'plot_type' is set to 'grid'
 	%	interp_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a conditioned DEM)
 
 	%
@@ -78,8 +80,9 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 	addParamValue(p,'direction','down',@(x) ischar(validatestring(x,{'down','up'})));
 	addParamValue(p,'method','new_picks',@(x) ischar(validatestring(x,{'new_picks','prev_picks'})));
-	addParamValue(p,'plot_type','native',@(x) ischar(validatestring(x,{'native','downsample'})));	
+	addParamValue(p,'plot_type','vector',@(x) ischar(validatestring(x,{'vector','grid'})));	
 	addParamValue(p,'plot_style','refresh',@(x) ischar(validatestring(x,{'refresh','keep'})));
+	addParamValue(p,'complete_networks_only',false,@(x) isscalar(x) && islogical(x));
 	addParamValue(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'min_elev',[],@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'max_area',[],@(x) isscalar(x) && isnumeric(x));
@@ -95,6 +98,8 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	S=p.Results.S;
 	A=p.Results.A;
 	basin_num=p.Results.basin_num;
+
+	cno=p.Results.complete_networks_only;
 	direction=p.Results.direction;
 	method=p.Results.method;
 	theta_ref=p.Results.ref_concavity;
@@ -142,6 +147,11 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
         end
     end
 
+    % Remove edges if flag is thrown
+    if cno
+    	S=removeedgeeffects(S,FD,DEM);
+    end
+
 
 	% Hydrologically condition dem
 	if isempty(DEMc)
@@ -152,7 +162,7 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	end
 
 	switch plot_type
-	case 'downsample'
+	case 'grid'
 		DA=A.*(A.cellsize^2);
 		DA.Z(DA.Z<threshold_area)=0;
 		LA=log10(DA);
@@ -180,13 +190,13 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 					short_circ=0;
 
 					switch plot_type
-					case 'downsample'
+					case 'grid'
 						if ii==1
 							hold on
 							imageschs(DEM,LA,'colormap','parula','colorbar',false);
 							hold off
 						end
-					case 'native'
+					case 'vector'
 						if ii==1
 							hold on
 							imageschs(DEM,DEM,'colormap','parula','colorbar',false);
@@ -420,13 +430,13 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 
 					switch plot_type
-					case 'downsample'
+					case 'grid'
 						if ii==1
 							hold on
 							imageschs(DEM,LA,'colormap','parula','colorbar',false);
 							hold off
 						end
-					case 'native'
+					case 'vector'
 						if ii==1
 							hold on
 							imageschs(DEM,DEM,'colormap','parula','colorbar',false);
@@ -534,11 +544,11 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 					set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
 
 					switch plot_type
-					case 'downsample'
+					case 'grid'
 						hold on
 						imageschs(DEM,LA,'colormap','parula','colorbar',false);
 						hold off
-					case 'native'
+					case 'vector'
 						hold on
 						imageschs(DEM,DEM,'colormap','parula','colorbar',false);
 						plot(S,'-w');
@@ -769,11 +779,11 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 					set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
 
 					switch plot_type
-					case 'downsample'
+					case 'grid'
 						hold on
 						imageschs(DEM,LA,'colormap','parula','colorbar',false);
 						hold off
-					case 'native'
+					case 'vector'
 						hold on
 						imageschs(DEM,DEM,'colormap','parula','colorbar',false);
 						plot(S,'-w');
