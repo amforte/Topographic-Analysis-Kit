@@ -26,13 +26,13 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	%	ksn_method [quick] - switch between method to calculate ksn values, options are 'quick' and 'trib', the 'trib' method takes 3-4 times longer 
 	%		than the 'quick' method. In most cases, the 'quick' method works well, but if values near tributary junctions are important, then 'trib'
 	%		may be better as this calculates ksn values for individual channel segments individually
-	%	output_level_method [] - parameter to control how stream network base level is adjusted. Options for control of output elevation are:
+	%	outlet_level_method [] - parameter to control how stream network outlet level is adjusted. Options for control of outlet elevation are:
 	%			'elevation' - extract streams only above a given elevation (provided by the user using the 'min_elevation' parameter) to ensure that base level
 	%				elevation for all streams is uniform. If the provided elevation is too low (i.e. some outlets of the unaltered stream network are above this
 	%				elevation) then a warning will be displayed, but the code will still run.
 	%			'max_out_elevation' - uses the maximum elevation of all stream outlets to extract streams only above this elevation, only valid for options that operate
 	%				on streamlines only (i.e. will not work with 'ksngrid' or 'chigrid').
-	%	min_elevation [] - parameter to set minimum elevation for base level, required if 'base_level_method' is set to 'elevation'
+	%	min_elevation [] - parameter to set minimum elevation for outlet level, required if 'outlet_level_method' is set to 'elevation'
 	%	complete_networks_only [true] - if true (default) the code will only populate portions of the stream network that are complete. Generally, this
 	%			option should probably be left as true (i.e. chi will not be accurate if drainage area is not accurate), but this can be overly agressive
 	%			on certain DEMs and when used in tandem with 'min_elevation', it can be slow to calculate as it requires recalculation of the FLOWobj.
@@ -63,7 +63,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	addParamValue(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'output',false,@(x) isscalar(x) && islogical(x));
 	addParamValue(p,'ksn_method','quick',@(x) ischar(validatestring(x,{'quick','trib'})));
-	addParamValue(p,'output_level_method',[],@(x) ischar(validatestring(x,{'elevation','max_out_elevation'})));
+	addParamValue(p,'outlet_level_method',[],@(x) ischar(validatestring(x,{'elevation','max_out_elevation'})));
 	addParamValue(p,'min_elevation',[],@(x) isnumeric(x));
 	addParamValue(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
 	addParamValue(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
@@ -81,7 +81,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	theta_ref=p.Results.ref_concavity;
 	output=p.Results.output;
 	ksn_method=p.Results.ksn_method;
-	blm=p.Results.output_level_method;
+	blm=p.Results.outlet_level_method;
 	me=p.Results.min_elevation;
 	iv=p.Results.interp_value;
 	DEMc=p.Results.conditioned_DEM;
