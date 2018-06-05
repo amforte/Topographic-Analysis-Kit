@@ -592,7 +592,10 @@ if plot_map
 	imageschs(DEM,DEM,'colormap','gray');
 	plot(SW,'legend',false);
 	scatter(x_coord(idx),y_coord(idx),20,'r','filled');
-	scatter(x_coord(~idx),y_coord(~idx),20,'w','filled');
+	% To avoid situations with extremely large number of points
+	if ~any([strcmp(data_type,'STREAMobj') strcmp(data_type,'ksn_profiler') strcmp(data_type,'ksn_batch')])
+		scatter(x_coord(~idx),y_coord(~idx),20,'w','filled');
+	end
 	hold off
 end
 

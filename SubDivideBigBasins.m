@@ -113,7 +113,7 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 
 		% Check drainage area to determine if this basin will be processed
 		if DA>=max_basin_size
-
+			
 			% Load in required basin files and rename
 			load(FileName,'RiverMouth','DEMoc','DEMcc','FDc','Ac','Sc','ksn_method','gradient_method');
 			DEM=DEMoc;
@@ -123,6 +123,8 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 			A=Ac;
 			RM=RiverMouth;	
 			basin_num=RM(:,3);
+
+			waitbar(ii/num_files,w1,['Subdividing basin number ' num2str(basin_num) ' - Determining number of subdivisions']);
 
 			DAG=(A.*(A.cellsize^2))/1e6;
 
@@ -245,7 +247,8 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 				num_new_basins=numel(x);
 
 				if recursive
-					while any(DAG.Z(cons_ix)>=max_basin_size);
+					rec_count=1;
+					while any(DAG.Z(cons_ix)>=max_basin_size) & rec_count<=10;
 						nidx=DAG.Z(cons_ix)>=max_basin_size;
 						if any(nidx)
 							x(nidx)=[];
@@ -258,19 +261,23 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 								S_sub=removeshortstreams(S_sub,DEM.cellsize*10);
 								ST_sub=trunk(S_sub);
 								tix=streampoi(S_sub,'bconfluences','ix');
-								tix=ismember(ST.IXgrid,tix);
-								ds=ST.distance;
+								tix=ismember(ST_sub.IXgrid,tix);
+								ds=ST_sub.distance;
 								ds(~tix)=NaN;
 								[~,tix]=max(ds);
 								SupT_sub=modify(S_sub,'tributaryto',ST_sub);
 								cons=streampoi(SupT_sub,'outlets','xy');
 								cons_ix=streampoi(SupT_sub,'outlets','ix');
-								cons_ix=vertcat(cons_ix,ST.IXgrid(tix));
-								xx=cons(:,1); xx=vertcat(xx,ST.x(tix));
-								yy=cons(:,2); yy=vertcat(yy,ST.y(tix));
+								cons_ix=vertcat(cons_ix,ST_sub.IXgrid(tix));
+								xx=cons(:,1); xx=vertcat(xx,ST_sub.x(tix));
+								yy=cons(:,2); yy=vertcat(yy,ST_sub.y(tix));
 								x=vertcat(x,xx);
 								y=vertcat(y,yy);
 							end
+						end
+						rec_count=rec_count+1;
+						if rec_count>10
+							warning(['Subdivision of basin number ' num2str(basin_num) ' ended prematurely to avoid an infinite loop']);
 						end
 					end
 					num_new_basins=numel(x);
@@ -298,7 +305,8 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 				num_new_basins=numel(x);
 
 				if recursive
-					while any(DAG.Z(cons_ix)>=max_basin_size);
+					rec_count=1;
+					while any(DAG.Z(cons_ix)>=max_basin_size) & rec_count<=10;
 						nidx=DAG.Z(cons_ix)>=max_basin_size;
 						if any(nidx)
 							x(nidx)=[];
@@ -311,20 +319,26 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 								S_sub=removeshortstreams(S_sub,DEM.cellsize*10);
 								ST_sub=trunk(S_sub);
 								tix=streampoi(S_sub,'bconfluences','ix');
-								tix=ismember(ST.IXgrid,tix);
-								ds=ST.distance;
+								tix=ismember(ST_sub.IXgrid,tix);
+								ds=ST_sub.distance;
 								ds(~tix)=NaN;
 								[~,tix]=max(ds);
 								SupT_sub=modify(S_sub,'tributaryto',ST_sub);
 								cons=streampoi(SupT_sub,'outlets','xy');
 								cons_ix=streampoi(SupT_sub,'outlets','ix');
-								cons_ix=vertcat(cons_ix,ST.IXgrid(tix));
-								xx=cons(:,1); xx=vertcat(xx,ST.x(tix));
-								yy=cons(:,2); yy=vertcat(yy,ST.y(tix));
-								x=vertcat(x,xx);
-								y=vertcat(y,yy);
+								cons_ix=vertcat(cons_ix,ST_sub.IXgrid(tix));
+								xx=cons(:,1); xx=vertcat(xx,ST_sub.x(tix));
+								yy=cons(:,2); yy=vertcat(yy,ST_sub.y(tix));
+								da_cons=DAG.Z(cons_ix);
+								da_idx=da_cons>=min_basin_size;
+								x=vertcat(x,xx(da_idx));
+								y=vertcat(y,yy(da_idx));
 							end
 						end
+						rec_count=rec_count+1;
+						if rec_count>10
+							warning(['Subdivision of basin number ' num2str(basin_num) ' ended prematurely to avoid an infinite loop']);
+						end						
 					end
 					num_new_basins=numel(x);
 				end
@@ -352,7 +366,8 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 				num_new_basins=numel(x);
 
 				if recursive
-					while any(DAG.Z(cons_ix)>=max_basin_size);
+					rec_count=1;
+					while any(DAG.Z(cons_ix)>=max_basin_size) & rec_count<=10;
 						nidx=DAG.Z(cons_ix)>=max_basin_size;
 						if any(nidx)
 							x(nidx)=[];
@@ -365,19 +380,25 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 								S_sub=removeshortstreams(S_sub,DEM.cellsize*10);
 								ST_sub=trunk(S_sub);
 								tix=streampoi(S_sub,'bconfluences','ix');
-								tix=ismember(ST.IXgrid,tix);
-								ds=ST.distance;
+								tix=ismember(ST_sub.IXgrid,tix);
+								ds=ST_sub.distance;
 								ds(~tix)=NaN;
 								[~,tix]=max(ds);
 								SupT_sub=modify(S_sub,'tributaryto',ST_sub);
 								cons=streampoi(SupT_sub,'outlets','xy');
 								cons_ix=streampoi(SupT_sub,'outlets','ix');
-								cons_ix=vertcat(cons_ix,ST.IXgrid(tix));
-								xx=cons(:,1); xx=vertcat(xx,ST.x(tix));
-								yy=cons(:,2); yy=vertcat(yy,ST.y(tix));
-								x=vertcat(x,xx);
-								y=vertcat(y,yy);
+								cons_ix=vertcat(cons_ix,ST_sub.IXgrid(tix));
+								xx=cons(:,1); xx=vertcat(xx,ST_sub.x(tix));
+								yy=cons(:,2); yy=vertcat(yy,ST_sub.y(tix));
+								da_cons=DAG.Z(cons_ix);
+								da_idx=da_cons>=mbz;
+								x=vertcat(x,xx(da_idx));
+								y=vertcat(y,yy(da_idx));
 							end
+						end
+						rec_count=rec_count+1;
+						if rec_count>10
+							warning(['Subdivision of basin number ' num2str(basin_num) ' ended prematurely to avoid an infinite loop']);
 						end
 					end
 					num_new_basins=numel(x);
@@ -385,8 +406,19 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 
 			end
 
+			% Nested Waitbar
+			w2=waitbar(0,['Processing ' num2str(num_new_basins) ' new basins']);
+			pos_w1=get(w1,'position');
+			pos_w2=[pos_w1(1) pos_w1(2)-pos_w1(4) pos_w1(3) pos_w1(4)];
+			set(w2,'position',pos_w2,'doublebuffer','on');
+
+			waitbar(ii/num_files,w1,['Subdividing basin number ' num2str(basin_num)]);
+
 			for jj=1:num_new_basins
-				waitbar(ii/num_files,w1,['Subdividing basin number ' num2str(basin_num) ' - Processing ' num2str(jj) ' of ' num2str(num_new_basins) ' new basins']);
+				% waitbar(ii/num_files,w1,['Subdividing basin number ' num2str(basin_num) ' - Processing ' num2str(jj) ' of ' num2str(num_new_basins) ' new basins']);
+				
+				waitbar(jj/num_new_basins,w2,['Processing ' num2str(jj) ' of ' num2str(num_new_basins) ' new basins']);
+
 				xx=x(jj);
 				yy=y(jj);
 				basin_string=sprintf([num2str(basin_num) '%03d'],jj);
@@ -602,6 +634,7 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 					end
 				end
 			end % New basin loop end
+			close(w2);
 		end % Drainage Area check end
 	end % Main Loop end
 	close(w1);

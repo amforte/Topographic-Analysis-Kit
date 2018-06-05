@@ -1,16 +1,17 @@
-function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
-    % Function takes results of makes streams and allows for interactive picking of basins for detrital
-    % analyses (e.g. Be-10 cosmo). Displays two panel figure with topography colored by elevation and local relief
-    % on which to pick individual basins. After the figure displays, it will wait until you press enter to begin the sample
-    % picking process. This is to allow you to zoom, pan, etc to find a stream you are interested in. When you click enter, 
-    % cross hairs will appear in the elevation map so you can select a pour point. Once you select a pour point, a new figure 
-    % will display this basin and stream to confirm that's the watershed you wanted (it will also display the drainage area). If 
-    % You can either accept this basin or reject it if it was misclick. If you accept it will then display a new figure with the
-    % chi-z and longitudinal profiles for that basin. It will then give you a choice to either save the choice or discard it.
-    % Finally it will ask if you want to keep picking streams, if you choose yes (the default) it will start the process over.
-    % Note that any selected (and saved) pour point will be displayed as a white circle on the main figure. As you pick basins
-    % the funciton saves a file called 'Outlets.mat' that contains the outlets you've picked so far. If you exit out of the function
-    % and restart it later, it looks for this Oulets file so you can pick up where you left off.
+function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
+    % Function takes results of makes streams and allows for interactive picking of basins (watersheds). Function was
+    %   designed intially for choosing basins suitable for detrital analyses (e.g. Be-10 cosmo). Displays two panel figure 
+    %   with topography colored by elevation and local relief on which to pick individual basins. After the figure displays,
+    %   it will wait until you press enter to begin the watershed picking process. This is to allow you to zoom, pan, etc to 
+    %   find a stream you are interested in. When you click enter, cross hairs will appear in the elevation map so you can 
+    %   select a pour point. Once you select a pour point, a new figure will display this basin and stream to confirm that's 
+    %   the watershed you wanted (it will also display the drainage area). You can either accept this basin or reject it if 
+    %   it was misclick. If you accept it will then display a new figure with the chi-z and longitudinal profiles for that basin. 
+    %   It will then give you a choice to either save the choice or discard it. Finally it will ask if you want to keep picking 
+    %   streams, if you choose yes (the default) it will start the process over. Note that any selected (and saved) pour point 
+    %   will be displayed as a white circle on the main figure. As you pick basins the funciton saves a file called 'Outlets.mat'
+    %   that contains the outlets you've picked so far. If you exit out of the function and restart it later, it looks for this 
+    %   Outlets file in the current working directory so you can pick up where you left off.
     %
     %
     % Required Inputs:
@@ -26,7 +27,9 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
     %           coordinates and dimensions as the provided DEM.
     %       extra_grid [] - sometimes it can be useful to also view an additional grid (e.g. georeferenced road map, precipitation grid, etc) along with the DEM and relief.
     %           This grid can be a different size or have a different cellsize than the underlying dem (but still must be the same projection and coordinates system!), it will be
-    %           resampled to match the provided DEM.  
+    %           resampled to match the provided DEM. 
+    %       cmap ['jet'] - colormap to use for the displayed maps. Input can be the name of a standard colormap or a nx3 array of rgb values
+    %           to use as a colormap.  
     %       conditioned_DEM [] - option to provide a hydrologically conditioned DEM for use in this function (do not provide a conditoned DEM
     %           for the main required DEM input!) which will be used for extracting elevations. See 'ConditionDEM' function for options for making a 
     %           hydrological conditioned DEM. If no input is provided the code defaults to using the mincosthydrocon function.
@@ -60,6 +63,7 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
     addParamValue(p,'ref_concavity',0.5,@(x) isscalar(x) && isnumeric(x));
     addParamValue(p,'rlf_radius',2500,@(x) isscalar(x) && isnumeric(x));
     addParamValue(p,'plot_type','vector',@(x) ischar(validatestring(x,{'vector','grid'})));
+    addParamValue(p,'cmap','jet',@(x) ischar(x) || isnumeric(x) & size(x,2)==3);
     addParamValue(p,'threshold_area',1e6,@(x) isnumeric(x));   
     addParamValue(p,'rlf_grid',[],@(x) isa(x,'GRIDobj'));
     addParamValue(p,'extra_grid',[],@(x) isa(x,'GRIDobj'));
@@ -76,6 +80,7 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
     rlf_radius=p.Results.rlf_radius;
     plot_type=p.Results.plot_type;
     threshold_area=p.Results.threshold_area;
+    cmap=p.Results.cmap;
     RLF=p.Results.rlf_grid;
     EG=p.Results.extra_grid;
     DEMf=p.Results.conditioned_DEM;
@@ -116,7 +121,7 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
 
             ax(2)=subplot(2,1,2);
             hold on
-            imageschs(DEM,RLF);
+            imageschs(DEM,RLF,'colormap',cmap);
             plot(S,'-k','LineWidth',1.5);
             scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
             title('Local Relief')
@@ -124,7 +129,7 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
                 
             ax(1)=subplot(2,1,1);
             hold on
-            imageschs(DEM,DEM);
+            imageschs(DEM,DEM,'colormap',cmap);
             plot(S,'-k','LineWidth',1.5);
             scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
             title('Elevation')
@@ -145,7 +150,7 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
             
             ax(3)=subplot(3,1,3);
             hold on
-            imageschs(DEM,EG)
+            imageschs(DEM,EG,'colormap',cmap)
             plot(S,'-k','LineWidth',1.5);
             scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
             title('User Provided Extra Grid')
@@ -153,7 +158,7 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
 
             ax(2)=subplot(3,1,2);
             hold on
-            imageschs(DEM,RLF);
+            imageschs(DEM,RLF,'colormap',cmap);
             plot(S,'-k','LineWidth',1.5);
             scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
             title('Local Relief')
@@ -161,7 +166,7 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
                 
             ax(1)=subplot(3,1,1);
             hold on
-            imageschs(DEM,DEM);
+            imageschs(DEM,DEM,'colormap',cmap);
             plot(S,'-k','LineWidth',1.5);
             scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
             title('Elevation')
@@ -204,7 +209,7 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
             
             ax(2)=subplot(2,1,2);
             hold on
-            imageschs(DEMr,RLFr);
+            imageschs(DEMr,RLFr,'colormap',cmap);
             plot(Sr,'-k','LineWidth',1.5);
             scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
             title('Local Relief')
@@ -212,7 +217,7 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
                 
             ax(1)=subplot(2,1,1);
             hold on
-            imageschs(DEMr,DEMr);
+            imageschs(DEMr,DEMr,'colormap',cmap);
             plot(Sr,'-k','LineWidth',1.5);
             scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
             title('Elevation')
@@ -230,7 +235,7 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
             
             ax(3)=subplot(3,1,3);
             hold on
-            imageschs(DEMr,EGr)
+            imageschs(DEMr,EGr,'colormap',cmap)
             plot(S,'-k','LineWidth',1.5);
             scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
             title('User Provided Extra Grid')
@@ -238,7 +243,7 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
 
             ax(2)=subplot(3,1,2);
             hold on
-            imageschs(DEMr,RLFr);
+            imageschs(DEMr,RLFr,'colormap',cmap);
             plot(Sr,'-k','LineWidth',1.5);
             scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
             title('Local Relief')
@@ -246,7 +251,7 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
                 
             ax(1)=subplot(3,1,1);
             hold on
-            imageschs(DEMr,DEMr);
+            imageschs(DEMr,DEMr,'colormap',cmap);
             plot(Sr,'-k','LineWidth',1.5);
             scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
             title('Elevation')
@@ -294,6 +299,7 @@ function [Outlets]=DetritalSamplePicker(DEM,FD,A,S,varargin)
             set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.45])
             hold on
             title(['Drainage Area = ' num2str(round(drainage_area)) 'km^2']);
+            colormap(cmap);
             imagesc(DEMc)
             plot(Sn,'-r','LineWidth',2);
             scatter(xn,yn,20,'w','filled');
