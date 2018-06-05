@@ -53,10 +53,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%			not draw them at all (false - default) or include them (true). This will automatically be set to true if you select 'slope_area'
 	%			as the 'pick_method'.
 	%	min_channel_length [] - minimum channel length for consideration when using the 'all_streams' method of input, provide in map units.
-	%	channel_head_list [] - m x 2 array of x and y coordinates of channel heads, required when using 'channel_heads' method of input, 
-	%			must be in the same coordinate system as the input DEM etc. The code will attempt to find the nearest channel head to the 
-	%			coordinates you provided, so the closer the provided user coordinates are to channel heads, the more accurate this selection
-	%			method will be.
+	%	channel_head_list [] - m x 2 array of x and y coordinates of channel heads OR the name / location of a point shapefile of channel heads, 
+	%			one of these is required when using 'channel_heads' method of input, must be in the same coordinate system as the input DEM etc. 
+	%			The code will attempt to find the nearest channel head to the coordinates you provided, so the closer the provided user coordinates
+	%			are to channel heads, the more accurate this selection method will be.
 	%	min_length_to_extract [] - minimum stream length (in map units) to extract streams if 'input_method' is set to 'stream_length'.
 	%	min_elev [] - minimum elevation below which the code stops extracting channel information
 	%	max_area [] - maximum drainage area above which the code stops extracting channel information (in square map units)
@@ -87,6 +87,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	% Examples:
 	%	[knl,ksn_master,bnd_list,Sc]=KSN_Profiler(DEM,FD,A,S);
 	%	[knl,ksn_master,bnd_list,Sc]=KSN_Profiler(DEM,FD,A,S,'junction_method','ignore','ref_concavity',0.65,'max_ksn',500);
+	%	[knl,ksn_master,bnd_list,Sc]=KSN_Profiler(DEM,FD,A,S,'input_method','channel_heads','channel_head_list',channel_head_array);
+	%	[knl,ksn_master,bnd_list,Sc]=KSN_Profiler(DEM,FD,A,S,'input_method','channel_heads','channel_head_list','channel_heads.shp');
 	%
 	% Note:
 	%	-If no boundaries/knickpoints are selected for any of the streams selected, then a '_knicks.shp' shapefile will not be produced.
@@ -117,7 +119,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	addParamValue(p,'plot_type','vector',@(x) ischar(validatestring(x,{'vector','grid'})));
 	addParamValue(p,'threshold_area',1e6,@(x) isnumeric(x));
 	addParamValue(p,'input_method','interactive',@(x) ischar(validatestring(x,{'interactive','channel_heads','all_streams','stream_length'})));
-	addParamValue(p,'channel_head_list',[],@(x) isnumeric(x) && size(x,2)==2);
+	addParamValue(p,'channel_head_list',[],@(x) isnumeric(x) && size(x,2)==2 || regexp(x,regexptranslate('wildcard','*.shp')));
 	addParamValue(p,'min_length_to_extract',[],@(x) isnumeric(x) && isscalar(x));
 	addParamValue(p,'min_channel_length',[],@(x) isnumeric(x) && isscalar(x));
 	addParamValue(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
@@ -168,6 +170,18 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	if strcmp(input_method,'channel_heads')
 		if isempty(chl)
 			error('Selection method is "channel_heads", must provide an input for the "channel_head_list" parameter');
+		end
+
+		% Load in shapefile if provided
+		if logical(regexp(chl,regexptranslate('wildcard','*.shp')))
+			ch_ms=shaperead(river_mouths);
+			ch_t=struct2table(ch_ms);
+			if ~strcmp(ch_t.Geometry(1),'Point')
+				error('Shapefile provided as "channel_heads" does not appear to be a point shapefile');
+			end
+			xi=ch_t.X;
+			yi=ch_t.Y;
+			chl=[xi yi];
 		end
 
 		% Snap to nearest channel heads
