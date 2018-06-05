@@ -44,6 +44,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%		'auto' - function finds a best fit concavity for each selected stream, if used in conjunction with 'junction_method','check'
 	%			this means that short sections of streams picked will auto fit concavity that may differ from downstream portions of the same
 	%			streams
+	%	redefine_threshold [false] - logical flag to initiate an extra step for each stream where you manually define the hillslope-fluvial 
+	%			transition (this will result in overriding the threshold area you used to generate the supplied STREAMobj, and it will also produce
+	%			a STREAMobj with a variable threshold area for channel definition). See additional optional input 'rd_pick_method'.
+	%	rd_pick_method ['slope_area'] - plot to use to choose new threshold area if 'redefine_threshold' is set to true. Valid inputs are 
+	%			'slopearea' and 'chi'.
 	%	complete_networks_only [false] - if true, the code will filter out portions of the stream network that are incomplete prior to choosing
 	%			streams
 	%	ref_concavity [0.50] - refrence concavity used if 'theta_method' is set to 'ref'
@@ -65,7 +70,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%			large datasets, but can result in inaccurate channel head selection. The 'vector' option is easier to see, but can be very 
 	%			slow to load and interact with on large datasets.	
 	%	max_ksn [250] - maximum  ksn used for the color scale, will not effect actual results, for display purposes only
-	%	threshold_area [1e6] - used to redraw downsampled stream network if 'plot_type' is set to 'downsample' 
+	%	threshold_area [1e6] - used to redraw downsampled stream network if 'plot_type' is set to 'grid' 
 	%	shape_name ['ksn'] - name for the shapefile to be export, must have no spaces to be a valid name for ArcGIS and should NOT include the '.shp'
 	%	conditioned_DEM [] - option to provide a hydrologically conditioned DEM for use in this function (do not provide a conditoned DEM
 	%			for the main required DEM input!) which will be used for extracting elevations. See 'ConditionDEM' function for options 
@@ -112,6 +117,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	addParamValue(p,'pick_method','chi',@(x) ischar(validatestring(x,{'chi','stream','slope_area'})));
 	addParamValue(p,'junction_method','check',@(x) ischar(validatestring(x,{'check','ignore'})));	
 	addParamValue(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'redefine_threshold',false,@(x) isscalar(x) && islogical(x));
+	addParamValue(p,'rd_pick_method','slope_area',@(x) ischar(validatestring(x,{'chi','slope_area'})));
 	addParamValue(p,'display_slope_area',false,@(x) isscalar(x) && islogical(x));
 	addParamValue(p,'max_ksn',250,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'min_elev',[],@(x) isscalar(x) && isnumeric(x));
@@ -151,6 +158,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	min_elev=p.Results.min_elev;
 	max_area=p.Results.max_area;
 	save_figures=p.Results.save_figures;
+	redefine_thresh=p.Results.redefine_threshold;
+	rd_pick_method=p.Results.rd_pick_method;
 
 	% Max Ksn for color scaling
 	mksn=p.Results.max_ksn;
@@ -366,6 +375,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 				% Extract stream of interest
 				Sn=modify(S,'downstreamto',IX);
+
+				if redefine_thresh
+					[Sn]=RedefineThreshold(DEM,FD,A,Sn,ref_theta,rd_pick_method,smooth_distance);
+				end
 
 				% Build composite stream network of picked streams
 				if strcmp(junction_method,'check')
@@ -1378,6 +1391,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 				% Extract stream of interest
 				Sn=modify(S,'downstreamto',IX);
+
+				if redefine_thresh
+					[Sn]=RedefineThreshold(DEM,FD,A,Sn,ref_theta,rd_pick_method,smooth_distance);
+				end
 
 				% Build composite stream network of picked streams
 				if strcmp(junction_method,'check')
@@ -2578,5 +2595,106 @@ function [bs,ba,bc,bd,bk]=sa_ksn(DEM,S,A,C,ak,bin_size);
 	bd=accumarray(ix,d,[numbins 1],@mean,nan);
 	bc=accumarray(ix,C,[numbins 1],@mean,nan);
 	bk=accumarray(ix,k,[numbins 1],@mean,nan);
+end
+
+function [Sn]=RedefineThreshold(DEM,FD,A,S,ref_theta,pick_method,bin_size)
+
+	% Find channel head and flow distances
+	chix=streampoi(S,'channelheads','ix');
+	FLUS=flowdistance(FD);
+	DA=A.*(DEM.cellsize^2);
+
+
+	UP=dependencemap(FD,chix);
+	FLDSt=DEM.*UP;
+
+	[~,ix]=max(FLDSt);
+
+	IX=influencemap(FD,ix);
+
+	ST=STREAMobj(FD,IX);
+	z=mincosthydrocon(ST,DEM,'interp',0.1);
+
+	C=chiplot(ST,z,A,'a0',1,'mn',ref_theta,'plot',false);
+	[bs,ba,bc,bd]=sa(DEM,ST,A,C.chi,bin_size);
+
+
+	% Filter negatives
+	idx=bs>=0 & ba>=0 & bc>=0 & bd>=0;
+	bs=bs(idx);
+	ba=ba(idx);
+	bc=bc(idx);
+	bd=bd(idx);
+
+	f4=figure(4);
+	set(f4,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
+	clf
+
+	colormap(jet);
+
+	switch pick_method
+	case 'chi'
+
+		ax2=subplot(2,1,2);
+		hold on 
+		scatter(ba,bs,20,bc,'filled','MarkerEdgeColor','k');
+		xlabel('Log Drainage Area');
+		ylabel('Log Gradient');
+		caxis([0 max(C.chi)]);
+		set(ax2,'YScale','log','XScale','log','XDir','reverse');
+		hold off
+
+		ax1=subplot(2,1,1);
+		hold on
+		plot(C.chi,C.elev,'-k');
+		scatter(C.chi,C.elev,10,C.chi,'filled');
+		xlabel('\chi');
+		ylabel('Elevation (m)');
+		title('Choose hillslope to channel transition');
+		caxis([0 max(C.chi)]);
+		ax1.XColor='Red';
+		ax1.YColor='Red';
+		hold off
+
+		% Find user selected threshold area
+		[c,~]=ginput(1);
+		[~,cix]=nanmin(abs(C.chi-c));
+		a=C.area(cix);
+
+	case 'slope_area'
+
+		ax2=subplot(2,1,2);
+		hold on
+		plot(C.chi,C.elev,'-k');
+		scatter(C.chi,C.elev,10,C.chi,'filled');
+		xlabel('\chi');
+		ylabel('Elevation (m)');
+		caxis([0 max(C.chi)]);
+		hold off
+
+		ax1=subplot(2,1,1);
+		hold on 
+		scatter(ba,bs,20,bc,'filled','MarkerEdgeColor','k');
+		xlabel('Log Drainage Area');
+		ylabel('Log Gradient');
+		title('Choose hillslope to channel transition');
+		caxis([0 max(C.chi)]);
+		set(ax1,'YScale','log','XScale','log','XDir','reverse');
+		ax1.XColor='Red';
+		ax1.YColor='Red';
+		hold off
+
+		% Find user selected threshold area
+		[a,~]=ginput(1);
+	end
+
+	close(f4);
+
+	da=getnal(ST,A.*A.cellsize^2);
+	nix=ST.IXgrid(da>=a);
+	IX=GRIDobj(DEM,'logical');
+	IX.Z(nix)=true;
+
+	Sn=STREAMobj(FD,IX);
 end
 
