@@ -174,7 +174,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 		% Load in shapefile if provided
 		if logical(regexp(chl,regexptranslate('wildcard','*.shp')))
-			ch_ms=shaperead(river_mouths);
+			ch_ms=shaperead(chl);
 			ch_t=struct2table(ch_ms);
 			if ~strcmp(ch_t.Geometry(1),'Point')
 				error('Shapefile provided as "channel_heads" does not appear to be a point shapefile');
