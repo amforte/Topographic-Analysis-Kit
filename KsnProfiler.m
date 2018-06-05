@@ -377,6 +377,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				Sn=modify(S,'downstreamto',IX);
 
 				if redefine_thresh
+					warning('Redefine threshold method is REAL broken')
 					[Sn]=RedefineThreshold(DEM,FD,A,Sn,ref_theta,rd_pick_method,smooth_distance);
 				end
 
@@ -1393,6 +1394,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				Sn=modify(S,'downstreamto',IX);
 
 				if redefine_thresh
+					warning('Redefine threshold method is REAL broken')
 					[Sn]=RedefineThreshold(DEM,FD,A,Sn,ref_theta,rd_pick_method,smooth_distance);
 				end
 
