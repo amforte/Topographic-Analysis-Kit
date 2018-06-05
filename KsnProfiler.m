@@ -2317,7 +2317,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	segthetaR.Z(ix)=knl(:,8);
 
 	% Create KSN map structure and export shapefile
-	KSN=STREAMobj2mapstruct(S,'seglength',smooth_distance,'attributes',...
+	KSN=STREAMobj2mapstruct(Sc,'seglength',smooth_distance,'attributes',...
 		{'ksn' ksnR @mean 'ksn_neg' ksnRn @mean 'ksn_pos' ksnRp @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'theta' thetaR @mean 'seg_theta' segthetaR @mean});
 
 	% Create knickpoint map structure and prepare bound output
