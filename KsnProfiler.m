@@ -98,9 +98,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%
 	%%%%%%%%%%	
 	% Outputs:
-	%	knl - n x 8 matrix of node list for selected stream segments, columns are x coordinate, y coordinate, drainage area, ksn,
-	%		reference concavity, best fit concavity, gradient, and an identifying number. Note that if using the code in 'theta_method','auto' mode then the
-	%		reference concavity and best fit concavity columns will be the same.
+	%	knl - n x 11 matrix of node list for selected stream segments, columns are x coordinate, y coordinate, drainage area, ksn, negative ksn error,
+	%		positive ksn error, reference concavity, best fit concavity, mininum threshold area, gradient, and an identifying number. Note that if using the 
+	%		code in 'concavity_method','auto' mode then the reference concavity and best fit concavity columns will be the same.
 	%	ksn_master - identical to knl but as a cell array where individual cells are individual selected channels
 	%	bnd_list - n x 4 matrix of selected bounds for fitting ksn, columns are x coordinate, y coordinate, elevation, and the stream identifying number 
 	%		(this could be thought of as a list of knickpoints), also output as a seperate shapefile. If x y and z values appear as NaN, this indicates
@@ -275,6 +275,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 	% Make gradient
 	G=gradient8(DEMc);
+	% Make drainage area
+	DA=A.*A.cellsize^2;
 
 	% Modify provided stream network if minimum elevation or maximum drainage area options are included
 	if ~isempty(min_elev)
@@ -409,8 +411,6 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				IX=GRIDobj(DEM,'logical');
 				IX.Z(ix)=true;
 
-
-
 				if redefine_thresh
 
 					% Extract stream of interest
@@ -421,14 +421,13 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					p1=plot(Sn,'-b','LineWidth',2);
 					hold off
 
-
 					qa1=questdlg('Is this the stream segment you wanted?','Stream Selection','Yes','No','Yes');
 					switch qa1
 					case 'Yes'
 
 						delete(p1);
 
-						[Sn]=RedefineThreshold(DEM,FD,A,Sn,FLUS,ref_theta,rd_pick_method,smooth_distance);
+						[Sn]=RedefineThreshold(DEM,FD,A,Sn,FLUS,ref_theta,rd_pick_method,smooth_distance,ii,save_figures);
 						% Update DEMc
 						if any(isnan(getnal(Sn,DEMc)));
 							zc=mincosthydrocon(Sn,DEM,'interp',iv);
@@ -514,9 +513,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						delete(p1);
 					end					
 				end
-
-
 			end % End single channel select
+
+			%% Extract threshold drainage area
+			snchix=streampoi(Sn,'channelheads','ix');
+			snda=DA.Z(snchix);
 
 			%% Calculate chi and extract ksn data
 			if strcmp(theta_method,'ref')
@@ -635,10 +636,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						if strcmp(theta_method,'ref')
 							Cbf=ChiCalc(Sn,DEMc,A,1);
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn ones(numel(C.x),1)*snda];
 						elseif strcmp(theta_method,'auto')
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*snda];
 						end
 
 						% Determine where ksn value fits into color scale and plot
@@ -762,7 +763,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							end
 
 							ksn_nodes{jj,1}=[Cseg.x Cseg.y Cseg.area ones(numel(Cseg.x),1)*Cseg.ks ones(numel(Cseg.x),1)*Cseg.ks_neg ones(numel(Cseg.x),1)*Cseg.ks_pos ...
-								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn];
+								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn ones(numel(Cseg.x),1)*snda];
 
 							% Plot linear fits	
 							rchi=rc(rb_chidist==min(rb_chidist));
@@ -947,10 +948,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						if strcmp(theta_method,'ref')
 							Cbf=ChiCalc(Sn,DEMc,A,1);
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn ones(numel(C.x),1)*snda];
 						elseif strcmp(theta_method,'auto')
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*snda];
 						end
 
 						% Determine where ksn value fits into color scale and plot
@@ -1072,7 +1073,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							end
 
 							ksn_nodes{jj,1}=[Cseg.x Cseg.y Cseg.area ones(numel(Cseg.x),1)*Cseg.ks ones(numel(Cseg.x),1)*Cseg.ks_neg ones(numel(Cseg.x),1)*Cseg.ks_pos ...
-								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn];
+								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn ones(numel(Cseg.x),1)*snda];
 
 							% Plot linear fits	
 							rchi=rc(rb_dist==min(rb_dist));
@@ -1220,10 +1221,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						if strcmp(theta_method,'ref')
 							Cbf=ChiCalc(Sn,DEMc,A,1);
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn ones(numel(C.x),1)*snda];
 						elseif strcmp(theta_method,'auto')
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*snda];
 						end
 
 						% Determine where ksn value fits into color scale and plot
@@ -1333,7 +1334,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							end
 
 							ksn_nodes{jj,1}=[Cseg.x Cseg.y Cseg.area ones(numel(Cseg.x),1)*Cseg.ks ones(numel(Cseg.x),1)*Cseg.ks_neg ones(numel(Cseg.x),1)*Cseg.ks_pos ...
-								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn];
+								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn ones(numel(Cseg.x),1)*snda];
 
 							% Plot linear fits	
 							rchi=rc(rb_dadist==min(rb_dadist));
@@ -1487,7 +1488,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				Sn=modify(S,'downstreamto',IX);
 
 				if redefine_thresh
-					[Sn]=RedefineThreshold(DEM,FD,A,Sn,FLUS,ref_theta,rd_pick_method,smooth_distance);
+					[Sn]=RedefineThreshold(DEM,FD,A,Sn,FLUS,ref_theta,rd_pick_method,smooth_distance,ii,save_figures);
 					% Update DEMc
 					if any(isnan(getnal(Sn,DEMc)));
 						zc=mincosthydrocon(Sn,DEM,'interp',iv);
@@ -1527,6 +1528,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						Sct=Sn;
 					end
 				end
+
+				%% Extract threshold drainage area
+				snchix=streampoi(Sn,'channelheads','ix');
+				snda=DA.Z(snchix);
 
 				%% Calculate chi and extract ksn data
 				if strcmp(theta_method,'ref')
@@ -1641,10 +1646,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						if strcmp(theta_method,'ref')
 							Cbf=ChiCalc(Sn,DEMc,A,1);
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn ones(numel(C.x),1)*snda];
 						elseif strcmp(theta_method,'auto')
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*snda];
 						end
 
 						% Determine where ksn value fits into color scale and plot
@@ -1738,7 +1743,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							ksn_val=Cseg.ks;
 
 							ksn_nodes{jj,1}=[Cseg.x Cseg.y Cseg.area ones(numel(Cseg.x),1)*Cseg.ks ones(numel(Cseg.x),1)*Cseg.ks_neg ones(numel(Cseg.x),1)*Cseg.ks_pos ...
-								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn];
+								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn ones(numel(Cseg.x),1)*snda];
 
 							% Plot linear fits	
 							rchi=rc(rb_chidist==min(rb_chidist));
@@ -1925,10 +1930,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						if strcmp(theta_method,'ref')
 							Cbf=ChiCalc(Sn,DEMc,A,1);
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn ones(numel(C.x),1)*snda];
 						elseif strcmp(theta_method,'auto')
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*snda];
 						end
 
 						% Determine where ksn value fits into color scale and plot
@@ -2022,7 +2027,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							ksn_val=Cseg.ks;
 
 							ksn_nodes{jj,1}=[Cseg.x Cseg.y Cseg.area ones(numel(Cseg.x),1)*Cseg.ks ones(numel(Cseg.x),1)*Cseg.ks_neg ones(numel(Cseg.x),1)*Cseg.ks_pos ...
-								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn];
+								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn ones(numel(Cseg.x),1)*snda];
 
 							% Plot linear fits	
 							rchi=rc(rb_dist==min(rb_dist));
@@ -2171,10 +2176,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						if strcmp(theta_method,'ref')
 							Cbf=ChiCalc(Sn,DEMc,A,1);
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn ones(numel(C.x),1)*snda];
 						elseif strcmp(theta_method,'auto')
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*snda];
 						end
 
 						% Determine where ksn value fits into color scale and plot
@@ -2256,7 +2261,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							ksn_val=Cseg.ks;
 
 							ksn_nodes{jj,1}=[Cseg.x Cseg.y Cseg.area ones(numel(Cseg.x),1)*Cseg.ks ones(numel(Cseg.x),1)*Cseg.ks_neg ones(numel(Cseg.x),1)*Cseg.ks_pos ...
-								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn];
+								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn ones(numel(Cseg.x),1)*snda];
 
 							% Plot linear fits	
 							rchi=rc(rb_dadist==min(rb_dadist));
@@ -2474,16 +2479,19 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	ksnRp=GRIDobj(DEM);
 	thetaR=GRIDobj(DEM);
 	segthetaR=GRIDobj(DEM);
+	threshaR=GRIDobj(DEM);
 
 	ksnR.Z(ix)=knl(:,4);
 	ksnRn.Z(ix)=knl(:,5);
 	ksnRp.Z(ix)=knl(:,6);
 	thetaR.Z(ix)=knl(:,7);
 	segthetaR.Z(ix)=knl(:,8);
+	threshaR.Z(ix)=knl(:,9);
 
 	% Create KSN map structure and export shapefile
 	KSN=STREAMobj2mapstruct(Sc,'seglength',smooth_distance,'attributes',...
-		{'ksn' ksnR @mean 'ksn_neg' ksnRn @mean 'ksn_pos' ksnRp @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'theta' thetaR @mean 'seg_theta' segthetaR @mean});
+		{'ksn' ksnR @mean 'ksn_neg' ksnRn @mean 'ksn_pos' ksnRp @mean 'uparea' (A.*(A.cellsize^2))...
+		 @mean 'gradient' G @mean 'theta' thetaR @mean 'seg_theta' segthetaR @mean 'thrsh_ar' threshaR @mean});
 
 	% Create knickpoint map structure and prepare bound output
 	idx=~isnan(bnd_list(:,5));
@@ -2731,7 +2739,7 @@ function [bs,ba,bc,bd,bk]=sa_ksn(DEM,S,A,C,ak,bin_size);
 	bk=accumarray(ix,k,[numbins 1],@mean,nan);
 end
 
-function [Sn]=RedefineThreshold(DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_size)
+function [Sn]=RedefineThreshold(DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_size,count,figure_flag)
 
 	% Find channel head and flow distances
 	chix=streampoi(S,'channelheads','ix');
@@ -2794,8 +2802,12 @@ function [Sn]=RedefineThreshold(DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_size)
 
 			% Find user selected threshold area
 			[c,~]=ginput(1);
-			[~,cix]=nanmin(abs(C.chi-c));
-			a=C.area(cix);
+			if ~isempty(c)
+				[~,cix]=nanmin(abs(C.chi-c));
+				a=C.area(cix);
+			else
+				a=1e6;
+			end
 
 			chi_idx=C.area<a;
 			sl_idx=ba<a;
@@ -2838,6 +2850,9 @@ function [Sn]=RedefineThreshold(DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_size)
 
 			% Find user selected threshold area
 			[a,~]=ginput(1);
+			if isempty(a)
+				a=1e6;
+			end
 
 			chi_idx=C.area<a;
 			sl_idx=ba<a;
@@ -2853,8 +2868,6 @@ function [Sn]=RedefineThreshold(DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_size)
 			title('Black points will be excluded from stream definition');
 			hold off
 
-
-
 		end
 
 		qa3=questdlg('Accept new threshold area?','Set Threshold','No, Redo','Yes','Yes');
@@ -2866,6 +2879,10 @@ function [Sn]=RedefineThreshold(DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_size)
 		end
 	end
 
+	if figure_flag
+		f4_name=['StreamThresh_' num2str(count) '.pdf'];
+		print(f4,f4_name,'-dpdf','-fillpage');
+	end
 
 	close(f4);
 
