@@ -74,7 +74,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%			for the main required DEM input!) which will be used for extracting elevations. See 'ConditionDEM' function for options 
 	%			for making a hydrological conditioned DEM. If no input is provided the code defaults to using the mincosthydrocon function.
 	%	interp_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a 
-	%			conditioned DEM)
+	%			conditioned DEM). Values closer to 0 tend to 'carve' more, whereas values closer to 1 tend to fill. See info for 
+	%			'mincosthydrocon'
 	%
 	%%% Display Options
 	%	display_slope_area [false] - logical flag to display slope area plots. Some people love slope area plots (like one of the authors of
