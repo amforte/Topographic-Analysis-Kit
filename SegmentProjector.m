@@ -29,7 +29,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 	%
 	% Output:
 	%	Produces a 2 x n cell array with a column for each stream segment provided (or channel head if a network is provided). The first row is the x-y
-	%	coordinate of the channel head for that stream. The second row is a datatable containing the following information about the segment of interest:
+	%	coordinate of the channel head for that stream. The second row is an array containing the following information about the segment of interest:
 	%	x coordinate, y coordinate, distance from mouth, drainage area, chi, concavity, true elevation, projected elevation, upper bound of projected elevation,
 	%	and lower bound of projected elevation. This output is also saved in a mat file called 'ProjectedSegments.mat'.
 	%		
@@ -159,9 +159,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			hold on
 			plot(C.chi,C.elev,'-k');
 			scatter(C.chi,C.elev,10,'k');
-			xlabel('Chi','Color','r')
+			xlabel('\chi','Color','r')
 			ylabel('Elevation (m)','Color','r')
-			title(['Chi - Z : \theta = ' num2str(C.mn) ' : Select bounds of stream segment you want to project'],'Color','r')
+			title(['\chi - Z : \theta = ' num2str(C.mn) ' : Select bounds of stream segment you want to project'],'Color','r')
 			ax1.XColor='Red';
 			ax1.YColor='Red';
 			hold off
@@ -242,7 +242,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			hold on
 			plot([0,max(C.chi)],[0,0],'--k');
 			scatter(C.chi,pred_el-C.elev,10,'k')
-			xlabel('Chi');
+			xlabel('\chi');
 			ylabel('Difference between projection and true profile (m)')
 			hold off
 
@@ -259,8 +259,8 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			OUT{2,ii}=[C.x C.y C.distance C.area C.chi ones(size(C.chi)).*C.mn C.elev pred_el pred_el_u pred_el_l];
 
 			if save_figures
-				print(f1,'-dpdf',['ProjectedProfile_' num2str(ii) '.pdf']);
-				print(f2,'-dpdf',['Residual_' num2str(ii) '.pdf']);
+				print(f1,'-dpdf',['ProjectedProfile_' num2str(ii) '.pdf'],'-bestfit');
+				print(f2,'-dpdf',['Residual_' num2str(ii) '.pdf'],'-bestfit');
 			else
 				if ii<num_ch
 					uiwait(msgbox('Click OK when ready to continue'))
@@ -306,18 +306,18 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			ax2=subplot(3,1,2);
 			hold on
 			scatter(CAvg,KsnAvg,20,'k','filled');
-			xlabel('Chi')
+			xlabel('\chi')
 			ylabel('Auto k_{sn}');
-			title('Chi - Auto k_{sn}');
+			title('\chi - Auto k_{sn}');
 			hold off
 
 			ax1=subplot(3,1,1);
 			hold on
 			plot(C.chi,C.elev,'-k');
 			scatter(C.chi,C.elev,10,'k');
-			xlabel('Chi','Color','r')
+			xlabel('\chi','Color','r')
 			ylabel('Elevation (m)','Color','r')
-			title(['Chi - Z : \theta = ' num2str(C.mn) ' : Select bounds of stream segment you want to project'],'Color','r')
+			title(['\chi - Z : \theta = ' num2str(C.mn) ' : Select bounds of stream segment you want to project'],'Color','r')
 			hold off
 
 			linkaxes([ax1,ax2],'x');
@@ -398,7 +398,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 				hold on
 				plot([0,max(C.chi)],[0,0],'--k');
 				scatter(C.chi,pred_el-C.elev,10,'k')
-				xlabel('Chi');
+				xlabel('\chi');
 				ylabel('Difference between projection and true profile (m)')
 				hold off
 
@@ -523,9 +523,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 				plot(CN.chi,pred_el,'-r','LineWidth',2);
 				plot(CN.chi,pred_el_u,'--r');
 				plot(CN.chi,pred_el_l,'--r');
-				xlabel('Chi')
+				xlabel('\chi')
 				ylabel('Elevation (m)')
-				title(['Chi - Z : \theta = ' num2str(CN.mn)],'Color','r')
+				title(['\chi - Z : \theta = ' num2str(CN.mn)],'Color','r')
 				hold off
 
 				ax2=subplot(3,1,2);
@@ -557,7 +557,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 				hold on
 				plot([0,max(CN.chi)],[0,0],'--k');
 				scatter(CN.chi,pred_el-CN.elev,10,'k')
-				xlabel('Chi');
+				xlabel('\chi');
 				ylabel('Difference between projection and true profile (m)')
 				hold off
 
@@ -577,8 +577,8 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 
 
 			if save_figures
-				print(f1,'-dpdf',['ProjectedProfile_' num2str(ii) '.pdf']);
-				print(f2,'-dpdf',['Residual_' num2str(ii) '.pdf']);
+				print(f1,'-dpdf',['ProjectedProfile_' num2str(ii) '.pdf'],'-bestfit');
+				print(f2,'-dpdf',['Residual_' num2str(ii) '.pdf'],'-bestfit');
 			else
 				if ii<num_ch
 					uiwait(msgbox('Click OK when ready to continue'))
@@ -616,9 +616,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			hold on
 			plot(C.chi,C.elev,'-k');
 			scatter(C.chi,C.elev,10,'k');
-			xlabel('Chi')
+			xlabel('\chi')
 			ylabel('Elevation (m)')
-			title('Chi - Z')
+			title('\chi - Z')
 			hold off
 
 			ax2=subplot(3,1,2);
@@ -626,7 +626,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			scatter(DAvg./1000,KsnAvg,20,'k','filled');
 			xlabel('Distance (km)')
 			ylabel('Auto k_{sn}');
-			title('Chi - Auto k_{sn}');
+			title('\chi - Auto k_{sn}');
 			hold off
 
 			ax1=subplot(3,1,3);
@@ -718,7 +718,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			hold on
 			plot([0,max(C.chi)],[0,0],'--k');
 			scatter(C.chi,pred_el-C.elev,10,'k')
-			xlabel('Chi');
+			xlabel('\chi');
 			ylabel('Difference between projection and true profile (m)')
 			hold off
 
@@ -735,8 +735,8 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			OUT{2,ii}=[C.x C.y C.distance C.area C.chi ones(size(C.chi)).*C.mn C.elev pred_el pred_el_u pred_el_l];
 
 			if save_figures
-				print(f1,'-dpdf',['ProjectedProfile_' num2str(ii) '.pdf']);
-				print(f2,'-dpdf',['Residual_' num2str(ii) '.pdf']);
+				print(f1,'-dpdf',['ProjectedProfile_' num2str(ii) '.pdf'],'-bestfit');
+				print(f2,'-dpdf',['Residual_' num2str(ii) '.pdf'],'-bestfit');
 			else
 				if ii<num_ch
 					uiwait(msgbox('Click OK when ready to continue'))
@@ -774,9 +774,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			hold on
 			plot(C.chi,C.elev,'-k');
 			scatter(C.chi,C.elev,10,'k');
-			xlabel('Chi')
+			xlabel('\chi')
 			ylabel('Elevation (m)')
-			title('Chi - Z')
+			title('\chi - Z')
 			hold off
 
 			ax2=subplot(3,1,2);
@@ -784,7 +784,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			scatter(DAvg./1000,KsnAvg,20,'k','filled');
 			xlabel('Distance (km)')
 			ylabel('Auto k_{sn}');
-			title('Chi - Auto k_{sn}');
+			title('\chi - Auto k_{sn}');
 			hold off
 
 			ax1=subplot(3,1,3);
@@ -877,7 +877,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 				hold on
 				plot([0,max(C.chi)],[0,0],'--k');
 				scatter(C.chi,pred_el-C.elev,10,'k')
-				xlabel('Chi');
+				xlabel('\chi');
 				ylabel('Difference between projection and true profile (m)')
 				hold off
 
@@ -999,9 +999,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 				plot(CN.chi,pred_el,'-r','LineWidth',2);
 				plot(CN.chi,pred_el_u,'--r');
 				plot(CN.chi,pred_el_l,'--r');
-				xlabel('Chi')
+				xlabel('\chi')
 				ylabel('Elevation (m)')
-				title('Chi - Z')
+				title('\chi - Z')
 				hold off
 
 				ax2=subplot(3,1,2);
@@ -1033,7 +1033,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 				hold on
 				plot([0,max(CN.chi)],[0,0],'--k');
 				scatter(CN.chi,pred_el-CN.elev,10,'k')
-				xlabel('Chi');
+				xlabel('\chi');
 				ylabel('Difference between projection and true profile (m)')
 				hold off
 
@@ -1051,8 +1051,8 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			end
 
 			if save_figures
-				print(f1,'-dpdf',['ProjectedProfile_' num2str(ii) '.pdf']);
-				print(f2,'-dpdf',['Residual_' num2str(ii) '.pdf']);
+				print(f1,'-dpdf',['ProjectedProfile_' num2str(ii) '.pdf'],'-bestfit');
+				print(f2,'-dpdf',['Residual_' num2str(ii) '.pdf'],'-bestfit');
 			else
 				if ii<num_ch
 					uiwait(msgbox('Click OK when ready to continue'))
