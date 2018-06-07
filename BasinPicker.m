@@ -41,7 +41,8 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
     %
     % 
     % Outputs:
-    %       Outlets - n x 3 matrix of sample locations with columns basin number, x coordinate, and y coordinate
+    %       Outlets - n x 3 matrix of sample locations with columns basin number, x coordinate, and y coordinate (valid input to 'ProcessRiverBasins'
+    %           as 'river_mouths' parameter)
     %
     % Examples:
     %       [Outs]=DetritalSamplePicker(DEM,FD,A,S);
@@ -403,9 +404,9 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
         % if isempty(str2) | strcmpi(str2,'Y');
         switch qa2
         case 'Yes'
-            Outlets(ii,3)=ii;
             Outlets(ii,1)=xn;
             Outlets(ii,2)=yn;
+            Outlets(ii,3)=ii;
             ii=ii+1;
             
             % Plot selected point on figures
