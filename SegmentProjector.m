@@ -1,15 +1,14 @@
-function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
+function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 	% Function to interactively select segments of a channel profile you wish to project (e.g. projecting a portion of the profile with a different ksn).
-	%	You can use the 'SegmentPicker' function to interactively choose channels to provide to the StreamProjector function. If the STREAMobj or cell array
-	%	from SegmentPicker has more than one channel head, this code will iterate through all channel heads (i.e. make sure you're only providing it streams
-	%	you want to project, not an entire network!). It calculates and will display 95% confidence bounds on this fit.
+	%	You can use the 'SegmentPicker' function to interactively choose channels to provide to the StreamProjector function. If the STREAMobj has more than 
+	%	one channel head, this code will iterate through all channel heads (i.e. make sure you're only providing it stream you want to project, not an entire
+	%	network!). It calculates and will display 95% confidence bounds on this fit.
 	%	
 	% Required Inputs:
 	%	DEM - Digital Elevation as a GRIDobj, assumes unconditioned DEM (e.g. DEMoc from ProcessRiverBasins)
 	%	FD - Flow direction as FLOWobj
 	%	A - Flow accumulation GRIDobj
-	%	Streams - Either a STREAMobj of channels you wish to use or a cell array of selected channels as output from 'SegmentPicker' (default name
-	%		of saved cell array is 'StreamSgmnts')
+	%	S - Streams you wish to project saved as a STREAMobj
 	%
 	% Optional Inputs:
 	%	conditioned_DEM [] - option to provide a hydrologically conditioned DEM for use in this function (do not provide a conditoned DEM
@@ -48,7 +47,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
 	addRequired(p,'FD',@(x) isa(x,'FLOWobj'));
 	addRequired(p,'A',@(x) isa(x,'GRIDobj'));
-	addRequired(p,'Streams',@(x) isa(x,'STREAMobj') | isa(x,'cell'));
+	addRequired(p,'S',@(x) isa(x,'STREAMobj'));
 
 	addParamValue(p,'theta_method','ref',@(x) ischar(validatestring(x,{'ref','auto'})));
 	addParamValue(p,'pick_method','chi',@(x) ischar(validatestring(x,{'chi','stream'})));
@@ -62,7 +61,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 	parse(p,DEM,FD,A,Streams,varargin{:});
 	DEM=p.Results.DEM;
 	FD=p.Results.FD;
-	Slist=p.Results.Streams;
+	S=p.Results.S;
 	A=p.Results.A;
 
 	smooth_distance=p.Results.smooth_distance;
@@ -74,22 +73,11 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 	iv=p.Results.interp_value;
 	DEMc=p.Results.conditioned_DEM;
 
-	if isa(Slist,'cell')
-		for ii=1:numel(Slist)
-			if ii==1
-				ST=Slist{ii};
-			else
-				Si=Slist{ii};
-				ST=union(Si,ST,FD);
-			end
-		end
-		chix=streampoi(ST,'channelheads','ix');
-		num_ch=numel(chix);
-	elseif isa(Slist,'STREAMobj')
-		ST=Slist;
-		chix=streampoi(ST,'channelheads','ix');
-		num_ch=numel(chix);
-	end
+
+	% Find channel heads
+	ST=S;
+	chix=streampoi(ST,'channelheads','ix');
+	num_ch=numel(chix);
 
 	% Hydrologically condition dem
 	if isempty(DEMc)

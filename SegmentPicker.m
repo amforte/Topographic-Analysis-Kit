@@ -1,4 +1,4 @@
-function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
+function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	% Function to select a segment of a stream network from the top of the stream, and plot the long profile 
 	% 	and chi-Z relationship of that segment,also outputs the extraced portion of the stream network and chi structure 
 	% 	(out of 'chiplot'). Allows user to iteratively select different parts of the stream network and display. 
@@ -45,20 +45,24 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	%	interp_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a conditioned DEM)
 	%
 	% Outputs:
+	% 	Sc - STREAMobj containing all the stream segments chosen.
+	%
 	%	Saves an output called 'PickedSegements_*.mat' with the provided basin number containing these results:
 	%		StreamSgmnts - Cell array of selected stream segments as STREAMobj
 	%		ChiSgmnts - Cell array of selected chi structures 
+	%		Sc - Single STREAMobj containing all the streams chosen.
 	%		and if 'down' is selected:
-	%		Heads - nx3 matrix of channel heads you picked with pick number, x cooord, and y coordinate as the columns
+	%			Heads - nx3 matrix of channel heads you picked with x cooord, y coordinate, and pick number as the columns
 	%		and if 'up' is selected:
-	%		Outlets - nx3 matrix of outlets you picked with pick number, x cooord, and y coordinate as the columns
+	%			Outlets - nx3 matrix of outlets you picked with x cooord, y coordinate, and pick number as the columns (valid input to 'ProcessRiverBasins'
+	%			as 'river_mouths' parameter)
 	%
 	% Examples:
-	%	SegmentPicker(DEM,FD,A,S,2);
-	%	SegmentPicker(DEM,FD,A,S,2,'direction','up','theta_ref',0.6,'min_grad',0.00001);
-	%	SegmentPicker(DEM,FD,A,S,32,'direction','down','theta_ref',0.5,'min_elev',300,'recalc',true);
-	%	SegmentPicker(DEM,FD,A,S,1,'method','prev_picks','picks',channel_heads); % If inputing a matrix named channel_heads
-	%	SegmentPicker(DEM,FD,A,S,1,'method','prev_picks','picks','channel_heads'); % If inputing a shapefile named channel_heads.shp
+	%	[Sc]=SegmentPicker(DEM,FD,A,S,2);
+	%	[Sc]=SegmentPicker(DEM,FD,A,S,2,'direction','up','theta_ref',0.6,'min_grad',0.00001);
+	%	[Sc]=SegmentPicker(DEM,FD,A,S,32,'direction','down','theta_ref',0.5,'min_elev',300,'recalc',true);
+	%	[Sc]=SegmentPicker(DEM,FD,A,S,1,'method','prev_picks','picks',channel_heads); % If inputing a matrix named channel_heads
+	%	[Sc]=SegmentPicker(DEM,FD,A,S,1,'method','prev_picks','picks','channel_heads'); % If inputing a shapefile named channel_heads.shp
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Last Revised Winter 2017 %
@@ -390,9 +394,9 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				StreamSgmnts{ii}=Sn;
 				ChiSgmnts{ii}=C;
-				Heads(ii,1)=ii;
-				Heads(ii,2)=chOI(:,1);
-				Heads(ii,3)=chOI(:,2);
+				Heads(ii,1)=chOI(:,1);
+				Heads(ii,2)=chOI(:,2);
+				Heads(ii,3)=ii;
 
 				ii=ii+1;
 
@@ -405,9 +409,6 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	                str2 = 'N';
 	            end				
 			end
-
-			fileOut=['PickedSegments_' num2str(basin_num) '.mat'];
-			save(fileOut,'StreamSgmnts','ChiSgmnts','Heads');
 
 		% Extract segements upstream from a pour point selection
 		case 'up_keep'
@@ -503,9 +504,9 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				StreamSgmnts{ii}=Sn;
 				ChiSgmnts{ii}=C;
-				Outlets(ii,1)=ii;
-				Outlets(ii,2)=xn;
-				Outlets(ii,3)=yn;
+				Outlets(ii,1)=xn;
+				Outlets(ii,2)=yn;
+				Outlets(ii,3)=ii;
 
 				ii=ii+1;
 
@@ -519,9 +520,6 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	                str2 = 'N';
 	            end
 			end
-
-			fileOut=['PickedSegments_' num2str(basin_num) '.mat'];
-			save(fileOut,'StreamSgmnts','ChiSgmnts','Outlets');
 
 		case 'down_ref'
 
@@ -745,9 +743,9 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				StreamSgmnts{ii}=Sn;
 				ChiSgmnts{ii}=C;
-				Heads(ii,1)=ii;
-				Heads(ii,2)=chOI(:,1);
-				Heads(ii,3)=chOI(:,2);
+				Heads(ii,1)=chOI(:,1);
+				Heads(ii,2)=chOI(:,2);
+				Heads(ii,3)=ii;
 
 				ii=ii+1;
 
@@ -762,9 +760,6 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	            end	
 
 			end
-
-			fileOut=['PickedSegments_' num2str(basin_num) '.mat'];
-			save(fileOut,'StreamSgmnts','ChiSgmnts','Heads');
 
 		% Extract segements upstream from a pour point selection
 		case 'up_ref'
@@ -857,9 +852,9 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				StreamSgmnts{ii}=Sn;
 				ChiSgmnts{ii}=C;
-				Outlets(ii,1)=ii;
-				Outlets(ii,2)=xn;
-				Outlets(ii,3)=yn;
+				Outlets(ii,1)=xn;
+				Outlets(ii,2)=yn;
+				Outlets(ii,3)=ii;
 
 				ii=ii+1;
 
@@ -874,9 +869,6 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	            end	
 
 			end
-
-			fileOut=['PickedSegments_' num2str(basin_num) '.mat'];
-			save(fileOut,'StreamSgmnts','ChiSgmnts','Outlets');
 		end
 		
 	% Previous Picks
@@ -999,15 +991,12 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				StreamSgmnts{ii}=Sn;
 				ChiSgmnts{ii}=C;
-				Heads(ii,1)=ii;
-				Heads(ii,2)=chOI(:,1);
-				Heads(ii,3)=chOI(:,2);
+				Heads(ii,1)=chOI(:,1);
+				Heads(ii,2)=chOI(:,2);
+				Heads(ii,3)=ii;
 				waitbar(ii/num_heads);
 			end
 			close(w1);
-
-			fileOut=['PickedSegments_' num2str(basin_num) '.mat'];
-			save(fileOut,'StreamSgmnts','ChiSgmnts','Heads');
 
 		case 'up'
 			outlets=pt;
@@ -1032,17 +1021,34 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				StreamSgmnts{ii}=Sn;
 				ChiSgmnts{ii}=C;
-				Outlets(ii,1)=ii;
-				Outlets(ii,2)=xn;
-				Outlets(ii,3)=yn;
+				Outlets(ii,1)=xn;
+				Outlets(ii,2)=yn;
+				Outlets(ii,3)=ii;
 				waitbar(ii/num_outs);
 			end
 			close(w1);
-
-			fileOut=['PickedSegments_' num2str(basin_num) '.mat'];
-			save(fileOut,'StreamSgmnts','ChiSgmnts','Outlets');
 		end
 	end
+
+% Clean up and generate outputs
+num_picks=numel(StreamSgmnts);
+if num_picks==1
+	Sc=StreamSgmnts{1};
+else
+	Sc=StreamSgmnts{1};
+	for ii=2:num_picks
+		Sc=union(Sc,StreamSgmnts{ii});
+	end
+end
+
+fileOut=['PickedSegments_' num2str(basin_num) '.mat'];
+switch direction
+case 'up'
+	save(fileOut,'StreamSgmnts','ChiSgmnts','Outlets','Sc');
+case 'down'
+	save(fileOut,'StreamSgmnts','ChiSgmnts','Heads','Sc');	
+end
+
 % Main Function End
 end
 
