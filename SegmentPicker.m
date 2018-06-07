@@ -4,10 +4,6 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	% 	(out of 'chiplot'). Allows user to iteratively select different parts of the stream network and display. 
 	% 	Keeps running dataset of all the streams you pick and accept.
 	%
-	% Syntax: 
-	%	SegmentPicker(DEM,FD,A,S,basin_num)
-	%	SegmentPicker(DEM,FD,A,S,basin_num,pn,pv,...)
-	%
 	% Required Inputs:
 	%	DEM - Digital Elevation as a GRIDobj, assumes unconditioned DEM (e.g. DEMoc from ProcessRiverBasins)
 	%	FD - Flow direction as FLOWobj
@@ -47,7 +43,6 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	%			 will have a chi value of zero and a distance from mouth value of zero).
 	%	threshold_area [1e6] - used to redraw downsampled stream network if 'plot_type' is set to 'grid'
 	%	interp_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a conditioned DEM)
-
 	%
 	% Outputs:
 	%	Saves an output called 'PickedSegements_*.mat' with the provided basin number containing these results:

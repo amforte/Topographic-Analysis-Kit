@@ -1,4 +1,5 @@
 function CheckTAKDependecies()
+	% Function to check required toolboxes for running Topographic Analysis Kit (TAK)
 
 	p=ver;
 

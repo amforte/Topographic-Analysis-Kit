@@ -1,5 +1,5 @@
 function [cmap]=ksncolor(n)
-	% Colormap for channel steepness data
+	% Function to generate colormap for channel steepness data
 	% 
 	% Code based off colormap functions provided with TopoToolbox
 	%

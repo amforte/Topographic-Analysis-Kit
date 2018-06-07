@@ -38,7 +38,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
     %           the stream network is plotted as a grid and downsampled ('grid'). The 'grid' option is much faster for large datasets, 
     %           but can result in inaccurate site selections. The 'vector' option is easier to see, but can be very slow to load and interact with.
     %       threshold_area [1e6] - used to redraw downsampled stream network if 'plot_type' is set to 'grid'
-
+    %
     % 
     % Outputs:
     %       Outlets - n x 3 matrix of sample locations with columns basin number, x coordinate, and y coordinate
