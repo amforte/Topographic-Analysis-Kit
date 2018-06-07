@@ -2516,6 +2516,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	out_shape_name=[shape_name '.shp'];
 	shapewrite(KSN,out_shape_name);
 
+	out_mat_name=[shape_name '.mat'];
+	save(out_mat_name,'knl','ksn_master','bnd_list','Sc');
+
 
 %FUNCTION END
 end
@@ -2562,6 +2565,9 @@ function [OUT]=ChiCalc(S,DEM,A,a0,varargin)
 	chiF=chi(Lib);
 	zabsF=zx(Lib)-zb;
 
+	% The splining generates lots of warning for small basins so turning warnings off
+	warning off
+
 	chiS=linspace(0,max(chiF),numel(chiF)).';
 	try
 		zS=spline(chiF,zabsF,chiS);
@@ -2571,6 +2577,8 @@ function [OUT]=ChiCalc(S,DEM,A,a0,varargin)
 		zS=zabsF;
 		chiS=chiF;
 	end
+
+	warning on
 
 	OUT=struct;
 	try
