@@ -151,7 +151,8 @@
 %
 % 
 % Outputs:
-%       Outlets - n x 3 matrix of sample locations with columns basin number, x coordinate, and y coordinate
+%       Outlets - n x 3 matrix of sample locations with columns basin number, x coordinate, and y coordinate (valid input to 'ProcessRiverBasins'
+%           as 'river_mouths' parameter)
 %
 % Examples:
 %       [Outs]=DetritalSamplePicker(DEM,FD,A,S);
@@ -759,6 +760,19 @@
 % 	bends - distances along swath of any bends, 0 if no bends
 %
 % ----------------------------------------------------------------------------------------------------------------------------
+% Mat2Arc
+%
+% Function converts all valid topotoolbox files contained within a mat file
+%	to Arc compatible outputs. Specifically converts any GRIDobjs to
+%	ascii files, any STREAMobjs to shapefiles, any FLOWobjs to ArcGIS 
+%	flow direction grids saved as an ascii file, and any valid mapstructures
+%	to shapefiles.
+%
+% Input:
+%	mat_file - name or path to matfile of interest
+%	file_prefix - characters to add to the front of all output files
+%
+% ----------------------------------------------------------------------------------------------------------------------------
 % PlotIndividualBasins
 %
 % Function takes outputs from 'ProcessRiverBasins' function and makes and saves plots for each basin with stream profiles, chi-z, and slope area
@@ -903,13 +917,17 @@
 %	interp_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a conditioned DEM)
 %
 % Outputs:
+% 	Sc - STREAMobj containing all the stream segments chosen.
+%
 %	Saves an output called 'PickedSegements_*.mat' with the provided basin number containing these results:
 %		StreamSgmnts - Cell array of selected stream segments as STREAMobj
 %		ChiSgmnts - Cell array of selected chi structures 
+%		Sc - Single STREAMobj containing all the streams chosen.
 %		and if 'down' is selected:
-%		Heads - nx3 matrix of channel heads you picked with pick number, x cooord, and y coordinate as the columns
+%			Heads - nx3 matrix of channel heads you picked with x cooord, y coordinate, and pick number as the columns
 %		and if 'up' is selected:
-%		Outlets - nx3 matrix of outlets you picked with pick number, x cooord, and y coordinate as the columns
+%			Outlets - nx3 matrix of outlets you picked with x cooord, y coordinate, and pick number as the columns (valid input to 'ProcessRiverBasins'
+%			as 'river_mouths' parameter)
 %
 % ----------------------------------------------------------------------------------------------------------------------------
 % SegmentPlotter
@@ -933,16 +951,15 @@
 % SegmentProjector
 %
 % Function to interactively select segments of a channel profile you wish to project (e.g. projecting a portion of the profile with a different ksn).
-%	You can use the 'SegmentPicker' function to interactively choose channels to provide to the StreamProjector function. If the STREAMobj or cell array
-%	from SegmentPicker has more than one channel head, this code will iterate through all channel heads (i.e. make sure you're only providing it streams
-%	you want to project, not an entire network!). It calculates and will display 95% confidence bounds on this fit.
+%	You can use the 'SegmentPicker' function to interactively choose channels to provide to the StreamProjector function. If the STREAMobj has more than 
+%	one channel head, this code will iterate through all channel heads (i.e. make sure you're only providing it stream you want to project, not an entire
+%	network!). It calculates and will display 95% confidence bounds on this fit.
 %	
 % Required Inputs:
 %	DEM - Digital Elevation as a GRIDobj, assumes unconditioned DEM (e.g. DEMoc from ProcessRiverBasins)
 %	FD - Flow direction as FLOWobj
 %	A - Flow accumulation GRIDobj
-%	Streams - Either a STREAMobj of channels you wish to use or a cell array of selected channels as output from 'SegmentPicker' (default name
-%		of saved cell array is 'StreamSgmnts')
+%	S - Streams you wish to project saved as a STREAMobj
 %
 % Optional Inputs:
 %	conditioned_DEM [] - option to provide a hydrologically conditioned DEM for use in this function (do not provide a conditoned DEM
