@@ -17,6 +17,8 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	%					the mean values by category using this plot. Requires inputs to both 'cat_mean1' (value that will be plotted on x axis) 
 	%					and 'cat_mean2' (value that will be plotted on y axis)
 	%		'stacked_hypsometry' - plot hypsometries for the basins
+	%		'compare_mean_and_dist' - plots a histogram of values within a selected basin or across all basins for a statistic of interest to 
+	%					compare to the mean value, accepts an input for 'statistic_of_interest' and 'basin_num'.
 	%		'xy' - generic plot, requires entries to optional 'xval' and 'yval' inputs
 	%
 	% Optional Inputs:
@@ -31,6 +33,12 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	%		to use as a colormap. 
 	%	xval [] - value to plot on x axis (name of column as it appears in the provided table) for plot type 'xy'
 	%	yval [] - value to plot on y axis (name of column as it appears in the provided table) for plot type 'xy'
+	%	statistic_of_interest ['ksn'] - statistic of interest for plotting histogram to compare with mean value. Valid inputs are 'ksn', 'gradient',
+	%		'elevation', 'relief' (if you provide relief, the code will look for relief calculated at the radius specified with the optional 'rlf_radius' parameter),
+	%		or the name of an additional grid provided to 'ProcessRiverBasins', e.g. if you provided a precipitation grid and provided the name 'precip'
+	%		and a column named 'mean_precip' exists in the table, then 'precip' would be a valid input to this parameter.
+	%	basin_num [] - number of basin (as it appears in the ID column of the table) to use for 'compare_mean_and_dist', if empty, 'compare_mean_and_dist'
+	%		will use all basins.
 	%	rlf_radius [2500] - radius of relief used when plotting relief related values
 	%	cat_mean1 [] - category to use for plotting, see 'category_mean_hist' or 'category_mean_compare', valid inputs are 'ksn', 'rlf', 'gradient', or 
 	%		the name of an additional grid provided to ProcessRiverMeans.
@@ -67,7 +75,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	p = inputParser;
 	p.FunctionName = 'BasinStatsPlots';
 	addRequired(p,'basin_table',@(x) isa(x,'table'));
-	addRequired(p,'plots',@(x) ischar(validatestring(x,{'grd_ksn','grd_rlf','rlf_ksn','compare_filtered','category_mean_hist','category_mean_compare','xy','stacked_hypsometry'})));
+	addRequired(p,'plots',@(x) ischar(validatestring(x,{'grd_ksn','grd_rlf','rlf_ksn','compare_filtered','category_mean_hist','category_mean_compare','xy','stacked_hypsometry','compare_mean_and_dist'})));
 
 	addParamValue(p,'uncertainty','se',@(x) ischar(validatestring(x,{'se','std','none'})));
 	addParamValue(p,'use_filtered',false,@(x) islogical(x) && isscalar(x));
@@ -75,6 +83,8 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	addParamValue(p,'cmap',[],@(x) ischar(x) || isnumeric(x) & size(x,2)==3);
 	addParamValue(p,'xval',[],@(x) ischar(x));
 	addParamValue(p,'yval',[],@(x) ischar(x));
+	addParamValue(p,'statistic_of_interest','ksn',@(x) ischar(x));
+	addParamValue(p,'basin_num',[],@(x) isnumeric(x) && isscalar(x));
 	addParamValue(p,'rlf_radius',2500,@(x) isnumeric(x) && isscalar(x));
 	addParamValue(p,'cat_mean1',[],@(x) ischar(x));
 	addParamValue(p,'cat_mean2',[],@(x) ischar(x));
@@ -91,6 +101,8 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	cmap=p.Results.cmap;
 	xval=p.Results.xval;
 	yval=p.Results.yval;
+	basin_num=p.Results.basin_num;
+	stOI=p.Results.statistic_of_interest;
 	rr=p.Results.rlf_radius;
 	cm1=p.Results.cat_mean1;
 	cm2=p.Results.cat_mean2;
@@ -101,17 +113,18 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		cmap=jet(50);
 	end
 
-
 	% Generate Plots
+
 
 	switch plts
 	case 'grd_ksn'
+
 		if use_filtered
-			g=T.mean_gradient;
-			k=T.mean_ksn;
-		else
 			g=T.mean_gradient_f;
 			k=T.mean_ksn_f;
+		else
+			g=T.mean_gradient;
+			k=T.mean_ksn;
 		end
 
 		if use_filtered
@@ -259,9 +272,8 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		xlabel(['Mean Basin ' num2str(rr) ' m^2 Relief']);
 		ylabel('Mean Basin Gradient');
 		hold off
+		
 	case 'rlf_ksn'
-
-
 			% Validate Relief Entry
 		if use_filtered
 			m_rlfN=['mean_rlf' num2str(rr) '_f'];
@@ -350,6 +362,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 
 	case 'stacked_hypsometry'
 		hypsCell=T.hypsometry;
+		HI=T.hyp_integral;
 
 		numHyps=numel(hypsCell);
 		normEl=zeros(100,numHyps);
@@ -357,12 +370,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 
 		El=normEl;
 		F=normF;
-		HI=zeros(numHyps,1);
 		for ii=1:numHyps
 			normEl(:,ii)=(hypsCell{ii}(:,2)-min(hypsCell{ii}(:,2)))/(max(hypsCell{ii}(:,2))-min(hypsCell{ii}(:,2)));
 			normF(:,ii)=(hypsCell{ii}(:,1))/100;
-
-			HI(ii)=abs(trapz(normEl(:,ii),normF(:,ii)));
 
 			El(:,ii)=hypsCell{ii}(:,2);
 			F(:,ii)=hypsCell{ii}(:,1);
@@ -525,6 +535,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		hold off
 
 	case 'compare_filtered'
+
 		VN=T.Properties.VariableNames;
 		ix=regexp(VN,regexptranslate('wildcard','mean_*_f'));
 		ix=cellfun(@any,ix);
@@ -791,9 +802,185 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			end
 		end
 
+	case 'compare_mean_and_dist'
+
+		% Validate Input
+		if strcmp(stOI,'ksn')
+			val=T.mean_ksn;
+			m_valN='mean_ksn';
+			load_flag=1;
+			title_str='Channel Steepness';
+		elseif strcmp(stOI,'gradient')
+			val=T.mean_gradient;
+			m_valN='mean_gradient';
+			load_flag=2;
+			title_str='Gradient';
+		elseif strcmp(stOI,'elevation')
+			val=T.mean_el;
+			m_valN='mean_el';
+			load_flag=3;
+			title_str='Elevation';
+		elseif strcmp(stOI,'relief')
+			m_valN=['mean_rlf' num2str(rr)];
+			if ismember(m_valN,T.Properties.VariableNames)
+				val=T.(m_valN);	
+				load_flag=4;
+			else
+				error('Relief radius is not recognized, confirm that you calculated local relief at this radius when running "ProcessRiverBasins"')
+			end
+			title_str=[num2str(rr) ' m^2 Relief'];
+		else
+			m_valN=['mean_' stOI];
+			if ismember(m_valN,T.Properties.VariableNames)
+				val=T.(m_valN);
+				load_flag=5;
+			else
+				error(['There is not a column named "mean_' stOI '" in the supplied table, confirm name of additional grid provided to "ProcessRiverBasins"'])
+			end
+			title_str=[upper(stOI(1)) stOI(2:end)];
+		end			
+
+		% Determine type of plot
+		if isempty(basin_num)
+			out=cell(numel(val),1);
+
+			w1=waitbar(0,'Compiling Statistics');
+			for ii=1:numel(val)
+				if load_flag==1
+					load(T.file_path{ii,1},'MSNc');
+					out{ii,1}=[MSNc.ksn]';
+				elseif load_flag==2
+					load(T.file_path{ii,1},'Goc');
+					g=Goc.Z(:);
+					g(isnan(g))=[];
+					out{ii,1}=g;
+				elseif load_flag==3
+					load(T.file_path{ii,1},'DEMoc');
+					d=DEMoc.Z(:);
+					d(isnan(d))=[];
+					out{ii,1}=d;
+				elseif load_flag==4
+					load(T.file_path{ii,1},'rlf');
+					ix=find(cell2mat(rlf(:,2))==rr);
+					r=rlf{ix,1}.Z(:);		
+					r(isnan(r))=[];
+					out{ii,1}=r;	
+				elseif load_flag==5
+					load(T.file_path{ii,1},'AGc');
+					ix=find(strcmp(AGc(:,2),stOI));
+					a=AGc{ix,1}.Z(:);
+					a(isnan(a))=[];
+					out{ii,1}=a;
+				end				
+				waitbar(ii/numel(val));
+			end
+			close(w1);
+
+			out=vertcat(out{:});
+
+			f=figure(1);
+			set(f,'Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
+			clf
+
+			% Filter
+			[N,ed]=histcounts(out,100);
+			N=N/max(N);
+			bin_list=[1:100]';
+			[IX]=discretize(out,ed);
+			idx=N>0.01;
+			keep_bins=bin_list(idx);
+			idx=ismember(IX,keep_bins);
+			out_f=out(idx);
+
+			subplot(2,2,1);
+			hold on 
+			[~,edges_f]=histcounts(out_f,100);
+			histogram(out_f,100);
+			title(title_str);
+			xlabel('All Values From All Basins - <1% Bins Removed');
+			hold off
+
+			subplot(2,2,3);
+			hold on 
+			histogram(val,edges_f);
+			xlabel('Mean Values From All Basins');
+			hold off
+
+
+			subplot(2,2,2);
+			hold on 
+			[~,edges]=histcounts(out,100);
+			histogram(out,100);
+			title(title_str);
+			xlabel('All Values From All Basins');
+			hold off
+
+			subplot(2,2,4);
+			hold on 
+			histogram(val,edges);
+			xlabel('Mean Values From All Basins');
+			hold off
+
+		else
+			
+			ii=find(T.river_mouth==basin_num);
+			if isempty(ii)
+				error('Basin number does not appear in provided table')
+			end
+
+			if load_flag==1
+				load(T.file_path{ii,1},'MSNc');
+				out=[MSNc.ksn]';
+			elseif load_flag==2
+				load(T.file_path{ii,1},'Goc');
+				g=Goc.Z(:);
+				g(isnan(g))=[];
+				out=g;
+			elseif load_flag==3
+				load(T.file_path{ii,1},'DEMoc');
+				d=DEMoc.Z(:);
+				d(isnan(d))=[];
+				out=d;
+			elseif load_flag==4
+				load(T.file_path{ii,1},'rlf');
+				ix=find(cell2mat(rlf(:,2))==rr);
+				r=rlf{ix,1}.Z(:);		
+				r(isnan(r))=[];
+				out=r;	
+			elseif load_flag==5
+				load(T.file_path{ii,1},'AGc');
+				ix=find(strcmp(AGc(:,2),stOI));
+				a=AGc{ix,1}.Z(:);
+				a(isnan(a))=[];
+				out=a;
+			end	
+
+			[N,~]=histcounts(out,100);
+
+			f=figure(1);
+			set(f,'Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
+			clf
+
+			hold on 
+			histogram(out,100);
+			plot([T.(m_valN)(ii,1),T.(m_valN)(ii,1)],[0,max(N)],'-k','LineWidth',2);
+			title(title_str);
+			xlabel(['Values from Basin ' num2str(basin_num)]);
+			hold off
+		end		
+
 	case 'xy'
+
 		if isempty(xval) | isempty(yval)
 			error('For "xy" plot, entries for "xval" and "yval" are required');
+		end
+
+		VN=T.Properties.VariableNames;
+
+		if ~any(strcmp(VN,xval))
+			error('Entry to provided to "xval" is not regonized as the name of a column in the provided table');
+		elseif ~any(strcmp(VN,yval))
+			error('Entry to provided to "yval" is not regonized as the name of a column in the provided table');
 		end
 
 		x=T.(xval);
@@ -836,9 +1023,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		hold on 
 
 		if ~strcmp(uncertainty,'none') & ~isempty(sx) & isempty(sy)
-			errobar(x,y,sx,'horizontal','.k','CapSize',0);
+			errorbar(x,y,sx,'horizontal','.k','CapSize',0);
 		elseif ~strcmp(uncertainty,'none') & isempty(sy) & ~isempty(sx)
-			errobar(x,y,sy,'vertical','.k','CapSize',0);
+			errorbar(x,y,sy,'vertical','.k','CapSize',0);
 		elseif ~strcmp(uncertainty,'none') & ~isempty(sx) & ~isempty(sy)
 			errorbar(x,y,sy,sy,sx,sx,'.k','CapSize',0);
 		end
