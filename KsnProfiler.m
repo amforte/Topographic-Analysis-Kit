@@ -99,9 +99,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%
 	%%%%%%%%%%	
 	% Outputs:
-	%	knl - n x 11 matrix of node list for selected stream segments, columns are x coordinate, y coordinate, drainage area, ksn, negative ksn error,
-	%		positive ksn error, reference concavity, best fit concavity, mininum threshold area, gradient, and an identifying number. Note that if using the 
-	%		code in 'concavity_method','auto' mode then the reference concavity and best fit concavity columns will be the same.
+	%	knl - n x 12 matrix of node list for selected stream segments, columns are x coordinate, y coordinate, drainage area, ksn, negative ksn error,
+	%		positive ksn error, reference concavity, best fit concavity, mininum threshold area, gradient, fit residual, and an identifying number. Note
+	%		that if using the code in 'concavity_method','auto' mode then the reference concavity and best fit concavity columns will be the same.
 	%	ksn_master - identical to knl but as a cell array where individual cells are individual selected channels
 	%	bnd_list - n x 4 matrix of selected bounds for fitting ksn, columns are x coordinate, y coordinate, elevation, and the stream identifying number 
 	%		(this could be thought of as a list of knickpoints), also output as a seperate shapefile. If x y and z values appear as NaN, this indicates
@@ -151,6 +151,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	addParamValue(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
 	addParamValue(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
 	addParamValue(p,'save_figures',false,@(x) isscalar(x) && islogical(x));
+	addParamValue(p,'restart',[],@(x) ischar(validatestring(x,{'continue','skip'})));
 
 	parse(p,DEM,FD,A,S,varargin{:});
 	DEM=p.Results.DEM;
@@ -179,9 +180,15 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	save_figures=p.Results.save_figures;
 	redefine_thresh=p.Results.redefine_threshold;
 	rd_pick_method=p.Results.rd_pick_method;
-
-	% Max Ksn for color scaling
 	mksn=p.Results.max_ksn;
+	restart=p.Results.restart;
+
+	% Store out parameters
+	out_mat_name=[shape_name '.mat'];
+
+	
+	input_params=p.Results;
+	save(out_mat_name,'input_params');
 
     % Remove edges if flag is thrown
     if cno
@@ -393,7 +400,6 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	            title('Zoom or pan to area of interest and then press enter');
 	            hold off
 				pause()
-
 
 	            figure(1)
 	            hold on
@@ -1431,6 +1437,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					str3 = 'C';
 					ksn_master{ii,1}=ksn_list;
 					bnd_master{ii,1}=bnd_ix;
+					res_master{ii,1}=res_list;
 					if save_figures
 						f2_name=['StreamFits_' num2str(ii) '.pdf'];
 						f3_name=['StreamRsds_' num2str(ii) '.pdf'];
@@ -1445,6 +1452,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					str3 = 'C';
 					ksn_master{ii,1}=ksn_list;
 					bnd_master{ii,1}=bnd_ix;
+					res_master{ii,1}=res_list;
 					if save_figures
 						f2_name=['StreamFits_' num2str(ii) '.pdf'];
 						f3_name=['StreamRsds_' num2str(ii) '.pdf'];
@@ -2358,6 +2366,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						str1 = [];
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
+						res_master{ii,1}=res_list;
 						Sc=Sct;
 						if save_figures
 							f2_name=['StreamFits_' num2str(ii) '.pdf'];
@@ -2375,6 +2384,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						str2=[];
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
+						res_master{ii,1}=res_list;
 						Sc=Sct;
 						if save_figures
 							f2_name=['StreamFits_' num2str(ii) '.pdf'];
@@ -2397,6 +2407,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						str1 = [];
 						ksn_master{ii,1}=ksn_list;
 						bnd_master{ii,1}=bnd_ix;
+						res_master{ii,1}=res_list;
 						Sc=Sct;
 						if save_figures
 							f2_name=['StreamFits_' num2str(ii) '.pdf'];
@@ -2461,12 +2472,16 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	% Collapse bnd_list
 	bnd_list=vertcat(bnd_list{:});
 
-	% Add Gradient to node list and clear NaNs
+	% Add Gradient and Residual to node list and clear NaNs
 	for jj=1:numel(ksn_master)
 		kmat=ksn_master{jj,1};
-		kmat(isnan(kmat(:,1)),:)=[];
+		rmat=res_master{jj,1};
+		kidx=isnan(kmat(:,1));
+		kmat(kidx,:)=[];
+		rmat(kidx,:)=[];
+
 		gix=coord2ind(DEM,kmat(:,1),kmat(:,2));
-		kmat=[kmat G.Z(gix) ones(size(kmat,1),1).*jj];
+		kmat=[kmat G.Z(gix) rmat(:,2) ones(size(kmat,1),1).*jj];
 		ksn_master{jj,1}=kmat;
 	end
 
@@ -2481,6 +2496,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	thetaR=GRIDobj(DEM);
 	segthetaR=GRIDobj(DEM);
 	threshaR=GRIDobj(DEM);
+	resR=GRIDobj(DEM);
+	rivnumR=GRIDobj(DEM);
 
 	ksnR.Z(ix)=knl(:,4);
 	ksnRn.Z(ix)=knl(:,5);
@@ -2488,11 +2505,14 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	thetaR.Z(ix)=knl(:,7);
 	segthetaR.Z(ix)=knl(:,8);
 	threshaR.Z(ix)=knl(:,9);
+	resR.Z(ix)=knl(:,11);
+	rivnumR.Z(ix)=knl(:,12);
 
 	% Create KSN map structure and export shapefile
 	KSN=STREAMobj2mapstruct(Sc,'seglength',smooth_distance,'attributes',...
-		{'ksn' ksnR @mean 'ksn_neg' ksnRn @mean 'ksn_pos' ksnRp @mean 'uparea' (A.*(A.cellsize^2))...
-		 @mean 'gradient' G @mean 'theta' thetaR @mean 'seg_theta' segthetaR @mean 'thrsh_ar' threshaR @mean});
+		{'ksn' ksnR @mean 'ksn_neg' ksnRn @mean 'ksn_pos' ksnRp @mean 'uparea' (A.*(A.cellsize^2)) @mean...
+		'gradient' G @mean 'theta' thetaR @mean 'seg_theta' segthetaR @mean 'thrsh_ar' threshaR @mean...
+		'resid' resR @mean 'riv_num' rivnumR @median});
 
 	% Create knickpoint map structure and prepare bound output
 	idx=~isnan(bnd_list(:,5));
@@ -2516,8 +2536,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	out_shape_name=[shape_name '.shp'];
 	shapewrite(KSN,out_shape_name);
 
-	out_mat_name=[shape_name '.mat'];
-	save(out_mat_name,'knl','ksn_master','bnd_list','Sc');
+	save(out_mat_name,'knl','ksn_master','bnd_list','Sc','-append');
 
 
 %FUNCTION END
@@ -2565,7 +2584,7 @@ function [OUT]=ChiCalc(S,DEM,A,a0,varargin)
 	chiF=chi(Lib);
 	zabsF=zx(Lib)-zb;
 
-	% The splining generates lots of warning for small basins so turning warnings off
+	% The splining and fitting generates lots of warning for small basins so turning warnings off
 	warning off
 
 	chiS=linspace(0,max(chiF),numel(chiF)).';
@@ -2578,7 +2597,7 @@ function [OUT]=ChiCalc(S,DEM,A,a0,varargin)
 		chiS=chiF;
 	end
 
-	warning on
+	
 
 	OUT=struct;
 	try
@@ -2598,6 +2617,7 @@ function [OUT]=ChiCalc(S,DEM,A,a0,varargin)
 		OUT.mn   = mn;
 	end
 
+	warning on
 
 	[OUT.x,...
 	 OUT.y,...
