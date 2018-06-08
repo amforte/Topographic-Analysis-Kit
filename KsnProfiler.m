@@ -1787,7 +1787,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						hold on
 						pl1=plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
 						pl2=plotdz(Sn,DEMc,'dunit','km','Color','k');
-						pl3=scatter((C.distance)./1000,C.elev,5,C.chi,'filled')
+						pl3=scatter((C.distance)./1000,C.elev,5,C.chi,'filled');
 						xlabel('Distance from Mouth (km)')
 						ylabel('Elevation (m)')
 						legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','Chi','location','best');
