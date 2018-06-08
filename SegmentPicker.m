@@ -1,12 +1,8 @@
-function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
+function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	% Function to select a segment of a stream network from the top of the stream, and plot the long profile 
 	% 	and chi-Z relationship of that segment,also outputs the extraced portion of the stream network and chi structure 
 	% 	(out of 'chiplot'). Allows user to iteratively select different parts of the stream network and display. 
 	% 	Keeps running dataset of all the streams you pick and accept.
-	%
-	% Syntax: 
-	%	SegmentPicker(DEM,FD,A,S,basin_num)
-	%	SegmentPicker(DEM,FD,A,S,basin_num,pn,pv,...)
 	%
 	% Required Inputs:
 	%	DEM - Digital Elevation as a GRIDobj, assumes unconditioned DEM (e.g. DEMoc from ProcessRiverBasins)
@@ -47,23 +43,26 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	%			 will have a chi value of zero and a distance from mouth value of zero).
 	%	threshold_area [1e6] - used to redraw downsampled stream network if 'plot_type' is set to 'grid'
 	%	interp_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a conditioned DEM)
-
 	%
 	% Outputs:
+	% 	Sc - STREAMobj containing all the stream segments chosen.
+	%
 	%	Saves an output called 'PickedSegements_*.mat' with the provided basin number containing these results:
 	%		StreamSgmnts - Cell array of selected stream segments as STREAMobj
 	%		ChiSgmnts - Cell array of selected chi structures 
+	%		Sc - Single STREAMobj containing all the streams chosen.
 	%		and if 'down' is selected:
-	%		Heads - nx3 matrix of channel heads you picked with pick number, x cooord, and y coordinate as the columns
+	%			Heads - nx3 matrix of channel heads you picked with x cooord, y coordinate, and pick number as the columns
 	%		and if 'up' is selected:
-	%		Outlets - nx3 matrix of outlets you picked with pick number, x cooord, and y coordinate as the columns
+	%			Outlets - nx3 matrix of outlets you picked with x cooord, y coordinate, and pick number as the columns (valid input to 'ProcessRiverBasins'
+	%			as 'river_mouths' parameter)
 	%
 	% Examples:
-	%	SegmentPicker(DEM,FD,A,S,2);
-	%	SegmentPicker(DEM,FD,A,S,2,'direction','up','theta_ref',0.6,'min_grad',0.00001);
-	%	SegmentPicker(DEM,FD,A,S,32,'direction','down','theta_ref',0.5,'min_elev',300,'recalc',true);
-	%	SegmentPicker(DEM,FD,A,S,1,'method','prev_picks','picks',channel_heads); % If inputing a matrix named channel_heads
-	%	SegmentPicker(DEM,FD,A,S,1,'method','prev_picks','picks','channel_heads'); % If inputing a shapefile named channel_heads.shp
+	%	[Sc]=SegmentPicker(DEM,FD,A,S,2);
+	%	[Sc]=SegmentPicker(DEM,FD,A,S,2,'direction','up','theta_ref',0.6,'min_grad',0.00001);
+	%	[Sc]=SegmentPicker(DEM,FD,A,S,32,'direction','down','theta_ref',0.5,'min_elev',300,'recalc',true);
+	%	[Sc]=SegmentPicker(DEM,FD,A,S,1,'method','prev_picks','picks',channel_heads); % If inputing a matrix named channel_heads
+	%	[Sc]=SegmentPicker(DEM,FD,A,S,1,'method','prev_picks','picks','channel_heads'); % If inputing a shapefile named channel_heads.shp
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Last Revised Winter 2017 %
@@ -183,33 +182,34 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 			close all
 			f1=figure(1);
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
+			clf
+			switch plot_type
+			case 'grid'
+				hold on
+				imageschs(DEM,LA,'colormap','parula','colorbar',false);
+				hold off
+			case 'vector'
+				hold on
+				imageschs(DEM,DEM,'colormap','parula','colorbar',false);
+				plot(S,'-w');
+				hold off
+			end
+
 			while strcmpi(str2,'Y')         
 				while strcmpi(str1,'N')    	
 					
 					% Reset short circuit switch
 					short_circ=0;
 
-					switch plot_type
-					case 'grid'
-						if ii==1
-							hold on
-							imageschs(DEM,LA,'colormap','parula','colorbar',false);
-							hold off
-						end
-					case 'vector'
-						if ii==1
-							hold on
-							imageschs(DEM,DEM,'colormap','parula','colorbar',false);
-							plot(S,'-w');
-							hold off
-						end
-					end
-
-		            disp('Zoom and pan to area of interest and press "return/enter" when ready to pick');
-		            pause()
-
-					disp('Choose point near channel head of interest')
 					figure(f1)
+					hold on
+					title('Zoom and pan to area of interest and press "return/enter" when ready to pick')
+					hold off
+					pause()
+
+					hold on
+					title('Choose point near channel head of interest')
+					hold off
 					[x,y]=ginput(1);
 					pOI=[x y];
 
@@ -298,18 +298,18 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 						Sn=Sn_t;
 					end
 
-					% clf
-
-
 					hold on
 					plot(Sn,'-r','LineWidth',2);
 					hold off
 
-					prompt='Is this the stream segment you wanted? Y/N [Y]: ';
-					str1=input(prompt,'s');
-					if isempty(str1)
-						str1 = 'Y';
-					end
+		            qa=questdlg('Is this the stream segment you wanted?','Stream Selection','No','Yes','Yes');
+
+		            switch qa
+		            case 'Yes'
+		                str1 = 'Y';
+		            case 'No'
+		                str1 = 'N';
+		            end
 				end
 
 				if isempty(p.Results.min_elev) && isempty(p.Results.max_area) 
@@ -341,16 +341,15 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 					C.area=C_t.area(ix3); C.res=C_t.res(ix3);
 				end
 
-				% clf
 				f2=figure(2);
 				set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
 
 				subplot(3,1,1);
 				hold on
 				plot(C.chi,C.elev,'Color',colcol(mod(ii,10)+1,:));
-				xlabel('Chi')
+				xlabel('\chi')
 				ylabel('Elevation (m)')
-				title('Chi - Z')
+				title('\chi - Z')
 				hold off
 
 				subplot(3,1,2);
@@ -395,25 +394,21 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				StreamSgmnts{ii}=Sn;
 				ChiSgmnts{ii}=C;
-				Heads(ii,1)=ii;
-				Heads(ii,2)=chOI(:,1);
-				Heads(ii,3)=chOI(:,2);
+				Heads(ii,1)=chOI(:,1);
+				Heads(ii,2)=chOI(:,2);
+				Heads(ii,3)=ii;
 
 				ii=ii+1;
 
-				prompt='Pick a Different Stream? Y/N [N]: ';
-				str2=input(prompt,'s');
-				if isempty(str2)
-					str2 = 'N';
-				end
-
-				if strcmpi(str2,'Y')   
-					str1='N';
-				end
+	            qa2=questdlg('Pick a different stream?','Stream Selection','No','Yes','Yes');
+	            switch qa2
+	            case 'Yes'
+	            	str2 = 'Y';
+	                str1 = 'N';
+	            case 'No'
+	                str2 = 'N';
+	            end				
 			end
-
-			fileOut=['PickedSegments_' num2str(basin_num) '.mat'];
-			save(fileOut,'StreamSgmnts','ChiSgmnts','Heads');
 
 		% Extract segements upstream from a pour point selection
 		case 'up_keep'
@@ -422,34 +417,35 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 			str2='Y';
 
 			ii=1;
-			close all
+	
 			f1=figure(1);
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
+			clf
+			switch plot_type
+			case 'grid'
+				hold on
+				imageschs(DEM,LA,'colormap','parula','colorbar',false);
+				hold off
+			case 'vector'
+				hold on
+				imageschs(DEM,DEM,'colormap','parula','colorbar',false);
+				plot(S,'-w');
+				hold off
+			end
+
 			while strcmpi(str2,'Y')       
 				while strcmpi(str1,'N')   	
 
-
-					switch plot_type
-					case 'grid'
-						if ii==1
-							hold on
-							imageschs(DEM,LA,'colormap','parula','colorbar',false);
-							hold off
-						end
-					case 'vector'
-						if ii==1
-							hold on
-							imageschs(DEM,DEM,'colormap','parula','colorbar',false);
-							plot(S,'-w');
-							hold off
-						end
-					end
-
-		            disp('Zoom and pan to area of interest and press "return/enter" when ready to pick');
-		            pause()
-
-					disp('Choose point above to which calculate Chi-Z')
 					figure(f1)
+					hold on
+					title('Zoom and pan to area of interest and press "return/enter" when ready to pick')
+					hold off
+					pause()
+
+					hold on
+					title('Choose point above to which calculate Chi-Z')
+					hold off
+
 					[x,y]=ginput(1);
 
 					% Build logical raster
@@ -467,25 +463,26 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 					plot(Sn,'-r','LineWidth',2);
 					hold off
 
-					prompt='Is this the stream segment you wanted? Y/N [Y]: ';
-					str1=input(prompt,'s');
-					if isempty(str1)
-						str1 = 'Y';
-					end
+		            qa=questdlg('Is this the stream segment you wanted?','Stream Selection','No','Yes','Yes');
+		            switch qa
+		            case 'Yes'
+		                str1 = 'Y';
+		            case 'No'
+		                str1 = 'N';
+		            end
 				end
 
 				C=chiplot(Sn,DEMc,A,'a0',1,'mn',theta_ref,'plot',false);
 
-				% clf
 				f2=figure(2);
 				set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
 
 				subplot(3,1,1);
 				hold on
 				plot(C.chi,C.elev);
-				xlabel('Chi')
+				xlabel('\chi')
 				ylabel('Elevation (m)')
-				title('Chi - Z')
+				title('\chi - Z')
 				hold off
 
 				subplot(3,1,2);
@@ -507,25 +504,22 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				StreamSgmnts{ii}=Sn;
 				ChiSgmnts{ii}=C;
-				Outlets(ii,1)=ii;
-				Outlets(ii,2)=xn;
-				Outlets(ii,3)=yn;
+				Outlets(ii,1)=xn;
+				Outlets(ii,2)=yn;
+				Outlets(ii,3)=ii;
 
 				ii=ii+1;
 
-				prompt='Pick a Different Stream? Y/N [N]: ';
-				str2=input(prompt,'s');
-				if isempty(str2)
-					str2 = 'N';
-				end
 
-				if strcmpi(str2,'Y')  
-					str1='N';
-				end
+	            qa2=questdlg('Pick a different stream?','Stream Selection','No','Yes','Yes');
+	            switch qa2
+	            case 'Yes'
+	            	str2 = 'Y';
+	                str1 = 'N';
+	            case 'No'
+	                str2 = 'N';
+	            end
 			end
-
-			fileOut=['PickedSegments_' num2str(basin_num) '.mat'];
-			save(fileOut,'StreamSgmnts','ChiSgmnts','Outlets');
 
 		case 'down_ref'
 
@@ -533,32 +527,37 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 			str2='Y';
 
 			ii=1;
-			close all
+
+			f1=figure(1);
+			set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
+			clf
+			switch plot_type
+			case 'grid'
+				hold on
+				imageschs(DEM,LA,'colormap','parula','colorbar',false);
+				hold off
+			case 'vector'
+				hold on
+				imageschs(DEM,DEM,'colormap','parula','colorbar',false);
+				plot(S,'-w');
+				hold off
+			end
+
 			while strcmpi(str2,'Y')     
 				while strcmpi(str1,'N')    	
 					
 					% Reset short circuit switch
 					short_circ=0;
 
-					f1=figure(1);
-					set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
+					figure(1)
+					hold on
+					title('Zoom and pan to area of interest and press "return/enter" when ready to pick')
+					hold off
+					pause()
 
-					switch plot_type
-					case 'grid'
-						hold on
-						imageschs(DEM,LA,'colormap','parula','colorbar',false);
-						hold off
-					case 'vector'
-						hold on
-						imageschs(DEM,DEM,'colormap','parula','colorbar',false);
-						plot(S,'-w');
-						hold off
-					end
-
-		            disp('Zoom and pan to area of interest and press "return/enter" when ready to pick');
-		            pause()
-
-					disp('Choose point near channel head of interest')
+					hold on
+					title('Choose point near channel head of interest')
+					hold off
 					[x,y]=ginput(1);
 					pOI=[x y];
 
@@ -647,18 +646,19 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 						Sn=Sn_t;
 					end
 
-					% clf
-
-
 					hold on
 					plot(Sn,'-r','LineWidth',2);
 					hold off
 
-					prompt='Is this the stream segment you wanted? Y/N [Y]: ';
-					str1=input(prompt,'s');
-					if isempty(str1)
-						str1 = 'Y';
-					end
+
+		            qa=questdlg('Is this the stream segment you wanted?','Stream Selection','No','Yes','Yes');
+		            switch qa
+		            case 'Yes'
+		                str1 = 'Y';
+		            case 'No'
+		                str1 = 'N';
+		            end
+
 				end
 
 				if isempty(p.Results.min_elev) && isempty(p.Results.max_area) 
@@ -696,9 +696,9 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				subplot(3,1,1);
 				hold on
 				plot(C.chi,C.elev,'-k');
-				xlabel('Chi')
+				xlabel('\chi')
 				ylabel('Elevation (m)')
-				title('Chi - Z')
+				title('\chi - Z')
 				hold off
 
 				subplot(3,1,2);
@@ -743,26 +743,23 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				StreamSgmnts{ii}=Sn;
 				ChiSgmnts{ii}=C;
-				Heads(ii,1)=ii;
-				Heads(ii,2)=chOI(:,1);
-				Heads(ii,3)=chOI(:,2);
+				Heads(ii,1)=chOI(:,1);
+				Heads(ii,2)=chOI(:,2);
+				Heads(ii,3)=ii;
 
 				ii=ii+1;
 
-				prompt='Pick a Different Stream? Y/N [N]: ';
-				str2=input(prompt,'s');
-				if isempty(str2)
-					str2 = 'N';
-				end
+	            qa2=questdlg('Pick a different stream?','Stream Selection','No','Yes','Yes');
+	            switch qa2
+	            case 'Yes'
+	            	str2 = 'Y';
+	                str1 = 'N';
+	                close figure 2
+	            case 'No'
+	                str2 = 'N';
+	            end	
 
-				if strcmpi(str2,'Y')  
-					str1='N';
-					close figure 2
-				end
 			end
-
-			fileOut=['PickedSegments_' num2str(basin_num) '.mat'];
-			save(fileOut,'StreamSgmnts','ChiSgmnts','Heads');
 
 		% Extract segements upstream from a pour point selection
 		case 'up_ref'
@@ -771,29 +768,33 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 			str2='Y';
 
 			ii=1;
-			close all
+			f1=figure(1);
+			set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
+			clf
+			switch plot_type
+			case 'grid'
+				hold on
+				imageschs(DEM,LA,'colormap','parula','colorbar',false);
+				hold off
+			case 'vector'
+				hold on
+				imageschs(DEM,DEM,'colormap','parula','colorbar',false);
+				plot(S,'-w');
+				hold off
+			end
+
 			while strcmpi(str2,'Y')        
 				while strcmpi(str1,'N')   	
 					
-					f1=figure(1);
-					set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
+					figure(1);
+					hold on
+					title('Zoom and pan to area of interest and press "return/enter" when ready to pick')
+					hold off
+					pause()
 
-					switch plot_type
-					case 'grid'
-						hold on
-						imageschs(DEM,LA,'colormap','parula','colorbar',false);
-						hold off
-					case 'vector'
-						hold on
-						imageschs(DEM,DEM,'colormap','parula','colorbar',false);
-						plot(S,'-w');
-						hold off
-					end
-
-		            disp('Zoom and pan to area of interest and press "return/enter" when ready to pick');
-		            pause()
-
-					disp('Choose point above to which calculate Chi-Z')
+					hold on
+					title('Choose point above to which calculate Chi-Z')
+					hold off
 					[x,y]=ginput(1);
 
 					% Build logical raster
@@ -811,11 +812,13 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 					plot(Sn,'-r','LineWidth',2);
 					hold off
 
-					prompt='Is this the stream segment you wanted? Y/N [Y]: ';
-					str1=input(prompt,'s');
-					if isempty(str1)
-						str1 = 'Y';
-					end
+		            qa=questdlg('Is this the stream segment you wanted?','Stream Selection','No','Yes','Yes');
+		            switch qa
+		            case 'Yes'
+		                str1 = 'Y';
+		            case 'No'
+		                str1 = 'N';
+		            end
 				end
 
 				C=chiplot(Sn,DEMc,A,'a0',1,'mn',theta_ref,'plot',false);
@@ -825,9 +828,9 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				subplot(3,1,1);
 				hold on
 				plot(C.chi,C.elev,'-k');
-				xlabel('Chi')
+				xlabel('\chi')
 				ylabel('Elevation (m)')
-				title('Chi - Z')
+				title('\chi - Z')
 				hold off
 
 				subplot(3,1,2);
@@ -849,26 +852,23 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				StreamSgmnts{ii}=Sn;
 				ChiSgmnts{ii}=C;
-				Outlets(ii,1)=ii;
-				Outlets(ii,2)=xn;
-				Outlets(ii,3)=yn;
+				Outlets(ii,1)=xn;
+				Outlets(ii,2)=yn;
+				Outlets(ii,3)=ii;
 
 				ii=ii+1;
 
-				prompt='Pick a Different Stream? Y/N [N]: ';
-				str2=input(prompt,'s');
-				if isempty(str2)
-					str2 = 'N';
-				end
+	            qa2=questdlg('Pick a different stream?','Stream Selection','No','Yes','Yes');
+	            switch qa2
+	            case 'Yes'
+	            	str2 = 'Y';
+	                str1 = 'N';
+	                close figure 2
+	            case 'No'
+	                str2 = 'N';
+	            end	
 
-				if strcmpi(str2,'Y') 
-					str1='N';
-					close figure 2
-				end
 			end
-
-			fileOut=['PickedSegments_' num2str(basin_num) '.mat'];
-			save(fileOut,'StreamSgmnts','ChiSgmnts','Outlets');
 		end
 		
 	% Previous Picks
@@ -991,15 +991,12 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				StreamSgmnts{ii}=Sn;
 				ChiSgmnts{ii}=C;
-				Heads(ii,1)=ii;
-				Heads(ii,2)=chOI(:,1);
-				Heads(ii,3)=chOI(:,2);
+				Heads(ii,1)=chOI(:,1);
+				Heads(ii,2)=chOI(:,2);
+				Heads(ii,3)=ii;
 				waitbar(ii/num_heads);
 			end
 			close(w1);
-
-			fileOut=['PickedSegments_' num2str(basin_num) '.mat'];
-			save(fileOut,'StreamSgmnts','ChiSgmnts','Heads');
 
 		case 'up'
 			outlets=pt;
@@ -1024,17 +1021,34 @@ function SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				StreamSgmnts{ii}=Sn;
 				ChiSgmnts{ii}=C;
-				Outlets(ii,1)=ii;
-				Outlets(ii,2)=xn;
-				Outlets(ii,3)=yn;
+				Outlets(ii,1)=xn;
+				Outlets(ii,2)=yn;
+				Outlets(ii,3)=ii;
 				waitbar(ii/num_outs);
 			end
 			close(w1);
-
-			fileOut=['PickedSegments_' num2str(basin_num) '.mat'];
-			save(fileOut,'StreamSgmnts','ChiSgmnts','Outlets');
 		end
 	end
+
+% Clean up and generate outputs
+num_picks=numel(StreamSgmnts);
+if num_picks==1
+	Sc=StreamSgmnts{1};
+else
+	Sc=StreamSgmnts{1};
+	for ii=2:num_picks
+		Sc=union(Sc,StreamSgmnts{ii});
+	end
+end
+
+fileOut=['PickedSegments_' num2str(basin_num) '.mat'];
+switch direction
+case 'up'
+	save(fileOut,'StreamSgmnts','ChiSgmnts','Outlets','Sc');
+case 'down'
+	save(fileOut,'StreamSgmnts','ChiSgmnts','Heads','Sc');	
+end
+
 % Main Function End
 end
 

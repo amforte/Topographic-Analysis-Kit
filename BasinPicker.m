@@ -38,10 +38,11 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
     %           the stream network is plotted as a grid and downsampled ('grid'). The 'grid' option is much faster for large datasets, 
     %           but can result in inaccurate site selections. The 'vector' option is easier to see, but can be very slow to load and interact with.
     %       threshold_area [1e6] - used to redraw downsampled stream network if 'plot_type' is set to 'grid'
-
+    %
     % 
     % Outputs:
-    %       Outlets - n x 3 matrix of sample locations with columns basin number, x coordinate, and y coordinate
+    %       Outlets - n x 3 matrix of sample locations with columns basin number, x coordinate, and y coordinate (valid input to 'ProcessRiverBasins'
+    %           as 'river_mouths' parameter)
     %
     % Examples:
     %       [Outs]=DetritalSamplePicker(DEM,FD,A,S);
@@ -263,17 +264,36 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
     end
     
     % Start sample selection process
-    str1='N';
-    str2='Y';
+    str1='N'; % Watershed choice
+    str2='Y'; % Continue choosing
 
     while strcmpi(str2,'Y');
         while strcmpi(str1,'N');	
             
-            disp('Zoom and pan to area of interest and press "return/enter" when ready to pick');
-            pause()
+            if isempty(EG)
+                subplot(2,1,1);
+                hold on
+                title('Zoom and pan to area of interest and press "return/enter" when ready to pick')
+                hold off
+                pause()
 
-    
-            disp('    Choose sample point on elevation map')
+                subplot(2,1,1);
+                hold on
+                title('Choose sample point on elevation map')
+                hold off
+            else
+                subplot(3,1,1);
+                hold on
+                title('Zoom and pan to area of interest and press "return/enter" when ready to pick')
+                hold off
+                pause()
+
+                subplot(3,1,1);
+                hold on
+                title('Choose sample point on elevation map')
+                hold off
+            end
+
             [x,y]=ginput(1);
 
             % Build logical raster
@@ -305,13 +325,54 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             scatter(xn,yn,20,'w','filled');
             hold off
 
-            prompt='    Is this the stream segment you wanted? Y/N [Y]: ';
-            str5=input(prompt,'s');
-            if isempty(str5) | strcmpi(str5,'Y');
-                str1 = 'Y';
-            elseif strcmpi(str5,'N')
-                str1='N';
+            if isempty(EG)
+                figure(1);
+
+                subplot(2,1,2);
+                hold on
+                pl(1)=plot(Sn,'-r','LineWidth',2);
+                sc(1)=scatter(xn,yn,20,'w','filled');
+                hold off
+                          
+                subplot(2,1,1);
+                hold on
+                pl(2)=plot(Sn,'-r','LineWidth',2);        
+                sc(2)=scatter(xn,yn,20,'w','filled');      
+                hold off
+            else
+                figure(1);
+
+                subplot(3,1,3);
+                hold on
+                pl(1)=plot(Sn,'-r','LineWidth',2);
+                sc(1)=scatter(xn,yn,20,'w','filled');
+                hold off
+
+                subplot(3,1,2);
+                hold on
+                pl(2)=plot(Sn,'-r','LineWidth',2);
+                sc(2)=scatter(xn,yn,20,'w','filled');
+                hold off
+                          
+                subplot(3,1,1);
+                hold on
+                pl(3)=plot(Sn,'-r','LineWidth',2);
+                sc(3)=scatter(xn,yn,20,'w','filled');
+                hold off
             end
+
+
+            qa=questdlg('Is this the watershed you wanted?','Basin Selection','No','Yes','Yes');
+
+            switch qa
+            case 'Yes'
+                str1 = 'Y';
+            case 'No'
+                str1 = 'N';
+            end
+
+            delete(pl);
+            delete(sc);
             close figure 2
         end
         
@@ -324,9 +385,9 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
         subplot(2,1,1);
         hold on
         plot(C.chi,C.elev);
-        xlabel('Chi')
+        xlabel('\chi')
         ylabel('Elevation (m)')
-        title('Chi - Z')
+        title('\chi - Z')
         hold off
 
         subplot(2,1,2);
@@ -336,13 +397,16 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
         ylabel('Elevation (m)')
         title('Long Profile')
         hold off
-       
-        prompt='    Keep this stream? Y/N [Y]: ';
-        str2=input(prompt,'s');
-        if isempty(str2) | strcmpi(str2,'Y');
-            Outlets(ii,3)=ii;
+
+        qa2=questdlg('Keep this basin?','Basin Selection','No','Yes','Yes');       
+        % prompt='    Keep this stream? Y/N [Y]: ';
+        % str2=input(prompt,'s');
+        % if isempty(str2) | strcmpi(str2,'Y');
+        switch qa2
+        case 'Yes'
             Outlets(ii,1)=xn;
             Outlets(ii,2)=yn;
+            Outlets(ii,3)=ii;
             ii=ii+1;
             
             % Plot selected point on figures
@@ -380,14 +444,16 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             save('Outlets.mat','Outlets');
         end
         
-        prompt='    Keep picking streams? Y/N [Y]: ';
-        str3=input(prompt,'s');
-        if isempty(str3) | strcmpi(str3,'Y');
-            str2 = 'Y';
-            str1 = 'N';
-        else
+
+        qa3=questdlg('Keep choosing basins?','Basin Selection','No','Yes','Yes'); 
+        switch qa3
+        case 'Yes'
+            str2='Y';
+            str1='N';
+        case 'No'
             str2='N';
-        end
+        end  
+
         
         close figure 2;
     end

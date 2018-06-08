@@ -234,6 +234,8 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 		end
 
 		T.hypsometry{ii,1}=hyps;
+		T.hyp_integral(ii,1)=abs(trapz((hyps(:,2)-min(hyps(:,2)))/(max(hyps(:,2))-min(hyps(:,2))),hyps(:,1)/100));
+
 
 		% Check for additional grids within the process river basins output
 		VarList=whos('-file',FileName);
@@ -517,6 +519,7 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 			end
 		end	
 
+		T.file_path{ii,1}=FileName;
 
 		waitbar(ii/num_files);
 	end

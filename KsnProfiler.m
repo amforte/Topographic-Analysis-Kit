@@ -74,7 +74,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%			for the main required DEM input!) which will be used for extracting elevations. See 'ConditionDEM' function for options 
 	%			for making a hydrological conditioned DEM. If no input is provided the code defaults to using the mincosthydrocon function.
 	%	interp_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a 
-	%			conditioned DEM)
+	%			conditioned DEM). Values closer to 0 tend to 'carve' more, whereas values closer to 1 tend to fill. See info for 
+	%			'mincosthydrocon'
 	%
 	%%% Display Options
 	%	display_slope_area [false] - logical flag to display slope area plots. Some people love slope area plots (like one of the authors of
@@ -98,9 +99,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%
 	%%%%%%%%%%	
 	% Outputs:
-	%	knl - n x 8 matrix of node list for selected stream segments, columns are x coordinate, y coordinate, drainage area, ksn,
-	%		reference concavity, best fit concavity, gradient, and an identifying number. Note that if using the code in 'theta_method','auto' mode then the
-	%		reference concavity and best fit concavity columns will be the same.
+	%	knl - n x 11 matrix of node list for selected stream segments, columns are x coordinate, y coordinate, drainage area, ksn, negative ksn error,
+	%		positive ksn error, reference concavity, best fit concavity, mininum threshold area, gradient, and an identifying number. Note that if using the 
+	%		code in 'concavity_method','auto' mode then the reference concavity and best fit concavity columns will be the same.
 	%	ksn_master - identical to knl but as a cell array where individual cells are individual selected channels
 	%	bnd_list - n x 4 matrix of selected bounds for fitting ksn, columns are x coordinate, y coordinate, elevation, and the stream identifying number 
 	%		(this could be thought of as a list of knickpoints), also output as a seperate shapefile. If x y and z values appear as NaN, this indicates
@@ -275,6 +276,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 	% Make gradient
 	G=gradient8(DEMc);
+	% Make drainage area
+	DA=A.*A.cellsize^2;
 
 	% Modify provided stream network if minimum elevation or maximum drainage area options are included
 	if ~isempty(min_elev)
@@ -292,6 +295,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		W=GRIDobj(DEMc,'logical');
 		W.Z(new_ix)=true;
 		S=STREAMobj(FD,W);		
+	end
+
+	% Generate flow distance grid if redefining threshold
+	if redefine_thresh
+		FLUS=flowdistance(FD);
 	end
 
 	% Generate Map Figures for interactive picking
@@ -379,10 +387,19 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 			% Select channel to fit
 			while strcmpi(str1,'N');	
 				str3='R'; %Reset redo flag
-	            disp('Zoom or pan to area of interest and then press enter');
-	            pause();
 
-				disp('    Choose point near channel head of interest')
+	            figure(1)
+	            hold on
+	            title('Zoom or pan to area of interest and then press enter');
+	            hold off
+				pause()
+
+
+	            figure(1)
+	            hold on
+	            title('Choose point near channel head of interest');
+	            hold off
+
 				[x,y]=ginput(1);
 				pOI=[x y];
 
@@ -395,56 +412,113 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				IX=GRIDobj(DEM,'logical');
 				IX.Z(ix)=true;
 
-				% Extract stream of interest
-				Sn=modify(S,'downstreamto',IX);
-
 				if redefine_thresh
-					[Sn]=RedefineThreshold(DEM,FD,A,Sn,ref_theta,rd_pick_method,smooth_distance);
-					% Update DEMc
-					if any(isnan(getnal(Sn,DEMc)));
-						zc=mincosthydrocon(Sn,DEM,'interp',iv);
-						DEMc.Z(Sn.IXgrid)=zc;
-					end
-				end
 
-				% Build composite stream network of picked streams
-				if strcmp(junction_method,'check')
-					if ii>1
-						[IIXX,~,~,Si]=intersectlocs(Sc,Sn);
-						if isempty(IIXX)
-							Sn=Sn;
+					% Extract stream of interest
+					Sn=modify(S,'downstreamto',IX);
+
+					figure(f1)
+					hold on
+					p1=plot(Sn,'-b','LineWidth',2);
+					hold off
+
+					qa1=questdlg('Is this the stream segment you wanted?','Stream Selection','Yes','No','Yes');
+					switch qa1
+					case 'Yes'
+
+						delete(p1);
+
+						[Sn]=RedefineThreshold(DEM,FD,A,Sn,FLUS,ref_theta,rd_pick_method,smooth_distance,ii,save_figures);
+						% Update DEMc
+						if any(isnan(getnal(Sn,DEMc)));
+							zc=mincosthydrocon(Sn,DEM,'interp',iv);
+							DEMc.Z(Sn.IXgrid)=zc;
+						end
+						% Recalculate auto_ksn
+						if strcmp(theta_method,'ref')
+							[auto_ksn]=KSN_Quick(DEM,A,Sn,ref_theta);
+						end
+
+						str1='Y';
+
+						if strcmp(junction_method,'check')
+							if ii>1
+								[IIXX,~,~,Si]=intersectlocs(Sc,Sn);
+								if isempty(IIXX)
+									Sn=Sn;
+									Sct=union(Sn,Sc,FD);
+								else
+									Sn=Si;
+									Sct=union(Sn,Sc,FD);
+								end
+							else
+								Sct=Sn;
+							end
+						elseif strcmp(junction_method,'ignore')					
+							if ii>1
+								Sct=union(Sn,Sc,FD);
+							else
+								Sct=Sn;
+							end
+						end
+
+						% Plot updated stream
+						figure(f1)
+						hold on
+						p1=plot(Sn,'-b','LineWidth',2);
+						hold off
+
+						Sc=Sct;
+					case 'No'
+						str1='N';
+						delete(p1);
+					end
+				else
+					% Extract stream of interest
+					Sn=modify(S,'downstreamto',IX);
+
+					% Build composite stream network of picked streams
+					if strcmp(junction_method,'check')
+						if ii>1
+							[IIXX,~,~,Si]=intersectlocs(Sc,Sn);
+							if isempty(IIXX)
+								Sn=Sn;
+								Sct=union(Sn,Sc,FD);
+							else
+								Sn=Si;
+								Sct=union(Sn,Sc,FD);
+							end
+						else
+							Sct=Sn;
+						end
+					elseif strcmp(junction_method,'ignore')					
+						if ii>1
 							Sct=union(Sn,Sc,FD);
 						else
-							Sn=Si;
-							Sct=union(Sn,Sc,FD);
+							Sct=Sn;
 						end
-					else
-						Sct=Sn;
 					end
-				elseif strcmp(junction_method,'ignore')					
-					if ii>1
-						Sct=union(Sn,Sc,FD);
-					else
-						Sct=Sn;
-					end
-				end
 
-				figure(f1)
-				hold on
-				p1=plot(Sn,'-b','LineWidth',2);
-				hold off
+					figure(f1)
+					hold on
+					p1=plot(Sn,'-b','LineWidth',2);
+					hold off
 
-				prompt='    Is this the stream segment you wanted? Y/N [Y]: ';
-				str1=input(prompt,'s');
-				if isempty(str1)
-					str1 = 'Y';
-					Sc=Sct;
-				elseif strcmpi(str1,'Y'); 
-					Sc=Sct;
-				else
-					delete(p1);
+					qa1=questdlg('Is this the stream segment you wanted?','Stream Selection','Yes','No','Yes');
+					switch qa1
+					case 'Yes'
+						str1='Y';
+						Sc=Sct;
+					case 'No'
+						str1='N';
+						delete(p1);
+					end					
 				end
 			end % End single channel select
+
+			%% Extract threshold drainage area
+			snchix=streampoi(Sn,'channelheads','ix');
+			snda=DA.Z(snchix);
 
 			%% Calculate chi and extract ksn data
 			if strcmp(theta_method,'ref')
@@ -452,7 +526,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				ak=getnal(Sn,auto_ksn);
 			elseif strcmp(theta_method,'auto')
 				C=ChiCalc(Sn,DEMc,A,1);
-				[auto_ksn]=KSN_Quick(DEM,A,S,C.mn);
+				if redefine_thresh
+					[auto_ksn]=KSN_Quick(DEM,A,Sn,C.mn);
+				else
+					[auto_ksn]=KSN_Quick(DEM,A,S,C.mn);
+				end
 				ak=getnal(Sn,auto_ksn);
 			end
 
@@ -507,7 +585,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						scatter(C.chi,C.elev,10,C.chi,'filled');
 						xlabel('Chi')
 						ylabel('Elevation (m)')
-						title(['Chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments'],'Color','r')
+						title(['Chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments - Press Enter When Done'],'Color','r')
 						ax1.XColor='Red';
 						ax1.YColor='Red';
 						hold off
@@ -541,7 +619,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						scatter(C.chi,C.elev,10,C.chi,'filled');
 						xlabel('Chi')
 						ylabel('Elevation (m)')
-						title(['Chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments'],'Color','r')
+						title(['Chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments - Press Enter When Done'],'Color','r')
 						ax1.XColor='Red';
 						ax1.YColor='Red';
 						hold off
@@ -551,17 +629,18 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					end	
 
 
-					disp('    Select bounds for calculating channel steepnesses and press enter when completed')
+					% uiwait(msgbox('Select bounds for calculating channel steepnesses and press enter when completed','Stream Fitting'));
+					% disp('    Select bounds for calculating channel steepnesses and press enter when completed')
 					[cv,e]=ginput;
 
 					if isempty(cv)
 						if strcmp(theta_method,'ref')
 							Cbf=ChiCalc(Sn,DEMc,A,1);
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn ones(numel(C.x),1)*snda];
 						elseif strcmp(theta_method,'auto')
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*snda];
 						end
 
 						% Determine where ksn value fits into color scale and plot
@@ -685,7 +764,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							end
 
 							ksn_nodes{jj,1}=[Cseg.x Cseg.y Cseg.area ones(numel(Cseg.x),1)*Cseg.ks ones(numel(Cseg.x),1)*Cseg.ks_neg ones(numel(Cseg.x),1)*Cseg.ks_pos ...
-								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn];
+								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn ones(numel(Cseg.x),1)*snda];
 
 							% Plot linear fits	
 							rchi=rc(rb_chidist==min(rb_chidist));
@@ -820,7 +899,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						xlabel('Distance from Mouth (km)')
 						ylabel('Elevation (m)')
 						legend('Unconditioned DEM','Conditioned DEM','Stream Distance','location','best');
-						title('Long Profile : Pick Segments','Color','r')
+						title('Long Profile : Pick Segments - Press Enter When Done','Color','r')
 						ax3.XColor='Red';
 						ax3.YColor='Red';
 						hold off
@@ -853,7 +932,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						xlabel('Distance from Mouth (km)')
 						ylabel('Elevation (m)')
 						legend('Unconditioned DEM','Conditioned DEM','Stream Distance','location','best');
-						title('Long Profile : Pick Segments','Color','r')
+						title('Long Profile : Pick Segments - Press Enter When Done','Color','r')
 						ax3.XColor='Red';
 						ax3.YColor='Red';
 						hold off
@@ -870,10 +949,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						if strcmp(theta_method,'ref')
 							Cbf=ChiCalc(Sn,DEMc,A,1);
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn ones(numel(C.x),1)*snda];
 						elseif strcmp(theta_method,'auto')
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*snda];
 						end
 
 						% Determine where ksn value fits into color scale and plot
@@ -995,7 +1074,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							end
 
 							ksn_nodes{jj,1}=[Cseg.x Cseg.y Cseg.area ones(numel(Cseg.x),1)*Cseg.ks ones(numel(Cseg.x),1)*Cseg.ks_neg ones(numel(Cseg.x),1)*Cseg.ks_pos ...
-								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn];
+								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn ones(numel(Cseg.x),1)*snda];
 
 							% Plot linear fits	
 							rchi=rc(rb_dist==min(rb_dist));
@@ -1127,7 +1206,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					scatter(ba,bs,20,log10(ba),'filled','MarkerEdgeColor','k');
 					xlabel('Log Area');
 					ylabel('Log Gradient');
-					title(['Slope-Area: \theta = ' num2str(C.mn) ' : Pick Segments'],'Color','r');
+					title(['Slope-Area: \theta = ' num2str(C.mn) ' : Pick Segments - Press Enter When Done'],'Color','r');
 					set(ax4,'YScale','log','XScale','log','XDir','reverse');
 					ax4.XColor='Red';
 					ax4.YColor='Red';
@@ -1143,10 +1222,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						if strcmp(theta_method,'ref')
 							Cbf=ChiCalc(Sn,DEMc,A,1);
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn ones(numel(C.x),1)*snda];
 						elseif strcmp(theta_method,'auto')
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*snda];
 						end
 
 						% Determine where ksn value fits into color scale and plot
@@ -1256,7 +1335,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							end
 
 							ksn_nodes{jj,1}=[Cseg.x Cseg.y Cseg.area ones(numel(Cseg.x),1)*Cseg.ks ones(numel(Cseg.x),1)*Cseg.ks_neg ones(numel(Cseg.x),1)*Cseg.ks_pos ...
-								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn];
+								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn ones(numel(Cseg.x),1)*snda];
 
 							% Plot linear fits	
 							rchi=rc(rb_dadist==min(rb_dadist));
@@ -1343,9 +1422,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 				end
 			
-				prompt='    Continue picking (Y), stop picking (N), or redo fit on this stream (R)? [Y]: ';
-				str2=input(prompt,'s');
-				if isempty(str2)
+				qa2=questdlg('What would you like to do?','Stream Fitting','Stop Picking','Redo Fit','Continue Picking','Continue Picking');
+
+				switch qa2
+				case 'Continue Picking'
 					str2 = 'Y';
 					str1 = 'N';
 					str3 = 'C';
@@ -1359,8 +1439,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					end
 					clear ksn_list ksn_nodes res_list bnd_ix;
 					ii=ii+1;
-				elseif strcmpi(str2,'Y');
+				case 'Stop Picking'
 					str1 = 'N';
+					str2 = 'N';
 					str3 = 'C';
 					ksn_master{ii,1}=ksn_list;
 					bnd_master{ii,1}=bnd_ix;
@@ -1371,20 +1452,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						print(f3,f3_name,'-dpdf','-fillpage');
 					end
 					clear ksn_list ksn_nodes res_list bnd_ix;
-					ii=ii+1;
-				elseif strcmpi(str2,'N');
-					str1 = 'N';
-					str3 = 'C';
-					ksn_master{ii,1}=ksn_list;
-					bnd_master{ii,1}=bnd_ix;
-					if save_figures
-						f2_name=['StreamFits_' num2str(ii) '.pdf'];
-						f3_name=['StreamRsds_' num2str(ii) '.pdf'];
-						print(f2,f2_name,'-dpdf','-fillpage');
-						print(f3,f3_name,'-dpdf','-fillpage');
-					end
-					clear ksn_list ksn_nodes res_list bnd_ix;
-				elseif strcmpi(str2,'R');
+				case 'Redo Fit'
 					str3 = 'R';
 					str2 = 'Y';
 					clear ksn_list ksn_nodes res_list bnd_ix;
@@ -1399,6 +1467,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	case 'preselected'
 		% Initiate while loop value
 		str1='R';
+		break_flag=false;
 
 		if strcmp(theta_method,'ref')
 			% Autocalculate ksn for comparison purposes
@@ -1420,11 +1489,16 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				Sn=modify(S,'downstreamto',IX);
 
 				if redefine_thresh
-					[Sn]=RedefineThreshold(DEM,FD,A,Sn,ref_theta,rd_pick_method,smooth_distance);
+					[Sn]=RedefineThreshold(DEM,FD,A,Sn,FLUS,ref_theta,rd_pick_method,smooth_distance,ii,save_figures);
 					% Update DEMc
 					if any(isnan(getnal(Sn,DEMc)));
 						zc=mincosthydrocon(Sn,DEM,'interp',iv);
 						DEMc.Z(Sn.IXgrid)=zc;
+					end
+
+					% Recalculate auto_ksn
+					if strcmp(theta_method,'ref')
+						[auto_ksn]=KSN_Quick(DEM,A,Sn,ref_theta);
 					end
 				end
 
@@ -1456,13 +1530,21 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					end
 				end
 
+				%% Extract threshold drainage area
+				snchix=streampoi(Sn,'channelheads','ix');
+				snda=DA.Z(snchix);
+
 				%% Calculate chi and extract ksn data
 				if strcmp(theta_method,'ref')
 					C=ChiCalc(Sn,DEMc,A,1,ref_theta);
 					ak=getnal(Sn,auto_ksn);
 				elseif strcmp(theta_method,'auto')
 					C=ChiCalc(Sn,DEMc,A,1);
-					[auto_ksn]=KSN_Quick(DEM,A,S,C.mn);
+					if redefine_thresh
+						[auto_ksn]=KSN_Quick(DEM,A,Sn,C.mn);
+					else
+						[auto_ksn]=KSN_Quick(DEM,A,S,C.mn);
+					end
 					ak=getnal(Sn,auto_ksn);
 				end
 
@@ -1516,7 +1598,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						scatter(C.chi,C.elev,10,C.chi,'filled');
 						xlabel('Chi')
 						ylabel('Elevation (m)')
-						title(['Chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments'],'Color','r')
+						title(['Chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments - Press Enter When Done'],'Color','r')
 						ax1.XColor='Red';
 						ax1.YColor='Red';
 						hold off
@@ -1550,7 +1632,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						scatter(C.chi,C.elev,10,C.chi,'filled');
 						xlabel('Chi')
 						ylabel('Elevation (m)')
-						title(['Chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments'],'Color','r')
+						title(['Chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments - Press Enter When Done'],'Color','r')
 						ax1.XColor='Red';
 						ax1.YColor='Red';
 						hold off
@@ -1559,17 +1641,16 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet');
 					end	
 
-					disp('    Select bounds for calculating channel steepnesses and press enter when completed')
 					[cv,e]=ginput;
 
 					if isempty(cv)
 						if strcmp(theta_method,'ref')
 							Cbf=ChiCalc(Sn,DEMc,A,1);
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn ones(numel(C.x),1)*snda];
 						elseif strcmp(theta_method,'auto')
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*snda];
 						end
 
 						% Determine where ksn value fits into color scale and plot
@@ -1663,7 +1744,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							ksn_val=Cseg.ks;
 
 							ksn_nodes{jj,1}=[Cseg.x Cseg.y Cseg.area ones(numel(Cseg.x),1)*Cseg.ks ones(numel(Cseg.x),1)*Cseg.ks_neg ones(numel(Cseg.x),1)*Cseg.ks_pos ...
-								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn];
+								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn ones(numel(Cseg.x),1)*snda];
 
 							% Plot linear fits	
 							rchi=rc(rb_chidist==min(rb_chidist));
@@ -1797,7 +1878,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						xlabel('Distance from Mouth (km)')
 						ylabel('Elevation (m)')
 						legend('Unconditioned DEM','Conditioned DEM','Stream Distance','location','best');
-						title('Long Profile : Pick Segments','Color','r')
+						title('Long Profile : Pick Segments - Press Enter When Done','Color','r')
 						ax3.XColor='Red';
 						ax3.YColor='Red';
 						hold off
@@ -1830,7 +1911,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						xlabel('Distance from Mouth (km)')
 						ylabel('Elevation (m)')
 						legend('Unconditioned DEM','Conditioned DEM','Stream Distance','location','best');
-						title('Long Profile : Pick Segments','Color','r')
+						title('Long Profile : Pick Segments - Press Enter When Done','Color','r')
 						ax3.XColor='Red';
 						ax3.YColor='Red';
 						hold off
@@ -1850,10 +1931,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						if strcmp(theta_method,'ref')
 							Cbf=ChiCalc(Sn,DEMc,A,1);
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn ones(numel(C.x),1)*snda];
 						elseif strcmp(theta_method,'auto')
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*snda];
 						end
 
 						% Determine where ksn value fits into color scale and plot
@@ -1947,7 +2028,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							ksn_val=Cseg.ks;
 
 							ksn_nodes{jj,1}=[Cseg.x Cseg.y Cseg.area ones(numel(Cseg.x),1)*Cseg.ks ones(numel(Cseg.x),1)*Cseg.ks_neg ones(numel(Cseg.x),1)*Cseg.ks_pos ...
-								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn];
+								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn ones(numel(Cseg.x),1)*snda];
 
 							% Plot linear fits	
 							rchi=rc(rb_dist==min(rb_dist));
@@ -2080,7 +2161,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					scatter(ba,bs,20,log10(ba),'filled','MarkerEdgeColor','k');
 					xlabel('Log Area');
 					ylabel('Log Gradient');
-					title(['Slope-Area: \theta = ' num2str(C.mn) ' : Pick Segments'],'Color','r');
+					title(['Slope-Area: \theta = ' num2str(C.mn) ' : Pick Segments - Press Enter When Done'],'Color','r');
 					set(ax4,'YScale','log','XScale','log','XDir','reverse');
 					ax4.XColor='Red';
 					ax4.YColor='Red';
@@ -2096,10 +2177,10 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						if strcmp(theta_method,'ref')
 							Cbf=ChiCalc(Sn,DEMc,A,1);
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*Cbf.mn ones(numel(C.x),1)*snda];
 						elseif strcmp(theta_method,'auto')
 							ksn_list=[C.x C.y C.area ones(numel(C.x),1)*C.ks ones(numel(C.x),1)*C.ks_neg ones(numel(C.x),1)*C.ks_pos ...
-								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn];
+								ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*C.mn ones(numel(C.x),1)*snda];
 						end
 
 						% Determine where ksn value fits into color scale and plot
@@ -2181,7 +2262,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							ksn_val=Cseg.ks;
 
 							ksn_nodes{jj,1}=[Cseg.x Cseg.y Cseg.area ones(numel(Cseg.x),1)*Cseg.ks ones(numel(Cseg.x),1)*Cseg.ks_neg ones(numel(Cseg.x),1)*Cseg.ks_pos ...
-								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn];
+								ones(numel(Cseg.x),1)*Cseg.mn ones(numel(Cseg.x),1)*Cbfseg.mn ones(numel(Cseg.x),1)*snda];
 
 							% Plot linear fits	
 							rchi=rc(rb_dadist==min(rb_dadist));
@@ -2268,42 +2349,81 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				% End pick method switch	
 				end
 
-				prompt='    Continue picking (Y) or redo fit on this stream (R)? [Y]: ';
-				str2=input(prompt,'s');
-				if isempty(str2)
-					str1=[];
-					ksn_master{ii,1}=ksn_list;
-					bnd_master{ii,1}=bnd_ix;
-					Sc=Sct;
-					if save_figures
-						f2_name=['StreamFits_' num2str(ii) '.pdf'];
-						f3_name=['StreamRsds_' num2str(ii) '.pdf'];
-						print(f2,f2_name,'-dpdf','-fillpage');
-						print(f3,f3_name,'-dpdf','-fillpage');
+				if ii<num_ch
+					qa2=questdlg('What would you like to do?','Stream Fitting','Ignore Remaining Streams','Redo Fit','Continue Picking','Continue Picking');
+
+					switch qa2
+					case 'Continue Picking'
+						str2 = 'Y';
+						str1 = [];
+						ksn_master{ii,1}=ksn_list;
+						bnd_master{ii,1}=bnd_ix;
+						Sc=Sct;
+						if save_figures
+							f2_name=['StreamFits_' num2str(ii) '.pdf'];
+							f3_name=['StreamRsds_' num2str(ii) '.pdf'];
+							print(f2,f2_name,'-dpdf','-fillpage');
+							print(f3,f3_name,'-dpdf','-fillpage');
+						end
+						clear ksn_list ksn_nodes res_list bnd_ix;
+					case 'Redo Fit'
+						str2 = 'R';
+						str1 = 'R';
+						clear ksn_list ksn_nodes res_list bnd_ix;
+					case 'Ignore Remaining Streams'
+						str1=[];
+						str2=[];
+						ksn_master{ii,1}=ksn_list;
+						bnd_master{ii,1}=bnd_ix;
+						Sc=Sct;
+						if save_figures
+							f2_name=['StreamFits_' num2str(ii) '.pdf'];
+							f3_name=['StreamRsds_' num2str(ii) '.pdf'];
+							print(f2,f2_name,'-dpdf','-fillpage');
+							print(f3,f3_name,'-dpdf','-fillpage');
+						end
+						clear ksn_list ksn_nodes res_list bnd_ix;	
+						break_flag=true;
 					end
-					clear ksn_list ksn_nodes res_list bnd_ix;
-				elseif strcmpi(str2,'Y');
-					str1=[];
-					ksn_master{ii,1}=ksn_list;
-					bnd_master{ii,1}=bnd_ix;
-					if save_figures
-						f2_name=['StreamFits_' num2str(ii) '.pdf'];
-						f3_name=['StreamRsds_' num2str(ii) '.pdf'];
-						print(f2,f2_name,'-dpdf','-fillpage');
-						print(f3,f3_name,'-dpdf','-fillpage');
+
+					close figure 2
+					close figure 3
+				else
+					qa2=questdlg('What would you like to do?','Stream Fitting','Redo Fit','Complete Routine','Complete Routine');
+
+					switch qa2
+					case 'Complete Routine'
+						str2 = 'Y';
+						str1 = [];
+						ksn_master{ii,1}=ksn_list;
+						bnd_master{ii,1}=bnd_ix;
+						Sc=Sct;
+						if save_figures
+							f2_name=['StreamFits_' num2str(ii) '.pdf'];
+							f3_name=['StreamRsds_' num2str(ii) '.pdf'];
+							print(f2,f2_name,'-dpdf','-fillpage');
+							print(f3,f3_name,'-dpdf','-fillpage');
+						end
+						clear ksn_list ksn_nodes res_list bnd_ix;
+					case 'Redo Fit'
+						str2 = 'R';
+						str1 = 'R';
+						clear ksn_list ksn_nodes res_list bnd_ix;
 					end
-					Sc=Sct;
-					clear ksn_list ksn_nodes res_list bnd_ix;
-				elseif strcmpi(str2,'R');
-					str1 = 'R';
-					clear ksn_list ksn_nodes res_list bnd_ix;
+
+					close figure 2
+					close figure 3					
 				end
 
-				close figure 2
-				close figure 3
+
 			end
 			% Reset for next loop
 			str1='R';
+			
+			if break_flag
+				break
+			end
+
 		end
 
 	% End switch between interactive vs provided
@@ -2341,18 +2461,6 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	% Collapse bnd_list
 	bnd_list=vertcat(bnd_list{:});
 
-	% % % Convert bound list
-	% if ~isempty(bnd_master{:,1})
-	% 	bndl=[vertcat(bnd_master{:,1}) vertcat(bnd_master{:,2})];
-	% 	bnd_z=DEM.Z(bndl(:,1));
-	% 	[bnd_x,bnd_y]=ind2coord(DEM,bndl(:,1));
-	% 	bnd_list=[bnd_x bnd_y bnd_z bndl(:,2)];
-	% else
-	% 	bndl=bnd_master{:,2};
-	% 	bnd_list=[0 0 0 bndl];
-	% end
-
-
 	% Add Gradient to node list and clear NaNs
 	for jj=1:numel(ksn_master)
 		kmat=ksn_master{jj,1};
@@ -2372,16 +2480,19 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	ksnRp=GRIDobj(DEM);
 	thetaR=GRIDobj(DEM);
 	segthetaR=GRIDobj(DEM);
+	threshaR=GRIDobj(DEM);
 
 	ksnR.Z(ix)=knl(:,4);
 	ksnRn.Z(ix)=knl(:,5);
 	ksnRp.Z(ix)=knl(:,6);
 	thetaR.Z(ix)=knl(:,7);
 	segthetaR.Z(ix)=knl(:,8);
+	threshaR.Z(ix)=knl(:,9);
 
 	% Create KSN map structure and export shapefile
 	KSN=STREAMobj2mapstruct(Sc,'seglength',smooth_distance,'attributes',...
-		{'ksn' ksnR @mean 'ksn_neg' ksnRn @mean 'ksn_pos' ksnRp @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'theta' thetaR @mean 'seg_theta' segthetaR @mean});
+		{'ksn' ksnR @mean 'ksn_neg' ksnRn @mean 'ksn_pos' ksnRp @mean 'uparea' (A.*(A.cellsize^2))...
+		 @mean 'gradient' G @mean 'theta' thetaR @mean 'seg_theta' segthetaR @mean 'thrsh_ar' threshaR @mean});
 
 	% Create knickpoint map structure and prepare bound output
 	idx=~isnan(bnd_list(:,5));
@@ -2404,6 +2515,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 	out_shape_name=[shape_name '.shp'];
 	shapewrite(KSN,out_shape_name);
+
+	out_mat_name=[shape_name '.mat'];
+	save(out_mat_name,'knl','ksn_master','bnd_list','Sc');
 
 
 %FUNCTION END
@@ -2451,6 +2565,9 @@ function [OUT]=ChiCalc(S,DEM,A,a0,varargin)
 	chiF=chi(Lib);
 	zabsF=zx(Lib)-zb;
 
+	% The splining generates lots of warning for small basins so turning warnings off
+	warning off
+
 	chiS=linspace(0,max(chiF),numel(chiF)).';
 	try
 		zS=spline(chiF,zabsF,chiS);
@@ -2460,6 +2577,8 @@ function [OUT]=ChiCalc(S,DEM,A,a0,varargin)
 		zS=zabsF;
 		chiS=chiF;
 	end
+
+	warning on
 
 	OUT=struct;
 	try
@@ -2629,11 +2748,10 @@ function [bs,ba,bc,bd,bk]=sa_ksn(DEM,S,A,C,ak,bin_size);
 	bk=accumarray(ix,k,[numbins 1],@mean,nan);
 end
 
-function [Sn]=RedefineThreshold(DEM,FD,A,S,ref_theta,pick_method,bin_size)
+function [Sn]=RedefineThreshold(DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_size,count,figure_flag)
 
 	% Find channel head and flow distances
 	chix=streampoi(S,'channelheads','ix');
-	FLUS=flowdistance(FD);
 	DA=A.*(DEM.cellsize^2);
 
 
@@ -2658,66 +2776,121 @@ function [Sn]=RedefineThreshold(DEM,FD,A,S,ref_theta,pick_method,bin_size)
 	bc=bc(idx);
 	bd=bd(idx);
 
-	f4=figure(4);
-	set(f4,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
-	clf
+	str11='R';
 
-	colormap(jet);
+	while strcmp(str11,'R');
+		f4=figure(4);
+		set(f4,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
+		clf
 
-	switch pick_method
-	case 'chi'
+		colormap(jet);
 
-		ax2=subplot(2,1,2);
-		hold on 
-		scatter(ba,bs,20,bc,'filled','MarkerEdgeColor','k');
-		xlabel('Log Drainage Area');
-		ylabel('Log Gradient');
-		caxis([0 max(C.chi)]);
-		set(ax2,'YScale','log','XScale','log','XDir','reverse');
-		hold off
+		switch pick_method
+		case 'chi'
 
-		ax1=subplot(2,1,1);
-		hold on
-		plot(C.chi,C.elev,'-k');
-		scatter(C.chi,C.elev,10,C.chi,'filled');
-		xlabel('\chi');
-		ylabel('Elevation (m)');
-		title('Choose hillslope to channel transition');
-		caxis([0 max(C.chi)]);
-		ax1.XColor='Red';
-		ax1.YColor='Red';
-		hold off
+			ax2=subplot(2,1,2);
+			hold on 
+			scatter(ba,bs,20,bc,'filled','MarkerEdgeColor','k');
+			xlabel('Log Drainage Area');
+			ylabel('Log Gradient');
+			caxis([0 max(C.chi)]);
+			set(ax2,'YScale','log','XScale','log','XDir','reverse');
+			hold off
 
-		% Find user selected threshold area
-		[c,~]=ginput(1);
-		[~,cix]=nanmin(abs(C.chi-c));
-		a=C.area(cix);
+			ax1=subplot(2,1,1);
+			hold on
+			plot(C.chi,C.elev,'-k');
+			scatter(C.chi,C.elev,10,C.chi,'filled');
+			xlabel('\chi');
+			ylabel('Elevation (m)');
+			title('Choose hillslope to channel transition');
+			caxis([0 max(C.chi)]);
+			ax1.XColor='Red';
+			ax1.YColor='Red';
+			hold off
 
-	case 'slope_area'
+			% Find user selected threshold area
+			[c,~]=ginput(1);
+			if ~isempty(c)
+				[~,cix]=nanmin(abs(C.chi-c));
+				a=C.area(cix);
+			else
+				a=1e6;
+			end
 
-		ax2=subplot(2,1,2);
-		hold on
-		plot(C.chi,C.elev,'-k');
-		scatter(C.chi,C.elev,10,C.chi,'filled');
-		xlabel('\chi');
-		ylabel('Elevation (m)');
-		caxis([0 max(C.chi)]);
-		hold off
+			chi_idx=C.area<a;
+			sl_idx=ba<a;
 
-		ax1=subplot(2,1,1);
-		hold on 
-		scatter(ba,bs,20,bc,'filled','MarkerEdgeColor','k');
-		xlabel('Log Drainage Area');
-		ylabel('Log Gradient');
-		title('Choose hillslope to channel transition');
-		caxis([0 max(C.chi)]);
-		set(ax1,'YScale','log','XScale','log','XDir','reverse');
-		ax1.XColor='Red';
-		ax1.YColor='Red';
-		hold off
 
-		% Find user selected threshold area
-		[a,~]=ginput(1);
+			subplot(2,1,2)
+			hold on
+			scatter(ba(sl_idx),bs(sl_idx),30,'k','filled');
+			hold off
+
+			subplot(2,1,1)
+			hold on
+			scatter(C.chi(chi_idx),C.elev(chi_idx),20,'k','filled');
+			title('Black points will be excluded from stream definition');
+			hold off
+
+		case 'slope_area'
+
+			ax2=subplot(2,1,2);
+			hold on
+			plot(C.chi,C.elev,'-k');
+			scatter(C.chi,C.elev,10,C.chi,'filled');
+			xlabel('\chi');
+			ylabel('Elevation (m)');
+			caxis([0 max(C.chi)]);
+			xlim([0 max(C.chi)+0.5]);
+			hold off
+
+			ax1=subplot(2,1,1);
+			hold on 
+			scatter(ba,bs,20,bc,'filled','MarkerEdgeColor','k');
+			xlabel('Log Drainage Area');
+			ylabel('Log Gradient');
+			title('Choose hillslope to channel transition');
+			caxis([0 max(C.chi)]);
+			set(ax1,'YScale','log','XScale','log','XDir','reverse');
+			ax1.XColor='Red';
+			ax1.YColor='Red';
+			hold off
+
+			% Find user selected threshold area
+			[a,~]=ginput(1);
+			if isempty(a)
+				a=1e6;
+			end
+
+			chi_idx=C.area<a;
+			sl_idx=ba<a;
+
+			subplot(2,1,2)
+			hold on
+			scatter(C.chi(chi_idx),C.elev(chi_idx),20,'k','filled');
+			hold off
+
+			subplot(2,1,1)
+			hold on
+			scatter(ba(sl_idx),bs(sl_idx),30,'k','filled');
+			title('Black points will be excluded from stream definition');
+			hold off
+
+		end
+
+		qa3=questdlg('Accept new threshold area?','Set Threshold','No, Redo','Yes','Yes');
+		switch qa3
+		case 'Yes'
+			str11='C';
+		case 'No, Redo'
+			str11='R';
+		end
+	end
+
+	if figure_flag
+		f4_name=['StreamThresh_' num2str(count) '.pdf'];
+		print(f4,f4_name,'-dpdf','-fillpage');
 	end
 
 	close(f4);

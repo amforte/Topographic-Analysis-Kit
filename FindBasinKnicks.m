@@ -34,6 +34,7 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 
 	addParamValue(p,'theta_ref',0.5,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'shape_name',[],@(x) ischar(x));
+	addParamValue(p,'save_mat',true,@(x) isscalar(x) && islogical(x));
 
 	parse(p,Basin_Data_File,plot_result,varargin{:});
 	Basin_Data_File=p.Results.Basin_Data_File;
@@ -41,6 +42,7 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 
 	theta_ref=p.Results.theta_ref;
 	shape_name=p.Results.shape_name;
+	save_mat=p.Results.save_mat;
 
 	% Load in File Contents
 	load(Basin_Data_File);
@@ -75,7 +77,8 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 	Chi=cell(NumHeads,1);
 	Knicks=cell(NumHeads,1);
 
-	disp('Choose knickpoints with mouse clicks and press return when done')
+	% disp('Choose knickpoints with mouse clicks and press return when done')
+	uiwait(msgbox('Choose knickpoints with mouse clicks on  chi - elevation plot and press return when done picking for that stream'));
 
 	for ii=1:NumHeads
 		ChOI=ChIX(ii);
@@ -125,7 +128,7 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 			;
 		end
 
-		xlabel('Chi');
+		xlabel('\chi');
 		ylabel('Elevation (m)');
 		title([num2str(NumHeads-ii) ' channels remaining']);
 		[c,e]=ginput;

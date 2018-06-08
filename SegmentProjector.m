@@ -1,15 +1,14 @@
-function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
+function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 	% Function to interactively select segments of a channel profile you wish to project (e.g. projecting a portion of the profile with a different ksn).
-	%	You can use the 'SegmentPicker' function to interactively choose channels to provide to the StreamProjector function. If the STREAMobj or cell array
-	%	from SegmentPicker has more than one channel head, this code will iterate through all channel heads (i.e. make sure you're only providing it streams
-	%	you want to project, not an entire network!). It calculates and will display 95% confidence bounds on this fit.
+	%	You can use the 'SegmentPicker' function to interactively choose channels to provide to the StreamProjector function. If the STREAMobj has more than 
+	%	one channel head, this code will iterate through all channel heads (i.e. make sure you're only providing it stream you want to project, not an entire
+	%	network!). It calculates and will display 95% confidence bounds on this fit.
 	%	
 	% Required Inputs:
 	%	DEM - Digital Elevation as a GRIDobj, assumes unconditioned DEM (e.g. DEMoc from ProcessRiverBasins)
 	%	FD - Flow direction as FLOWobj
 	%	A - Flow accumulation GRIDobj
-	%	Streams - Either a STREAMobj of channels you wish to use or a cell array of selected channels as output from 'SegmentPicker' (default name
-	%		of saved cell array is 'StreamSgmnts')
+	%	S - Streams you wish to project saved as a STREAMobj
 	%
 	% Optional Inputs:
 	%	conditioned_DEM [] - option to provide a hydrologically conditioned DEM for use in this function (do not provide a conditoned DEM
@@ -29,7 +28,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 	%
 	% Output:
 	%	Produces a 2 x n cell array with a column for each stream segment provided (or channel head if a network is provided). The first row is the x-y
-	%	coordinate of the channel head for that stream. The second row is a datatable containing the following information about the segment of interest:
+	%	coordinate of the channel head for that stream. The second row is an array containing the following information about the segment of interest:
 	%	x coordinate, y coordinate, distance from mouth, drainage area, chi, concavity, true elevation, projected elevation, upper bound of projected elevation,
 	%	and lower bound of projected elevation. This output is also saved in a mat file called 'ProjectedSegments.mat'.
 	%		
@@ -48,7 +47,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
 	addRequired(p,'FD',@(x) isa(x,'FLOWobj'));
 	addRequired(p,'A',@(x) isa(x,'GRIDobj'));
-	addRequired(p,'Streams',@(x) isa(x,'STREAMobj') | isa(x,'cell'));
+	addRequired(p,'S',@(x) isa(x,'STREAMobj'));
 
 	addParamValue(p,'theta_method','ref',@(x) ischar(validatestring(x,{'ref','auto'})));
 	addParamValue(p,'pick_method','chi',@(x) ischar(validatestring(x,{'chi','stream'})));
@@ -62,7 +61,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 	parse(p,DEM,FD,A,Streams,varargin{:});
 	DEM=p.Results.DEM;
 	FD=p.Results.FD;
-	Slist=p.Results.Streams;
+	S=p.Results.S;
 	A=p.Results.A;
 
 	smooth_distance=p.Results.smooth_distance;
@@ -74,22 +73,11 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 	iv=p.Results.interp_value;
 	DEMc=p.Results.conditioned_DEM;
 
-	if isa(Slist,'cell')
-		for ii=1:numel(Slist)
-			if ii==1
-				ST=Slist{ii};
-			else
-				Si=Slist{ii};
-				ST=union(Si,ST,FD);
-			end
-		end
-		chix=streampoi(ST,'channelheads','ix');
-		num_ch=numel(chix);
-	elseif isa(Slist,'STREAMobj')
-		ST=Slist;
-		chix=streampoi(ST,'channelheads','ix');
-		num_ch=numel(chix);
-	end
+
+	% Find channel heads
+	ST=S;
+	chix=streampoi(ST,'channelheads','ix');
+	num_ch=numel(chix);
 
 	% Hydrologically condition dem
 	if isempty(DEMc)
@@ -159,9 +147,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			hold on
 			plot(C.chi,C.elev,'-k');
 			scatter(C.chi,C.elev,10,'k');
-			xlabel('Chi','Color','r')
+			xlabel('\chi','Color','r')
 			ylabel('Elevation (m)','Color','r')
-			title(['Chi - Z : \theta = ' num2str(C.mn) ' : Pick Segment to Project'],'Color','r')
+			title(['\chi - Z : \theta = ' num2str(C.mn) ' : Select bounds of stream segment you want to project'],'Color','r')
 			ax1.XColor='Red';
 			ax1.YColor='Red';
 			hold off
@@ -169,7 +157,6 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			linkaxes([ax1,ax2],'x');
 
 			while strcmpi(str1,'N')
-				disp('    Select bounds of stream segment you want to project')
 				[cv,e]=ginput(2);
 
 				% Sort knickpoint list and construct bounds list
@@ -197,8 +184,14 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 				p1=scatter(ax1,rcC,reC,20,'r','filled');
 				hold off
 
-				prompt='Is this the stream segment you wanted? Y/N [Y]: ';
-				str1=input(prompt,'s');
+
+	            qa=questdlg('Is this the stream segment you wanted to project?','Stream Projection','No','Yes','Yes');
+	            switch qa
+	            case 'Yes'
+	                str1 = 'Y';
+	            case 'No'
+	                str1 = 'N';
+	            end
 
 				delete(p1);
 			end
@@ -237,7 +230,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			hold on
 			plot([0,max(C.chi)],[0,0],'--k');
 			scatter(C.chi,pred_el-C.elev,10,'k')
-			xlabel('Chi');
+			xlabel('\chi');
 			ylabel('Difference between projection and true profile (m)')
 			hold off
 
@@ -254,13 +247,15 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			OUT{2,ii}=[C.x C.y C.distance C.area C.chi ones(size(C.chi)).*C.mn C.elev pred_el pred_el_u pred_el_l];
 
 			if save_figures
-				print(f1,'-depsc2',['ProjectedProfile_' num2str(ii) '.eps']);
-				print(f2,'-depsc2',['Residual_' num2str(ii) '.eps']);
+				print(f1,'-dpdf',['ProjectedProfile_' num2str(ii) '.pdf'],'-bestfit');
+				print(f2,'-dpdf',['Residual_' num2str(ii) '.pdf'],'-bestfit');
+			else
+				if ii<num_ch
+					uiwait(msgbox('Click OK when ready to continue'))
+				end
 			end
 
 			if ii<num_ch
-				disp('    Press enter when you are ready to continue picking')
-				pause()
 				close(f1);
 				close(f2);
 			end
@@ -299,18 +294,18 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			ax2=subplot(3,1,2);
 			hold on
 			scatter(CAvg,KsnAvg,20,'k','filled');
-			xlabel('Chi')
+			xlabel('\chi')
 			ylabel('Auto k_{sn}');
-			title('Chi - Auto k_{sn}');
+			title('\chi - Auto k_{sn}');
 			hold off
 
 			ax1=subplot(3,1,1);
 			hold on
 			plot(C.chi,C.elev,'-k');
 			scatter(C.chi,C.elev,10,'k');
-			xlabel('Chi','Color','r')
+			xlabel('\chi','Color','r')
 			ylabel('Elevation (m)','Color','r')
-			title(['Chi - Z : \theta = ' num2str(C.mn) ' : Pick Segment to Project'],'Color','r')
+			title(['\chi - Z : \theta = ' num2str(C.mn) ' : Select bounds of stream segment you want to project'],'Color','r')
 			hold off
 
 			linkaxes([ax1,ax2],'x');
@@ -319,7 +314,6 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			case false
 
 				while strcmpi(str1,'N')
-					disp('    Select bounds of stream segment you want to project')
 					[cv,e]=ginput(2);
 
 					% Sort knickpoint list and construct bounds list
@@ -347,8 +341,13 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 					p1=scatter(ax1,rcC,reC,20,'r','filled');
 					hold off
 
-					prompt='Is this the stream segment you wanted? Y/N [Y]: ';
-					str1=input(prompt,'s');
+		            qa=questdlg('Is this the stream segment you wanted to project?','Stream Projection','No','Yes','Yes');
+		            switch qa
+		            case 'Yes'
+		                str1 = 'Y';
+		            case 'No'
+		                str1 = 'N';
+		            end
 
 					delete(p1);
 				end
@@ -387,7 +386,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 				hold on
 				plot([0,max(C.chi)],[0,0],'--k');
 				scatter(C.chi,pred_el-C.elev,10,'k')
-				xlabel('Chi');
+				xlabel('\chi');
 				ylabel('Difference between projection and true profile (m)')
 				hold off
 
@@ -406,7 +405,6 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			case true
 
 				while strcmpi(str1,'N')
-					disp('    Select bounds of stream segment you want to project')
 					[cv,e]=ginput(2);
 
 					% Sort knickpoint list and construct bounds list
@@ -471,8 +469,13 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 					p1=scatter(ax1,rcC0,reC0,20,'r','filled');
 					hold off
 
-					prompt='Is this the stream segment you wanted? Y/N [Y]: ';
-					str1=input(prompt,'s');
+		            qa=questdlg('Is this the stream segment you wanted to project?','Stream Projection','No','Yes','Yes');
+		            switch qa
+		            case 'Yes'
+		                str1 = 'Y';
+		            case 'No'
+		                str1 = 'N';
+		            end
 
 					delete(p1);
 				end
@@ -508,9 +511,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 				plot(CN.chi,pred_el,'-r','LineWidth',2);
 				plot(CN.chi,pred_el_u,'--r');
 				plot(CN.chi,pred_el_l,'--r');
-				xlabel('Chi')
+				xlabel('\chi')
 				ylabel('Elevation (m)')
-				title(['Chi - Z : \theta = ' num2str(CN.mn)],'Color','r')
+				title(['\chi - Z : \theta = ' num2str(CN.mn)],'Color','r')
 				hold off
 
 				ax2=subplot(3,1,2);
@@ -542,7 +545,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 				hold on
 				plot([0,max(CN.chi)],[0,0],'--k');
 				scatter(CN.chi,pred_el-CN.elev,10,'k')
-				xlabel('Chi');
+				xlabel('\chi');
 				ylabel('Difference between projection and true profile (m)')
 				hold off
 
@@ -562,13 +565,15 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 
 
 			if save_figures
-				print(f1,'-depsc2',['ProjectedProfile_' num2str(ii) '.eps']);
-				print(f2,'-depsc2',['Residual_' num2str(ii) '.eps']);
+				print(f1,'-dpdf',['ProjectedProfile_' num2str(ii) '.pdf'],'-bestfit');
+				print(f2,'-dpdf',['Residual_' num2str(ii) '.pdf'],'-bestfit');
+			else
+				if ii<num_ch
+					uiwait(msgbox('Click OK when ready to continue'))
+				end
 			end
 
 			if ii<num_ch
-				disp('    Press enter when you are ready to continue picking')
-				pause()
 				close(f1);
 				close(f2);
 			end
@@ -599,9 +604,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			hold on
 			plot(C.chi,C.elev,'-k');
 			scatter(C.chi,C.elev,10,'k');
-			xlabel('Chi')
+			xlabel('\chi')
 			ylabel('Elevation (m)')
-			title('Chi - Z')
+			title('\chi - Z')
 			hold off
 
 			ax2=subplot(3,1,2);
@@ -609,7 +614,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			scatter(DAvg./1000,KsnAvg,20,'k','filled');
 			xlabel('Distance (km)')
 			ylabel('Auto k_{sn}');
-			title('Chi - Auto k_{sn}');
+			title('\chi - Auto k_{sn}');
 			hold off
 
 			ax1=subplot(3,1,3);
@@ -619,7 +624,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			xlabel('Distance from Mouth (km)','Color','r')
 			ylabel('Elevation (m)','Color','r')
 			legend('Unconditioned DEM','Conditioned DEM','location','best');
-			title(['Long Profile : \theta = ' num2str(C.mn) ' : Pick Segment to Project'],'Color','r')
+			title(['Long Profile : \theta = ' num2str(C.mn) ' : Select bounds of stream segment you want to project'],'Color','r')
 			ax1.XColor='Red';
 			ax1.YColor='Red';
 			hold off
@@ -627,7 +632,6 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			linkaxes([ax1,ax2],'x');
 
 			while strcmpi(str1,'N')
-				disp('    Select bounds of stream segment you want to project')
 				[d,e]=ginput(2);
 				d=d*1000;
 
@@ -657,8 +661,13 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 				p1=scatter(ax1,rdC/1000,reC,20,'r','filled');
 				hold off
 
-				prompt='Is this the stream segment you wanted? Y/N [Y]: ';
-				str1=input(prompt,'s');
+	            qa=questdlg('Is this the stream segment you wanted to project?','Stream Projection','No','Yes','Yes');
+	            switch qa
+	            case 'Yes'
+	                str1 = 'Y';
+	            case 'No'
+	                str1 = 'N';
+	            end
 
 				delete(p1);
 			end				
@@ -697,7 +706,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			hold on
 			plot([0,max(C.chi)],[0,0],'--k');
 			scatter(C.chi,pred_el-C.elev,10,'k')
-			xlabel('Chi');
+			xlabel('\chi');
 			ylabel('Difference between projection and true profile (m)')
 			hold off
 
@@ -714,13 +723,15 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			OUT{2,ii}=[C.x C.y C.distance C.area C.chi ones(size(C.chi)).*C.mn C.elev pred_el pred_el_u pred_el_l];
 
 			if save_figures
-				print(f1,'-depsc2',['ProjectedProfile_' num2str(ii) '.eps']);
-				print(f2,'-depsc2',['Residual_' num2str(ii) '.eps']);
+				print(f1,'-dpdf',['ProjectedProfile_' num2str(ii) '.pdf'],'-bestfit');
+				print(f2,'-dpdf',['Residual_' num2str(ii) '.pdf'],'-bestfit');
+			else
+				if ii<num_ch
+					uiwait(msgbox('Click OK when ready to continue'))
+				end
 			end
 
 			if ii<num_ch
-				disp('    Press enter when you are ready to continue picking')
-				pause()
 				close(f1);
 				close(f2);
 			end
@@ -751,9 +762,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			hold on
 			plot(C.chi,C.elev,'-k');
 			scatter(C.chi,C.elev,10,'k');
-			xlabel('Chi')
+			xlabel('\chi')
 			ylabel('Elevation (m)')
-			title('Chi - Z')
+			title('\chi - Z')
 			hold off
 
 			ax2=subplot(3,1,2);
@@ -761,7 +772,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			scatter(DAvg./1000,KsnAvg,20,'k','filled');
 			xlabel('Distance (km)')
 			ylabel('Auto k_{sn}');
-			title('Chi - Auto k_{sn}');
+			title('\chi - Auto k_{sn}');
 			hold off
 
 			ax1=subplot(3,1,3);
@@ -771,7 +782,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			xlabel('Distance from Mouth (km)','Color','r')
 			ylabel('Elevation (m)','Color','r')
 			legend('Unconditioned DEM','Conditioned DEM','location','best');
-			title(['Long Profile : \theta = ' num2str(C.mn) ' : Pick Segment to Project'],'Color','r')
+			title(['Long Profile : \theta = ' num2str(C.mn) ' : Select bounds of stream segment you want to project'],'Color','r')
 			hold off
 
 			linkaxes([ax1,ax2],'x');
@@ -780,7 +791,6 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			case false
 
 				while strcmpi(str1,'N')
-					disp('    Select bounds of stream segment you want to project')
 					[d,e]=ginput(2);
 					d=d*1000;
 
@@ -810,8 +820,13 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 					p1=scatter(ax1,rdC/1000,reC,20,'r','filled');
 					hold off
 
-					prompt='Is this the stream segment you wanted? Y/N [Y]: ';
-					str1=input(prompt,'s');
+		            qa=questdlg('Is this the stream segment you wanted to project?','Stream Projection','No','Yes','Yes');
+		            switch qa
+		            case 'Yes'
+		                str1 = 'Y';
+		            case 'No'
+		                str1 = 'N';
+		            end
 
 					delete(p1);
 				end
@@ -850,7 +865,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 				hold on
 				plot([0,max(C.chi)],[0,0],'--k');
 				scatter(C.chi,pred_el-C.elev,10,'k')
-				xlabel('Chi');
+				xlabel('\chi');
 				ylabel('Difference between projection and true profile (m)')
 				hold off
 
@@ -869,7 +884,6 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			case true
 
 				while strcmpi(str1,'N')
-					disp('    Select bounds of stream segment you want to project')
 					[d,e]=ginput(2);
 					d=d*1000;
 
@@ -931,8 +945,13 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 					p1=scatter(ax1,rdC/1000,reC,20,'r','filled');
 					hold off
 
-					prompt='Is this the stream segment you wanted? Y/N [Y]: ';
-					str1=input(prompt,'s');
+		            qa=questdlg('Is this the stream segment you wanted to project?','Stream Projection','No','Yes','Yes');
+		            switch qa
+		            case 'Yes'
+		                str1 = 'Y';
+		            case 'No'
+		                str1 = 'N';
+		            end
 
 					delete(p1);
 				end
@@ -968,9 +987,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 				plot(CN.chi,pred_el,'-r','LineWidth',2);
 				plot(CN.chi,pred_el_u,'--r');
 				plot(CN.chi,pred_el_l,'--r');
-				xlabel('Chi')
+				xlabel('\chi')
 				ylabel('Elevation (m)')
-				title('Chi - Z')
+				title('\chi - Z')
 				hold off
 
 				ax2=subplot(3,1,2);
@@ -1002,7 +1021,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 				hold on
 				plot([0,max(CN.chi)],[0,0],'--k');
 				scatter(CN.chi,pred_el-CN.elev,10,'k')
-				xlabel('Chi');
+				xlabel('\chi');
 				ylabel('Difference between projection and true profile (m)')
 				hold off
 
@@ -1020,13 +1039,15 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 			end
 
 			if save_figures
-				print(f1,'-depsc2',['ProjectedProfile_' num2str(ii) '.eps']);
-				print(f2,'-depsc2',['Residual_' num2str(ii) '.eps']);
+				print(f1,'-dpdf',['ProjectedProfile_' num2str(ii) '.pdf'],'-bestfit');
+				print(f2,'-dpdf',['Residual_' num2str(ii) '.pdf'],'-bestfit');
+			else
+				if ii<num_ch
+					uiwait(msgbox('Click OK when ready to continue'))
+				end
 			end
 
 			if ii<num_ch
-				disp('    Press enter when you are ready to continue picking')
-				pause()
 				close(f1);
 				close(f2);
 			end
@@ -1034,7 +1055,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,Streams,varargin);
 		end
 	end
 
-	save('ProjectedSegments.mat',OUT);
+	save('ProjectedSegments.mat','OUT');
 end
 
 function [OUT]=ChiCalc(S,DEM,A,a0,varargin)
