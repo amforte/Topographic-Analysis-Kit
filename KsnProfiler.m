@@ -682,12 +682,12 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 						ax3=subplot(4,1,3);
 						hold on
-						plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-						plotdz(Sn,DEMc,'dunit','km','Color','k');
-						scatter((C.distance)./1000,C.elev,5,C.chi,'filled');
+						pl1=plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+						pl2=plotdz(Sn,DEMc,'dunit','km','Color','k');
+						pl3=scatter((C.distance)./1000,C.elev,5,C.chi,'filled');
 						xlabel('Distance from Mouth (km)')
 						ylabel('Elevation (m)')
-						legend('Unconditioned DEM','Conditioned DEM','Chi','location','best');
+						legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','Chi','location','best');
 						title('Long Profile')
 						hold off
 
@@ -716,12 +716,12 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					else
 						ax3=subplot(3,1,3);
 						hold on
-						plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-						plotdz(Sn,DEMc,'dunit','km','Color','k');
-						scatter((C.distance)./1000,C.elev,5,C.chi,'filled')
+						pl1=plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+						pl2=plotdz(Sn,DEMc,'dunit','km','Color','k');
+						pl3=scatter((C.distance)./1000,C.elev,5,C.chi,'filled');
 						xlabel('Distance from Mouth (km)')
 						ylabel('Elevation (m)')
-						legend('Unconditioned DEM','Conditioned DEM','Chi','location','best');
+						legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','Chi','location','best');
 						title('Long Profile')
 						hold off
 
@@ -792,7 +792,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 							subplot(4,1,3);
 							hold on
-							plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
+							pl4=plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
+							legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Chi','Segment Fit','location','best');
 							hold off
 
 							subplot(4,1,4);
@@ -809,7 +810,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 							subplot(3,1,3);
 							hold on
-							plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
+							pl4=plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
+							legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Chi','Segment Fit','location','best');
 							hold off
 						end
 
@@ -904,7 +906,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 								seg_st=rd(lb_chidist==min(lb_chidist));
 								subplot(4,1,3);
 								hold on
-								plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								pl4=plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Chi','Segment Fit','location','best');
 								hold off
 
 								subplot(4,1,4);
@@ -921,7 +924,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 								seg_st=rd(lb_chidist==min(lb_chidist));
 								subplot(3,1,3);
 								hold on
-								plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								pl4=plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Chi','Segment Fit','location','best');
 								hold off
 							end
 
@@ -1013,12 +1017,12 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 						ax3=subplot(4,1,3);
 						hold on
-						plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-						plotdz(Sn,DEMc,'dunit','km','Color','k');
-						scatter((C.distance)./1000,C.elev,5,(C.distance)./1000,'filled');
+						pl1=plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+						pl2=plotdz(Sn,DEMc,'dunit','km','Color','k');
+						pl3=scatter((C.distance)./1000,C.elev,5,(C.distance)./1000,'filled');
 						xlabel('Distance from Mouth (km)')
 						ylabel('Elevation (m)')
-						legend('Unconditioned DEM','Conditioned DEM','Stream Distance','location','best');
+						legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','Stream Distance','location','best');
 						title('Long Profile : Pick Segments - Press Enter When Done','Color','r')
 						ax3.XColor='Red';
 						ax3.YColor='Red';
@@ -1046,12 +1050,12 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 						ax3=subplot(3,1,3);
 						hold on
-						plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-						plotdz(Sn,DEMc,'dunit','km','Color','k');
-						scatter((C.distance)./1000,C.elev,5,(C.distance)./1000,'filled');
+						pl1=plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+						pl2=plotdz(Sn,DEMc,'dunit','km','Color','k');
+						pl3=scatter((C.distance)./1000,C.elev,5,(C.distance)./1000,'filled');
 						xlabel('Distance from Mouth (km)')
 						ylabel('Elevation (m)')
-						legend('Unconditioned DEM','Conditioned DEM','Stream Distance','location','best');
+						legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','Stream Distance','location','best');
 						title('Long Profile : Pick Segments - Press Enter When Done','Color','r')
 						ax3.XColor='Red';
 						ax3.YColor='Red';
@@ -1103,7 +1107,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 							subplot(4,1,3);
 							hold on
-							plot((C.distance)./1000,C.pred+elbl,'-k','LineWidth',2);
+							pl4=plot((C.distance)./1000,C.pred+elbl,'-k','LineWidth',2);
+							legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Stream Distance','Segment Fit','location','best');
 							hold off
 
 							subplot(4,1,4);
@@ -1119,7 +1124,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 							subplot(3,1,3);
 							hold on
-							plot((C.distance)./1000,C.pred+elbl,'-k','LineWidth',2);
+							pl4=plot((C.distance)./1000,C.pred+elbl,'-k','LineWidth',2);
+							legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Stream Distance','Segment Fit','location','best');
 							hold off
 						end
 
@@ -1214,7 +1220,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 								seg_st=rd(lb_dist==min(lb_dist));
 								subplot(4,1,3);
 								hold on
-								plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								pl4=plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Stream Distance','Segment Fit','location','best');
 								hold off
 
 								subplot(4,1,4);
@@ -1231,7 +1238,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 								seg_st=rd(lb_dist==min(lb_dist));
 								subplot(3,1,3);
 								hold on
-								plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								pl4=plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Stream Distance','Segment Fit','location','best');
 								hold off	
 							end						
 
@@ -1294,12 +1302,12 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 					ax3=subplot(4,1,3);
 					hold on
-					plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-					plotdz(Sn,DEMc,'dunit','km','Color','k');
-					scatter((C.distance)./1000,C.elev,5,log10(C.area),'filled');
+					pl1=plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+					pl2=plotdz(Sn,DEMc,'dunit','km','Color','k');
+					pl3=scatter((C.distance)./1000,C.elev,5,log10(C.area),'filled');
 					xlabel('Distance from Mouth (km)')
 					ylabel('Elevation (m)')
-					legend('Unconditioned DEM','Conditioned DEM','Log Drainage Area','location','best');
+					legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','Log Drainage Area','location','best');
 					title('Long Profile')
 					hold off
 
@@ -1376,7 +1384,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 						subplot(4,1,3);
 						hold on
-						plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
+						pl4=plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
+						legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Log Drainage Area','Segment Fit','location','best');
 						hold off
 
 						subplot(4,1,4);
@@ -1474,7 +1483,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							seg_st=rd(lb_dadist==min(lb_dadist));
 							subplot(4,1,3);
 							hold on
-							plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+							pl4=plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+							legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Log Drainage Area','Segment Fit','location','best');
 							hold off
 
 							subplot(4,1,4);
@@ -1741,12 +1751,12 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 						ax3=subplot(4,1,3);
 						hold on
-						plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-						plotdz(Sn,DEMc,'dunit','km','Color','k');
-						scatter((C.distance)./1000,C.elev,5,C.chi,'filled');
+						pl1=plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+						pl2=plotdz(Sn,DEMc,'dunit','km','Color','k');
+						pl3=scatter((C.distance)./1000,C.elev,5,C.chi,'filled');
 						xlabel('Distance from Mouth (km)')
 						ylabel('Elevation (m)')
-						legend('Unconditioned DEM','Conditioned DEM','Chi','location','best');
+						legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','Chi','location','best');
 						title('Long Profile')
 						hold off
 
@@ -1775,12 +1785,12 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					else
 						ax3=subplot(3,1,3);
 						hold on
-						plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-						plotdz(Sn,DEMc,'dunit','km','Color','k');
-						scatter((C.distance)./1000,C.elev,5,C.chi,'filled')
+						pl1=plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+						pl2=plotdz(Sn,DEMc,'dunit','km','Color','k');
+						pl3=scatter((C.distance)./1000,C.elev,5,C.chi,'filled')
 						xlabel('Distance from Mouth (km)')
 						ylabel('Elevation (m)')
-						legend('Unconditioned DEM','Conditioned DEM','Chi','location','best');
+						legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','Chi','location','best');
 						title('Long Profile')
 						hold off
 
@@ -1833,7 +1843,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 							subplot(4,1,3);
 							hold on
-							plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
+							pl4=plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
+							legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Chi','Segment Fit','location','best');
 							hold off
 
 							subplot(4,1,4);
@@ -1849,7 +1860,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 							subplot(3,1,3);
 							hold on
-							plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
+							pl4=plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
+							legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','Chi','Segment Fit','location','best');
 							hold off
 						end
 
@@ -1930,7 +1942,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 								seg_st=rd(lb_chidist==min(lb_chidist));
 								subplot(4,1,3);
 								hold on
-								plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								pl4=plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Chi','Segment Fit','location','best');
 								hold off
 
 								subplot(4,1,4);
@@ -1947,7 +1960,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 								seg_st=rd(lb_chidist==min(lb_chidist));
 								subplot(3,1,3);
 								hold on
-								plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								pl4=plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Chi','Segment Fit','location','best');
 								hold off
 							end
 
@@ -2038,12 +2052,12 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 						ax3=subplot(4,1,3);
 						hold on
-						plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-						plotdz(Sn,DEMc,'dunit','km','Color','k');
-						scatter((C.distance)./1000,C.elev,5,(C.distance)./1000,'filled');
+						pl1=plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+						pl2=plotdz(Sn,DEMc,'dunit','km','Color','k');
+						pl3=scatter((C.distance)./1000,C.elev,5,(C.distance)./1000,'filled');
 						xlabel('Distance from Mouth (km)')
 						ylabel('Elevation (m)')
-						legend('Unconditioned DEM','Conditioned DEM','Stream Distance','location','best');
+						legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','Stream Distance','location','best');
 						title('Long Profile : Pick Segments - Press Enter When Done','Color','r')
 						ax3.XColor='Red';
 						ax3.YColor='Red';
@@ -2071,12 +2085,12 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 						ax3=subplot(3,1,3);
 						hold on
-						plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-						plotdz(Sn,DEMc,'dunit','km','Color','k');
-						scatter((C.distance)./1000,C.elev,5,(C.distance)./1000,'filled');
+						pl1=plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+						pl2=plotdz(Sn,DEMc,'dunit','km','Color','k');
+						pl3=scatter((C.distance)./1000,C.elev,5,(C.distance)./1000,'filled');
 						xlabel('Distance from Mouth (km)')
 						ylabel('Elevation (m)')
-						legend('Unconditioned DEM','Conditioned DEM','Stream Distance','location','best');
+						legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','Stream Distance','location','best');
 						title('Long Profile : Pick Segments - Press Enter When Done','Color','r')
 						ax3.XColor='Red';
 						ax3.YColor='Red';
@@ -2117,7 +2131,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 							subplot(4,1,3);
 							hold on
-							plot((C.distance)./1000,C.pred+elbl,'-k','LineWidth',2);
+							pl4=plot((C.distance)./1000,C.pred+elbl,'-k','LineWidth',2);
+							legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Stream Distance','Segment Fit','location','best');
 							hold off
 
 							subplot(4,1,4);
@@ -2133,7 +2148,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 							subplot(3,1,3);
 							hold on
-							plot((C.distance)./1000,C.pred+elbl,'-k','LineWidth',2);
+							pl4=plot((C.distance)./1000,C.pred+elbl,'-k','LineWidth',2);
+							legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Stream Distance','Segment Fit','location','best');
 							hold off
 						end
 
@@ -2215,7 +2231,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 								seg_st=rd(lb_dist==min(lb_dist));
 								subplot(4,1,3);
 								hold on
-								plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								pl4=plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Stream Distance','Segment Fit','location','best');
 								hold off
 
 								subplot(4,1,4);
@@ -2232,7 +2249,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 								seg_st=rd(lb_dist==min(lb_dist));
 								subplot(3,1,3);
 								hold on
-								plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								pl4=plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+								legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Stream Distance','Segment Fit','location','best');
 								hold off
 							end
 
@@ -2295,12 +2313,12 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 					ax3=subplot(4,1,3);
 					hold on
-					plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-					plotdz(Sn,DEMc,'dunit','km','Color','k');
-					scatter((C.distance)./1000,C.elev,5,log10(C.area),'filled');
+					pl1=plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+					pl2=plotdz(Sn,DEMc,'dunit','km','Color','k');
+					pl3=scatter((C.distance)./1000,C.elev,5,log10(C.area),'filled');
 					xlabel('Distance from Mouth (km)')
 					ylabel('Elevation (m)')
-					legend('Unconditioned DEM','Conditioned DEM','Log Drainage Area','location','best');
+					legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','Log Drainage Area','location','best');
 					title('Long Profile')
 					hold off
 
@@ -2363,7 +2381,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 						subplot(4,1,3);
 						hold on
-						plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
+						pl4=plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
+						legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Log Drainage Area','Segment Fit','location','best');
 						hold off
 
 						subplot(4,1,4);
@@ -2447,7 +2466,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							seg_st=rd(lb_dadist==min(lb_dadist));
 							subplot(4,1,3);
 							hold on
-							plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+							pl4=plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
+							legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Log Drainage Area','Segment Fit','location','best');
 							hold off
 
 							subplot(4,1,4);

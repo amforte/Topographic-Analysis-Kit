@@ -400,7 +400,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				ii=ii+1;
 
-	            qa2=questdlg('Pick a different stream?','Stream Selection','No','Yes','Yes');
+	            qa2=questdlg('Continue picking streams?','Stream Selection','No','Yes','Yes');
 	            switch qa2
 	            case 'Yes'
 	            	str2 = 'Y';
@@ -511,7 +511,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				ii=ii+1;
 
 
-	            qa2=questdlg('Pick a different stream?','Stream Selection','No','Yes','Yes');
+	            qa2=questdlg('Continue picking streams?','Stream Selection','No','Yes','Yes');
 	            switch qa2
 	            case 'Yes'
 	            	str2 = 'Y';
@@ -749,7 +749,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				ii=ii+1;
 
-	            qa2=questdlg('Pick a different stream?','Stream Selection','No','Yes','Yes');
+	            qa2=questdlg('Continue picking streams?','Stream Selection','No','Yes','Yes');
 	            switch qa2
 	            case 'Yes'
 	            	str2 = 'Y';
@@ -858,7 +858,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				ii=ii+1;
 
-	            qa2=questdlg('Pick a different stream?','Stream Selection','No','Yes','Yes');
+	            qa2=questdlg('Continue picking streams?','Stream Selection','No','Yes','Yes');
 	            switch qa2
 	            case 'Yes'
 	            	str2 = 'Y';

@@ -58,7 +58,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 	addParamValue(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
 	addParamValue(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
 
-	parse(p,DEM,FD,A,Streams,varargin{:});
+	parse(p,DEM,FD,A,S,varargin{:});
 	DEM=p.Results.DEM;
 	FD=p.Results.FD;
 	S=p.Results.S;
@@ -127,11 +127,11 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 			clf
 			subplot(3,1,3);
 			hold on
-			plotdz(S,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-			plotdz(S,DEMc,'dunit','km','Color','k');
+			pl1=plotdz(S,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+			pl2=plotdz(S,DEMc,'dunit','km','Color','k');
 			xlabel('Distance from Mouth (km)')
 			ylabel('Elevation (m)')
-			legend('Unconditioned DEM','Conditioned DEM','location','best');
+			legend([pl1 pl2],'Unconditioned DEM','Conditioned DEM','location','best');
 			title('Long Profile')
 			hold off
 
@@ -219,9 +219,10 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 
 			subplot(3,1,3)
 			hold on
-			plot(C.distance./1000,pred_el,'-r','LineWidth',2);
-			plot(C.distance./1000,pred_el_u,'--r');
+			pl3=plot(C.distance./1000,pred_el,'-r','LineWidth',2);
+			pl4=plot(C.distance./1000,pred_el_u,'--r');
 			plot(C.distance./1000,pred_el_l,'--r');
+			legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Projected Stream','Uncertainty','location','best');
 			hold off
 
 			f2=figure(2);
@@ -283,11 +284,11 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 			clf
 			subplot(3,1,3);
 			hold on
-			plotdz(S,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-			plotdz(S,DEMc,'dunit','km','Color','k');
+			pl1=plotdz(S,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+			pl2=plotdz(S,DEMc,'dunit','km','Color','k');
 			xlabel('Distance from Mouth (km)')
 			ylabel('Elevation (m)')
-			legend('Unconditioned DEM','Conditioned DEM','location','best');
+			legend([pl1 pl2],'Unconditioned DEM','Conditioned DEM','location','best');
 			title('Long Profile')
 			hold off
 
@@ -368,9 +369,10 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 
 				subplot(3,1,1)
 				hold on
-				plot(C.chi,pred_el,'-r','LineWidth',2);
-				plot(C.chi,pred_el_u,'--r');
+				pl3=plot(C.chi,pred_el,'-r','LineWidth',2);
+				pl4=plot(C.chi,pred_el_u,'--r');
 				plot(C.chi,pred_el_l,'--r');
+				legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Projected Stream','Uncertainty','location','best');
 				hold off
 
 				subplot(3,1,3)
@@ -526,14 +528,14 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 
 				subplot(3,1,3)
 				hold on
-				plotdz(S,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-				plotdz(S,DEMc,'dunit','km','Color','k');
-				plot(CN.distance./1000,pred_el,'-r','LineWidth',2);
-				plot(CN.distance./1000,pred_el_u,'--r');
+				pl1=plotdz(S,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+				pl2=plotdz(S,DEMc,'dunit','km','Color','k');
+				pl3=plot(CN.distance./1000,pred_el,'-r','LineWidth',2);
+				pl4=plot(CN.distance./1000,pred_el_u,'--r');
 				plot(CN.distance./1000,pred_el_l,'--r');
 				xlabel('Distance from Mouth (km)')
 				ylabel('Elevation (m)')
-				legend('Unconditioned DEM','Conditioned DEM','location','best');
+				legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Projected Stream','Uncertainty','location','best');
 				title('Long Profile')
 				hold off	
 
@@ -619,11 +621,11 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 
 			ax1=subplot(3,1,3);
 			hold on
-			plotdz(S,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-			plotdz(S,DEMc,'dunit','km','Color','k');
+			pl1=plotdz(S,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+			pl2=plotdz(S,DEMc,'dunit','km','Color','k');
 			xlabel('Distance from Mouth (km)','Color','r')
 			ylabel('Elevation (m)','Color','r')
-			legend('Unconditioned DEM','Conditioned DEM','location','best');
+			legend([pl1 pl2],'Unconditioned DEM','Conditioned DEM','location','best');
 			title(['Long Profile : \theta = ' num2str(C.mn) ' : Select bounds of stream segment you want to project'],'Color','r')
 			ax1.XColor='Red';
 			ax1.YColor='Red';
@@ -695,9 +697,10 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 
 			subplot(3,1,3)
 			hold on
-			plot(C.distance./1000,pred_el,'-r','LineWidth',2);
-			plot(C.distance./1000,pred_el_u,'--r');
+			pl3=plot(C.distance./1000,pred_el,'-r','LineWidth',2);
+			pl4=plot(C.distance./1000,pred_el_u,'--r');
 			plot(C.distance./1000,pred_el_l,'--r');
+			legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Projected Stream','Uncertainty','location','best');
 			hold off
 
 			f2=figure(2);
@@ -777,11 +780,11 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 
 			ax1=subplot(3,1,3);
 			hold on
-			plotdz(S,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-			plotdz(S,DEMc,'dunit','km','Color','k');
+			pl1=plotdz(S,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+			pl2=plotdz(S,DEMc,'dunit','km','Color','k');
 			xlabel('Distance from Mouth (km)','Color','r')
 			ylabel('Elevation (m)','Color','r')
-			legend('Unconditioned DEM','Conditioned DEM','location','best');
+			legend([pl1 pl2],'Unconditioned DEM','Conditioned DEM','location','best');
 			title(['Long Profile : \theta = ' num2str(C.mn) ' : Select bounds of stream segment you want to project'],'Color','r')
 			hold off
 
@@ -854,9 +857,10 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 
 				subplot(3,1,3)
 				hold on
-				plot(C.distance./1000,pred_el,'-r','LineWidth',2);
-				plot(C.distance./1000,pred_el_u,'--r');
+				pl3=plot(C.distance./1000,pred_el,'-r','LineWidth',2);
+				pl4=plot(C.distance./1000,pred_el_u,'--r');
 				plot(C.distance./1000,pred_el_l,'--r');
+				legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Projected Stream','Uncertainty','location','best');
 				hold off
 
 				f2=figure(2);
@@ -1002,14 +1006,14 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 
 				ax1=subplot(3,1,3);
 				hold on
-				plotdz(S,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-				plotdz(S,DEMc,'dunit','km','Color','k');
-				plot(CN.distance./1000,pred_el,'-r','LineWidth',2);
-				plot(CN.distance./1000,pred_el_u,'--r');
+				pl1=plotdz(S,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
+				pl2=plotdz(S,DEMc,'dunit','km','Color','k');
+				pl3=plot(CN.distance./1000,pred_el,'-r','LineWidth',2);
+				pl4=plot(CN.distance./1000,pred_el_u,'--r');
 				plot(CN.distance./1000,pred_el_l,'--r');
 				xlabel('Distance from Mouth (km)')
 				ylabel('Elevation (m)')
-				legend('Unconditioned DEM','Conditioned DEM','location','best');
+				legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Projected Stream','Uncertainty','location','best');
 				title(['Long Profile : \theta = ' num2str(CN.mn)],'Color','r')
 				hold off	
 
