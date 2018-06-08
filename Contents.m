@@ -527,6 +527,24 @@
 %%%%%%%%%%%%%%%%%%
 % Optional Inputs:
 %
+%%% Restart Picking
+%	restart [] - providing an entry to this parameter allows the user to restart a run, either a run that you succesfully completed
+%			but want to restart or a run that failed part way through either because of an error or because you aborted out. While 
+%			the code is running, it will save data necessary to restart in a mat file called '*_restart.mat'. If the code succesfully
+%			completes, this '*_restart.mat' file will be deleted. DO NOT DELETE THIS FILE WHILE THE CODE IS RUNNING OR IF THE CODE FAILS
+%			AND YOU WISH TO SALVAGE THE RUN. You can also call use restart if you just wish to restart picking streams from a previously 
+%			completed run. If you run the code with an 'input_method' other than 'interactive' and the code succesfully completes (i.e
+%			you fit all the streams selected via the input method you choose and you did not stop the code early) then running with restart
+%			will not do anything. If you wish to restart, you do not need to define any of the original parameters, these are saved in the
+%			output files and will be loaded in, you only need to provide the four required inputs (see example) along with the restart parameter. 
+%			Valid inputs to restart are:
+%		'continue' - will restart the run. If used with a completed or failed 'interactive' run will repopulate the map with already picked 
+%			streams and you can continue picking. If using with a non interactive input method that either failed or you aborted, will start 
+%			on the next stream in the sequence.
+%		'skip' - only a meaningful input for a non interactive run. This will skip the next stream segment in the sequence. This would be useful
+%			if a particular stream segment causes the code to error, this way you can skip that stream in a restart without having to modifying
+%			the stream network.
+%
 %%% Main Options
 % 	input_method ['interactive'] - parameter which controls how streams of interest are supplied:
 %		'interactive' - user picks streams of interest by selecting channelheads on a map, this option will also iteratively build a 
@@ -608,9 +626,9 @@
 %
 %%%%%%%%%%	
 % Outputs:
-%	knl - n x 11 matrix of node list for selected stream segments, columns are x coordinate, y coordinate, drainage area, ksn, negative ksn error,
-%		positive ksn error, reference concavity, best fit concavity, mininum threshold area, gradient, and an identifying number. Note that if using the 
-%		code in 'concavity_method','auto' mode then the reference concavity and best fit concavity columns will be the same.
+%	knl - n x 12 matrix of node list for selected stream segments, columns are x coordinate, y coordinate, drainage area, ksn, negative ksn error,
+%		positive ksn error, reference concavity, best fit concavity, mininum threshold area, gradient, fit residual, and an identifying number. Note
+%		that if using the code in 'concavity_method','auto' mode then the reference concavity and best fit concavity columns will be the same.
 %	ksn_master - identical to knl but as a cell array where individual cells are individual selected channels
 %	bnd_list - n x 4 matrix of selected bounds for fitting ksn, columns are x coordinate, y coordinate, elevation, and the stream identifying number 
 %		(this could be thought of as a list of knickpoints), also output as a seperate shapefile. If x y and z values appear as NaN, this indicates
