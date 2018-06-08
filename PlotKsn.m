@@ -74,7 +74,7 @@ function PlotKsn(DEM,FD,ksn,varargin)
 	c1=colorbar;
 	ylabel(c1,'Normalized Channel Steepness')
 	if numel(varargin)==1
-		knks=varargin{1}
+		knks=varargin{1};
 		if ischar(knks) & logical(regexp(knks,regexptranslate('wildcard','*.shp')))
 			knk=shaperead(knks);
 			knkx=[knk.X];
