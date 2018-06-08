@@ -687,25 +687,25 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						pl3=scatter((C.distance)./1000,C.elev,5,C.chi,'filled');
 						xlabel('Distance from Mouth (km)')
 						ylabel('Elevation (m)')
-						legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','Chi','location','best');
+						legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','\chi','location','best');
 						title('Long Profile')
 						hold off
 
 						ax2=subplot(4,1,2);
 						hold on
 						scatter(CAvg,KsnAvg,20,CAvg,'filled','MarkerEdgeColor','k');
-						xlabel('Chi')
+						xlabel('\chi')
 						ylabel('Auto k_{sn}');
-						title('Chi - Auto k_{sn}');
+						title('\chi - Auto k_{sn}');
 						hold off
 
 						ax1=subplot(4,1,1);
 						hold on
 						plot(C.chi,C.elev,'-k');
 						scatter(C.chi,C.elev,10,C.chi,'filled');
-						xlabel('Chi')
+						xlabel('\chi')
 						ylabel('Elevation (m)')
-						title(['Chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments - Press Enter When Done'],'Color','r')
+						title(['\chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments - Press Enter When Done'],'Color','r')
 						ax1.XColor='Red';
 						ax1.YColor='Red';
 						hold off
@@ -721,25 +721,25 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						pl3=scatter((C.distance)./1000,C.elev,5,C.chi,'filled');
 						xlabel('Distance from Mouth (km)')
 						ylabel('Elevation (m)')
-						legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','Chi','location','best');
+						legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','\chi','location','best');
 						title('Long Profile')
 						hold off
 
 						ax2=subplot(3,1,2);
 						hold on
 						scatter(CAvg,KsnAvg,20,CAvg,'filled','MarkerEdgeColor','k');
-						xlabel('Chi')
+						xlabel('\chi')
 						ylabel('Auto k_{sn}');
-						title('Chi - Auto k_{sn}');
+						title('\chi - Auto k_{sn}');
 						hold off
 
 						ax1=subplot(3,1,1);
 						hold on
 						plot(C.chi,C.elev,'-k');
 						scatter(C.chi,C.elev,10,C.chi,'filled');
-						xlabel('Chi')
+						xlabel('\chi')
 						ylabel('Elevation (m)')
-						title(['Chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments - Press Enter When Done'],'Color','r')
+						title(['\chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments - Press Enter When Done'],'Color','r')
 						ax1.XColor='Red';
 						ax1.YColor='Red';
 						hold off
@@ -793,7 +793,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							subplot(4,1,3);
 							hold on
 							pl4=plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
-							legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Chi','Segment Fit','location','best');
+							legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','\chi','Segment Fit','location','best');
 							hold off
 
 							subplot(4,1,4);
@@ -811,7 +811,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							subplot(3,1,3);
 							hold on
 							pl4=plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
-							legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Chi','Segment Fit','location','best');
+							legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','\chi','Segment Fit','location','best');
 							hold off
 						end
 
@@ -907,7 +907,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 								subplot(4,1,3);
 								hold on
 								pl4=plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
-								legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Chi','Segment Fit','location','best');
+								legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','\chi','Segment Fit','location','best');
 								hold off
 
 								subplot(4,1,4);
@@ -925,7 +925,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 								subplot(3,1,3);
 								hold on
 								pl4=plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
-								legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Chi','Segment Fit','location','best');
+								legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','\chi','Segment Fit','location','best');
 								hold off
 							end
 
@@ -968,17 +968,17 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						text(chi_means(kk),ksn_vals(kk),['k_{sn} = ' num2str(ksn_vals(kk))],...
 							'VerticalAlignment','bottom','HorizontalAlignment','center');
 					end
-					xlabel('Chi')
+					xlabel('\chi')
 					ylabel('k_{sn}')
 					legend([s1 p1 p2],{'Auto k_{sn}','k_{sn} uncertainty','k_{sn} of fit segments'},'location','best');
-					title('k_{sn} - Chi')
+					title('k_{sn} - \chi')
 					hold off
 
 					subplot(2,1,1)
 					hold on
 					plot([min(res_list(:,1)) max(res_list(:,1))],[0 0],'-k');
 					scatter(res_list(:,1),res_list(:,2),10,'k','filled');
-					xlabel('Chi')
+					xlabel('\chi')
 					ylabel('Residual (m)')
 					title('Residual on k_{sn} fit')
 					hold off				
@@ -1002,9 +1002,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						hold on
 						plot(C.chi,C.elev,'Color',[0.5 0.5 0.5]);
 						scatter(C.chi,C.elev,10,(C.distance)./1000,'filled');
-						xlabel('Chi')
+						xlabel('\chi')
 						ylabel('Elevation (m)')
-						title(['Chi - Z : \theta = ' num2str(C.mn)])
+						title(['\chi - Z : \theta = ' num2str(C.mn)])
 						hold off
 
 						ax2=subplot(4,1,2);
@@ -1035,9 +1035,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						hold on
 						plot(C.chi,C.elev,'Color',[0.5 0.5 0.5]);
 						scatter(C.chi,C.elev,10,(C.distance)./1000,'filled');
-						xlabel('Chi')
+						xlabel('\chi')
 						ylabel('Elevation (m)')
-						title(['Chi - Z : \theta = ' num2str(C.mn)])
+						title(['\chi - Z : \theta = ' num2str(C.mn)])
 						hold off
 
 						ax2=subplot(3,1,2);
@@ -1324,9 +1324,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					hold on
 					plot(C.chi,C.elev,'-k');
 					scatter(C.chi,C.elev,10,log10(C.area),'filled');
-					xlabel('Chi')
+					xlabel('\chi')
 					ylabel('Elevation (m)')
-					title('Chi - Z')
+					title('\chi - Z')
 					hold off
 
 					ax4=subplot(4,1,4);
@@ -1756,25 +1756,25 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						pl3=scatter((C.distance)./1000,C.elev,5,C.chi,'filled');
 						xlabel('Distance from Mouth (km)')
 						ylabel('Elevation (m)')
-						legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','Chi','location','best');
+						legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','\chi','location','best');
 						title('Long Profile')
 						hold off
 
 						ax2=subplot(4,1,2);
 						hold on
 						scatter(CAvg,KsnAvg,20,CAvg,'filled','MarkerEdgeColor','k');
-						xlabel('Chi')
+						xlabel('\chi')
 						ylabel('Auto k_{sn}');
-						title('Chi - Auto k_{sn}');
+						title('\chi - Auto k_{sn}');
 						hold off
 
 						ax1=subplot(4,1,1);
 						hold on
 						plot(C.chi,C.elev,'-k');
 						scatter(C.chi,C.elev,10,C.chi,'filled');
-						xlabel('Chi')
+						xlabel('\chi')
 						ylabel('Elevation (m)')
-						title(['Chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments - Press Enter When Done'],'Color','r')
+						title(['\chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments - Press Enter When Done'],'Color','r')
 						ax1.XColor='Red';
 						ax1.YColor='Red';
 						hold off
@@ -1790,25 +1790,25 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						pl3=scatter((C.distance)./1000,C.elev,5,C.chi,'filled');
 						xlabel('Distance from Mouth (km)')
 						ylabel('Elevation (m)')
-						legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','Chi','location','best');
+						legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','\chi','location','best');
 						title('Long Profile')
 						hold off
 
 						ax2=subplot(3,1,2);
 						hold on
 						scatter(CAvg,KsnAvg,20,CAvg,'filled','MarkerEdgeColor','k');
-						xlabel('Chi')
+						xlabel('\chi')
 						ylabel('Auto k_{sn}');
-						title('Chi - Auto k_{sn}');
+						title('\chi - Auto k_{sn}');
 						hold off
 
 						ax1=subplot(3,1,1);
 						hold on
 						plot(C.chi,C.elev,'-k');
 						scatter(C.chi,C.elev,10,C.chi,'filled');
-						xlabel('Chi')
+						xlabel('\chi')
 						ylabel('Elevation (m)')
-						title(['Chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments - Press Enter When Done'],'Color','r')
+						title(['\chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments - Press Enter When Done'],'Color','r')
 						ax1.XColor='Red';
 						ax1.YColor='Red';
 						hold off
@@ -1844,7 +1844,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							subplot(4,1,3);
 							hold on
 							pl4=plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
-							legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Chi','Segment Fit','location','best');
+							legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','\chi','Segment Fit','location','best');
 							hold off
 
 							subplot(4,1,4);
@@ -1861,7 +1861,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							subplot(3,1,3);
 							hold on
 							pl4=plot((C.distance)/1000,C.pred+elbl,'-k','LineWidth',2);
-							legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','Chi','Segment Fit','location','best');
+							legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','\chi','Segment Fit','location','best');
 							hold off
 						end
 
@@ -1943,7 +1943,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 								subplot(4,1,3);
 								hold on
 								pl4=plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
-								legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Chi','Segment Fit','location','best');
+								legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','\chi','Segment Fit','location','best');
 								hold off
 
 								subplot(4,1,4);
@@ -1961,7 +1961,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 								subplot(3,1,3);
 								hold on
 								pl4=plot((Cseg.distance+seg_st)/1000,(Cseg.pred)+elbl,'-k','LineWidth',2);
-								legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Chi','Segment Fit','location','best');
+								legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','\chi','Segment Fit','location','best');
 								hold off
 							end
 
@@ -2004,17 +2004,17 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						text(chi_means(kk),ksn_vals(kk),['k_{sn} = ' num2str(ksn_vals(kk))],...
 							'VerticalAlignment','bottom','HorizontalAlignment','center','Color','r');
 					end
-					xlabel('Chi')
+					xlabel('\chi')
 					ylabel('k_{sn}')
 					legend([s1 p1 p2],{'Auto k_{sn}','k_{sn} uncertainty','k_{sn} of fit segments'},'location','best');
-					title('k_{sn} - Chi')
+					title('k_{sn} - \chi')
 					hold off
 
 					subplot(2,1,1)
 					hold on
 					plot([min(res_list(:,1)) max(res_list(:,1))],[0 0],'-k');
 					scatter(res_list(:,1),res_list(:,2),10,'k','filled');
-					xlabel('Chi')
+					xlabel('\chi')
 					ylabel('Residual (m)')
 					title('Residual on k_{sn} fit')
 					hold off				
@@ -2037,9 +2037,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						hold on
 						plot(C.chi,C.elev,'Color',[0.5 0.5 0.5]);
 						scatter(C.chi,C.elev,10,(C.distance)./1000,'filled');
-						xlabel('Chi')
+						xlabel('\chi')
 						ylabel('Elevation (m)')
-						title(['Chi - Z : \theta = ' num2str(C.mn)])
+						title(['\chi - Z : \theta = ' num2str(C.mn)])
 						hold off
 
 						ax2=subplot(4,1,2);
@@ -2070,9 +2070,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						hold on
 						plot(C.chi,C.elev,'Color',[0.5 0.5 0.5]);
 						scatter(C.chi,C.elev,10,(C.distance)./1000,'filled');
-						xlabel('Chi')
+						xlabel('\chi')
 						ylabel('Elevation (m)')
-						title(['Chi - Z : \theta = ' num2str(C.mn)])
+						title(['\chi - Z : \theta = ' num2str(C.mn)])
 						hold off
 
 						ax2=subplot(3,1,2);
@@ -2335,9 +2335,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					hold on
 					plot(C.chi,C.elev,'-k');
 					scatter(C.chi,C.elev,10,log10(C.area),'filled');
-					xlabel('Chi')
+					xlabel('\chi')
 					ylabel('Elevation (m)')
-					title('Chi - Z')
+					title('\chi - Z')
 					hold off
 
 					ax4=subplot(4,1,4);
