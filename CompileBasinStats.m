@@ -29,6 +29,7 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	%			sample name, and erosion rate then your extra_field_names cell array should include entries for 'sample_name' and 'erosion_rate' in that order. 
 	%		uncertainty ['se'] - parameter to control which measure of uncertainty is included, expects 'se' for standard error (default), 'std' for standard deviation, or 'both'
 	%			to include both standard error and deviation.
+	%		dist_along_azimuth [] - option to calculate distances along a given azimuth for all basins. Expects an single numeric input, interpreted as an azimuth in degrees 
 	%		filter_by_category [false] - logical flag to recalculate selected mean values based on filtering by particular categories within a categorical grid (provided to
 	%			ProcessRiverBasins as 'add_cat_grids'). Requires entries to 'filter_type', 'cat_grid', and 'cat_values'. Will produce filtered values for channel steepness, gradient,
 	%			and mean  elevation by default along with any additonal grids present (i.e. grids provided with 'add_grids' to ProcessRiverBasins).
@@ -102,6 +103,7 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	addParamValue(p,'include','all',@(x) ischar(validatestring(x,{'all','subdivided','bigonly'})));
 	addParamValue(p,'extra_field_values',[],@(x) isa(x,'cell'));
 	addParamValue(p,'extra_field_names',[],@(x) isa(x,'cell') && size(x,1)==1);
+	addParamValue(p,'dist_along_azimuth',[],@(x) isnumeric(x) && isscalar(x) && x>=0 && x<=360);
 	addParamValue(p,'uncertainty','se',@(x) ischar(validatestring(x,{'se','std','both'})));
 	addParamValue(p,'populate_categories',false,@(x) isscalar(x) && islogical(x))
 	addParamValue(p,'means_by_category',[],@(x) isa(x,'cell') && size(x,2)>=2);
@@ -118,6 +120,7 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	include=p.Results.include;
 	efv=p.Results.extra_field_values;
 	efn=p.Results.extra_field_names;
+	az=p.Results.dist_along_azimuth;
 	uncertainty=p.Results.uncertainty;
 	pc=p.Results.populate_categories;
 	mbc=p.Results.means_by_category;
@@ -524,6 +527,21 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 		waitbar(ii/num_files);
 	end
 	warning on
+
+	if ~isempty(az)
+		% Rotate by center of dataset
+		x0=mean(T.center_x);
+		y0=mean(T.center_y);
+		% Convert provided azimuth
+		azn=az-90;
+		% Do Rotation
+		d=(T.center_x-x0).*cosd(azn)-(T.center_y-y0).*sind(azn);
+		% Normalize distance
+		d=d-min(d);	
+		% Add to the table
+		az_name=['dist_along_' num2str(round(az))];
+		T=addvars(T,d,'NewVariableNames',az_name,'After','hyp_integral');
+	end
 
 	if ~isempty(mbc)
 		if warn_flag==true
