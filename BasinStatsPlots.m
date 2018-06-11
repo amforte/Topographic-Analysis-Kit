@@ -19,6 +19,8 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	%		'stacked_hypsometry' - plot hypsometries for the basins
 	%		'compare_mean_and_dist' - plots a histogram of values within a selected basin or across all basins for a statistic of interest to 
 	%					compare to the mean value, accepts an input for 'statistic_of_interest' and 'basin_num'.
+	%		'scatterplot_matrix' - matrix of scatterplots and histograms, designed to be sort of similar to 'lattice' plots in R. Providing a table 
+	%					for which you calculated filtered means and leaving 'use_filtered' set to false may produce a large matrix 
 	%		'xy' - generic plot, requires entries to optional 'xval' and 'yval' inputs
 	%
 	% Optional Inputs:
@@ -26,13 +28,19 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	%		Providing 'none' indicates you do not want to plot errorbars. Behavior of this option will depend on how you ran ProcessRiverBasins, 
 	%		e.g. if you only calculated standard deviations when running ProcessRiverBasins but supply 'se'	here, the code will ignore your choice
 	%		and use the standard deviation values.
-	%	use_filtered [false] - logical flag to use filtered values for 'grd_ksn', 'grd_rlf', or 'rlf_ksn'. Will only work if you calculated filtered
-	%		values when running 'CompileBasinStats'.
-	%	color_by [] - value to color points by, valid for 'grd_ksn','grd_rlf','rlf_ksn', and 'xy'
+	%	use_filtered [false] - logical flag to use filtered values for 'grd_ksn', 'grd_rlf', 'rlf_ksn', or 'scatterplot_matrix'. Will only work if 
+	%		you calculated filtered values when running 'CompileBasinStats'.
+	%	color_by [] - value to color points by, valid for 'grd_ksn','grd_rlf','rlf_ksn', and 'xy', either the name of a column in the provided table
+	%		or a m x 1 array of numeric values the same length as the provided table
 	%	cmap [] - colormap to use if an entry is provided to 'color_by', can be the name of a standard colormap or a nx3 array of rgb values
 	%		to use as a colormap. 
-	%	xval [] - value to plot on x axis (name of column as it appears in the provided table) for plot type 'xy'
-	%	yval [] - value to plot on y axis (name of column as it appears in the provided table) for plot type 'xy'
+	%	xval [] - value to plot on x axis for plot type 'xy' provided as name of column as it appears in the provided table or a a m x 1 array of numeric 
+	%		values the same length as the provided table 
+	%	yval [] - value to plot on y axis for plot type 'xy' provided as name of column as it appears in the provided table or a a m x 1 array of numeric 
+	%		values the same length as the provided table 
+	%	define_region [] - set of coordinates to define a rectangular region to draw data from, expects a four element matrix (row or column) that define
+	%		the minimum x, maximum x, minimum y, and maximum y coordinate to include OR define as true to bring up a plot of all basin centers
+	%		for you to select a region by drawing a rectangle. Works with all plots.
 	%	statistic_of_interest ['ksn'] - statistic of interest for plotting histogram to compare with mean value. Valid inputs are 'ksn', 'gradient',
 	%		'elevation', 'relief' (if you provide relief, the code will look for relief calculated at the radius specified with the optional 'rlf_radius' parameter),
 	%		or the name of an additional grid provided to 'ProcessRiverBasins', e.g. if you provided a precipitation grid and provided the name 'precip'
@@ -75,14 +83,17 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	p = inputParser;
 	p.FunctionName = 'BasinStatsPlots';
 	addRequired(p,'basin_table',@(x) isa(x,'table'));
-	addRequired(p,'plots',@(x) ischar(validatestring(x,{'grd_ksn','grd_rlf','rlf_ksn','compare_filtered','category_mean_hist','category_mean_compare','xy','stacked_hypsometry','compare_mean_and_dist'})));
+	addRequired(p,'plots',@(x) ischar(validatestring(x,{'grd_ksn','grd_rlf','rlf_ksn',...
+		'compare_filtered','category_mean_hist','category_mean_compare','xy','stacked_hypsometry',...
+		'compare_mean_and_dist','scatterplot_matrix'})));
 
 	addParamValue(p,'uncertainty','se',@(x) ischar(validatestring(x,{'se','std','none'})));
 	addParamValue(p,'use_filtered',false,@(x) islogical(x) && isscalar(x));
-	addParamValue(p,'color_by',[],@(x) ischar(x));
+	addParamValue(p,'color_by',[],@(x) ischar(x) || isnumeric(x) & size(x,2)==1);
 	addParamValue(p,'cmap',[],@(x) ischar(x) || isnumeric(x) & size(x,2)==3);
-	addParamValue(p,'xval',[],@(x) ischar(x));
-	addParamValue(p,'yval',[],@(x) ischar(x));
+	addParamValue(p,'xval',[],@(x) ischar(x) || isnumeric(x) & size(x,2)==1);
+	addParamValue(p,'yval',[],@(x) ischar(x) || isnumeric(x) & size(x,2)==1);
+	addParamValue(p,'define_region',[],@(x) isnumeric(x) & numel(x)==4 || islogical(x));
 	addParamValue(p,'statistic_of_interest','ksn',@(x) ischar(x));
 	addParamValue(p,'basin_num',[],@(x) isnumeric(x) && isscalar(x));
 	addParamValue(p,'rlf_radius',2500,@(x) isnumeric(x) && isscalar(x));
@@ -101,6 +112,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	cmap=p.Results.cmap;
 	xval=p.Results.xval;
 	yval=p.Results.yval;
+	regionOI=p.Results.define_region;
 	basin_num=p.Results.basin_num;
 	stOI=p.Results.statistic_of_interest;
 	rr=p.Results.rlf_radius;
@@ -109,13 +121,63 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	op=p.Results.only_positive;
 	save_figure=p.Results.save_figure;
 
+ 
 	if isempty(cmap);
 		cmap=jet(50);
 	end
 
+	% Deal with variable inputs
+	if ~isempty(color_by) & isnumeric(color_by)
+		cval=color_by;
+		color_by='color_by';
+		T.color_by=cval;
+	end
+
+	if ~isempty(xval) & isnumeric(xval);
+		xv=xval;
+		xval='xval';
+		T.xval=xv;
+	end
+
+	if ~isempty(yval) & isnumeric(yval);
+		yv=yval;
+		yval='yval';
+		T.yval=yv;
+	end	
+
+	% Deal with region if specified
+	if ~isempty(regionOI) & ~islogical(regionOI)
+		rIDX=T.center_x>=regionOI(1) & T.center_x<=regionOI(2) & T.center_y>=regionOI(3) & T.center_y<=regionOI(4);
+		T=T(rIDX,:);
+		if isempty(T)
+			error('Provided region has eliminated all entries from the table, check that the coordinates are correct');
+		end
+	elseif ~isempty(regionOI) & islogical(regionOI)
+
+		f1=figure(1);
+		clf
+		hold on
+		scatter(T.center_x,T.center_y,20,'k','filled');
+		title('Draw a rectangle around the data you would like to select');
+		hold off
+
+		rgn=getrect;
+
+		close(f1);
+
+		regionOI=zeros(4,1);
+		regionOI(1)=rgn(1);
+		regionOI(2)=rgn(1)+rgn(3);
+		regionOI(3)=rgn(2);
+		regionOI(4)=rgn(2)+rgn(4);
+
+		rIDX=T.center_x>=regionOI(1) & T.center_x<=regionOI(2) & T.center_y>=regionOI(3) & T.center_y<=regionOI(4);
+		T=T(rIDX,:);
+	end
+
+
+
 	% Generate Plots
-
-
 	switch plts
 	case 'grd_ksn'
 
@@ -353,7 +415,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			color_by_label=strrep(color_by,'_',' ');
 			ylabel(cb,color_by_label);
 		else
-			scatter(k,g,30,'k','filled');
+			scatter(k,r,30,'k','filled');
 		end
 
 		ylabel(['Mean Basin ' num2str(rr) ' m^2 Relief']);
@@ -533,6 +595,73 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		xlim([0 1]);
 		ylim([0 1]);
 		hold off
+
+	case 'scatterplot_matrix'
+		% Find values with means
+		if use_filtered
+			VN=T.Properties.VariableNames;
+			ix=regexp(VN,regexptranslate('wildcard','mean_*_f'));
+			ix=cellfun(@any,ix);
+			VNoi=VN(ix);
+		else
+			VN=T.Properties.VariableNames;
+			ix=regexp(VN,regexptranslate('wildcard','mean_*'));
+			ix=cellfun(@any,ix);
+			VNoi=VN(ix);
+		end
+
+		% Add azimuth if it was calculated
+		aix=regexp(VN,regexptranslate('wildcard','dist_along*'));
+		aix=cellfun(@any,aix);
+		if ~isempty(aix);
+			VNoi=horzcat(VNoi,VN(aix));
+		end
+
+		num_sc=numel(VNoi);
+
+		f=figure(1);
+		set(f,'Units','normalized','Position',[0.05 0.5 0.9 0.9],'renderer','painters');		
+		clf
+		pos=1;
+
+		for ii=1:num_sc
+			yval=T.(VNoi{ii});
+			yname=VNoi{ii};
+			yname=strrep(yname,'_',' ');
+			for jj=1:num_sc
+				subplot(num_sc,num_sc,pos)
+				hold on
+				if ii==jj
+					histogram(yval,25,'FaceColor','k');
+					if jj==num_sc & ii==num_sc
+						xlabel(yname);
+					end
+					axis square
+				else
+					xval=T.(VNoi{jj});
+					xname=VNoi{jj};
+					xname=strrep(xname,'_',' ');
+					scatter(xval,yval,5,'k','filled');
+					warning off
+					f=fit(xval,yval,'poly2');
+					warning on
+					xx=linspace(min(xval),max(xval),50);
+					yy=f(xx);
+					plot(xx,yy,'-r');
+					if ii==num_sc
+						xlabel(xname);
+					end
+
+					if jj==1
+						ylabel(yname);
+					end
+
+					axis square
+				end
+				hold off
+				pos=pos+1;
+			end
+		end
 
 	case 'compare_filtered'
 
@@ -1057,8 +1186,15 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	if save_figure
 		num_figs=numel(f);
 
-		for ii=1:num_figs
-			orient(f(ii),'landscape');
-			print(f(ii),'-dpdf','-fillpage',['Figure_' num2str(ii) '.pdf']);
+		if num_figs>1
+			for ii=1:num_figs
+				orient(f(ii),'landscape');
+				print(f(ii),'-dpdf','-fillpage',['Figure_' num2str(ii) '.pdf']);
+			end
+		else % WEIRD SIMULINK ERROR FROM HELL
+			current=gcf;
+			orient 'landscape';
+			print(current,'-dpdf','-fillpage',['Figure_1.pdf']);
 		end
+
 	end
