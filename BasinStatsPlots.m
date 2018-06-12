@@ -1021,33 +1021,31 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			idx=ismember(IX,keep_bins);
 			out_f=out(idx);
 
-			subplot(2,2,1);
+			subplot(1,2,1);
 			hold on 
-			[~,edges_f]=histcounts(out_f,100);
-			histogram(out_f,100);
-			title(title_str);
-			xlabel('All Values From All Basins - <1% Bins Removed');
+			[nF,edgesF]=histcounts(out_f,100);
+			[nV,~]=histcounts(val,edgesF);
+			nF=nF/max(nF);
+			nV=nV/max(nV);
+			histogram('BinEdges',edgesF,'BinCounts',nF);
+			histogram('BinEdges',edgesF,'BinCounts',nV);
+			title('<1% Bins Removed');
+			legend('All Basins','Basin Means','location','best');
+			xlabel(title_str);
+			ylabel('Normalized Counts');
 			hold off
 
-			subplot(2,2,3);
+			subplot(1,2,2)
 			hold on 
-			histogram(val,edges_f);
-			xlabel('Mean Values From All Basins');
-			hold off
-
-
-			subplot(2,2,2);
-			hold on 
-			[~,edges]=histcounts(out,100);
-			histogram(out,100);
-			title(title_str);
-			xlabel('All Values From All Basins');
-			hold off
-
-			subplot(2,2,4);
-			hold on 
-			histogram(val,edges);
-			xlabel('Mean Values From All Basins');
+			[n,edges]=histcounts(out,100);
+			[nV,~]=histcounts(val,edges);
+			n=n/max(n);
+			nV=nV/max(nV);
+			histogram('BinEdges',edges,'BinCounts',n);
+			histogram('BinEdges',edges,'BinCounts',nV);
+			title('All Data')
+			legend('All Basins','Basin Means','location','best');			
+			xlabel(title_str);			
 			hold off
 
 		else
