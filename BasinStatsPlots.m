@@ -100,6 +100,11 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	addParamValue(p,'cat_mean1',[],@(x) ischar(x));
 	addParamValue(p,'cat_mean2',[],@(x) ischar(x));
 	addParamValue(p,'only_positive',false,@(x) isscalar(x) && islogical(x));
+	addParamValue(p,'fit_grd_ksn',false,@(x) isscalar(x) && islogical(x));
+	addParamValue(p,'start_diffusivity',0.01,@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'start_erodibility',1e-7,@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'start_threshold_gradient',0.8,@(x) isscalar(x) && isnumeric(x));
+	addParamValue(p,'n_val',2,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'save_figure',false,@(x) isscalar(x) && islogical(x));
 
 	parse(p,basin_table,plots,varargin{:});
@@ -119,6 +124,11 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	cm1=p.Results.cat_mean1;
 	cm2=p.Results.cat_mean2;
 	op=p.Results.only_positive;
+	fit_grd_ksn=p.Results.fit_grd_ksn;
+	D_in=p.Results.start_diffusivity;
+	K_in=p.Results.start_erodibility;
+	s_in=p.Results.start_threshold_gradient;
+	n_val=p.Results.n_val;
 	save_figure=p.Results.save_figure;
 
  
@@ -219,7 +229,15 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			end
 		end
 
+
+		if fit_grd_ksn
+			[pf]=KGF(k,g,D_in,K_in,s_in,n_val);
+			[mg,mk,er,l]=KGG(pf.D,pf.K,pf.Sc,pf.n,k);
+		end			
+
+
 		f=figure(1);
+		clf
 		set(f,'Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
 		hold on 
 
@@ -243,6 +261,13 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			ylabel(cb,color_by_label);
 		else
 			scatter(k,g,30,'k','filled');
+		end
+
+		if fit_grd_ksn
+			plot(mk,mg,'-r','LineWidth',2);
+			disp(['K = ' num2str(pf.K)]);
+			disp(['D = ' num2str(pf.D)]);
+			disp(['Sc = ' num2str(pf.Sc)]);
 		end
 
 		xlabel('Mean Basin k_{sn}');
@@ -1196,3 +1221,123 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		end
 
 	end
+end
+
+function [param_fit]=KGF(x0,y0,D_in,K_in,s_in,n)
+	% n is not a free parameter in this version
+
+    model=@RC;
+    stp=[D_in,K_in,s_in];
+    lb=[0,0,0];
+    ub=[1,1,2];
+	opt=optimset('Display','iter'); %,'MaxFunEvals',1000,'MaxIter',1000);
+
+	disp('	Begin Fitting')
+    % [est]=fminsearch(model,stp,opt);
+    est=fmincon(model,stp,[],[],[],[],lb,ub);
+
+    disp('	Fitting Completed')
+
+    param_fit.D=est(1);
+    param_fit.K=est(2);
+    param_fit.Sc=est(3);
+    param_fit.n=n;
+
+    % Define least absolute deviation solver
+    function [lad]=RC(params)
+    	D=params(1);
+    	K=params(2);
+    	s=params(3);
+
+    	er=ErKsn(x0,K,n);
+    	er=er.';
+
+		% Calculate hillslope lengths
+		for ii=1:numel(er);
+			l(1,ii)=CharLh(K,D,er(ii),n,s);
+		end
+
+		% Calculate mean slopes
+		[mean_gradient]=NonLinearHillslope(er,s,D,l);
+		res=(y0.')-mean_gradient;
+		lad=sum(abs(res));
+	end
+end
+
+function [me_grd,me_ksn,er,l]=KGG(D,K,s,n,ksn)
+
+	% Define Erosion Rate Range
+	% % er - erosion rate (m/yr)
+	% er=logspace(-5,-1,100);
+	ksn_vec=linspace(min(ksn),max(ksn)+50,100);
+	er=ErKsn(ksn_vec,K,n);
+
+	% Calculate hillslope lengths
+	% l - hillslope length (m)
+	for ii=1:numel(er);
+		l(1,ii)=CharLh(K,D,er(ii),n,s);
+	end
+
+	% Calculate mean gradients
+	[me_grd]=NonLinearHillslope(er,s,D,l);
+
+	% Calcualte mean ksn
+	% me_ksn - basin averaged channel steepness
+	[me_ksn]=KsnEr(er,K,n);
+end
+
+function [lh]=CharLh(K,D,er,n,s)
+	% er - erosion rate
+	% s - threshold gradient
+	% b - sediment density ratio
+	% D - diffusivity
+	% K - fluvial erodiblity
+	b=2;
+	m=n/2;
+
+	fun=@(lh) (((D*(s^2))/(b*er*lh))*(sqrt(1+((b*er*lh)/(D*s))^2)-1))-((er/(2*K*(lh^(2*m))))^(1/n));
+
+	lh=fzero(fun,100);
+end
+
+function [ksn]=KsnEr(er,K,n)
+	% K = erosivity
+	% n = slope exponent
+		ksn=(er./K).^(1/n);
+end
+
+function [er]=ErKsn(ksn,K,n)
+	% K = erosivity
+	% n = slope exponent
+	er=K.*(ksn.^n);
+end
+
+function [mean_gradient_r]=NonLinearHillslope(er,s,D,l)
+	% er - erosion rate
+	% s - threshold gradient
+	% b - sediment density ratio
+	% D - diffusivity
+	% l - hillslope length
+
+	b=2;
+
+	[z_0]=el_func_x(er,s,b,D,0);
+	[z_l]=el_func_x(er,s,b,D,l);
+
+	mean_gradient_r=(z_0-z_l)./l;
+end
+
+function [z]=el_func_x(er,s,b,D,xx)
+	% Helper function for NonLinearHillslope, elevation as a function of x
+
+	out_term=(-(s^2)./(2*b.*er));
+
+	rep_term=(2*b.*er)./s;
+
+	first_inner=sqrt((D^2)+(rep_term.*xx).^2);
+
+	second_inner=D * log((first_inner+D)./rep_term);
+
+	z=out_term.*(first_inner-second_inner);
+
+end
