@@ -17,6 +17,7 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 	% 	plot_figure [false] - logical flag to plot result. 
 	%	plot_as_points [false] - logical flag to switch plot type to distributions of points
 	%	plot_as_heatmap [false] - logical flag to switch plot type to a heat map
+	%	save_figure [false] - logical flag to save the swath figure as a pdf (this will also set 'plot_figure' to true)
 	%
 	% Outputs:
 	% 	SW - TopoToolbox Swath object, contains various information as a structure. Can plot path and box of swath with plot(SW) and
@@ -42,6 +43,7 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 	addParamValue(p,'plot_figure',false,@(x) isscalar(x) && islogical(x));
 	addParamValue(p,'plot_as_points',false,@(x) isscalar(x) && islogical(x));
 	addParamValue(p,'plot_as_heatmap',false,@(x) isscalar(x) && islogical(x));
+	addParamValue(p,'save_figure',false,@(x) isscalar(x) && islogical(x));
 
 	parse(p,DEM,points,width,varargin{:});
 	DEM=p.Results.DEM;
@@ -54,6 +56,7 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 	plot_figure=p.Results.plot_figure;
 	plot_as_points=p.Results.plot_as_points;
 	plot_as_heatmap=p.Results.plot_as_heatmap;
+	save_figure=p.Results.save_figure;
 
 	if isempty(sample)
 		sample=DEM.cellsize;
@@ -61,6 +64,10 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 
 	if plot_as_points & plot_as_heatmap
 		error('Please only set one of "plot_as_points" and "plot_as_heatmap" to true');
+	end
+
+	if save_figure
+		plot_figure=true;
 	end
 
 	% Find Bend Points in Swath
@@ -167,6 +174,16 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 		xlim([0 max(swdist)]);
 		hold off
 	end
+
+	if save_figure
+		orient(f1,'Landscape')
+		if plot_as_points
+			print(f1,'-dtiff','Swath.tif');
+		else
+			print(f1,'-dpdf','-bestfit','Swath.pdf');
+		end
+	end
+
 end
 
 
