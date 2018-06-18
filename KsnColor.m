@@ -1,5 +1,16 @@
-function [cmap]=ksncolor(n)
-	% Function to generate colormap for channel steepness data
+function [cmap]=KsnColor(n)
+	%
+	% Usage:
+	% 	[cmap]=KsnColor(n);
+	%
+	% Description:
+	% 	Function to generate colormap for channel steepness data
+	%
+	% Required Inputs:
+	%	n - scalar number of colors within colormap
+	%
+	% Output:
+	%	cmap - nx3 array of values defining colormap.
 	% 
 	% Code based off colormap functions provided with TopoToolbox
 	%

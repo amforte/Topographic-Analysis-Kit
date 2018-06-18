@@ -1,5 +1,10 @@
 function [OUT,look_table]=CatPoly2GRIDobj(DEM,poly_shape,field)
-	% Function to convert a categorical polygon shape file (e.g. a digitzed geologic map) to a GRIDobj. Can
+	%
+	% Usage:
+	%	[GRIDobj,look_up_table]=CatPoly2GRIDobj(DEM,poly_shape,field);
+	%
+	% Description:
+	% 	Function to convert a categorical polygon shape file (e.g. a digitzed geologic map) to a GRIDobj. Can
 	%	be useful for use in 'ProcessRiverBasins'
 	%
 	% Required Inputs:
@@ -16,9 +21,9 @@ function [OUT,look_table]=CatPoly2GRIDobj(DEM,poly_shape,field)
 	% Example:
 	%	[GEO,geo_table]=CatPoly2GRIDobj(DEM,'geologic_map.shp','rtype');
 	% 
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Read in shape and covert to a table
 	PS=shaperead(poly_shape);

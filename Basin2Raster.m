@@ -1,6 +1,12 @@
 function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
-	% Function takes outputs from 'ProcessRiverBasins' function and produces a single GRIDobj with individual drainage
-	% basins (as selected by 'ProcessRiverBasins' and 'SubDivideBigBasins') assinged various values
+	%
+	% Usage:
+	%	[RASTER]=Basin2Raster(DEM,valueOI,location_of_data_files);
+	%	[RASTER]=Basin2Raster(DEM,valueOI,location_of_data_files,'name',value,...);
+	%
+	% Description:
+	% 	Function takes outputs from 'ProcessRiverBasins' function and produces a single GRIDobj with individual drainage
+	% 	basins (as selected by 'ProcessRiverBasins' and 'SubDivideBigBasins') assinged various values
 	%
 	% Required Inputs:
 	%	DEM - GRIDobj of full extent of datasets
@@ -28,9 +34,9 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 	%		so you do not need to specify a value for this property. If you picked nested catchments manually and then
 	%		ran 'ProcessRiverBasins' you should use 'nested'.
 	%		 
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 	% Parse Inputs
@@ -40,9 +46,9 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 	addRequired(p,'valueOI',@(x) ischar(x));
 	addRequired(p,'location_of_data_files',@(x) isdir(x));
 
-	addParamValue(p,'location_of_subbasins','SubBasins',@(x) ischar(x));
-	addParamValue(p,'file_name_prefix','basins','SubBasins',@(x) ischar(x));
-	addParamValue(p,'method','subdivided',@(x) ischar(validatestring(x,{'subdivided','nested'})));
+	addParameter(p,'location_of_subbasins','SubBasins',@(x) ischar(x));
+	addParameter(p,'file_name_prefix','basins','SubBasins',@(x) ischar(x));
+	addParameter(p,'method','subdivided',@(x) ischar(validatestring(x,{'subdivided','nested'})));
 
 	parse(p,DEM,valueOI,location_of_data_files,varargin{:});
 	DEM=p.Results.DEM;

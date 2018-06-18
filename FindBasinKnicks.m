@@ -1,5 +1,11 @@
 function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
-	% Function for manually selecting knickpoints within a Basin_Data_File (i.e. result of ProcessRiverBasins). 
+	%
+	% Usage:
+	%	[KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result);
+	%	[KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result,'name',value,...);
+	%
+	% Description:
+	% 	Function for manually selecting knickpoints within a Basin_Data_File (i.e. result of ProcessRiverBasins). 
 	% 	Choose knickpoints on Chi-Elevation plot with mouse clicks and press return when you have selected
 	% 	all the knickpoints for a given stream segment. As you progress through, knickpoints you have already picked 
 	% 	(i.e. on shared portions of river profiles) will be displayed as red dots. If you're interested in trying out
@@ -32,9 +38,9 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 	addRequired(p,'Basin_Data_File',@(x) ischar(x));
 	addRequired(p,'plot_result',@(x) islogical(x));
 
-	addParamValue(p,'theta_ref',0.5,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'shape_name',[],@(x) ischar(x));
-	addParamValue(p,'save_mat',true,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'theta_ref',0.5,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'shape_name',[],@(x) ischar(x));
+	addParameter(p,'save_mat',true,@(x) isscalar(x) && islogical(x));
 
 	parse(p,Basin_Data_File,plot_result,varargin{:});
 	Basin_Data_File=p.Results.Basin_Data_File;

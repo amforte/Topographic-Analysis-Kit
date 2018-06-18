@@ -1,5 +1,11 @@
 function ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,varargin)
-	% Function to iterate through a set of bounds (i.e. knickpoints) selected while running 'KsnProfiler'. The function 
+	%
+	% Usage:
+	%	ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list);
+	%	ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,'shape_name','name');
+	%
+	% Description:
+	% 	Function to iterate through a set of bounds (i.e. knickpoints) selected while running 'KsnProfiler'. The function 
 	%	will display a long profile and chi - elevation plot for individual stream segments and will iterate through each
 	%	bound point you selected in KsnProfiler. The code expects you to input a number or character (at the command prompt)
 	%	to categorize the knickpoint higlighted in red. You must be consistent in your choice (i.e. you must either use 
@@ -21,9 +27,9 @@ function ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,varargin)
 	% Outputs:
 	%	saves a shapfile of knickpoints including the classification you assign using this tool
 	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Summer 2018 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Parse Inputs
 	p = inputParser;
@@ -35,7 +41,7 @@ function ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,varargin)
 	addRequired(p,'ksn_master',@(x) iscell(x));
 	addRequired(p,'bnd_list',@(x) ismatrix(x));
 
-	addParamValue(p,'shape_name','ksn',@(x) ischar(x));
+	addParameter(p,'shape_name','ksn',@(x) ischar(x));
 
 	parse(p,DEM,FD,A,Sc,ksn_master,bnd_list,varargin{:});
 	DEM=p.Results.DEM;

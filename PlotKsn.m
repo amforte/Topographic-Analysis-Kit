@@ -1,5 +1,12 @@
 function PlotKsn(DEM,FD,ksn,varargin)
-	% Function to plot a map of normalized channel steepness on a hillshade colored
+	%
+	% Usage:
+	%	PlotKsn(DEM,FD,ksn);
+	%	PlotKsn(DEM,FD,ksn,bnd_list);
+	%	PlotKsn(DEM,FD,ksn,'knicks.shp');
+	%
+	% Description:
+	% 	Function to plot a map of normalized channel steepness on a hillshade colored
 	% 	by elevation.
 	%
 	% Required Inputs:
@@ -18,9 +25,9 @@ function PlotKsn(DEM,FD,ksn,varargin)
 	%	PlotKsn(DEM,FD,'ksn.shp','ksn_knicks.shp'); % Include knickpoint locations from KsnProfiler
 	%	PlotKsn(DEMoc,FDc,MSNc,KnickPoints); %Include knickpoints output from FindBasinKnicks
 	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Summer 2018 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 	if ischar(ksn) & logical(regexp(ksn,regexptranslate('wildcard','*.shp')))

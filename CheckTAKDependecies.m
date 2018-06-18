@@ -1,5 +1,14 @@
-function CheckTAKDependecies()
-	% Function to check required toolboxes for running Topographic Analysis Kit (TAK)
+function CheckTAKDependencies()
+	%
+	% Usage:
+	%	CheckTAKDependencies;
+	%
+	% Description:
+	% 	Function to check required toolboxes for running Topographic Analysis Kit (TAK)
+	%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	p=ver;
 

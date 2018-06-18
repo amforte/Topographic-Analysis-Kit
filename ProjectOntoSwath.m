@@ -1,8 +1,27 @@
 function [ds,db]=ProjectOntoSwath(SW,x,y,data_width)
-	% Function projects points on a SWATHobj (SW) and finds distance along (ds) and 
+	%
+	% Usage:
+	%	[ds,db]=ProjectOntoSwath(SW,x,y,data_width);
+	%
+	% Description:
+	% 	Function projects points on a SWATHobj (SW) and finds distance along (ds) and 
 	%	from center line (db) of the SWATHobj, used in 'MakeCombinedSwath'
+	%
+	% Required Inputs:
+	%	SW - SWATHobj
+	%	x - xdata to project
+	%	y - ydata to project
+	%	data_width - width (in map units) from centerline of swath to include
+	%
+	% Outputs:
+	%	ds - distance along swath of each x-y point
+	%	db - distance from center line in map units of each x-y point
 	% 
 	% Values for points that do not project onto swath are set to NaN
+	%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Extract parameters from SWATHobj
 	xypoints=SW.xy;

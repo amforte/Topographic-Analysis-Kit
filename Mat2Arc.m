@@ -1,5 +1,10 @@
 function Mat2Arc(mat_file,file_prefix)
-	% Function converts all valid topotoolbox files contained within a mat file
+	%
+	% Usage:
+	%	Mat2Arc(mat_file,file_prefix);
+	%
+	% Description:
+	% 	Function converts all valid topotoolbox files contained within a mat file
 	%	to Arc compatible outputs. Specifically converts any GRIDobjs to
 	%	ascii files, any STREAMobjs to shapefiles, any FLOWobjs to ArcGIS 
 	%	flow direction grids saved as an ascii file, and any valid mapstructures
@@ -22,9 +27,9 @@ function Mat2Arc(mat_file,file_prefix)
 	%		Example_S.shp - shapefile of the streams in STREAMobj
 	%		Example_MS_KSN.shp - shapefile of the stream data with ksn
 	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Summer 2018 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	d=whos('-file',mat_file);
 

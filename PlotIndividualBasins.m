@@ -1,5 +1,11 @@
 function PlotIndividualBasins(location_of_data_files,varargin)
-	% Function takes outputs from 'ProcessRiverBasins' function and makes and saves plots for each basin with stream profiles, chi-z, and slope area
+	%
+	% Usage:
+	%	PlotIndividualBasins(location_of_data_files);
+	%	PlotIndividualBasins(location_of_data_files,'location_of_subbasins','location');
+	%
+	% Description:
+	% 	Function takes outputs from 'ProcessRiverBasins' function and makes and saves plots for each basin with stream profiles, chi-z, and slope area
 	%
 	% Required Inputs:
 	% 	location_of_data_files - full path of folder which contains the mat files from 'ProcessRiverBasins'
@@ -8,16 +14,16 @@ function PlotIndividualBasins(location_of_data_files,varargin)
 	%	location_of_subbasins ['SubBasins'] - name of folder that contains subbasins of interest (if you created subbasins using
 	%		"SubDivideBigBasins"), expected to be within the main Basin folder provided with "location_of_data_files"
 	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Parse Inputs
 	p = inputParser;
 	p.FunctionName = 'PlotIndividualBasins';
 	addRequired(p,'location_of_data_files',@(x) isdir(x));
 
-	addParamValue(p,'location_of_subbasins','SubBasins',@(x) ischar(x));
+	addParameter(p,'location_of_subbasins','SubBasins',@(x) ischar(x));
 
 	parse(p,location_of_data_files,varargin{:});
 	location_of_data_files=p.Results.location_of_data_files;

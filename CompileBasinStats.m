@@ -1,5 +1,11 @@
 function [T]=CompileBasinStats(location_of_data_files,varargin)
-	% Function to take the outputs from 'ProcessRiverBasins' and 'SubDivideBigBasins' and produce a single shapefile showing the outlines of polygons
+	%
+	% Usage:
+	%	[T]=CompileBasinStats(location_of_data_files);
+	%	[T]=CompileBasinStats(location_of_data_files,'name',value,...);
+	%
+	% Description:
+	% 	Function to take the outputs from 'ProcessRiverBasins' and 'SubDivideBigBasins' and produce a single shapefile showing the outlines of polygons
 	% 	and with commonly desired attributes from the results of 'ProcessRiverBasins' etc. See below for a full list of fields that the output shapefile
 	% 	will include. If additional grids were provided to 'ProcessRiverBasins', mean and standard error values for those grids will be auto-populated in
 	% 	the shapefile and the name of the fields will be the character array provided in the second column of additional grids input. This function also
@@ -89,9 +95,9 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	%		interpolated 'KsnOBJc', not the stream values like the the value reported in mean_ksn in the output table.
 	%		
 	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	
 
 	% Parse Inputs
@@ -99,18 +105,18 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	p.FunctionName = 'CompileBasinStats';
 	addRequired(p,'location_of_data_files',@(x) isdir(x));
 
-	addParamValue(p,'location_of_subbasins','SubBasins',@(x) ischar(x));
-	addParamValue(p,'include','all',@(x) ischar(validatestring(x,{'all','subdivided','bigonly'})));
-	addParamValue(p,'extra_field_values',[],@(x) isa(x,'cell'));
-	addParamValue(p,'extra_field_names',[],@(x) isa(x,'cell') && size(x,1)==1);
-	addParamValue(p,'dist_along_azimuth',[],@(x) isnumeric(x) && isscalar(x) && x>=0 && x<=360);
-	addParamValue(p,'uncertainty','se',@(x) ischar(validatestring(x,{'se','std','both'})));
-	addParamValue(p,'populate_categories',false,@(x) isscalar(x) && islogical(x))
-	addParamValue(p,'means_by_category',[],@(x) isa(x,'cell') && size(x,2)>=2);
-	addParamValue(p,'filter_by_category',false,@(x) isscalar(x) && islogical(x));
-	addParamValue(p,'filter_type','exclude',@(x) ischar(validatestring(x,{'exclude','include','mode'})));
-	addParamValue(p,'cat_grid',[],@(x) ischar(x));
-	addParamValue(p,'cat_values',[],@(x) isa(x,'cell') && size(x,1)==1);
+	addParameter(p,'location_of_subbasins','SubBasins',@(x) ischar(x));
+	addParameter(p,'include','all',@(x) ischar(validatestring(x,{'all','subdivided','bigonly'})));
+	addParameter(p,'extra_field_values',[],@(x) isa(x,'cell'));
+	addParameter(p,'extra_field_names',[],@(x) isa(x,'cell') && size(x,1)==1);
+	addParameter(p,'dist_along_azimuth',[],@(x) isnumeric(x) && isscalar(x) && x>=0 && x<=360);
+	addParameter(p,'uncertainty','se',@(x) ischar(validatestring(x,{'se','std','both'})));
+	addParameter(p,'populate_categories',false,@(x) isscalar(x) && islogical(x))
+	addParameter(p,'means_by_category',[],@(x) isa(x,'cell') && size(x,2)>=2);
+	addParameter(p,'filter_by_category',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'filter_type','exclude',@(x) ischar(validatestring(x,{'exclude','include','mode'})));
+	addParameter(p,'cat_grid',[],@(x) ischar(x));
+	addParameter(p,'cat_values',[],@(x) isa(x,'cell') && size(x,1)==1);
 
 
 	parse(p,location_of_data_files,varargin{:});

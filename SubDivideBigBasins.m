@@ -1,6 +1,12 @@
 function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
-	% Function takes outputs from 'ProcessRiverBasins' function and subdvides any basin with a drainage area above a specified size and
-	% outputs clipped dem, stream network, variout topographic metrics, and river values (ks, ksn, chi)
+	%
+	% Usage:
+	%	SubDivideBigBasins(basin_dir,max_basin_size,divide_method);
+	%	SubDivideBigBasins(basin_dir,max_basin_size,divide_method,'name',value,...);
+	%
+	% Description:
+	% 	Function takes outputs from 'ProcessRiverBasins' function and subdvides any basin with a drainage area above a specified size and
+	% 	outputs clipped dem, stream network, variout topographic metrics, and river values (ks, ksn, chi)
 	%
 	% Required Inputs:
 	% 		basin_dir - full path of folder which contains the mat files from 'ProcessRiverBasins'
@@ -50,9 +56,9 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 	%		these very small basins but it is not always effective and can occassionally result in errors. If you are encountering errors try running the drainage area
 	%		filtered versions
 	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Parse Inputs
 	p = inputParser;
@@ -61,15 +67,15 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 	addRequired(p,'max_basin_size',@(x) isnumeric(x));
 	addRequired(p,'divide_method',@(x) ischar(validatestring(x,{'order','confluences','up_confluences','filtered_confluences','p_filtered_confluences','trunk','filtered_trunk','p_filtered_trunk'})));
 
-	addParamValue(p,'SBFiles_Dir','SubBasins',@(x) ischar(x));
-	addParamValue(p,'recursive',true,@(x) isscalar(x) && islogical(x));
-	addParamValue(p,'ref_concavity',0.5,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'threshold_area',1e6,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'segment_length',1000,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'write_arc_files',false,@(x) isscalar(x));
-	addParamValue(p,'s_order',[3],@(x) isscalar(x));
-	addParamValue(p,'min_basin_size',[10],@(x) isnumeric(x) & isscalar(x));
-	addParamValue(p,'no_nested',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'SBFiles_Dir','SubBasins',@(x) ischar(x));
+	addParameter(p,'recursive',true,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'ref_concavity',0.5,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'threshold_area',1e6,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'segment_length',1000,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'write_arc_files',false,@(x) isscalar(x));
+	addParameter(p,'s_order',[3],@(x) isscalar(x));
+	addParameter(p,'min_basin_size',[10],@(x) isnumeric(x) & isscalar(x));
+	addParameter(p,'no_nested',false,@(x) isscalar(x) && islogical(x));
 
 	parse(p,basin_dir,max_basin_size,divide_method,varargin{:});
 	location_of_data_files=p.Results.basin_dir;

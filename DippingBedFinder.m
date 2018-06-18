@@ -1,5 +1,10 @@
 function [BED]=DippingBedFinder(DEM,xy,hght_abv_base,thickness,strike,dip);
-    % Function to determine the expected location of a planar dipping bed within a landscape based on an input coordinate
+    %
+    % Usage:
+    %   [GRIDobj]=DippingBedFinder(DEM,xy,hght_abv_base,thickness,strike,dip); 
+    %
+    % Description:
+    %   Function to determine the expected location of a planar dipping bed within a landscape based on an input coordinate
     %
     % Required Inputs:
     % 	DEM - DEM GRIDobj
@@ -21,9 +26,9 @@ function [BED]=DippingBedFinder(DEM,xy,hght_abv_base,thickness,strike,dip);
     % 	[BED]=DippingBedFinder(DEM,[45325.23 1024567.2],10,50,270,40); If you want to provide a coordinate
     %   [BED]=DippingBedFinder(DEM,[],10,50,270,40); If you want to pick a spot on the DEM
     %
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Function Written by Adam M. Forte - Last Revised Spring 2017 %
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Function Written by Adam M. Forte - Updated : 06/18/18 %
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     if isempty(xy);
         f1=figure(1);

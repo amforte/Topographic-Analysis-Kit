@@ -1,6 +1,12 @@
 function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
-	% Function takes grid object outputs from MakeStreams script (DEM,FD,A,S), a series of x,y coordinates of river mouths,
-	% and outputs clipped dem, stream network, variout topographic metrics, and river values (ks, ksn, chi)
+	%
+	% Usage:
+	%	ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir);
+	%	ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,'name',value,...);
+	%
+	% Description:
+	% 	Function takes grid object outputs from MakeStreams script (DEM,FD,A,S), a series of x,y coordinates of river mouths,
+	% 	and outputs clipped dem, stream network, variout topographic metrics, and river values (ks, ksn, chi)
 	%
 	% Required Inputs:
 	% 		DEM - GRIDobj of the digital elevation model of your area loaded into the workspace
@@ -60,9 +66,9 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 	%		ProcessRiverBasins(DEM,FD,S,RiverMouths);
 	%		ProcessRiverBasins(DEM,FD,S,RiverMouths,'theta_ref',0.5,'write_arc_files',true);
 	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Winter 2017 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Parse Inputs
 	p = inputParser;
@@ -74,19 +80,19 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 	addRequired(p,'river_mouths',@(x) isnumeric(x) && size(x,2)==3 || isnumeric(x) && isscalar(x) || regexp(x,regexptranslate('wildcard','*.shp')));
 	addRequired(p,'basin_dir',@(x) ischar(x));
 
-	addParamValue(p,'ref_concavity',0.5,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'threshold_area',1e6,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'segment_length',1000,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'write_arc_files',false,@(x) isscalar(x));
-	addParamValue(p,'ksn_method','quick',@(x) ischar(validatestring(x,{'quick','trib'})));
-	addParamValue(p,'add_grids',[],@(x) isa(x,'cell') && size(x,2)==2);
-	addParamValue(p,'add_cat_grids',[],@(x) isa(x,'cell') && size(x,2)==3);
-	addParamValue(p,'resample_method','nearest',@(x) ischar(validatestring(x,{'nearest','bilinear','bicubic'})));
-	addParamValue(p,'gradient_method','arcslope',@(x) ischar(validatestring(x,{'arcslope','gradient8'})));
-	addParamValue(p,'calc_relief',false,@(x) isscalar(x));
-	addParamValue(p,'relief_radii',[2500],@(x) isnumeric(x) && size(x,2)==1 || size(x,1)==1);
-	addParamValue(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
-	addParamValue(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
+	addParameter(p,'ref_concavity',0.5,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'threshold_area',1e6,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'segment_length',1000,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'write_arc_files',false,@(x) isscalar(x));
+	addParameter(p,'ksn_method','quick',@(x) ischar(validatestring(x,{'quick','trib'})));
+	addParameter(p,'add_grids',[],@(x) isa(x,'cell') && size(x,2)==2);
+	addParameter(p,'add_cat_grids',[],@(x) isa(x,'cell') && size(x,2)==3);
+	addParameter(p,'resample_method','nearest',@(x) ischar(validatestring(x,{'nearest','bilinear','bicubic'})));
+	addParameter(p,'gradient_method','arcslope',@(x) ischar(validatestring(x,{'arcslope','gradient8'})));
+	addParameter(p,'calc_relief',false,@(x) isscalar(x));
+	addParameter(p,'relief_radii',[2500],@(x) isnumeric(x) && size(x,2)==1 || size(x,1)==1);
+	addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
+	addParameter(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
 
 	parse(p,DEM,FD,A,S,river_mouths,basin_dir,varargin{:});
 	DEM=p.Results.DEM;

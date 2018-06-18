@@ -1,5 +1,11 @@
 function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
-	% Function takes a dem and outputs the necessary base datasets for use in other TopoToolbox functions.
+	%
+	% Usage:
+	%	[DEM,FD,A,S]=MakeStreams(dem,threshold_area);
+	%	[DEM,FD,A,S]=MakeStreams(dem,threshold_area,'name',value,...);
+	%
+	% Description:
+	% 	Function takes a dem and outputs the necessary base datasets for use in other TopoToolbox functions.
 	% 	Input DEMs with grid resolutions (i.e. cellsizes) that are not whole numbers sometimes cause issues
 	% 	in companion functions. If the provided DEM has a non-whole number for a cellsize, the code will
 	% 	warn the user (but not do anything). If you want to fix the cellsize issue, you can either reproject
@@ -47,9 +53,9 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	%		below -100m or above 10,000m to nan
 	% 
 	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Parse Inputs
 	p = inputParser;         
@@ -57,13 +63,13 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	addRequired(p,'dem',@(x) isa(x,'GRIDobj') | ischar(x));
 	addRequired(p,'threshold_area', @(x) isscalar(x));
 
-	addParamValue(p,'file_name',[],@(x) ischar(x));
-	addParamValue(p,'no_data_exp',[],@(x) ischar(x));
-	addParamValue(p,'min_flat_area',1e5,@(x) isnumeric(x) && isscalar(x));
-	addParamValue(p,'resample_grid',false,@(x) isscalar(x) && islogical(x));
-	addParamValue(p,'new_cellsize',[],@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'precip_grid',[],@(x) isa(x,'GRIDobj'));
-	addParamValue(p,'rr_grid',[],@(x) isa(x,'GRIDobj'));
+	addParameter(p,'file_name',[],@(x) ischar(x));
+	addParameter(p,'no_data_exp',[],@(x) ischar(x));
+	addParameter(p,'min_flat_area',1e5,@(x) isnumeric(x) && isscalar(x));
+	addParameter(p,'resample_grid',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'new_cellsize',[],@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'precip_grid',[],@(x) isa(x,'GRIDobj'));
+	addParameter(p,'rr_grid',[],@(x) isa(x,'GRIDobj'));
 
 	parse(p,dem,threshold_area,varargin{:});
 	dem=p.Results.dem;

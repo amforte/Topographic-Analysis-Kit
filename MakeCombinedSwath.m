@@ -1,5 +1,11 @@
 function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_type,data,data_width,varargin)
-	% Function to plot various additional data onto a swath profile.
+	%
+	% Usage:
+	%	[SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_type,data,data_width);
+	%	[SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_type,data,data_width,'name',value,...);
+	%
+	% Description:
+	% 	Function to plot various additional data onto a swath profile.
 	%
 	% Required Inputs:
 	% 	DEM - DEM Grid Object with which to make topo swath
@@ -67,9 +73,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	%		'basin_stats' - distances, mean basin elevation, 'basin_value', 'basin_scale' (if provided), distance from base line, 
 	%						x coordinate, y coordinate
 	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Parse Inputs
 	p = inputParser;
@@ -81,14 +87,14 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	addRequired(p,'data');
 	addRequired(p,'data_width',@(x) isnumeric(x) && isscalar(x));
 
-	addParamValue(p,'sample',[],@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'smooth',0,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'vex',10,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'basin_value',[],@(x) ischar(x));
-	addParamValue(p,'basin_scale',[],@(x) ischar(x));
-	addParamValue(p,'plot_map',true,@(x) isscalar(x) && islogical(x));
-	addParamValue(p,'cmap','parula',@(x) ischar(x) || isnumeric(x) & size(x,2)==3);
-	addParamValue(p,'save_figure',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'sample',[],@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'smooth',0,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'vex',10,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'basin_value',[],@(x) ischar(x));
+	addParameter(p,'basin_scale',[],@(x) ischar(x));
+	addParameter(p,'plot_map',true,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'cmap','parula',@(x) ischar(x) || isnumeric(x) & size(x,2)==3);
+	addParameter(p,'save_figure',false,@(x) isscalar(x) && islogical(x));
 
 
 	parse(p,DEM,points,width,data_type,data,data_width,varargin{:});

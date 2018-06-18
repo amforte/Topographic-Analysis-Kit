@@ -1,5 +1,10 @@
 function [DEMn,MASK]=RemoveFlats(dem,strength)
-	% Function takes DEM and attempts a semi-automated routine to remove flat areas with some input from 
+	%
+	% Usage:
+	%	[DEMn,MASK]=RemoveFlats(dem,strength);
+	%
+	% Description:
+	% 	Function takes DEM and attempts a semi-automated routine to remove flat areas with some input from 
 	% 	the user to select areas considred to be flat. This function sometimes works reliably, but will 
 	% 	never produce as clean a result as manually clipping out flat areas in gis software (but it's
 	%	a lot faster!)
@@ -18,9 +23,9 @@ function [DEMn,MASK]=RemoveFlats(dem,strength)
 	%		DEMn - Version of the DEM with idenitifed flat areas masked out (values set to nan)
 	%		MASK - Logical GRIDobj, true where area was identified as a flat.
 	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 	% Parse Inputs

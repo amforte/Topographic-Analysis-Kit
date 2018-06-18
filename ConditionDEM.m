@@ -1,5 +1,11 @@
 function [DEMc]=ConditionDEM(DEM,FD,S,method,varargin)
-	% Wrapper around the variety of methods provided by TopoToolbox for smoothing a stream profile. With the exception of
+	%
+	% Usage:
+	%	[DEMc]=ConditionDEM(DEM,FD,S,method);
+	%	[DEMc]=ConditionDEM(DEM,FD,S,method,'name',value,...);
+	%
+	% Description:
+	% 	Wrapper around the variety of methods provided by TopoToolbox for smoothing a stream profile. With the exception of
 	% 	'quantc_grid' and 'mingrad' these methods will only modify elevations along the stream network provided to the code.
 	% 	See the relevant parent functions for a more in depth description of the behavior of these individual methods. Produces
 	%	one figure that compares the long profile of the longest stream within the dataset using the uncondtioned and 
@@ -53,9 +59,9 @@ function [DEMc]=ConditionDEM(DEM,FD,S,method,varargin)
 	%		[DEMc]=ConditionDEM(DEM,FD,S,'mincost');
 	%		[DEMc]=ConditionDEM(DEM,FD,S,'quantc','tau',0.6);
 	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 	% Parse Inputs
@@ -66,22 +72,22 @@ function [DEMc]=ConditionDEM(DEM,FD,S,method,varargin)
 	addRequired(p,'S',@(x) isa(x,'STREAMobj'));
 	addRequired(p,'method',@(x) ischar(validatestring(x,{'mincost','mingrad','quantc','quantc_grid','smooth','crs','crslin'})))
 
-	addParamValue(p,'mc_method','interp',@(x) ischar(validatestring(x,{'minmax','interp'})));
-	addParamValue(p,'fillp',0.1,@(x) isscalar(x) && isnumeric(x) && x>=0 && x<=1);
-	addParamValue(p,'ming',0,@(x) isscalar(x) && isnumeric(x) && x>=0);
-	addParamValue(p,'tau',0.5,@(x) isscalar(x) && isnumeric(x) && x>=0 && x<=1);
-	addParamValue(p,'split',true,@(x) islogical(x))
-	addParamValue(p,'sm_method','regularization',@(x) ischar(validatestring(x,{'regularization','movmean'})));
-	addParamValue(p,'stiffness',10,@(x) isscalar(x) && isnumeric(x) && x>=0);
-	addParamValue(p,'stiff_tribs',true,@(x) islogical(x));
-	addParamValue(p,'positive',true,@(x) islogical(x));
-	addParamValue(p,'knicks',[],@(x) isnumeric(x) && size(x,2)==2);
-	addParamValue(p,'imposemin',false,@(x) islogical(x));
-	addParamValue(p,'attachtomin',false,@(x) islogical(x));
-	addParamValue(p,'attachheads',false,@(x) islogical(x));
-	addParamValue(p,'discardflats',false,@(x) islogical(x));
-	addParamValue(p,'maxcurvature',[],@(x) isnumeric(x) && isscalar(x));
-	addParamValue(p,'precisecoords',[],@(x) isnumeric(x) && size(x,2)==3);
+	addParameter(p,'mc_method','interp',@(x) ischar(validatestring(x,{'minmax','interp'})));
+	addParameter(p,'fillp',0.1,@(x) isscalar(x) && isnumeric(x) && x>=0 && x<=1);
+	addParameter(p,'ming',0,@(x) isscalar(x) && isnumeric(x) && x>=0);
+	addParameter(p,'tau',0.5,@(x) isscalar(x) && isnumeric(x) && x>=0 && x<=1);
+	addParameter(p,'split',true,@(x) islogical(x))
+	addParameter(p,'sm_method','regularization',@(x) ischar(validatestring(x,{'regularization','movmean'})));
+	addParameter(p,'stiffness',10,@(x) isscalar(x) && isnumeric(x) && x>=0);
+	addParameter(p,'stiff_tribs',true,@(x) islogical(x));
+	addParameter(p,'positive',true,@(x) islogical(x));
+	addParameter(p,'knicks',[],@(x) isnumeric(x) && size(x,2)==2);
+	addParameter(p,'imposemin',false,@(x) islogical(x));
+	addParameter(p,'attachtomin',false,@(x) islogical(x));
+	addParameter(p,'attachheads',false,@(x) islogical(x));
+	addParameter(p,'discardflats',false,@(x) islogical(x));
+	addParameter(p,'maxcurvature',[],@(x) isnumeric(x) && isscalar(x));
+	addParameter(p,'precisecoords',[],@(x) isnumeric(x) && size(x,2)==3);
 
 	parse(p,DEM,FD,S,method,varargin{:});
 	DEM=p.Results.DEM;

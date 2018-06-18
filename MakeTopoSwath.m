@@ -1,5 +1,11 @@
 function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
-	% Wrapper around TopoToolbox SWATHobj functionality
+	%
+	% Usage:
+	%	[SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width);
+	%	[SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,'name',value);
+	% 
+	% Description:
+	% 	Wrapper around TopoToolbox SWATHobj functionality
 	%
 	% Required Inputs:
 	% 	DEM - DEM Grid Object with which to make topo swath
@@ -26,9 +32,9 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 	% 	xypoints - n x 2 matrix containing x,y points of each swath sample point, along swath center line
 	% 	bends - distances along swath of any bends, 0 if no bends
 	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Parse Inputs
 	p = inputParser;
@@ -37,13 +43,13 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 	addRequired(p,'points',@(x) isnumeric(x) && size(x,1)>=2 && size(x,2)==2);
 	addRequired(p,'width',@(x) isscalar(x) && isnumeric(x));
 
-	addParamValue(p,'sample',[],@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'smooth',0,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'vex',10,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'plot_figure',false,@(x) isscalar(x) && islogical(x));
-	addParamValue(p,'plot_as_points',false,@(x) isscalar(x) && islogical(x));
-	addParamValue(p,'plot_as_heatmap',false,@(x) isscalar(x) && islogical(x));
-	addParamValue(p,'save_figure',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'sample',[],@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'smooth',0,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'vex',10,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'plot_figure',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'plot_as_points',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'plot_as_heatmap',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'save_figure',false,@(x) isscalar(x) && islogical(x));
 
 	parse(p,DEM,points,width,varargin{:});
 	DEM=p.Results.DEM;

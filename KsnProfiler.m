@@ -1,5 +1,11 @@
 function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
-	% Function to interactively select channel heads and define segements over which to calculate channel steepness values.
+	%
+	% Usage:
+	%	[knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S);
+	%	[knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,'name',value,...);
+	%
+	% Description:
+	% 	Function to interactively select channel heads and define segements over which to calculate channel steepness values.
 	% 	This function is designed to be similar to the operation of Profiler_51, with some improvements. Function will display map
 	%	with the stream network and expects the user to select a location near a channel head of interest. The user will be then 
 	%	prompted to confirm that the defined stream is the desired choice. Finally, displays of the chi-z and longitudinal profile 
@@ -141,9 +147,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%	-The '*_profiler.mat' that is saved out contains additional files besides the formal outputs of the code. These additional variables
 	%		are necessary to be able to restart a run using the 'restart' option.
 	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Parse Inputs
 	p = inputParser;
@@ -153,29 +159,29 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	addRequired(p,'A',@(x) isa(x,'GRIDobj'));
 	addRequired(p,'S',@(x) isa(x,'STREAMobj'));
 
-	addParamValue(p,'shape_name','ksn',@(x) ischar(x));
-	addParamValue(p,'smooth_distance',1000,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'concavity_method','ref',@(x) ischar(validatestring(x,{'ref','auto'})));
-	addParamValue(p,'complete_networks_only',false,@(x) isscalar(x) && islogical(x));
-	addParamValue(p,'pick_method','chi',@(x) ischar(validatestring(x,{'chi','stream','slope_area'})));
-	addParamValue(p,'junction_method','check',@(x) ischar(validatestring(x,{'check','ignore'})));	
-	addParamValue(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'redefine_threshold',false,@(x) isscalar(x) && islogical(x));
-	addParamValue(p,'rd_pick_method','slope_area',@(x) ischar(validatestring(x,{'chi','slope_area'})));
-	addParamValue(p,'display_slope_area',false,@(x) isscalar(x) && islogical(x));
-	addParamValue(p,'max_ksn',250,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'min_elev',[],@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'max_area',[],@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'plot_type','vector',@(x) ischar(validatestring(x,{'vector','grid'})));
-	addParamValue(p,'threshold_area',1e6,@(x) isnumeric(x));
-	addParamValue(p,'input_method','interactive',@(x) ischar(validatestring(x,{'interactive','channel_heads','all_streams','stream_length'})));
-	addParamValue(p,'channel_head_list',[],@(x) isnumeric(x) && size(x,2)==2 || regexp(x,regexptranslate('wildcard','*.shp')));
-	addParamValue(p,'min_length_to_extract',[],@(x) isnumeric(x) && isscalar(x));
-	addParamValue(p,'min_channel_length',[],@(x) isnumeric(x) && isscalar(x));
-	addParamValue(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
-	addParamValue(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
-	addParamValue(p,'save_figures',false,@(x) isscalar(x) && islogical(x));
-	addParamValue(p,'restart',[],@(x) ischar(validatestring(x,{'continue','skip'})));
+	addParameter(p,'shape_name','ksn',@(x) ischar(x));
+	addParameter(p,'smooth_distance',1000,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'concavity_method','ref',@(x) ischar(validatestring(x,{'ref','auto'})));
+	addParameter(p,'complete_networks_only',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'pick_method','chi',@(x) ischar(validatestring(x,{'chi','stream','slope_area'})));
+	addParameter(p,'junction_method','check',@(x) ischar(validatestring(x,{'check','ignore'})));	
+	addParameter(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'redefine_threshold',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'rd_pick_method','slope_area',@(x) ischar(validatestring(x,{'chi','slope_area'})));
+	addParameter(p,'display_slope_area',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'max_ksn',250,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'min_elev',[],@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'max_area',[],@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'plot_type','vector',@(x) ischar(validatestring(x,{'vector','grid'})));
+	addParameter(p,'threshold_area',1e6,@(x) isnumeric(x));
+	addParameter(p,'input_method','interactive',@(x) ischar(validatestring(x,{'interactive','channel_heads','all_streams','stream_length'})));
+	addParameter(p,'channel_head_list',[],@(x) isnumeric(x) && size(x,2)==2 || regexp(x,regexptranslate('wildcard','*.shp')));
+	addParameter(p,'min_length_to_extract',[],@(x) isnumeric(x) && isscalar(x));
+	addParameter(p,'min_channel_length',[],@(x) isnumeric(x) && isscalar(x));
+	addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
+	addParameter(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
+	addParameter(p,'save_figures',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'restart',[],@(x) ischar(validatestring(x,{'continue','skip'})));
 
 	parse(p,DEM,FD,A,S,varargin{:});
 	DEM=p.Results.DEM;

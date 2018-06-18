@@ -1,9 +1,16 @@
 function SegmentPlotter(basin_nums,varargin)
-	% Function to plot all of the chi-Z relationships from a series of picked segments of river networks that result
-	% from the 'SegmentPicker' function. 
+	%
+	% Usage:
+	%	SegmentPloter(basin_nums);
+	%	SegmentPloter(basin_nums,'name',value,...):
+	%
+	% Description:
+	% 	Function to plot all of the chi-Z relationships from a series of picked segments of river networks that result
+	% 	from the 'SegmentPicker' function. 
 	%
 	% Required Input:
-	% 	basin_nums - row or column vector of basin numbers used for the SegmentPicker you wish to plot together.
+	% 	basin_nums - row or column vector of basin numbers used for the SegmentPicker you wish to plot together. Code expects that
+	%		the mat files saved from SegmentPicker are in the active directory on your matlab path.
 	% 
 	% Optionl Input:
 	%	separate [false] - logical flag to plot all segments as separate figures 
@@ -19,20 +26,20 @@ function SegmentPlotter(basin_nums,varargin)
 	%	SegmentPlotter(4,'label',true,'names','big');
 	%	SegmentPlotter(1,'subset',[3,5,7,8]);
 	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Summer 2017 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Parse Inputs
 	p = inputParser;
 	p.FunctionName = 'SegmentPlotter';
 	addRequired(p,'basin_nums',@(x) isnumeric(x));
 
-	addParamValue(p,'separate',false,@(x) islogical(x));
-	addParamValue(p,'subset',[],@(x) isnumeric(x));
-	addParamValue(p,'label',false,@(x) islogical(x));
-	addParamValue(p,'trunks_only',false,@(x) islogical(x));
-	addParamValue(p,'names','',@(x) ischar(x) | iscell(x));
+	addParameter(p,'separate',false,@(x) islogical(x));
+	addParameter(p,'subset',[],@(x) isnumeric(x));
+	addParameter(p,'label',false,@(x) islogical(x));
+	addParameter(p,'trunks_only',false,@(x) islogical(x));
+	addParameter(p,'names','',@(x) ischar(x) | iscell(x));
 
 	parse(p,basin_nums,varargin{:});
 	basin_nums=p.Results.basin_nums;

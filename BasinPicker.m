@@ -1,5 +1,11 @@
 function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
-    % Function takes results of makes streams and allows for interactive picking of basins (watersheds). Function was
+    %
+    % Usage:
+    %   [Outlets]=BasinPicker(DEM,FD,A,S);
+    %   [Outlets]=BasinPicker(DEM,FD,A,S,'name',value,...);
+    %
+    % Description:
+    %   Function takes results of makes streams and allows for interactive picking of basins (watersheds). Function was
     %   designed intially for choosing basins suitable for detrital analyses (e.g. Be-10 cosmo). Displays two panel figure 
     %   with topography colored by elevation and local relief on which to pick individual basins. After the figure displays,
     %   it will wait until you press enter to begin the watershed picking process. This is to allow you to zoom, pan, etc to 
@@ -49,9 +55,9 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
     %       [Outs]=DetritalSamplePicker(DEM,FD,A,S,'rlf_radius',5000);
     %       [Outs]=DetritalSamplePicker(DEM,FD,A,S,,'rlf_grid',RLF);
     %  
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Function Written by Adam M. Forte - Last Revised Spring 2018 %
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Function Written by Adam M. Forte - Updated : 06/18/18 %
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     % Parse Inputs
     p = inputParser;
@@ -61,15 +67,15 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
     addRequired(p,'A',@(x) isa(x,'GRIDobj'));
     addRequired(p,'S',@(x) isa(x,'STREAMobj'));
 
-    addParamValue(p,'ref_concavity',0.5,@(x) isscalar(x) && isnumeric(x));
-    addParamValue(p,'rlf_radius',2500,@(x) isscalar(x) && isnumeric(x));
-    addParamValue(p,'plot_type','vector',@(x) ischar(validatestring(x,{'vector','grid'})));
-    addParamValue(p,'cmap','jet',@(x) ischar(x) || isnumeric(x) & size(x,2)==3);
-    addParamValue(p,'threshold_area',1e6,@(x) isnumeric(x));   
-    addParamValue(p,'rlf_grid',[],@(x) isa(x,'GRIDobj'));
-    addParamValue(p,'extra_grid',[],@(x) isa(x,'GRIDobj'));
-    addParamValue(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
-    addParamValue(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
+    addParameter(p,'ref_concavity',0.5,@(x) isscalar(x) && isnumeric(x));
+    addParameter(p,'rlf_radius',2500,@(x) isscalar(x) && isnumeric(x));
+    addParameter(p,'plot_type','vector',@(x) ischar(validatestring(x,{'vector','grid'})));
+    addParameter(p,'cmap','jet',@(x) ischar(x) || isnumeric(x) & size(x,2)==3);
+    addParameter(p,'threshold_area',1e6,@(x) isnumeric(x));   
+    addParameter(p,'rlf_grid',[],@(x) isa(x,'GRIDobj'));
+    addParameter(p,'extra_grid',[],@(x) isa(x,'GRIDobj'));
+    addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
+    addParameter(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
 
     parse(p,DEM,FD,A,S,varargin{:});
     DEM=p.Results.DEM;

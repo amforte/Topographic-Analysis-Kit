@@ -1,5 +1,11 @@
 function [Sn,thresh_list,xd_list]=FitThreshold(DEM,FD,A,S,num_streams,pick_method,varargin)
-	% Function to interactively select an appopriate threshold area for a given stream
+	%
+	% Usage:
+	%	[Sn,thresh_list,xd_list]=FitThreshold(DEM,FD,A,S,num_streams,pick_method);
+	%	[Sn,thresh_list,xd_list]=FitThreshold(DEM,FD,A,S,num_streams,pick_method,'name',value,...);
+	% 
+	% Description:
+	% 	Function to interactively select an appopriate threshold area for a given stream
 	%	network. Function will have you iterate through a number of single streams 
 	%	(controlled by the number passed to 'num_streams') extracted from the drainage divide.
 	%	You can use either chi-elevation or slope-area plots (both will be displayed regardless
@@ -26,9 +32,9 @@ function [Sn,thresh_list,xd_list]=FitThreshold(DEM,FD,A,S,num_streams,pick_metho
 	%	thresh_list - list of chosen threshold areas
 	%	xd_list - list of chosen distances from channel head to divide
 	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Summer 2018 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Parse Inputs
 	p = inputParser;
@@ -40,7 +46,7 @@ function [Sn,thresh_list,xd_list]=FitThreshold(DEM,FD,A,S,num_streams,pick_metho
 	addRequired(p,'num_streams',@(x) isnumeric(x) && isscalar(x));
 	addRequired(p,'pick_method',@(x) ischar(validatestring(x,{'chi','slopearea'})));
 	
-	addParamValue(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
 
 	parse(p,DEM,FD,A,S,num_streams,pick_method,varargin{:});
 	DEM=p.Results.DEM;

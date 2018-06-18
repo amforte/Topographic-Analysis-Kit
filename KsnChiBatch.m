@@ -1,5 +1,12 @@
 function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
-	% Function to produce channel steepness, chi maps or chi grids for all channels within a DEM
+	%
+	% Usage:
+	%	KsnChiBatch(DEM,FD,A,S,product);
+	%	KsnChiBatch(DEM,FD,A,S,product,'name',value...);
+	%	[outputs]=KsnChiBatch(DEM,FD,A,S,product,'output',true,...);
+	%
+	% Description:
+	% 	Function to produce channel steepness, chi maps or chi grids for all channels within a DEM
 	% 
 	% Reqiured Inputs:
 	% 	DEM - DEM Grid Object (assumes unconditioned DEM)
@@ -45,9 +52,9 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	%	KSN_Chi_Batch(DEM,FD,A,S,'ksn');
 	%	[KSN,ChiMap,ChiGrid]=KSN_Chi_Batch(DEM,FD,A,S,'output',true,'theta_ref',0.55);
 	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Parse Inputs
 	p = inputParser;         
@@ -58,16 +65,16 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	addRequired(p,'S',@(x) isa(x,'STREAMobj'));
 	addRequired(p,'product',@(x) ischar(validatestring(x,{'ksn','ksngrid','chimap','chigrid','all'})));
 
-	addParamValue(p,'file_name_prefix','batch',@(x) ischar(x));
-	addParamValue(p,'segment_length',1000,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'output',false,@(x) isscalar(x) && islogical(x));
-	addParamValue(p,'ksn_method','quick',@(x) ischar(validatestring(x,{'quick','trib'})));
-	addParamValue(p,'outlet_level_method',[],@(x) ischar(validatestring(x,{'elevation','max_out_elevation'})));
-	addParamValue(p,'min_elevation',[],@(x) isnumeric(x));
-	addParamValue(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
-	addParamValue(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
-	addParamValue(p,'complete_networks_only',true,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'file_name_prefix','batch',@(x) ischar(x));
+	addParameter(p,'segment_length',1000,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'output',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'ksn_method','quick',@(x) ischar(validatestring(x,{'quick','trib'})));
+	addParameter(p,'outlet_level_method',[],@(x) ischar(validatestring(x,{'elevation','max_out_elevation'})));
+	addParameter(p,'min_elevation',[],@(x) isnumeric(x));
+	addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
+	addParameter(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
+	addParameter(p,'complete_networks_only',true,@(x) isscalar(x) && islogical(x));
 
 	parse(p,DEM,FD,A,S,product,varargin{:});
 	DEM=p.Results.DEM;
@@ -354,8 +361,8 @@ function [SC]=DTSetOutlet(DEM,FD,A,S,method,varargin)
 	addRequired(p,'S',@(x) isa(x,'STREAMobj'));
 	addRequired(p,'method',@(x) ischar(validatestring(x,{'elevation','max_out_elevation','complete_only'})));
 
-	addParamValue(p,'complete_networks_only',true,@(x) islogical(x) & isscalar(x));
-	addParamValue(p,'min_elevation',[],@(x) isnumeric(x));
+	addParameter(p,'complete_networks_only',true,@(x) islogical(x) & isscalar(x));
+	addParameter(p,'min_elevation',[],@(x) isnumeric(x));
 
 
 	parse(p,DEM,FD,A,S,method,varargin{:});
@@ -464,10 +471,10 @@ function [ChiOBJ]=MakeChiGrid(DEM,FD,varargin)
 	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
 	addRequired(p,'FD', @(x) isa(x,'FLOWobj'));
 
-	addParamValue(p,'theta_ref',0.5,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'chi_ref_area',1,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'complete_networks_only',true,@(x) isscalar(x) && islogical(x));
-	addParamValue(p,'min_elevation',[],@(x) isnumeric(x));
+	addParameter(p,'theta_ref',0.5,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'chi_ref_area',1,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'complete_networks_only',true,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'min_elevation',[],@(x) isnumeric(x));
 
 	parse(p,DEM,FD,varargin{:});
 	DEM=p.Results.DEM;

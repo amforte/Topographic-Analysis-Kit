@@ -1,5 +1,11 @@
 function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
-	% Function to take the outputs from 'ProcessRiverBasins' and 'SubDivideBigBasins' and produce a single shapefile showing the outlines of polygons
+	%
+	% Usage:
+	%	[MapStruct]=Basin2Sahpe(DEM,location_of_data_files);
+	%	[MapStruct]=Basin2Sahpe(DEM,location_of_data_files,'name',value,...);	
+	%
+	% Description:
+	% 	Function to take the outputs from 'ProcessRiverBasins' and 'SubDivideBigBasins' and produce a single shapefile showing the outlines of polygons
 	% 	and with commonly desired attributes from the results of 'ProcessRiverBasins' etc. See below for a full list of fields that the output shapefile
 	% 	will include. If additional grids were provided to 'ProcessRiverBasins', mean and standard error values for those grids will be auto-populated in
 	% 	the shapefile and the name of the fields will be the character array provided in the second column of additional grids input. This function also
@@ -51,9 +57,9 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	%		Either standard errors, standard deviations or both will be populated for elevation, ksn, and gradient depending on value of 'uncertainty'
 	%		Mean and standard error / standard deviation / both values will be populated for any additional grids
 	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	
 
 	% Parse Inputs
@@ -62,14 +68,14 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
 	addRequired(p,'location_of_data_files',@(x) isdir(x));
 
-	addParamValue(p,'location_of_subbasins','SubBasins',@(x) ischar(x));
-	addParamValue(p,'shape_name','basins',@(x) ischar(x));
-	addParamValue(p,'include','all',@(x) ischar(validatestring(x,{'all','subdivided','bigonly'})));
-	addParamValue(p,'extra_field_values',[],@(x) isa(x,'cell'));
-	addParamValue(p,'extra_field_names',[],@(x) isa(x,'cell') & size(x,1)==1);
-	addParamValue(p,'uncertainty','se',@(x) ischar(validatestring(x,{'se','std','both'})));
-	addParamValue(p,'populate_categories',false,@(x) isscalar(x) && islogical(x))
-	addParamValue(p,'suppress_shape_write',false,@(x) isscalar(x) && islogical(x))
+	addParameter(p,'location_of_subbasins','SubBasins',@(x) ischar(x));
+	addParameter(p,'shape_name','basins',@(x) ischar(x));
+	addParameter(p,'include','all',@(x) ischar(validatestring(x,{'all','subdivided','bigonly'})));
+	addParameter(p,'extra_field_values',[],@(x) isa(x,'cell'));
+	addParameter(p,'extra_field_names',[],@(x) isa(x,'cell') & size(x,1)==1);
+	addParameter(p,'uncertainty','se',@(x) ischar(validatestring(x,{'se','std','both'})));
+	addParameter(p,'populate_categories',false,@(x) isscalar(x) && islogical(x))
+	addParameter(p,'suppress_shape_write',false,@(x) isscalar(x) && islogical(x))
 
 	parse(p,DEM,location_of_data_files,varargin{:});
 	DEM=p.Results.DEM;

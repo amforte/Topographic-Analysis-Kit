@@ -1,5 +1,11 @@
 function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
-	% Function to select a segment of a stream network from the top of the stream, and plot the long profile 
+	% 
+	% Usage:
+	%	[Sc]=SegmentPicker(DEM,FD,A,S,basin_num);
+	%	[Sc]=SegmentPicker(DEM,FD,A,S,basin_num,'name',value,...);
+	%
+	% Description:
+	% 	Function to select a segment of a stream network from the top of the stream, and plot the long profile 
 	% 	and chi-Z relationship of that segment,also outputs the extraced portion of the stream network and chi structure 
 	% 	(out of 'chiplot'). Allows user to iteratively select different parts of the stream network and display. 
 	% 	Keeps running dataset of all the streams you pick and accept.
@@ -64,9 +70,9 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	%	[Sc]=SegmentPicker(DEM,FD,A,S,1,'method','prev_picks','picks',channel_heads); % If inputing a matrix named channel_heads
 	%	[Sc]=SegmentPicker(DEM,FD,A,S,1,'method','prev_picks','picks','channel_heads'); % If inputing a shapefile named channel_heads.shp
 	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Winter 2017 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Parse Inputs
 	p = inputParser;
@@ -77,19 +83,19 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	addRequired(p,'S',@(x) isa(x,'STREAMobj'));
 	addRequired(p,'basin_num',@(x) isnumeric(x));
 
-	addParamValue(p,'direction','down',@(x) ischar(validatestring(x,{'down','up'})));
-	addParamValue(p,'method','new_picks',@(x) ischar(validatestring(x,{'new_picks','prev_picks'})));
-	addParamValue(p,'plot_type','vector',@(x) ischar(validatestring(x,{'vector','grid'})));	
-	addParamValue(p,'plot_style','refresh',@(x) ischar(validatestring(x,{'refresh','keep'})));
-	addParamValue(p,'complete_networks_only',false,@(x) isscalar(x) && islogical(x));
-	addParamValue(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'min_elev',[],@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'max_area',[],@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'recalc',false,@(x) isscalar(x));
-	addParamValue(p,'picks',[],@(x) (isnumeric(x) && size(x,2)==3) | ischar(x));
-	addParamValue(p,'threshold_area',1e6,@(x) isnumeric(x));
-	addParamValue(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
-	addParamValue(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
+	addParameter(p,'direction','down',@(x) ischar(validatestring(x,{'down','up'})));
+	addParameter(p,'method','new_picks',@(x) ischar(validatestring(x,{'new_picks','prev_picks'})));
+	addParameter(p,'plot_type','vector',@(x) ischar(validatestring(x,{'vector','grid'})));	
+	addParameter(p,'plot_style','refresh',@(x) ischar(validatestring(x,{'refresh','keep'})));
+	addParameter(p,'complete_networks_only',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'min_elev',[],@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'max_area',[],@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'recalc',false,@(x) isscalar(x));
+	addParameter(p,'picks',[],@(x) (isnumeric(x) && size(x,2)==3) | ischar(x));
+	addParameter(p,'threshold_area',1e6,@(x) isnumeric(x));
+	addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
+	addParameter(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
 
 	parse(p,DEM,FD,A,S,basin_num,varargin{:});
 	DEM=p.Results.DEM;

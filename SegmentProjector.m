@@ -1,5 +1,11 @@
 function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
-	% Function to interactively select segments of a channel profile you wish to project (e.g. projecting a portion of the profile with a different ksn).
+	%
+	% Usage:
+	%	[OUT]=SegmentProjector(DEM,FD,A,S);
+	%	[OUT]=SegmentProjector(DEM,FD,A,S,'name',value,...);
+	%
+	% Description:
+	% 	Function to interactively select segments of a channel profile you wish to project (e.g. projecting a portion of the profile with a different ksn).
 	%	You can use the 'SegmentPicker' function to interactively choose channels to provide to the StreamProjector function. If the STREAMobj has more than 
 	%	one channel head, this code will iterate through all channel heads (i.e. make sure you're only providing it stream you want to project, not an entire
 	%	network!). It calculates and will display 95% confidence bounds on this fit.
@@ -37,9 +43,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 	%	[OUT]=StreamProjector(DEM,FD,A,S,'ref_concavity',0.55);
 	%	[OUT]=StreamProjector(DEM,FD,A,S,'theta_method','auto','pick_method','stream','refit_streams',true);
 	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Winter 2017 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Parse Inputs
 	p = inputParser;
@@ -49,14 +55,14 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 	addRequired(p,'A',@(x) isa(x,'GRIDobj'));
 	addRequired(p,'S',@(x) isa(x,'STREAMobj'));
 
-	addParamValue(p,'theta_method','ref',@(x) ischar(validatestring(x,{'ref','auto'})));
-	addParamValue(p,'pick_method','chi',@(x) ischar(validatestring(x,{'chi','stream'})));
-	addParamValue(p,'smooth_distance',1000,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'refit_streams',false,@(x) isscalar(x) && islogical(x));
-	addParamValue(p,'save_figures',false,@(x) isscalar(x) && islogical(x));
-	addParamValue(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
-	addParamValue(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
+	addParameter(p,'theta_method','ref',@(x) ischar(validatestring(x,{'ref','auto'})));
+	addParameter(p,'pick_method','chi',@(x) ischar(validatestring(x,{'chi','stream'})));
+	addParameter(p,'smooth_distance',1000,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'refit_streams',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'save_figures',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
+	addParameter(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
 
 	parse(p,DEM,FD,A,S,varargin{:});
 	DEM=p.Results.DEM;
