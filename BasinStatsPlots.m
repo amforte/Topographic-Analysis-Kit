@@ -1,5 +1,11 @@
 function BasinStatsPlots(basin_table,plots,varargin)
-	% Function to take the complied outputs from 'ProcessRiverBasins' and 'SubDivideBigBasins' and produce various plots
+	%
+	% Usage:
+	%	BasinStatsPlots(basin_table,plots);
+	%	BasinStatsPlots(basin_table,plots,'name',value,...);
+	%
+	% Description:
+	% 	Function to take the complied outputs from 'ProcessRiverBasins' and 'SubDivideBigBasins' and produce various plots
 	%	of aggregated basin values. 
 	%
 	% Required inputs:
@@ -23,7 +29,10 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	%					for which you calculated filtered means and leaving 'use_filtered' set to false may produce a large matrix 
 	%		'xy' - generic plot, requires entries to optional 'xval' and 'yval' inputs
 	%
+	%%%%%%%%%%%%%%%%%%
 	% Optional Inputs:
+	%
+	%%% General Parameters
 	%	uncertianty ['se'] - uncertainty to value use for plots, valid options are 'se' (standard error), 'std' (standard deviation), or 'none'. 
 	%		Providing 'none' indicates you do not want to plot errorbars. Behavior of this option will depend on how you ran ProcessRiverBasins, 
 	%		e.g. if you only calculated standard deviations when running ProcessRiverBasins but supply 'se'	here, the code will ignore your choice
@@ -34,28 +43,50 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	%		or a m x 1 array of numeric values the same length as the provided table
 	%	cmap [] - colormap to use if an entry is provided to 'color_by', can be the name of a standard colormap or a nx3 array of rgb values
 	%		to use as a colormap. 
+	%	define_region [] - set of coordinates to define a rectangular region to draw data from, expects a four element matrix (row or column) that define
+	%		the minimum x, maximum x, minimum y, and maximum y coordinate to include OR define as true to bring up a plot of all basin centers
+	%		for you to select a region by drawing a rectangle. Works with all plots.
+	%	rlf_radius [2500] - radius of relief used when plotting relief related values
+	%	save_figure [false] - logical flag to save pdfs of all figures produced
+	%
+	%%% xy plot
 	%	xval [] - value to plot on x axis for plot type 'xy' provided as name of column as it appears in the provided table or a a m x 1 array of numeric 
 	%		values the same length as the provided table 
 	%	yval [] - value to plot on y axis for plot type 'xy' provided as name of column as it appears in the provided table or a a m x 1 array of numeric 
 	%		values the same length as the provided table 
-	%	define_region [] - set of coordinates to define a rectangular region to draw data from, expects a four element matrix (row or column) that define
-	%		the minimum x, maximum x, minimum y, and maximum y coordinate to include OR define as true to bring up a plot of all basin centers
-	%		for you to select a region by drawing a rectangle. Works with all plots.
+	%
+	%%% compare_mean_and_dist plot
 	%	statistic_of_interest ['ksn'] - statistic of interest for plotting histogram to compare with mean value. Valid inputs are 'ksn', 'gradient',
 	%		'elevation', 'relief' (if you provide relief, the code will look for relief calculated at the radius specified with the optional 'rlf_radius' parameter),
 	%		or the name of an additional grid provided to 'ProcessRiverBasins', e.g. if you provided a precipitation grid and provided the name 'precip'
 	%		and a column named 'mean_precip' exists in the table, then 'precip' would be a valid input to this parameter.
 	%	basin_num [] - number of basin (as it appears in the ID column of the table) to use for 'compare_mean_and_dist', if empty, 'compare_mean_and_dist'
 	%		will use all basins.
-	%	rlf_radius [2500] - radius of relief used when plotting relief related values
+	%
+	%%% category_mean_hist OR category_mean_compare 
 	%	cat_mean1 [] - category to use for plotting, see 'category_mean_hist' or 'category_mean_compare', valid inputs are 'ksn', 'rlf', 'gradient', or 
 	%		the name of an additional grid provided to ProcessRiverMeans.
 	%	cat_mean2 [] - category to use for plotting, 'category_mean_compare' , valid inputs are 'ksn', 'rlf', 'gradient', or the name of an additional grid 
 	%		provided to ProcessRiverMeans.
-	%	only_positive [false] - filter out negative values when using either 'category_mean_hist' or 'category_mean_compare'	
-	%	save_figure [false] - logical flag to save pdfs of all figures produced
 	%
+	%%% Fit Gradient-Ksn Relationship
+	%	fit_grd_ksn [false] - logical flag to initiate fitting of gradient - ksn relationship. Setting this flag to true only produces a result if the 
+	%		plot type is set to 'grd_ksn'. The relationship is a fit using a power law relationship between erosion rate and channel steepness and erosion
+	%		rate and mean hillslope gradient. See Forte et al, 2016, Earth and Planetary Science Letters for further discussion. The fit optimizes
+	%		values of hillslope diffusivity (D), fluvial erodibility (K), and threshold gradient (Sc). The best fit values for these will be printed
+	%		to the console.
+	%	start_diffusivity [0.01] - starting value for optimization of hillslope diffusivity parameter.
+	%	start_erodibility [1e-7] - starting value for optimization of fluvial erodibility parameter.
+	%	start_threshold_gradient [0.8] - starting value for optimzation of threshold hillslope gradient parameter.
+	%	n_val [2] - n value on slope parameter, this is not a free parameter in the fit.
+	%
+	%%% Fit Relief-Ksn Relationship
+	%	fit_rlf_ksn [false] - logical flag to initiate simple linear fit of relief-ksn relationship (expectation is a linear relationship). Setting this
+	%		flag to true only produces a result if the plot type is set to 'rlf_ksn'.
+	%
+	%%%%%%%%%%%%%%%%%%
 	% Examples:
+	%
 	%	% Plot of mean basin gradient vs 2500 m^2 relief using default relief radius
 	%	BasinStatsPlots(T,'grd_rlf');
 	%
@@ -75,9 +106,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	%	% Plots of mean basin gradient vs mean basin channel steepness within individual categories
 	%	BasinStatsPlots(T,'category_mean_compare','cat_mean1','ksn','cat_mean2','gradient');
 	% 
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Parse Inputs
 	p = inputParser;
@@ -87,25 +118,26 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		'compare_filtered','category_mean_hist','category_mean_compare','xy','stacked_hypsometry',...
 		'compare_mean_and_dist','scatterplot_matrix'})));
 
-	addParamValue(p,'uncertainty','se',@(x) ischar(validatestring(x,{'se','std','none'})));
-	addParamValue(p,'use_filtered',false,@(x) islogical(x) && isscalar(x));
-	addParamValue(p,'color_by',[],@(x) ischar(x) || isnumeric(x) & size(x,2)==1);
-	addParamValue(p,'cmap',[],@(x) ischar(x) || isnumeric(x) & size(x,2)==3);
-	addParamValue(p,'xval',[],@(x) ischar(x) || isnumeric(x) & size(x,2)==1);
-	addParamValue(p,'yval',[],@(x) ischar(x) || isnumeric(x) & size(x,2)==1);
-	addParamValue(p,'define_region',[],@(x) isnumeric(x) & numel(x)==4 || islogical(x));
-	addParamValue(p,'statistic_of_interest','ksn',@(x) ischar(x));
-	addParamValue(p,'basin_num',[],@(x) isnumeric(x) && isscalar(x));
-	addParamValue(p,'rlf_radius',2500,@(x) isnumeric(x) && isscalar(x));
-	addParamValue(p,'cat_mean1',[],@(x) ischar(x));
-	addParamValue(p,'cat_mean2',[],@(x) ischar(x));
-	addParamValue(p,'only_positive',false,@(x) isscalar(x) && islogical(x));
-	addParamValue(p,'fit_grd_ksn',false,@(x) isscalar(x) && islogical(x));
-	addParamValue(p,'start_diffusivity',0.01,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'start_erodibility',1e-7,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'start_threshold_gradient',0.8,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'n_val',2,@(x) isscalar(x) && isnumeric(x));
-	addParamValue(p,'save_figure',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'uncertainty','se',@(x) ischar(validatestring(x,{'se','std','none'})));
+	addParameter(p,'use_filtered',false,@(x) islogical(x) && isscalar(x));
+	addParameter(p,'color_by',[],@(x) ischar(x) || isnumeric(x) & size(x,2)==1);
+	addParameter(p,'cmap',[],@(x) ischar(x) || isnumeric(x) & size(x,2)==3);
+	addParameter(p,'xval',[],@(x) ischar(x) || isnumeric(x) & size(x,2)==1);
+	addParameter(p,'yval',[],@(x) ischar(x) || isnumeric(x) & size(x,2)==1);
+	addParameter(p,'define_region',[],@(x) isnumeric(x) & numel(x)==4 || islogical(x));
+	addParameter(p,'statistic_of_interest','ksn',@(x) ischar(x));
+	addParameter(p,'basin_num',[],@(x) isnumeric(x) && isscalar(x));
+	addParameter(p,'rlf_radius',2500,@(x) isnumeric(x) && isscalar(x));
+	addParameter(p,'cat_mean1',[],@(x) ischar(x));
+	addParameter(p,'cat_mean2',[],@(x) ischar(x));
+	addParameter(p,'fit_grd_ksn',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'start_diffusivity',0.01,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'start_erodibility',1e-7,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'start_threshold_gradient',0.8,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'n_val',2,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'fit_rlf_ksn',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'fit_filtered',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'save_figure',false,@(x) isscalar(x) && islogical(x));
 
 	parse(p,basin_table,plots,varargin{:});
 	T=p.Results.basin_table;
@@ -123,8 +155,8 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	rr=p.Results.rlf_radius;
 	cm1=p.Results.cat_mean1;
 	cm2=p.Results.cat_mean2;
-	op=p.Results.only_positive;
 	fit_grd_ksn=p.Results.fit_grd_ksn;
+	fit_filtered=p.Results.fit_filtered;
 	D_in=p.Results.start_diffusivity;
 	K_in=p.Results.start_erodibility;
 	s_in=p.Results.start_threshold_gradient;
@@ -416,6 +448,13 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			end
 		end
 
+		if fit_rlf_ksn
+			ft=fittype('a*x');
+			[fobj,gof]=fit(k,r,ft,'StartPoint',k\r);
+			krs=coeffvalues(fobj);
+			krs_unc=confint(fobj);
+		end	
+
 		f=figure(1);
 		set(f,'Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
 		clf
@@ -442,6 +481,19 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		else
 			scatter(k,r,30,'k','filled');
 		end
+
+		if fit_rlf_ksn
+			ksn_vec=linspace(0,max(ksn)+50,100);
+			rlf_vec=krs*ksn_vec;
+			rlf_vec_pos=(krs+abs(krs_unc(2)))*ksn_vec;
+			rlf_vec_neg=(krs-abs(krs_unc(1)))*ksn_vec;	
+			plot(ksn_vec,rlf_vec,'-r','LineWidth',2);
+			plot(ksn_vec,rlf_vec_pos,'--r');
+			plot(ksn_vec,rlf_vec_neg,'--r');
+			disp(['Relationship slope = ' num2str(krs)]);
+			disp(['Uncertainty on slope = ' num2str(krs_unc(1)) ' : ' num2str(krs_unc(2))]);
+			disp(['r-square = ' num2str(gof.rsquare)]);
+		end		
 
 		ylabel(['Mean Basin ' num2str(rr) ' m^2 Relief']);
 		xlabel('Mean Basin k_{sn}');
@@ -698,6 +750,10 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			error('No filtered values were found in provided table');
 		end
 
+		if fit_filtered
+			ft=fittype('a*x');
+		end		
+
 		num_filt=numel(VNoi);
 		for ii=1:num_filt
 			fN=VNoi{ii};
@@ -723,6 +779,12 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			idx2=slp<1;
 			idx3=slp>1;
 
+			if fit_filtered
+				[fobj,gof]=fit(T.(fN),T.(N),ft,'StartPoint',T.(fN)\T.(N));
+				cf=coeffvalues(fobj);
+				cf_unc=confint(fobj);
+			end	
+
 			f(ii)=figure(ii);
 			set(gcf,'Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
 			clf
@@ -731,6 +793,22 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			sp(1)=scatter(T.(fN)(idx1),T.(N)(idx1),30,'k','filled');
 			sp(2)=scatter(T.(fN)(idx2),T.(N)(idx2),30,'r','filled');
 			sp(3)=scatter(T.(fN)(idx3),T.(N)(idx3),30,'b','filled');
+
+			if fit_filtered
+				fvec=linspace(0,max(T.(fN),100);
+				vec=cf*fvec;
+				vec_pos=(cf+abs(cf_unc(2)))*fvec;
+				vec_neg=(cf-abs(cf_unc(1)))*fvec;	
+				plot(fvec,vec,'-k','LineWidth',2);
+				plot(fvec,vec_pos,'--k');
+				plot(fvec,vec_neg,'--k');
+				disp(['Fits on ' t ':']);
+				disp(['	Relationship slope = ' num2str(cf)]);
+				disp(['	Uncertainty on slope = ' num2str(cf_unc(1)) ' : ' num2str(cf_unc(2))]);
+				disp(['	r-square = ' num2str(gof.rsquare)]);
+			end
+
+
 			legend(sp,{'Filtered = Unfiltered','Filtered > Unfiltered','Filtered < Unfiltered'},'location','northwest')
 			xlabel('Filtered Means');
 			ylabel('Unfiltered Means');
@@ -785,9 +863,6 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		for ii=1:numel(VNoi)
 			vals=T.(VNoi{ii});
 			vals(isnan(vals))=[];
-			if op
-				vals(vals<0)=[];
-			end
 
 			if ~isempty(vals)
 				val_list{ii,1}=vals;
@@ -799,9 +874,6 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		for ii=1:numel(VNoi)
 			vals=T.(VNoi{ii});
 			vals(isnan(vals))=[];
-			if op
-				vals(vals<0)=[];
-			end
 
 			if ~isempty(vals)
 				f(ii)=figure(ii);
@@ -911,12 +983,6 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			vals1=vals1(idx);
 			vals2=vals2(idx);
 
-			if op
-				idx= vals1>=0 & vals2>=0;
-				vals1=vals1(idx);
-				vals2=vals2(idx);
-			end
-
 			if ~isempty(vals1) & ~isempty(vals2)
 				rng_v1(ii,1)=nanmin(vals1);
 				rng_v2(ii,1)=nanmin(vals2);
@@ -936,11 +1002,6 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			vals1=vals1(idx);
 			vals2=vals2(idx);
 
-			if op
-				idx= vals1>=0 & vals2>=0;
-				vals1=vals1(idx);
-				vals2=vals2(idx);
-			end
 
 			if ~isempty(vals1) & ~isempty(vals2)
 				f(ii)=figure(ii);
