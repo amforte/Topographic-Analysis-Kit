@@ -675,10 +675,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				if strcmp(pick_method,'chi')
 
 					if display_slope_area
-						[bs,ba,bc,bd]=sa(DEMc,Sn,A,C.chi,smooth_distance);
+						[bs,ba,bc,bd,aa,ag,ad,ac]=sa(DEMc,Sn,A,C.chi,smooth_distance);
 
 						ax4=subplot(4,1,4);
 						hold on
+						scatter(aa,ag,5,ac,'+');
 						scatter(ba,bs,20,bc,'filled','MarkerEdgeColor','k');
 						xlabel('Log Area');
 						ylabel('Log Gradient');
@@ -754,9 +755,6 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet');
 					end	
 
-
-					% uiwait(msgbox('Select bounds for calculating channel steepnesses and press enter when completed','Stream Fitting'));
-					% disp('    Select bounds for calculating channel steepnesses and press enter when completed')
 					[cv,e]=ginput;
 
 					if isempty(cv)
@@ -835,7 +833,6 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						ry=C.y;
 						rd=C.distance;
 						for jj=1:num_bnds-1
-							% disp([' Calculating segment ' num2str(jj)])
 							% Extract bounds
 							lb=bnds(jj);
 							rb=bnds(jj+1);
@@ -993,10 +990,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				elseif strcmp(pick_method,'stream')	
 
 					if display_slope_area
-						[bs,ba,bc,bd,bk]=sa_ksn(DEMc,Sn,A,C.chi,ak,smooth_distance);	
+						[bs,ba,bc,bd,bk,aa,ag,ad,ac]=sa_ksn(DEMc,Sn,A,C.chi,ak,smooth_distance);	
 
 						ax4=subplot(4,1,4);
 						hold on
+						scatter(aa,ag,5,ad./1000,'+');
 						scatter(ba,bs,20,bd./1000,'filled','MarkerEdgeColor','k');
 						xlabel('Log Area');
 						ylabel('Log Gradient');
@@ -1071,7 +1069,6 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet');	
 					end	
 
-					disp('    Select bounds for calculating channel steepnesses and press enter when completed')
 					[d,e]=ginput;
 					d=d*1000; % convert back to meters;
 
@@ -1149,7 +1146,6 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						ry=C.y; 
 						rc=C.chi;
 						for jj=1:num_bnds-1
-							% disp([' Calculating segment ' num2str(jj)])
 							% Extract bounds
 							lb=bnds(jj);
 							rb=bnds(jj+1);
@@ -1304,7 +1300,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 				elseif strcmp(pick_method,'slope_area')
 
-					[bs,ba,bc,bd,bk]=sa_ksn(DEMc,Sn,A,C.chi,ak,smooth_distance);
+					[bs,ba,bc,bd,bk,aa,ag,ad,ac]=sa_ksn(DEMc,Sn,A,C.chi,ak,smooth_distance);
 
 					ax3=subplot(4,1,3);
 					hold on
@@ -1337,6 +1333,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 					ax4=subplot(4,1,4);
 					hold on
+					scatter(aa,ag,5,log10(aa),'+');
 					scatter(ba,bs,20,log10(ba),'filled','MarkerEdgeColor','k');
 					xlabel('Log Area');
 					ylabel('Log Gradient');
@@ -1349,7 +1346,6 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					linkaxes([ax4,ax2],'x');
 					colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet'); colormap(ax4,'jet');
 
-					disp('    Select bounds for calculating channel steepnesses and press enter when completed')
 					[av,~]=ginput;
 
 					if isempty(av)
@@ -1744,10 +1740,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				if strcmp(pick_method,'chi')
 
 					if display_slope_area
-						[bs,ba,bc,bd]=sa(DEMc,Sn,A,C.chi,smooth_distance);
+						[bs,ba,bc,bd,aa,ag,ad,ac]=sa(DEMc,Sn,A,C.chi,smooth_distance);
 
 						ax4=subplot(4,1,4);
 						hold on
+						scatter(aa,ag,5,ac,'+');
 						scatter(ba,bs,20,bc,'filled','MarkerEdgeColor','k');
 						xlabel('Log Area');
 						ylabel('Log Gradient');
@@ -1885,7 +1882,6 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						ry=C.y;
 						rd=C.distance;
 						for jj=1:num_bnds-1
-							% disp([' Calculating segment ' num2str(jj)])
 							% Extract bounds
 							lb=bnds(jj);
 							rb=bnds(jj+1);
@@ -2028,10 +2024,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				elseif strcmp(pick_method,'stream')	
 
 					if display_slope_area
-						[bs,ba,bc,bd]=sa(DEMc,Sn,A,C.chi,smooth_distance);	
+						[bs,ba,bc,bd,aa,ag,ad,ac]=sa(DEMc,Sn,A,C.chi,smooth_distance);	
 
 						ax4=subplot(4,1,4);
 						hold on
+						scatter(aa,ag,5,ad./1000,'+');
 						scatter(ba,bs,20,bd./1000,'filled','MarkerEdgeColor','k');
 						xlabel('Log Area');
 						ylabel('Log Gradient');
@@ -2109,7 +2106,6 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					linkaxes([ax2,ax3],'x');
 					colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet');
 
-					disp('    Select bounds for calculating channel steepnesses and press enter when completed')
 					[d,e]=ginput;
 					d=d*1000; % convert back to meters;
 
@@ -2173,7 +2169,6 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						ry=C.y; 
 						rc=C.chi;
 						for jj=1:num_bnds-1
-							% disp([' Calculating segment ' num2str(jj)])
 							% Extract bounds
 							lb=bnds(jj);
 							rb=bnds(jj+1);
@@ -2315,7 +2310,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 				elseif strcmp(pick_method,'slope_area')
 
-					[bs,ba,bc,bd,bk]=sa_ksn(DEMc,Sn,A,C.chi,ak,smooth_distance);
+					[bs,ba,bc,bd,bk,aa,ag,ad,ac]=sa_ksn(DEMc,Sn,A,C.chi,ak,smooth_distance);
 
 					ax3=subplot(4,1,3);
 					hold on
@@ -2348,6 +2343,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 					ax4=subplot(4,1,4);
 					hold on
+					scatter(aa,ag,5,log10(aa),'+');
 					scatter(ba,bs,20,log10(ba),'filled','MarkerEdgeColor','k');
 					xlabel('Log Area');
 					ylabel('Log Gradient');
@@ -2360,7 +2356,6 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					linkaxes([ax4,ax2],'x');
 					colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet'); colormap(ax4,'jet');
 
-					disp('    Select bounds for calculating channel steepnesses and press enter when completed')
 					[av,~]=ginput;
 
 					if isempty(av)
@@ -2888,7 +2883,7 @@ function [ksn]=KSN_Quick(DEM,A,S,theta_ref)
 	
 end
 
-function [bs,ba,bc,bd]=sa(DEM,S,A,C,bin_size)
+function [bs,ba,bc,bd,a,g,d,C]=sa(DEM,S,A,C,bin_size)
 	% Modified slope area function that uses the smooth length to
 	%	to determine the number of bins and uses those same bins
 	%	to find mean values of chi and distance for plotting
@@ -2929,7 +2924,7 @@ function [bs,ba,bc,bd]=sa(DEM,S,A,C,bin_size)
 	bc=accumarray(ix,C,[numbins 1],@mean,nan);
 end
 
-function [bs,ba,bc,bd,bk]=sa_ksn(DEM,S,A,C,ak,bin_size);
+function [bs,ba,bc,bd,bk,a,g,d,C]=sa_ksn(DEM,S,A,C,ak,bin_size);
 	% Modified slope area function that uses the smooth length to
 	%	to determine the number of bins and uses those same bins
 	%	to find mean values of chi and distance for plotting
@@ -2990,7 +2985,7 @@ function [Sn]=RedefineThreshold(DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_size,c
 	z=mincosthydrocon(ST,DEM,'interp',0.1);
 
 	C=chiplot(ST,z,A,'a0',1,'mn',ref_theta,'plot',false);
-	[bs,ba,bc,bd]=sa(DEM,ST,A,C.chi,bin_size);
+	[bs,ba,bc,bd,aa,ag,ad,ac]=sa(DEM,ST,A,C.chi,bin_size);
 
 
 	% Filter negatives
@@ -2999,6 +2994,12 @@ function [Sn]=RedefineThreshold(DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_size,c
 	ba=ba(idx);
 	bc=bc(idx);
 	bd=bd(idx);
+
+	idx=aa>=0 & ag>=0 & ad>=0 & ac>=0;
+	aa=aa(idx);
+	ag=ag(idx);
+	ad=ad(idx);
+	ac=ac(idx);
 
 	str11='R';
 
@@ -3014,6 +3015,7 @@ function [Sn]=RedefineThreshold(DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_size,c
 
 			ax2=subplot(2,1,2);
 			hold on 
+			scatter(aa,ag,5,ac,'+');
 			scatter(ba,bs,20,bc,'filled','MarkerEdgeColor','k');
 			xlabel('Log Drainage Area');
 			ylabel('Log Gradient');
@@ -3044,10 +3046,11 @@ function [Sn]=RedefineThreshold(DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_size,c
 
 			chi_idx=C.area<a;
 			sl_idx=ba<a;
-
+			aa_idx=aa<a;
 
 			subplot(2,1,2)
 			hold on
+			scatter(aa(aa_idx),ag(aa_idx),10,'k','+');
 			scatter(ba(sl_idx),bs(sl_idx),30,'k','filled');
 			hold off
 
@@ -3071,6 +3074,7 @@ function [Sn]=RedefineThreshold(DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_size,c
 
 			ax1=subplot(2,1,1);
 			hold on 
+			scatter(aa,ag,5,ac,'+');
 			scatter(ba,bs,20,bc,'filled','MarkerEdgeColor','k');
 			xlabel('Log Drainage Area');
 			ylabel('Log Gradient');
@@ -3089,6 +3093,7 @@ function [Sn]=RedefineThreshold(DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_size,c
 
 			chi_idx=C.area<a;
 			sl_idx=ba<a;
+			aa_idx=aa<a;
 
 			subplot(2,1,2)
 			hold on
@@ -3097,6 +3102,7 @@ function [Sn]=RedefineThreshold(DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_size,c
 
 			subplot(2,1,1)
 			hold on
+			scatter(aa(aa_idx),ag(aa_idx),10,'k','+');
 			scatter(ba(sl_idx),bs(sl_idx),30,'k','filled');
 			title('Black points will be excluded from stream definition');
 			hold off
