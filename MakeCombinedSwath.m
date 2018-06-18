@@ -591,26 +591,75 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			hold off
 	end
 
-if plot_map
-	f2=figure(2);
-	set(f2,'Units','normalized','Position',[0.05 0.1 0.6 0.6]);
-	hold on
-	imageschs(DEM,DEM,'colormap','gray');
-	plot(SW,'legend',false);
-	scatter(x_coord(idx),y_coord(idx),20,'r','filled');
-	% To avoid situations with extremely large number of points
-	if ~any([strcmp(data_type,'STREAMobj') strcmp(data_type,'ksn_profiler') strcmp(data_type,'ksn_batch')])
-		scatter(x_coord(~idx),y_coord(~idx),20,'w','filled');
+	% Make output shape
+	ms=struct;
+	ms(1,1).Geometry='Line';
+	ms(1,1).X=SW.xy0(:,1);
+	ms(1,1).Y=SW.xy0(:,2);
+	ms(1,1).Type='Center';
+
+	Tverts=SwathPolygon(SW,wdth);
+	ms(2,1).Geometry='Line';
+	ms(2,1).X=Tverts(:,1);
+	ms(2,1).Y=Tverts(:,2);
+	ms(2,1).Type='TopoWdth';
+
+	Dverts=SwathPolygon(SW,data_width);
+	ms(3,1).Geometry='Line';
+	ms(3,1).X=Dverts(:,1);
+	ms(3,1).Y=Dverts(:,2);
+	ms(3,1).Type='DataWdth';
+
+	shapewrite(ms,'SwathBounds.shp');
+
+	if plot_map
+		f2=figure(2);
+		set(f2,'Units','normalized','Position',[0.05 0.1 0.6 0.6]);
+		hold on
+		imageschs(DEM,DEM,'colormap','gray');
+		plot(SW.xy0(:,1),SW.xy0(:,2),'-g','LineWidth',0.5);
+		plot(Tverts(:,1),Tverts(:,2),'-g','LineWidth',0.5);
+		plot(Dverts(:,1),Dverts(:,2),'-r','LineWidth',0.5);		
+		scatter(x_coord(idx),y_coord(idx),20,'r','filled');
+		% To avoid situations with extremely large number of points
+		if ~any([strcmp(data_type,'STREAMobj') strcmp(data_type,'ksn_profiler') strcmp(data_type,'ksn_batch')])
+			scatter(x_coord(~idx),y_coord(~idx),20,'w','filled');
+		end
+		hold off
 	end
-	hold off
+
+	if save_figure
+		orient(f1,'Landscape')
+		print(f1,'-dpdf','-bestfit','Swath.pdf');
+	end
+
 end
 
-if save_figure
-	orient(f1,'Landscape')
-	print(f1,'-dpdf','-bestfit','Swath.pdf');
-end
+function [verts]=SwathPolygon(SW,w);
 
-% Function End
+	cx=SW.xy(:,1);
+	cy=SW.xy(:,2);
+
+	dx=diff(cx);
+	dy=diff(cy);
+
+	w=w/2;
+
+	[sw_angle,~]=cart2pol(dx,dy);
+	sw_angle=vertcat(sw_angle,sw_angle(end));
+	[px,py]=pol2cart(sw_angle+(pi/2),w);
+	[mx,my]=pol2cart(sw_angle-(pi/2),w);
+
+	swx=[cx+px cx+mx];
+	swy=[cy+py cy+my];
+
+	warning off
+	P=polyshape(vertcat(swx(:,1),flipud(swx(:,2))),vertcat(swy(:,1),flipud(swy(:,2))));
+	warning on
+	P=rmholes(P);
+	verts=P.Vertices;
+	verts=vertcat(verts,verts(1,:));
+
 end
 
 

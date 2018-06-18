@@ -190,8 +190,48 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 		end
 	end
 
+	% Make output shape
+	ms=struct;
+	ms(1,1).Geometry='Line';
+	ms(1,1).X=SW.xy0(:,1);
+	ms(1,1).Y=SW.xy0(:,2);
+	ms(1,1).Type='Center';
+
+	verts=SwathPolygon(SW,wdth);
+	ms(2,1).Geometry='Line';
+	ms(2,1).X=verts(:,1);
+	ms(2,1).Y=verts(:,2);
+	ms(2,1).Type='TopoWdth';
+
+	shapewrite(ms,'SwathBounds.shp');
+
 end
 
+function [verts]=SwathPolygon(SW,w);
 
+	cx=SW.xy(:,1);
+	cy=SW.xy(:,2);
+
+	dx=diff(cx);
+	dy=diff(cy);
+
+	w=w/2;
+
+	[sw_angle,~]=cart2pol(dx,dy);
+	sw_angle=vertcat(sw_angle,sw_angle(end));
+	[px,py]=pol2cart(sw_angle+(pi/2),w);
+	[mx,my]=pol2cart(sw_angle-(pi/2),w);
+
+	swx=[cx+px cx+mx];
+	swy=[cy+py cy+my];
+
+	warning off
+	P=polyshape(vertcat(swx(:,1),flipud(swx(:,2))),vertcat(swy(:,1),flipud(swy(:,2))));
+	warning on
+	P=rmholes(P);
+	verts=P.Vertices;
+	verts=vertcat(verts,verts(1,:));
+
+end
 
 
