@@ -84,6 +84,10 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	%	fit_rlf_ksn [false] - logical flag to initiate simple linear fit of relief-ksn relationship (expectation is a linear relationship). Setting this
 	%		flag to true only produces a result if the plot type is set to 'rlf_ksn'.
 	%
+	%%% Fit Filtered Data
+	%	fit_filtered [false] - logical flat to initiate a simple linear fit to filtered data. Setting this to true only produces a result if plot type
+	%		is set to 'compare_filtered'.
+	%
 	%%%%%%%%%%%%%%%%%%
 	% Examples:
 	%
@@ -156,6 +160,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	cm1=p.Results.cat_mean1;
 	cm2=p.Results.cat_mean2;
 	fit_grd_ksn=p.Results.fit_grd_ksn;
+	fit_rlf_ksn=p.Results.fit_rlf_ksn;
 	fit_filtered=p.Results.fit_filtered;
 	D_in=p.Results.start_diffusivity;
 	K_in=p.Results.start_erodibility;
@@ -297,9 +302,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 
 		if fit_grd_ksn
 			plot(mk,mg,'-r','LineWidth',2);
-			disp(['K = ' num2str(pf.K)]);
-			disp(['D = ' num2str(pf.D)]);
-			disp(['Sc = ' num2str(pf.Sc)]);
+			disp(['Fluvial Erodibility (K) = ' num2str(pf.K)]);
+			disp(['Diffusivity (D) = ' num2str(pf.D)]);
+			disp(['Threshold Gradient (Sc) = ' num2str(pf.Sc)]);
 		end
 
 		xlabel('Mean Basin k_{sn}');
@@ -483,10 +488,10 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		end
 
 		if fit_rlf_ksn
-			ksn_vec=linspace(0,max(ksn)+50,100);
+			ksn_vec=linspace(0,max(k)+50,100);
 			rlf_vec=krs*ksn_vec;
-			rlf_vec_pos=(krs+abs(krs_unc(2)))*ksn_vec;
-			rlf_vec_neg=(krs-abs(krs_unc(1)))*ksn_vec;	
+			rlf_vec_pos=(krs_unc(2))*ksn_vec;
+			rlf_vec_neg=(krs_unc(1))*ksn_vec;	
 			plot(ksn_vec,rlf_vec,'-r','LineWidth',2);
 			plot(ksn_vec,rlf_vec_pos,'--r');
 			plot(ksn_vec,rlf_vec_neg,'--r');
@@ -780,7 +785,10 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			idx3=slp>1;
 
 			if fit_filtered
-				[fobj,gof]=fit(T.(fN),T.(N),ft,'StartPoint',T.(fN)\T.(N));
+				idx=isnan(T.(fN)) | isnan(T.(N));
+				x=double(T.(fN)(~idx));
+				y=double(T.(N)(~idx));
+				[fobj,gof]=fit(x,y,ft,'StartPoint',x\y);
 				cf=coeffvalues(fobj);
 				cf_unc=confint(fobj);
 			end	
@@ -795,21 +803,24 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			sp(3)=scatter(T.(fN)(idx3),T.(N)(idx3),30,'b','filled');
 
 			if fit_filtered
-				fvec=linspace(0,max(T.(fN),100);
+				fvec=linspace(0,max(T.(fN)),100);
 				vec=cf*fvec;
-				vec_pos=(cf+abs(cf_unc(2)))*fvec;
-				vec_neg=(cf-abs(cf_unc(1)))*fvec;	
-				plot(fvec,vec,'-k','LineWidth',2);
-				plot(fvec,vec_pos,'--k');
-				plot(fvec,vec_neg,'--k');
+				vec_pos=(cf_unc(2))*fvec;
+				vec_neg=(cf_unc(1))*fvec;	
+				pl=plot(fvec,vec,'-g','LineWidth',2);
+				plot(fvec,vec_pos,'--g');
+				plot(fvec,vec_neg,'--g');
 				disp(['Fits on ' t ':']);
 				disp(['	Relationship slope = ' num2str(cf)]);
 				disp(['	Uncertainty on slope = ' num2str(cf_unc(1)) ' : ' num2str(cf_unc(2))]);
 				disp(['	r-square = ' num2str(gof.rsquare)]);
+				legend([sp pl],{'Filtered = Unfiltered','Filtered > Unfiltered','Filtered < Unfiltered','Best Fit'},'location','northwest')
+			else
+				legend(sp,{'Filtered = Unfiltered','Filtered > Unfiltered','Filtered < Unfiltered'},'location','northwest')			
 			end
 
 
-			legend(sp,{'Filtered = Unfiltered','Filtered > Unfiltered','Filtered < Unfiltered'},'location','northwest')
+
 			xlabel('Filtered Means');
 			ylabel('Unfiltered Means');
 			title(t);
@@ -1293,11 +1304,8 @@ function [param_fit]=KGF(x0,y0,D_in,K_in,s_in,n)
     ub=[1,1,2];
 	opt=optimset('Display','iter'); %,'MaxFunEvals',1000,'MaxIter',1000);
 
-	disp('	Begin Fitting')
-    % [est]=fminsearch(model,stp,opt);
+	disp('Fitting...')
     est=fmincon(model,stp,[],[],[],[],lb,ub);
-
-    disp('	Fitting Completed')
 
     param_fit.D=est(1);
     param_fit.K=est(2);
