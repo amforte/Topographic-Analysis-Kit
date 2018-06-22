@@ -34,7 +34,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	%			but can result in inaccurate choices. The 'vector' option is easier to see, but can be very slow to load and interact with.
 	%	complete_networks_only [false] - if true, the code will filter out portions of the stream network that are incomplete prior to choosing
 	%			streams
-	%	picks - expects a m x 3 matrix with columns as an identifying number, x coordinates, and y coordinates OR the name of a point shapefile with a single value column of 
+	%	picks - expects a m x 3 matrix with columns as x coordinates, y coordinates, and an identifying number OR the name of a point shapefile with a single value column of 
 	%			identifying numbers. Will interpret this input as a list of channel heads if 'direction' is 'down' and a list of channel outlets if 'direction' is 'up'.
 	%	ref_concavity [0.50] - reference concavity for calculating Chi-Z, default is 0.50
 	%	min_elev [] - minimum elevation below which the code stops extracting channel information, only used if 'direction'
@@ -146,10 +146,12 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
             pt_name=[points '.shp'];
             pt_shp=shaperead(pt_name);
             fn=fieldnames(pt_shp);
-            pt=horzcat([pt_shp.(fn{4})]',[pt_shp.X]',[pt_shp.Y]');
+            pt=horzcat([pt_shp.X]',[pt_shp.Y]',[pt_shp.(fn{4})]');
         catch
             error('Error reading shapefile, make sure the name provided did NOT include .shp, the shapefile is a point file with a single value column, and you have a license for the Mapping Toolbox');
         end
+    elseif strcmp(method,'prev_picks')
+    	pt=points;
     end
 
     % Remove edges if flag is thrown
@@ -887,7 +889,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 			w1=waitbar(0,'Extracting segments');
 			for ii=1:num_heads
 				short_circ=0;
-				x=heads(ii,2); y=heads(ii,3);
+				x=heads(ii,1); y=heads(ii,2);
 				pOI=[x y];
 
 				% Find nearest channel head
@@ -1010,7 +1012,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 			w1=waitbar(0,'Extracting segments');
 			for ii=1:num_outs
-				x=outlets(ii,2); y=outlets(ii,3);
+				x=outlets(ii,1); y=outlets(ii,2);
 				% Build logical raster
 				[xn,yn]=snap2stream(S,x,y);
 				ix=coord2ind(DEM,xn,yn);
