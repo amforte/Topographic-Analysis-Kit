@@ -126,7 +126,7 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 		cd(basin_dir);
 	else
 		mkdir(basin_dir);
-		cd(basin_rid);
+		cd(basin_dir);
 	end
 
 	% Perform check on dimensions and cellsize of additional grids and resample if necessary
@@ -222,6 +222,18 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 		csvwrite('river_mouths.txt',RM);
 	end
 
+	% Check for zeros and replace and warn
+	if nnz(RM(:,3))~=numel(RM(:,3))
+		warning('Zeros present in "river_mouths" IDs, IDs for zeros have been reassigned')
+		zeroIDX=RM(:,3)==0;
+		maxRM=max(RM(:,3));
+		numZeros=sum(zeroIDX);
+		zeroIX=find(zeroIDX);
+		for ii=1:numZeros
+			RM(zeroIX(ii),3)=maxRM+ii;
+		end
+		csvwrite('river_mouths_updated.txt',RM);
+	end
 
 	w1=waitbar(0,['Working on Basin Number 1 of ' num2str(num_basins) ' total basins']);
 	for ii=1:num_basins
