@@ -15,9 +15,9 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
     %   it was misclick. If you accept it will then display a new figure with the chi-z and longitudinal profiles for that basin. 
     %   It will then give you a choice to either save the choice or discard it. Finally it will ask if you want to keep picking 
     %   streams, if you choose yes (the default) it will start the process over. Note that any selected (and saved) pour point 
-    %   will be displayed as a white circle on the main figure. As you pick basins the funciton saves a file called 'Outlets.mat'
-    %   that contains the outlets you've picked so far. If you exit out of the function and restart it later, it looks for this 
-    %   Outlets file in the current working directory so you can pick up where you left off.
+    %   will be displayed on the main figure. As you pick basins the funciton saves a file called 'Outlets.mat' that contains 
+    %   the outlets you've picked so far. If you exit out of the function and restart it later, it looks for this Outlets file
+    %   in the current working directory so you can pick up where you left off.
     %
     %
     % Required Inputs:
@@ -34,7 +34,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
     %       extra_grid [] - sometimes it can be useful to also view an additional grid (e.g. georeferenced road map, precipitation grid, etc) along with the DEM and relief.
     %           This grid can be a different size or have a different cellsize than the underlying dem (but still must be the same projection and coordinates system!), it will be
     %           resampled to match the provided DEM. 
-    %       cmap ['jet'] - colormap to use for the displayed maps. Input can be the name of a standard colormap or a nx3 array of rgb values
+    %       cmap ['landcolor'] - colormap to use for the displayed maps. Input can be the name of a standard colormap or a nx3 array of rgb values
     %           to use as a colormap.  
     %       conditioned_DEM [] - option to provide a hydrologically conditioned DEM for use in this function (do not provide a conditoned DEM
     %           for the main required DEM input!) which will be used for extracting elevations. See 'ConditionDEM' function for options for making a 
@@ -70,7 +70,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
     addParameter(p,'ref_concavity',0.5,@(x) isscalar(x) && isnumeric(x));
     addParameter(p,'rlf_radius',2500,@(x) isscalar(x) && isnumeric(x));
     addParameter(p,'plot_type','vector',@(x) ischar(validatestring(x,{'vector','grid'})));
-    addParameter(p,'cmap','jet',@(x) ischar(x) || isnumeric(x) & size(x,2)==3);
+    addParameter(p,'cmap','landcolor',@(x) ischar(x) || isnumeric(x) & size(x,2)==3);
     addParameter(p,'threshold_area',1e6,@(x) isnumeric(x));   
     addParameter(p,'rlf_grid',[],@(x) isa(x,'GRIDobj'));
     addParameter(p,'extra_grid',[],@(x) isa(x,'GRIDobj'));
@@ -111,14 +111,18 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
         DEMf.Z(S.IXgrid)=zc;
     end
 
+    % Calculate Relief
+    if isempty(RLF)
+        disp('Calculating local relief')
+        RLF=localtopography(DEM,rlf_radius);
+    end
+
+    % Calculate gradient and simple KSN
+    G=gradient8(DEMf);
+    KSN=G./(A.*(A.cellsize^2)).^(-theta_ref);
+
     switch plot_type
     case 'vector'
-
-
-        if isempty(RLF)
-            disp('Calculating local relief')
-            RLF=localtopography(DEM,rlf_radius);
-        end
 
         % Plot main figure
         if isempty(EG)
@@ -130,7 +134,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             hold on
             imageschs(DEM,RLF,'colormap',cmap);
             plot(S,'-k','LineWidth',1.5);
-            scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
+            scatter(Outlets(:,1),Outlets(:,2),20,'r','filled');
             title('Local Relief')
             hold off
                 
@@ -138,7 +142,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             hold on
             imageschs(DEM,DEM,'colormap',cmap);
             plot(S,'-k','LineWidth',1.5);
-            scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
+            scatter(Outlets(:,1),Outlets(:,2),20,'r','filled');
             title('Elevation')
             hold off
             
@@ -159,7 +163,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             hold on
             imageschs(DEM,EG,'colormap',cmap)
             plot(S,'-k','LineWidth',1.5);
-            scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
+            scatter(Outlets(:,1),Outlets(:,2),20,'r','filled');
             title('User Provided Extra Grid')
             hold off
 
@@ -167,7 +171,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             hold on
             imageschs(DEM,RLF,'colormap',cmap);
             plot(S,'-k','LineWidth',1.5);
-            scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
+            scatter(Outlets(:,1),Outlets(:,2),20,'r','filled');
             title('Local Relief')
             hold off
                 
@@ -175,7 +179,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             hold on
             imageschs(DEM,DEM,'colormap',cmap);
             plot(S,'-k','LineWidth',1.5);
-            scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
+            scatter(Outlets(:,1),Outlets(:,2),20,'r','filled');
             title('Elevation')
             hold off
             
@@ -202,11 +206,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
         % Turn it into a grid
         SG=STREAMobj2GRIDobj(Sr);
         % Redo local relief
-        if isempty(RLF)
-            RLFr=localtopography(DEMr,rlf_radius);
-        else
-            RLFr=resample(RLF,DEMr,'bicubic');
-        end
+        RLFr=resample(RLF,DEMr,'bicubic');
 
         if isempty(EG)
             % Plot main figure
@@ -218,7 +218,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             hold on
             imageschs(DEMr,RLFr,'colormap',cmap);
             plot(Sr,'-k','LineWidth',1.5);
-            scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
+            scatter(Outlets(:,1),Outlets(:,2),20,'r','filled');
             title('Local Relief')
             hold off
                 
@@ -226,7 +226,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             hold on
             imageschs(DEMr,DEMr,'colormap',cmap);
             plot(Sr,'-k','LineWidth',1.5);
-            scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
+            scatter(Outlets(:,1),Outlets(:,2),20,'r','filled');
             title('Elevation')
             hold off
             
@@ -244,7 +244,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             hold on
             imageschs(DEMr,EGr,'colormap',cmap)
             plot(S,'-k','LineWidth',1.5);
-            scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
+            scatter(Outlets(:,1),Outlets(:,2),20,'r','filled');
             title('User Provided Extra Grid')
             hold off
 
@@ -252,7 +252,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             hold on
             imageschs(DEMr,RLFr,'colormap',cmap);
             plot(Sr,'-k','LineWidth',1.5);
-            scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
+            scatter(Outlets(:,1),Outlets(:,2),20,'r','filled');
             title('Local Relief')
             hold off
                 
@@ -260,7 +260,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             hold on
             imageschs(DEMr,DEMr,'colormap',cmap);
             plot(Sr,'-k','LineWidth',1.5);
-            scatter(Outlets(:,1),Outlets(:,2),20,'w','filled');
+            scatter(Outlets(:,1),Outlets(:,2),20,'r','filled');
             title('Elevation')
             hold off
             
@@ -311,9 +311,13 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             % Clip out stream network
             Sn=modify(S,'upstreamto',IX);
             
-            % Clip out DEM
+            % Clip out GRIDs
             I=dependencemap(FD,xn,yn);
             DEMc=crop(DEM,I,nan);
+            RLFc=crop(RLF,I,nan);
+            if ~isempty(EG)
+                EGc=crop(EG,I,nan);
+            end
                         
             % Calculate drainage area
             dep_map=GRIDobj2mat(I);
@@ -367,7 +371,6 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
                 hold off
             end
 
-
             qa=questdlg('Is this the watershed you wanted?','Basin Selection','No','Yes','Yes');
 
             switch qa
@@ -385,6 +388,13 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
         Sn=klargestconncomps(Sn,1);
         C=chiplot(Sn,DEM,A,'a0',1,'mn',theta_ref,'plot',false);
 
+        ksn=getnal(Sn,KSN);
+        mksn=nanmean(ksn);
+        mrlf=nanmean(RLFc.Z(:));
+        if ~isempty(EG)
+            meg=nanmean(EGc.Z(:));
+        end
+
         f2=figure(2);
         clf
         set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
@@ -393,7 +403,11 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
         plot(C.chi,C.elev);
         xlabel('\chi')
         ylabel('Elevation (m)')
-        title('\chi - Z')
+        if isempty(EG)
+            title(['\chi - Z : Mean k_{sn} = ' num2str(round(mksn)) ' : Mean Relief = ' num2str(round(mrlf))])
+        else
+            title(['\chi - Z : Mean k_{sn} = ' num2str(round(mksn)) ' : Mean Relief = ' num2str(round(mrlf)) ' : Mean Extra Grid = ' num2str(round(meg))])
+        end
         hold off
 
         subplot(2,1,2);
@@ -405,9 +419,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
         hold off
 
         qa2=questdlg('Keep this basin?','Basin Selection','No','Yes','Yes');       
-        % prompt='    Keep this stream? Y/N [Y]: ';
-        % str2=input(prompt,'s');
-        % if isempty(str2) | strcmpi(str2,'Y');
+
         switch qa2
         case 'Yes'
             Outlets(ii,1)=xn;
@@ -421,36 +433,35 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
                 figure(1);
                 subplot(2,1,2);
                 hold on
-                scatter(xn,yn,20,'w','filled');
+                scatter(xn,yn,20,'r','filled');
                 hold off
                           
                 subplot(2,1,1);
                 hold on
-                scatter(xn,yn,20,'w','filled');
+                scatter(xn,yn,20,'r','filled');
                 hold off
             else
                 figure(1);
 
                 subplot(3,1,3);
                 hold on
-                scatter(xn,yn,20,'w','filled');
+                scatter(xn,yn,20,'r','filled');
                 hold off
 
                 subplot(3,1,2);
                 hold on
-                scatter(xn,yn,20,'w','filled');
+                scatter(xn,yn,20,'r','filled');
                 hold off
                           
                 subplot(3,1,1);
                 hold on
-                scatter(xn,yn,20,'w','filled');
+                scatter(xn,yn,20,'r','filled');
                 hold off
             end
             
             save('Outlets.mat','Outlets');
         end
         
-
         qa3=questdlg('Keep choosing basins?','Basin Selection','No','Yes','Yes'); 
         switch qa3
         case 'Yes'
@@ -459,8 +470,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
         case 'No'
             str2='N';
         end  
-
-        
+     
         close figure 2;
     end
 end   
