@@ -77,10 +77,10 @@ function SegmentPlotter(basin_nums,varargin)
 				vInfo=who('-file',fileName);
 				if ismember('Heads',vInfo)
 					load(fileName,'Heads');
-					seg_num=Heads(:,1);
+					seg_num=Heads(:,3);
 				elseif ismember('Outlets',vInfo)
 					load(fileName,'Outlets');
-					seg_num=Outlets(:,1);
+					seg_num=Outlets(:,3);
 				end
 
 				num_seg=numel(ChiSgmnts);
@@ -144,10 +144,10 @@ function SegmentPlotter(basin_nums,varargin)
 				vInfo=who('-file',fileName);
 				if ismember('Heads',vInfo)
 					load(fileName,'Heads');
-					seg_num=Heads(:,1);
+					seg_num=Heads(:,3);
 				elseif ismember('Outlets',vInfo)
 					load(fileName,'Outlets');
-					seg_num=Outlets(:,1);
+					seg_num=Outlets(:,3);
 				end
 
 				num_seg=numel(ChiSgmnts);
@@ -194,10 +194,10 @@ function SegmentPlotter(basin_nums,varargin)
 			vInfo=who('-file',fileName);
 			if ismember('Heads',vInfo)
 				load(fileName,'Heads');
-				seg_num=Heads(:,1);
+				seg_num=Heads(:,3);
 			elseif ismember('Outlets',vInfo)
 				load(fileName,'Outlets');
-				seg_num=Outlets(:,1);
+				seg_num=Outlets(:,3);
 			end
 
 			idx=ismember(seg_num,sub);
@@ -255,10 +255,10 @@ function SegmentPlotter(basin_nums,varargin)
 				vInfo=who('-file',fileName);
 				if ismember('Heads',vInfo)
 					load(fileName,'Heads');
-					seg_num=Heads(:,1);
+					seg_num=Heads(:,3);
 				elseif ismember('Outlets',vInfo)
 					load(fileName,'Outlets');
-					seg_num=Outlets(:,1);
+					seg_num=Outlets(:,3);
 				end
 
 				idx=ismember(seg_num,sub);
