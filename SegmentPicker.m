@@ -49,6 +49,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	%			 will have a chi value of zero and a distance from mouth value of zero).
 	%	threshold_area [1e6] - used to redraw downsampled stream network if 'plot_type' is set to 'grid'
 	%	interp_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a conditioned DEM)
+	%	bin_size [500] - bin size (in map units) for binning slope area data.
 	%
 	% Outputs:
 	% 	Sc - STREAMobj containing all the stream segments chosen.
@@ -96,6 +97,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	addParameter(p,'threshold_area',1e6,@(x) isnumeric(x));
 	addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
 	addParameter(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
+	addParameter(p,'bin_size',500,@(x) isscalar(x) && isnumeric(x));
 
 	parse(p,DEM,FD,A,S,basin_num,varargin{:});
 	DEM=p.Results.DEM;
@@ -114,6 +116,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	points=p.Results.picks;
 	iv=p.Results.interp_value;
 	DEMc=p.Results.conditioned_DEM;
+	bin_size=p.Results.bin_size;
 
 
 	% Catch errors
@@ -386,15 +389,17 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				saax=subplot(3,1,3);
 				hold on
 				if isempty(p.Results.min_elev) && isempty(p.Results.max_area) 
-					[bs,ba]=sa(DEMc,Sn,A);
+					[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
 				elseif ~isempty(p.Results.min_elev) | ~isempty(p.Results.max_area) && p.Results.recalc								
-					[bs,ba]=sa(DEMc,Sn,A);
+					[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
 				elseif short_circ==1;
-					[bs,ba]=sa(DEMc,Sn,A);
+					[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
 				elseif ~isempty(p.Results.min_elev) | ~isempty(p.Results.max_area) && p.Results.recalc==0
-					[bs,ba]=sa(DEMc,Sn_t,A);
+					[bs,ba,aa,ag]=sa(DEMc,Sn_t,A,bin_size);
 				end
-				scatter(ba,bs,10,colcol(mod(ii,10)+1,:));
+
+				scatter(aa,ag,5,[0.5 0.5 0.5],'+');
+				scatter(ba,bs,20,colcol(mod(ii,10)+1,:));	
 				set(saax,'Xscale','log','Yscale','log','XDir','reverse');
 				xlabel('Log Drainage Area');
 				ylabel('Log Slope');	
@@ -402,6 +407,8 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				StreamSgmnts{ii}=Sn;
 				ChiSgmnts{ii}=C;
+				SlpAreaSgmnts{ii,1}=[bs ba];
+				SlpAreaSgmnts{ii,2}=[ag aa];				
 				Heads(ii,1)=chOI(:,1);
 				Heads(ii,2)=chOI(:,2);
 				Heads(ii,3)=ii;
@@ -503,8 +510,9 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				saax=subplot(3,1,3);
 				hold on
-				[bs,ba]=sa(DEMc,Sn,A);
-				scatter(ba,bs,'filled');
+				[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
+				scatter(aa,ag,5,[0.5 0.5 0.5],'+');
+				scatter(ba,bs,20,'filled');
 				set(saax,'Xscale','log','Yscale','log','XDir','reverse');
 				xlabel('Log Drainage Area');
 				ylabel('Log Slope');	
@@ -512,6 +520,8 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				StreamSgmnts{ii}=Sn;
 				ChiSgmnts{ii}=C;
+				SlpAreaSgmnts{ii,1}=[bs ba];
+				SlpAreaSgmnts{ii,2}=[ag aa];	
 				Outlets(ii,1)=xn;
 				Outlets(ii,2)=yn;
 				Outlets(ii,3)=ii;
@@ -735,15 +745,16 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				saax=subplot(3,1,3);
 				hold on
 				if isempty(p.Results.min_elev) && isempty(p.Results.max_area) 
-					[bs,ba]=sa(DEMc,Sn,A);
+					[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
 				elseif ~isempty(p.Results.min_elev) | ~isempty(p.Results.max_area) && p.Results.recalc								
-					[bs,ba]=sa(DEMc,Sn,A);
+					[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
 				elseif short_circ==1;
-					[bs,ba]=sa(DEMc,Sn,A);
+					[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
 				elseif ~isempty(p.Results.min_elev) | ~isempty(p.Results.max_area) && p.Results.recalc==0
-					[bs,ba]=sa(DEMc,Sn_t,A);
-				end
-				scatter(ba,bs,10,'k','filled');
+					[bs,ba,aa,ag]=sa(DEMc,Sn_t,A,bin_size);
+				end		
+				scatter(aa,ag,5,[0.5 0.5 0.5],'+');
+				scatter(ba,bs,20,'k','filled');
 				set(saax,'Xscale','log','Yscale','log','XDir','reverse');
 				xlabel('Log Drainage Area');
 				ylabel('Log Slope');	
@@ -751,6 +762,8 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				StreamSgmnts{ii}=Sn;
 				ChiSgmnts{ii}=C;
+				SlpAreaSgmnts{ii,1}=[bs ba];
+				SlpAreaSgmnts{ii,2}=[ag aa];	
 				Heads(ii,1)=chOI(:,1);
 				Heads(ii,2)=chOI(:,2);
 				Heads(ii,3)=ii;
@@ -851,8 +864,9 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				saax=subplot(3,1,3);
 				hold on
-				[bs,ba]=sa(DEMc,Sn,A);
-				scatter(ba,bs,10,'k','filled');
+				[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
+				scatter(aa,ag,5,[0.5 0.5 0.5],'+');
+				scatter(ba,bs,20,'k','filled');
 				set(saax,'Xscale','log','Yscale','log','XDir','reverse');
 				xlabel('Log Drainage Area');
 				ylabel('Log Slope');	
@@ -860,6 +874,8 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				StreamSgmnts{ii}=Sn;
 				ChiSgmnts{ii}=C;
+				SlpAreaSgmnts{ii,1}=[bs ba];
+				SlpAreaSgmnts{ii,2}=[ag aa];	
 				Outlets(ii,1)=xn;
 				Outlets(ii,2)=yn;
 				Outlets(ii,3)=ii;
@@ -973,6 +989,8 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 					Sn=Sn_t;
 				end
 
+				[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
+
 				if isempty(p.Results.min_elev) && isempty(p.Results.max_area) 
 					C=chiplot(Sn,DEMc,A,'a0',1,'mn',theta_ref,'plot',false);
 				elseif ~isempty(p.Results.min_elev) | ~isempty(p.Results.max_area) && p.Results.recalc
@@ -999,6 +1017,8 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				StreamSgmnts{ii}=Sn;
 				ChiSgmnts{ii}=C;
+				SlpAreaSgmnts{ii,1}=[bs ba];
+				SlpAreaSgmnts{ii,2}=[ag aa];	
 				Heads(ii,1)=chOI(:,1);
 				Heads(ii,2)=chOI(:,2);
 				Heads(ii,3)=ii;
@@ -1026,9 +1046,12 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				Sn=modify(S,'upstreamto',IX);
 				Sn=klargestconncomps(Sn,1);
 				C=chiplot(Sn,DEMc,A,'a0',1,'mn',theta_ref,'plot',false);
+				[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
 
 				StreamSgmnts{ii}=Sn;
 				ChiSgmnts{ii}=C;
+				SlpAreaSgmnts{ii,1}=[bs ba];
+				SlpAreaSgmnts{ii,2}=[ag aa];	
 				Outlets(ii,1)=xn;
 				Outlets(ii,2)=yn;
 				Outlets(ii,3)=ii;
@@ -1052,22 +1075,36 @@ end
 fileOut=['PickedSegments_' num2str(basin_num) '.mat'];
 switch direction
 case 'up'
-	save(fileOut,'StreamSgmnts','ChiSgmnts','Outlets','Sc');
+	save(fileOut,'StreamSgmnts','ChiSgmnts','SlpAreaSgmnts','Outlets','Sc');
 case 'down'
-	save(fileOut,'StreamSgmnts','ChiSgmnts','Heads','Sc');	
+	save(fileOut,'StreamSgmnts','ChiSgmnts','SlpAreaSgmnts','Heads','Sc');	
 end
 
 % Main Function End
 end
 
-function [bs,ba]=sa(DEM,S,A)
-	% Stripped down and tweaked version of 'slopearea' function
 
-	numbins=100;
+function [bs,ba,a,g]=sa(DEM,S,A,bin_size)
+	% Modified slope area function that uses the smooth length to
+	%	to determine the number of bins and uses those same bins
+	%	to find mean values of chi and distance for plotting
+	%	purposes
 
-	a=getnal(S,A.*A.cellsize^2);
+	minX=min(S.distance);
+	maxX=max(S.distance);
+	b=[minX:bin_size:maxX+bin_size];
+
+	numbins=round(max([numel(b) numel(S.IXgrid)/10]));
+
+	an=getnal(S,A.*A.cellsize^2);
 	z=getnal(S,DEM);
-	g=gradient(S,z,'unit','tangent'); % Already a conditioned DEM
+	gn=gradient(S,z,'unit','tangent'); % Already a conditioned DEM
+
+	% Run through STREAMobj2XY so chi and everything else are same size
+	[~,~,a,g]=STREAMobj2XY(S,an,gn);
+	% Remove NaNs
+	a(isnan(a))=[];
+	g(isnan(g))=[];
 
 	mina=min(a);
 	maxa=max(a);
@@ -1082,9 +1119,16 @@ function [bs,ba]=sa(DEM,S,A)
 
 	ba=accumarray(ix,a,[numbins 1],@median,nan);
 	bs=accumarray(ix,g,[numbins 1],@(x) mean(x(~isnan(x))),nan);
+
+	% Filter negatives
+	idx=bs>=0 & ba>=0;
+	bs=bs(idx);
+	ba=ba(idx);
+
+	idx=a>=0 & g>=0;
+	a=a(idx);
+	g=g(idx);
 end
-
-
 
 
 

@@ -14,7 +14,7 @@ function SegmentPlotter(basin_nums,varargin)
 	% 
 	% Optionl Input:
 	%	separate [false] - logical flag to plot all segments as separate figures 
-	%	subset [] - list of specific river numbers (i.e. the first column of either the 'Heads' or the 'Outlets' variable) that you wish to include
+	%	subset [] - list of specific river numbers (i.e. the third column of either the 'Heads' or the 'Outlets' variable) that you wish to include
 	%				in the plot. Only valid if you have only provided a single basin number for 'basin_nums'.
 	%	label [false]  - logical flag to either label individual streams with the river number (true) or not label them (false, default). If 'separate' flag
 	%					is true then the input for label is ignored as the stream number will be in the title of the plots
@@ -44,19 +44,19 @@ function SegmentPlotter(basin_nums,varargin)
 	parse(p,basin_nums,varargin{:});
 	basin_nums=p.Results.basin_nums;
 	sep=p.Results.separate;
-	sub=p.Results.subset;
+	subset=p.Results.subset;
 	lab=p.Results.label;
 	nm=p.Results.names;
 
 	num_basins=numel(basin_nums);
 
 	% Check for errors
-	if ~isempty(sub) & num_basins>1
+	if ~isempty(subset) & num_basins>1
 		warning('Providing a list of specific rivers via "subset" is only recognized if only one basin number is provided, ignoring "subset" input')
 		su=0;
-	elseif ~isempty(sub) & num_basins==1
+	elseif ~isempty(subset) & num_basins==1
 		su=1;
-	elseif isempty(sub)
+	elseif isempty(subset)
 		su=0;
 	end
 
@@ -72,7 +72,7 @@ function SegmentPlotter(basin_nums,varargin)
 			for ii=1:num_basins
 				basin_num=basin_nums(ii);
 				fileName=['PickedSegments_' num2str(basin_num) '.mat'];
-				load(fileName,'ChiSgmnts');
+				load(fileName,'ChiSgmnts','SlpAreaSgmnts');
 
 				vInfo=who('-file',fileName);
 				if ismember('Heads',vInfo)
@@ -94,8 +94,10 @@ function SegmentPlotter(basin_nums,varargin)
 
 				for jj=1:num_seg
 					C=ChiSgmnts{jj};
+					bSA=SlpAreaSgmnts{jj,1};
+					aSA=SlpAreaSgmnts{jj,2};
 
-					subplot(2,1,1);
+					subplot(3,1,1);
 					hold on
 					p1(ii)=plot(C.chi,C.elev,'Color',cMap(ii,:));
 					if lab
@@ -105,7 +107,7 @@ function SegmentPlotter(basin_nums,varargin)
 					end
 					hold off
 
-					subplot(2,1,2);
+					subplot(3,1,2);
 					hold on
 					p2(ii)=plot(C.distance,C.elev,'Color',cMap(ii,:));
 					if lab
@@ -114,25 +116,42 @@ function SegmentPlotter(basin_nums,varargin)
 						text(md+md*0.01,me,[pre ' ' num2str(seg_num(jj))],'Color',cMap(ii,:));
 					end
 					hold off
+
+					ax3=subplot(3,1,3);
+					hold on
+					scatter(aSA(:,2),aSA(:,1),5,cMap(ii,:),'+');
+					p3(ii)=scatter(bSA(:,2),bSA(:,1),20,'MarkerFaceColor',cMap(ii,:),'MarkerEdgeColor','k');
+					set(ax3,'Xscale','log','Yscale','log','XDir','reverse');
+					hold off
+	
 				end
 			LegendEnt{ii}=['Basin ' num2str(basin_num)];
 			end
 
-			subplot(2,1,1);
+			subplot(3,1,1);
 			hold on
-				xlabel('Chi')
+				xlabel('\chi')
 				ylabel('Elevation (m)')
-				title('Chi - Z')
+				title('\chi - Z')
 				legend(p1,LegendEnt,'location','best');
 			hold off
 
-			subplot(2,1,2);
+			subplot(3,1,2);
 			hold on
 				xlabel('Distance from Mouth (m)')
 				ylabel('Elevation (m)')
 				title('Long Profile')
 				legend(p2,LegendEnt,'location','best');
 			hold off
+
+			subplot(3,1,3);
+			hold on
+				xlabel('Log Drainage Area');
+				ylabel('Log Gradient');
+				legend(p3,LegendEnt,'location','best');
+				title('Slope-Area');
+			hold off
+
 		elseif sep
 
 			fig_num=1;
@@ -140,7 +159,7 @@ function SegmentPlotter(basin_nums,varargin)
 			for ii=1:num_basins
 				basin_num=basin_nums(ii);
 				fileName=['PickedSegments_' num2str(basin_num) '.mat'];
-				load(fileName,'ChiSgmnts');
+				load(fileName,'ChiSgmnts','SlpAreaSgmnts');
 				vInfo=who('-file',fileName);
 				if ismember('Heads',vInfo)
 					load(fileName,'Heads');
@@ -156,8 +175,10 @@ function SegmentPlotter(basin_nums,varargin)
 					f=figure(fig_num);
 					set(f,'Units','inches','Position',[1.0 1.5 10 10],'renderer','painters','PaperSize',[10 10],'PaperPositionMode','auto');
 					C=ChiSgmnts{jj};
+					bSA=SlpAreaSgmnts{jj,1};
+					aSA=SlpAreaSgmnts{jj,2};
 
-					subplot(2,1,1);
+					subplot(3,1,1);
 					hold on
 					plot(C.chi,C.elev,'-k');
 					xlabel('Chi')
@@ -165,13 +186,21 @@ function SegmentPlotter(basin_nums,varargin)
 					title(['Basin ' num2str(basin_num) '- Stream ' num2str(seg_num(jj))]);
 					hold off
 
-					subplot(2,1,2);
+					subplot(3,1,2);
 					hold on
 					plot(C.distance,C.elev,'-k');
 					xlabel('Distance from Mouth (m)')
 					ylabel('Elevation (m)')
 					hold off
 
+					ax3=subplot(3,1,3);
+					hold on
+					scatter(aSA(:,2),aSA(:,1),5,[0.5 0.5 0.5],'+');
+					scatter(bSA(:,2),bSA(:,1),20,'k','filled');
+					set(ax3,'Xscale','log','Yscale','log','XDir','reverse');
+					xlabel('Log Drainage Area');
+					ylabel('Log Gradient');
+					hold off					
 
 					fig_num=fig_num+1;
 					drawnow
@@ -189,7 +218,7 @@ function SegmentPlotter(basin_nums,varargin)
 
 			basin_num=basin_nums;
 			fileName=['PickedSegments_' num2str(basin_num) '.mat'];
-			load(fileName,'ChiSgmnts');
+			load(fileName,'ChiSgmnts','SlpAreaSgmnts');
 
 			vInfo=who('-file',fileName);
 			if ismember('Heads',vInfo)
@@ -200,16 +229,19 @@ function SegmentPlotter(basin_nums,varargin)
 				seg_num=Outlets(:,3);
 			end
 
-			idx=ismember(seg_num,sub);
+			idx=ismember(seg_num,subset);
 			ChiSgmnts=ChiSgmnts(idx);
+			SlpAreaSgmnts=SlpAreaSgmnts(idx,:);
 			seg_num=seg_num(idx);
 
 			num_seg=numel(ChiSgmnts);
 
 			for jj=1:num_seg
 				C=ChiSgmnts{jj};
+				bSA=SlpAreaSgmnts{jj,1};
+				aSA=SlpAreaSgmnts{jj,2};
 
-				subplot(2,1,1);
+				subplot(3,1,1);
 				hold on
 				plot(C.chi,C.elev,'-k');
 				if lab
@@ -219,7 +251,7 @@ function SegmentPlotter(basin_nums,varargin)
 				end
 				hold off
 
-				subplot(2,1,2);
+				subplot(3,1,2);
 				hold on
 				plot(C.distance,C.elev,'-k');
 				if lab
@@ -228,21 +260,36 @@ function SegmentPlotter(basin_nums,varargin)
 					text(md+md*0.01,me,[nm ' ' num2str(seg_num(jj))]);
 				end
 				hold off
+
+				ax3=subplot(3,1,3);
+				hold on
+				scatter(aSA(:,2),aSA(:,1),5,[0.5 0.5 0.5],'+');
+				scatter(bSA(:,2),bSA(:,1),20,'k','filled');
+				set(ax3,'Xscale','log','Yscale','log','XDir','reverse');
+				hold off
+
 			end
 
-			subplot(2,1,1);
+			subplot(3,1,1);
 			hold on
 				xlabel('Chi')
 				ylabel('Elevation (m)')
 				title('Chi - Z')
 			hold off
 
-			subplot(2,1,2);
+			subplot(3,1,2);
 			hold on
 				xlabel('Distance from Mouth (m)')
 				ylabel('Elevation (m)')
 				title('Long Profile')
 			hold off
+
+			subplot(3,1,3);
+			hold on
+				xlabel('Log Drainage Area');
+				ylabel('Log Gradient');
+				title('Slope-Area');
+			hold off			
 
 		elseif sep
 
@@ -251,7 +298,7 @@ function SegmentPlotter(basin_nums,varargin)
 			for ii=1:num_basins
 				basin_num=basin_nums(ii);
 				fileName=['PickedSegments_' num2str(basin_num) '.mat'];
-				load(fileName,'ChiSgmnts');
+				load(fileName,'ChiSgmnts','SlpAreaSgmnts');
 				vInfo=who('-file',fileName);
 				if ismember('Heads',vInfo)
 					load(fileName,'Heads');
@@ -261,8 +308,9 @@ function SegmentPlotter(basin_nums,varargin)
 					seg_num=Outlets(:,3);
 				end
 
-				idx=ismember(seg_num,sub);
+				idx=ismember(seg_num,subset);
 				ChiSgmnts=ChiSgmnts(idx);
+				SlpAreaSgmnts=SlpAreaSgmnts(idx,:);
 				seg_num=seg_num(idx);
 
 				num_seg=numel(ChiSgmnts);
@@ -271,8 +319,10 @@ function SegmentPlotter(basin_nums,varargin)
 					f=figure(fig_num);
 					set(f,'Units','inches','Position',[1.0 1.5 10 10],'renderer','painters','PaperSize',[10 10],'PaperPositionMode','auto');
 					C=ChiSgmnts{jj};
+					bSA=SlpAreaSgmnts{jj,1};
+					aSA=SlpAreaSgmnts{jj,2};
 
-					subplot(2,1,1);
+					subplot(3,1,1);
 					hold on
 					plot(C.chi,C.elev,'-k');
 					xlabel('Chi')
@@ -280,11 +330,20 @@ function SegmentPlotter(basin_nums,varargin)
 					title(['Basin ' num2str(basin_num) '- Stream ' num2str(seg_num(jj))]);
 					hold off
 
-					subplot(2,1,2);
+					subplot(3,1,2);
 					hold on
 					plot(C.distance,C.elev,'-k');
 					xlabel('Distance from Mouth (m)')
 					ylabel('Elevation (m)')
+					hold off
+
+					ax3=subplot(3,1,3);
+					hold on
+					scatter(aSA(:,2),aSA(:,1),5,[0.5 0.5 0.5],'+');
+					scatter(bSA(:,2),bSA(:,1),20,'k','filled');
+					set(ax3,'Xscale','log','Yscale','log','XDir','reverse');
+					xlabel('Log Drainage Area');
+					ylabel('Log Gradient');
 					hold off
 
 
