@@ -109,13 +109,6 @@ function [Sn,thresh_list,xd_list]=FindThreshold(DEM,FD,A,S,num_streams,varargin)
 			C=chiplot(St,z,A,'a0',1,'mn',ref_theta,'plot',false);
 			[bs,ba,bc,bd,aa,ag,ac]=sa(DEM,St,A,C.chi,500);
 
-			% Filter negatives
-			idx=bs>=0 & ba>=0 & bc>=0 & bd>=0;
-			bs=bs(idx);
-			ba=ba(idx);
-			bc=bc(idx);
-			bd=bd(idx);
-
 			f1=figure(1);
 			set(f1,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
 			clf
@@ -252,13 +245,6 @@ function [Sn,thresh_list,xd_list]=FindThreshold(DEM,FD,A,S,num_streams,varargin)
 
 			C=chiplot(St,z,A,'a0',1,'mn',ref_theta,'plot',false);
 			[bs,ba,bc,bd,aa,ag,ac]=sa(DEM,St,A,C.chi,500);
-
-			% Filter negatives
-			idx=bs>=0 & ba>=0 & bc>=0 & bd>=0;
-			bs=bs(idx);
-			ba=ba(idx);
-			bc=bc(idx);
-			bd=bd(idx);
 
 			f1=figure(1);
 			set(f1,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
