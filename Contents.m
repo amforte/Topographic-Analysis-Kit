@@ -29,7 +29,7 @@
 % DippingBedFinder
 % FindBasinKnicks
 % FindCentroid
-% FitThreshold
+% FindThreshold
 % KsnChiBatch
 % KsnColor
 % KsnProfiler
