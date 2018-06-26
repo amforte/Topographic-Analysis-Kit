@@ -118,6 +118,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%	threshold_area [1e6] - used to redraw downsampled stream network if 'plot_type' is set to 'grid' 
 	%
 	%%% Output Options
+	%	stack_method ['stack'] - if 'junction_method' is set to 'ignore', this parameter will control how the function deals with overlapping sections
+	%			of stream networks when generating the shapefile. Valid inputs are 'stack' (default) and 'average'. If set to 'stack', the output shapefile 
+	%			will have multiple stacked polylines in overlapping portions of networks. This is similar to how Profiler51 worked. If set to 'average', the
+	%			function will average overlapping portions of networks on a node by node basis. Note that if 'junction_method' is set to 'check', then this 
+	%			parameter is ignored.
 	%	shape_name ['ksn'] - name for the shapefile to be export, must have no spaces to be a valid name for ArcGIS and should NOT include the '.shp'
 	%	save_figures [false] - logical flag to either save figures showing ksn fits (true) or to not (false - default)	
 	%
@@ -182,6 +187,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	addParameter(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
 	addParameter(p,'save_figures',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'restart',[],@(x) ischar(validatestring(x,{'continue','skip'})));
+	addParameter(p,'stack_method','stack',@(x) ischar(validatestring(x,{'average','stack'})));
 
 	parse(p,DEM,FD,A,S,varargin{:});
 	DEM=p.Results.DEM;
@@ -212,6 +218,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	rd_pick_method=p.Results.rd_pick_method;
 	mksn=p.Results.max_ksn;
 	restart=p.Results.restart;
+	stack_method=p.Results.stack_method;
 
 	% Set restart flag
 	if ~isempty(restart)
@@ -2680,34 +2687,122 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	% Collapse bnd_list
 	bnd_list=vertcat(bnd_list{:});
 
-	% Bundle all observations into single node list
-	knl=vertcat(ksn_master{:});
-	ix=coord2ind(DEM,knl(:,1),knl(:,2));
+	% Build KSN Mapstructure
+	if strcmp(junction_method,'check')
+		% Bundle all observations into single node list
+		knl=vertcat(ksn_master{:});
+		ix=coord2ind(DEM,knl(:,1),knl(:,2));
 
-	% Build ksn and concavity raster
-	ksnR=GRIDobj(DEM);
-	ksnRn=GRIDobj(DEM);
-	ksnRp=GRIDobj(DEM);
-	thetaR=GRIDobj(DEM);
-	segthetaR=GRIDobj(DEM);
-	threshaR=GRIDobj(DEM);
-	resR=GRIDobj(DEM);
-	rivnumR=GRIDobj(DEM);
+		% Generate empty rasters
+		ksnR=GRIDobj(DEM);
+		ksnRn=GRIDobj(DEM);
+		ksnRp=GRIDobj(DEM);
+		thetaR=GRIDobj(DEM);
+		segthetaR=GRIDobj(DEM);
+		threshaR=GRIDobj(DEM);
+		resR=GRIDobj(DEM);
+		rivnumR=GRIDobj(DEM);
 
-	ksnR.Z(ix)=knl(:,4);
-	ksnRn.Z(ix)=knl(:,5);
-	ksnRp.Z(ix)=knl(:,6);
-	thetaR.Z(ix)=knl(:,7);
-	segthetaR.Z(ix)=knl(:,8);
-	threshaR.Z(ix)=knl(:,9);
-	resR.Z(ix)=knl(:,11);
-	rivnumR.Z(ix)=knl(:,12);
+		ksnR.Z(ix)=knl(:,4);
+		ksnRn.Z(ix)=knl(:,5);
+		ksnRp.Z(ix)=knl(:,6);
+		thetaR.Z(ix)=knl(:,7);
+		segthetaR.Z(ix)=knl(:,8);
+		threshaR.Z(ix)=knl(:,9);
+		resR.Z(ix)=knl(:,11);
+		rivnumR.Z(ix)=knl(:,12);
 
-	% Create KSN map structure and export shapefile
-	KSN=STREAMobj2mapstruct(Sc,'seglength',smooth_distance,'attributes',...
-		{'ksn' ksnR @mean 'ksn_neg' ksnRn @mean 'ksn_pos' ksnRp @mean 'uparea' (A.*(A.cellsize^2)) @mean...
-		'gradient' G @mean 'theta' thetaR @mean 'seg_theta' segthetaR @mean 'thrsh_ar' threshaR @mean...
-		'resid' resR @mean 'riv_num' rivnumR @median});
+		% Create KSN map structure and export shapefile
+		KSN=STREAMobj2mapstruct(Sc,'seglength',smooth_distance,'attributes',...
+			{'ksn' ksnR @mean 'ksn_neg' ksnRn @mean 'ksn_pos' ksnRp @mean 'uparea' (A.*(A.cellsize^2)) @mean...
+			'gradient' G @mean 'theta' thetaR @mean 'seg_theta' segthetaR @mean 'thrsh_ar' threshaR @mean...
+			'resid' resR @mean 'riv_num' rivnumR @median});
+	elseif strcmp(junction_method,'ignore') & strcmp(stack_method,'stack')
+		num_streams=numel(ksn_master);
+		KSN=cell(num_streams,1);
+		for ii=1:num_streams
+			knl=ksn_master{ii};
+			ix=coord2ind(DEM,knl(:,1),knl(:,2));
+			WW=GRIDobj(DEM,'logical');
+			WW.Z(ix)=true;
+			ScT=STREAMobj(FD,WW);
+
+			% Generate empty rasters
+			ksnR=GRIDobj(DEM);
+			ksnRn=GRIDobj(DEM);
+			ksnRp=GRIDobj(DEM);
+			thetaR=GRIDobj(DEM);
+			segthetaR=GRIDobj(DEM);
+			threshaR=GRIDobj(DEM);
+			resR=GRIDobj(DEM);
+			rivnumR=GRIDobj(DEM);
+
+			ksnR.Z(ix)=knl(:,4);
+			ksnRn.Z(ix)=knl(:,5);
+			ksnRp.Z(ix)=knl(:,6);
+			thetaR.Z(ix)=knl(:,7);
+			segthetaR.Z(ix)=knl(:,8);
+			threshaR.Z(ix)=knl(:,9);
+			resR.Z(ix)=knl(:,11);
+			rivnumR.Z(ix)=knl(:,12);
+
+			KSN{ii}=STREAMobj2mapstruct(ScT,'seglength',smooth_distance,'attributes',...
+				{'ksn' ksnR @mean 'ksn_neg' ksnRn @mean 'ksn_pos' ksnRp @mean 'uparea' (A.*(A.cellsize^2)) @mean...
+				'gradient' G @mean 'theta' thetaR @mean 'seg_theta' segthetaR @mean 'thrsh_ar' threshaR @mean...
+				'resid' resR @mean 'riv_num' rivnumR @median});	
+		end
+		KSN=vertcat(KSN{:});
+	elseif strcmp(junction_method,'ignore') & strcmp(stack_method,'average')
+		% Bundle all observations into single node list
+		knl=vertcat(ksn_master{:});
+		ix=coord2ind(DEM,knl(:,1),knl(:,2));
+
+		% Generate empty rasters
+		ksnR=GRIDobj(DEM);
+		ksnRn=GRIDobj(DEM);
+		ksnRp=GRIDobj(DEM);
+		thetaR=GRIDobj(DEM);
+		segthetaR=GRIDobj(DEM);
+		threshaR=GRIDobj(DEM);
+		resR=GRIDobj(DEM);
+		rivnumR=GRIDobj(DEM);
+
+		% Accumulate values
+		ksnr=accumarray(ix,knl(:,4),[],@mean);
+		ksnrn=accumarray(ix,knl(:,5),[],@mean);
+		ksnrp=accumarray(ix,knl(:,6),[],@mean);
+		thetar=accumarray(ix,knl(:,7),[],@mean);
+		segthetar=accumarray(ix,knl(:,8),[],@mean);
+		threshar=accumarray(ix,knl(:,9),[],@mean);
+		resr=accumarray(ix,knl(:,11),[],@mean);
+		rivnumr=accumarray(ix,knl(:,12),[],@mode);
+
+		% Filter values
+		ksnr=ksnr(ix);
+		ksnrn=ksnrn(ix);
+		ksnrp=ksnrp(ix);
+		thetar=thetar(ix);
+		segthetar=segthetar(ix);
+		threshar=threshar(ix);
+		resr=resr(ix);
+		rivnumr=rivnumr(ix);
+
+		% Populate grids
+		ksnR.Z(ix)=ksnr;
+		ksnRn.Z(ix)=ksnrn;
+		ksnRp.Z(ix)=ksnrp;
+		thetaR.Z(ix)=thetar;
+		segthetaR.Z(ix)=segthetar;
+		threshaR.Z(ix)=threshar;
+		resR.Z(ix)=resr;
+		rivnumR.Z(ix)=rivnumr;
+
+		% Create KSN map structure and export shapefile
+		KSN=STREAMobj2mapstruct(Sc,'seglength',smooth_distance,'attributes',...
+			{'ksn' ksnR @mean 'ksn_neg' ksnRn @mean 'ksn_pos' ksnRp @mean 'uparea' (A.*(A.cellsize^2)) @mean...
+			'gradient' G @mean 'theta' thetaR @mean 'seg_theta' segthetaR @mean 'thrsh_ar' threshaR @mean...
+			'resid' resR @mean 'riv_num' rivnumR @mode});
+	end		
 
 	% Create knickpoint map structure and prepare bound output
 	idx=~isnan(bnd_list(:,5));
