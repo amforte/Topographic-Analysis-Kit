@@ -2922,6 +2922,19 @@ function [bs,ba,bc,bd,a,g,d,C]=sa(DEM,S,A,C,bin_size)
 	bs=accumarray(ix,g,[numbins 1],@(x) mean(x(~isnan(x))),nan);
 	bd=accumarray(ix,d,[numbins 1],@mean,nan);
 	bc=accumarray(ix,C,[numbins 1],@mean,nan);
+
+	% Filter negatives
+	idx=bs>=0 & ba>=0 & bc>=0 & bd>=0;
+	bs=bs(idx);
+	ba=ba(idx);
+	bc=bc(idx);
+	bd=bd(idx);
+
+	idx=a>=0 & g>=0 & d>=0 & C>=0;
+	a=a(idx);
+	g=g(idx);
+	d=d(idx);
+	C=C(idx);
 end
 
 function [bs,ba,bc,bd,bk,a,g,d,C]=sa_ksn(DEM,S,A,C,ak,bin_size);
@@ -2965,6 +2978,21 @@ function [bs,ba,bc,bd,bk,a,g,d,C]=sa_ksn(DEM,S,A,C,ak,bin_size);
 	bd=accumarray(ix,d,[numbins 1],@mean,nan);
 	bc=accumarray(ix,C,[numbins 1],@mean,nan);
 	bk=accumarray(ix,k,[numbins 1],@mean,nan);
+
+	% Filter negatives
+	idx=bs>=0 & ba>=0 & bc>=0 & bd>=0 & bk>=0;
+	bs=bs(idx);
+	ba=ba(idx);
+	bc=bc(idx);
+	bd=bd(idx);
+	bk=bk(idx);
+
+	idx=a>=0 & g>=0 & d>=0 & C>=0 & k>=0;
+	a=a(idx);
+	g=g(idx);
+	d=d(idx);
+	C=C(idx);
+	k=k(idx);
 end
 
 function [Sn]=RedefineThreshold(DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_size,count,figure_flag)
@@ -2988,18 +3016,18 @@ function [Sn]=RedefineThreshold(DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_size,c
 	[bs,ba,bc,bd,aa,ag,ad,ac]=sa(DEM,ST,A,C.chi,bin_size);
 
 
-	% Filter negatives
-	idx=bs>=0 & ba>=0 & bc>=0 & bd>=0;
-	bs=bs(idx);
-	ba=ba(idx);
-	bc=bc(idx);
-	bd=bd(idx);
+	% % Filter negatives
+	% idx=bs>=0 & ba>=0 & bc>=0 & bd>=0;
+	% bs=bs(idx);
+	% ba=ba(idx);
+	% bc=bc(idx);
+	% bd=bd(idx);
 
-	idx=aa>=0 & ag>=0 & ad>=0 & ac>=0;
-	aa=aa(idx);
-	ag=ag(idx);
-	ad=ad(idx);
-	ac=ac(idx);
+	% idx=aa>=0 & ag>=0 & ad>=0 & ac>=0;
+	% aa=aa(idx);
+	% ag=ag(idx);
+	% ad=ad(idx);
+	% ac=ac(idx);
 
 	str11='R';
 
