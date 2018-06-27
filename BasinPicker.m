@@ -404,9 +404,9 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
         xlabel('\chi')
         ylabel('Elevation (m)')
         if isempty(EG)
-            title(['\chi - Z : Mean k_{sn} = ' num2str(round(mksn)) ' : Mean Relief = ' num2str(round(mrlf))])
+            title(['\chi - Z : Mean k_{sn} = ' num2str(round(mksn)) ' : Mean Relief = ' num2str(round(mrlf)) ' : Drainage Area = ' num2str(round(drainage_area)) 'km^2'])
         else
-            title(['\chi - Z : Mean k_{sn} = ' num2str(round(mksn)) ' : Mean Relief = ' num2str(round(mrlf)) ' : Mean Extra Grid = ' num2str(round(meg))])
+            title(['\chi - Z : Mean k_{sn} = ' num2str(round(mksn)) ' : Mean Relief = ' num2str(round(mrlf)) ' : Mean Extra Grid = ' num2str(round(meg)) ' : Drainage Area = ' num2str(round(drainage_area)) 'km^2'])
         end
         hold off
 
