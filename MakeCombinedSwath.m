@@ -549,7 +549,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			knps=cell(numel(fileList),1);
 			for jj=1:numel(fileList)
 				load(fileList(jj,1).name);
-				knps{jj}=KnickPoints(:,[1:3]);
+				knps{jj}=[KnickTable.x_coord KnickTable.y_coord KnickTable.elevation];
 			end
 
 			knps=vertcat(knps{:});

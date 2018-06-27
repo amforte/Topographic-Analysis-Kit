@@ -1,8 +1,8 @@
-function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
+function [KnickTable]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 	%
 	% Usage:
-	%	[KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result);
-	%	[KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result,'name',value,...);
+	%	[KnickTable]=FindBasinKnicks(Basin_Data_File,plot_result);
+	%	[KnickTable]=FindBasinKnicks(Basin_Data_File,plot_result,'name',value,...);
 	%
 	% Description:
 	% 	Function for manually selecting knickpoints within a Basin_Data_File (i.e. result of ProcessRiverBasins). 
@@ -16,6 +16,7 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 	% 	plot_result - logical flag to either plot the results (true) or not (false) 
 	%
 	% Optional Inputs
+	%	classify_knicks [false] - logical flag to provide a classification for each chosen knickpoint
 	% 	theta_ref [0.5] - reference concavity for chi calculation
 	%	save_mat [true] - logical flag to save output mat file containing the KnickPoints array. The name of the file will 
 	%		be 'Knicks_NUM.mat' where NUM is the river number. Do not change the file name if you want to plot knickpoints
@@ -24,9 +25,10 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 	%		no shapefile is output
 	%
 	% Outputs:
-	%	KnickPoints - nx5 matrix, one row for each selected knickpoints with columns being x, y, z, distance upstream, and chi value
+	%	KnickTable - table with one row for each selected knickpoints. If classify_knicks is false, will have with columns x_coord, 
+	%		y_coord, elevation, distance, and chi. If classify_knicks is true, will have a sixth column containing the classification
+	%		of the knickpoints.
 	%	
-	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -38,6 +40,7 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 	addRequired(p,'Basin_Data_File',@(x) ischar(x));
 	addRequired(p,'plot_result',@(x) islogical(x));
 
+	addParameter(p,'classify_knicks',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'theta_ref',0.5,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'shape_name',[],@(x) ischar(x));
 	addParameter(p,'save_mat',true,@(x) isscalar(x) && islogical(x));
@@ -46,6 +49,7 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 	Basin_Data_File=p.Results.Basin_Data_File;
 	plot_result=p.Results.plot_result;
 
+	classify_knicks=p.Results.classify_knicks;
 	theta_ref=p.Results.theta_ref;
 	shape_name=p.Results.shape_name;
 	save_mat=p.Results.save_mat;
@@ -137,8 +141,9 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 		xlabel('\chi');
 		ylabel('Elevation (m)');
 		title([num2str(NumHeads-ii) ' channels remaining']);
-		[c,e]=ginput;
 		hold off
+
+		[c,e]=ginput;
 
 		if numel(c)>=1;
 			% Find point closest to pick
@@ -151,10 +156,42 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 			Knicks{ii}=knp;
 		end
 
+		if classify_knicks
+			if numel(c)>=1
+				figure(f1);
+				for jj=1:numel(c);
+					hold on
+					s1=scatter(knp(jj,5),knp(jj,3),40,'g');
+					cl=inputdlg('Enter the classification for the selected knickpoint:','Knickpoint Classification');
+					hold off
+					delete(s1);
+
+					cl_num=str2num(cl{1});
+					if isempty(cl_num)
+						knpClass{jj,1}=cl{1};
+					else 
+						knpClass{jj,1}=double(cl_num);
+					end
+
+				end	
+			end	
+			knpClasses{ii}=knpClass;
+		end
+
 	end
 
 	KnickPoints=vertcat(Knicks{:});
-	KnickPoints=unique(KnickPoints,'rows');
+	[KnickPoints,idx,~]=unique(KnickPoints,'rows');
+
+	KnickTable=array2table(KnickPoints,'VariableNames',{'x_coord','y_coord','elevation','distance','chi'});
+
+	if classify_knicks
+		if exist('knpClasses')
+			knpClasses=vertcat(knpClasses{:});
+			knpClasses=knpClasses(idx);
+			KnickTable.classification=knpClasses;
+		end
+	end
 
 	close all
 
@@ -186,7 +223,7 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 	end
 
 	if save_mat
-		save(['Knicks_' num2str(RiverMouth(:,3)) '.mat'],'KnickPoints');
+		save(['Knicks_' num2str(RiverMouth(:,3)) '.mat'],'KnickTable');
 	end
 
 	if ~isempty(shape_name)
@@ -199,6 +236,9 @@ function [KnickPoints]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 			MS(ii,1).elev=KnickPoints(ii,3);
 			MS(ii,1).dist=KnickPoints(ii,4);
 			MS(ii,1).chi=KnickPoints(ii,5);
+			if classify_knicks
+				MS(ii,1).class=knpClasses{ii};
+			end
 		end
 		shp_out=[shape_name '.shp'];
 		shapewrite(MS,shp_out);
