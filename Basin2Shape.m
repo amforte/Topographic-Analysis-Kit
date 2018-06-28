@@ -149,7 +149,7 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 		FileName=[FileList(ii,1).folder '/' FileList(ii,1).name];
 		DB=GRIDobj(DEM);
 
-		load(FileName,'DEMoc','RiverMouth','drainage_area','out_el','KSNc_stats','Zc_stats','Gc_stats','Centroid');
+		load(FileName,'DEMoc','RiverMouth','drainage_area','out_el','KSNc_stats','Zc_stats','Gc_stats','Centroid','hyps','Chic','DEMcc','Sc','Ac','theta_ref');
 
 		I=~isnan(DEMoc.Z);
 		[X,Y]=getcoordinates(DEMoc);
@@ -198,6 +198,11 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 			MS(ii,1).std_gradient=Gc_stats(3);
 		end
 
+		MS(ii,1).hyp_int=abs(trapz((hyps(:,2)-min(hyps(:,2)))/(max(hyps(:,2))-min(hyps(:,2))),hyps(:,1)/100));
+		MS(ii,1).theta=Chic.mn;
+
+		c=chiplot(Sc,DEMcc,Ac,'a0',1,'mn',theta_ref,'plot',false);
+		MS(ii,1).chi_r2=c.R2;
 		
 		% Determine if a georef structure exists and if so, produce lat-lon locations for sample points
 		if ~isempty(DEM.georef)
@@ -249,26 +254,7 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 				end
 			end
 		end	
-
-		VarInd=find(strcmp(cellstr(char(VarList.name)),'ACGc'));
-		if ~isempty(VarInd)
-			load(FileName,'ACGc','ACGc_stats');
-			num_grids=size(ACGc,1);
-
-			for kk=1:num_grids
-				mode_prop_name=['mode_' ACGc{kk,3}];		
-				MS(ii,1).(mode_prop_name)=double(ACGc_stats(kk,1));
-
-				if pc
-					ACG_T=ACGc{kk,2};
-					total_nodes=sum(ACG_T.Counts);
-					for ll=1:numel(ACG_T.Categories)
-						cat_name=matlab.lang.makeValidName(ACG_T.Categories{ll});
-						MS(ii,1).(cat_name)=double((ACG_T.Counts(ll)/total_nodes)*100);
-					end
-				end
-			end
-		end		
+	
 
 		VarInd=find(strcmp(cellstr(char(VarList.name)),'rlf'));
 		if ~isempty(VarInd)
@@ -349,7 +335,6 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 				end
 			end
 		end
-
 
 		waitbar(ii/num_files);
 	end
