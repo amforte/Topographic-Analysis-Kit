@@ -527,7 +527,7 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 
 				SubFileName=[SBFiles_Dir '/Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '.mat'];
 
-				save(SubFileName,'RiverMouth','DEMcc','DEMoc','out_el','drainage_area','hyps','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method');
+				save(SubFileName,'RiverMouth','DEMcc','DEMoc','out_el','drainage_area','hyps','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method','gradient_method','theta_ref');
 				
 				% Make interpolated ksn grid
 				try 
