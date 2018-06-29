@@ -17,7 +17,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	% 	data_type - the type of additional data you are providing to plot along with the swath, supported inputs are:
 	%		'points3' - generic point dataset, expects a n x 3 matrix with values of x, y, and z
 	%		'points4' - generic point dataset, expects a n x 4 matrix with values of x, y, z, and extra value. Dots will 
-	%					be sclaed by this extra value
+	%					be colored by this extra value
+	%		'points5' - generic point dataset, expects a n x 5 matrix with values of x, y, z, and two extra values. Dots will
+	%					colored by the first extra value (column 4) and scaled by the second extra value (column 5).
 	%		'eqs' - earthquakes, expects a n x 4 matrix with x, y, depth, and magnitude. Points will be scaled by magnitude 
 	%					and colored by distance from swath line. Expects depth to be positive.
 	%		'STREAMobj' - will project portions of selected stream profiles (as points) onto a swath. Expects a STREAMobj 
@@ -83,7 +85,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
 	addRequired(p,'points',@(x) isnumeric(x) && size(x,1)>=2 && size(x,2)==2);
 	addRequired(p,'width',@(x) isscalar(x) && isnumeric(x));
-	addRequired(p,'data_type',@(x) ischar(validatestring(x,{'points3','points4','eqs','STREAMobj','ksn_chandata','ksn_batch','ksn_profiler','basin_stats'})));
+	addRequired(p,'data_type',@(x) ischar(validatestring(x,{'points3','points4','points5','eqs','STREAMobj','ksn_chandata','ksn_batch','ksn_profiler','basin_stats'})));
 	addRequired(p,'data');
 	addRequired(p,'data_width',@(x) isnumeric(x) && isscalar(x));
 
@@ -175,14 +177,14 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			x_coord=data(:,1);
 			y_coord=data(:,2);
 			z=data(:,3);
-			scle=data(:,4);
+			col=data(:,4);
 
 			% Remove any points beyond the extent of the provided DEM
 			[demix]=inpolygon(x_coord,y_coord,demx,demy);	
-			x_coord=x_coord(demix); y_coord=y_coord(demix); z=z(demix); scle=scle(demix);
+			x_coord=x_coord(demix); y_coord=y_coord(demix); z=z(demix); col=col(demix);
 
 			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
-			outData=[ds z scle db x_coord y_coord];
+			outData=[ds z col db x_coord y_coord];
 			idx=outData(:,4)<=(data_width/2) & ~isnan(ds);
 
 			% Plot Swath
@@ -202,12 +204,69 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 				plot([bends(jj),bends(jj)],yl,'-k');
 			end
 
-			scatter(outData(idx,1),outData(idx,2),outData(idx,3),'k','filled');
+			scatter(outData(idx,1),outData(idx,2),30,outData(idx,3),'filled');
+
+			c1=colorbar;
+			xlabel(c1,'User Provided Value')
 
 			xlabel('Distance along swath (m)');
 			ylabel('Elevation (m)');
 			xlim([0 max(swdist)]);
 			hold off
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%		
+		case 'points5'
+			x_coord=data(:,1);
+			y_coord=data(:,2);
+			z=data(:,3);
+			col=data(:,4)
+			scle=data(:,5);
+
+			% Remove any points beyond the extent of the provided DEM
+			[demix]=inpolygon(x_coord,y_coord,demx,demy);	
+			x_coord=x_coord(demix); y_coord=y_coord(demix); z=z(demix); col=col(demix); scle=scle(demix);
+
+			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
+			outData=[ds z col scle db x_coord y_coord];
+			idx=outData(:,5)<=(data_width/2) & ~isnan(ds);
+
+			% Plot Swath
+			f1=figure(1);
+			clf 
+			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
+
+			hold on
+			plot(swdist,min_elevs,'-k');
+			plot(swdist,max_elevs,'-k');
+			plot(swdist,mean_elevs,'-k','LineWidth',2);
+
+			daspect([vex 1 1])
+
+			% Scale size vector
+			sz_val=outData(idx,4);
+			sz=(sz_val/max(sz_val))*100;
+			% Create size legend
+			sz_sizes=linspace(min(sz),max(sz),5);
+			sz_val_scale=(sz_sizes/100)*max(sz_val);
+			for ii=1:5
+				sz_leg(ii)=plot(0,0,'ko','MarkerSize',sqrt(sz_sizes(ii)),'MarkerFaceColor','k','LineStyle','none');
+				set(sz_leg(ii),'visible','off');
+				leg_ent{ii}=num2str(sz_val_scale(ii));
+			end	
+
+			yl=ylim;
+			for jj=1:numel(bends)
+				plot([bends(jj),bends(jj)],yl,'-k');
+			end
+
+			scatter(outData(idx,1),outData(idx,2),sz,outData(idx,3),'filled');
+			c1=colorbar('southoutside');
+			xlabel(c1,'User Provided Value 1')
+			legend(sz_leg,leg_ent);
+			xlabel('Distance along swath (m)');
+			ylabel('Elevation (m)');
+			xlim([0 max(swdist)]);
+			hold off
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%		
 		case 'eqs'
 			x_coord=data(:,1);
