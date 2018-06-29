@@ -87,8 +87,12 @@ function PlotKsn(DEM,FD,ksn,varargin)
 			knkx=[knk.X];
 			knky=[knk.Y];
 			scatter(knkx,knky,100,'w','p','filled','MarkerEdgeColor','k');
+		elseif istable(knks)
+			knkx=knks.x_coord;
+			knky=knks.y_coord;
+			scatter(knkx,knky,100,'w','p','filled','MarkerEdgeColor','k');
 		else
-			scatter(knks(:,1),knk(:,2),100,'w','p','filled','MarkerEdgeColor','k');
+			scatter(knks(:,1),knks(:,2),100,'w','p','filled','MarkerEdgeColor','k');
 		end
 	end
 
