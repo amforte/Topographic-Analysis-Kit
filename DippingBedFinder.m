@@ -103,7 +103,7 @@ function [BED]=DippingBedFinder(DEM,xy,hght_abv_base,thickness,strike,dip);
     f1=figure(1);
     set(f1,'Units','normalized','Position',[0.1 0.1 0.8 0.8],'renderer','painters');
     hold on
-    imageschs(DEM,BED);
+    imageschs(DEM,BED,'colormap','parula','colorbar',false);
     scatter(x_coord,y_coord,20,'w','filled');
     title('Projected Intersection of Bed');
     hold off
