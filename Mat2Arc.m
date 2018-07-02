@@ -44,17 +44,17 @@ function Mat2Arc(mat_file,file_prefix)
 			varOI=load(mat_file,varNM);
 			out_name=[file_prefix '_' varNM '.txt'];
 			GRIDobj2ascii(varOI.(varNM),out_name);
-		elseif(classOI,'STREAMobj')
+		elseif strcmp(classOI,'STREAMobj')
 			varOI=load(mat_file,varNM);
 			out_name=[file_prefix '_' varNM '.shp'];
 			MS=STREAMobj2mapstruct(varOI.(varNM));
 			shapewrite(MS,out_name);
-		elseif(classOI,'FLOWobj')
+		elseif strcmp(classOI,'FLOWobj')
 			varOI=load(mat_file,varNM);
 			out_name=[file_prefix '_' varNM '.txt'];
 			G=FLOWobj2GRIDobj(varOI.(varNM));
 			GRIDobj2ascii(G,out_name);
-		elseif(classOI,'struct')
+		elseif strcmp(classOI,'struct')
 			varOI=load(mat_file,varNM);
 			st=varOI.(varNM);
 			fn=fieldnames(st);
