@@ -29,9 +29,9 @@ function [KnickTable]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 	%		y_coord, elevation, distance, and chi. If classify_knicks is true, will have a sixth column containing the classification
 	%		of the knickpoints.
 	%	
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Last Revised Spring 2018 %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Function Written by Adam M. Forte - Updated : 07/02/18 %
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 	% Parse Inputs

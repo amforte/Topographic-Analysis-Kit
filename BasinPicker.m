@@ -51,9 +51,9 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
     %           as 'river_mouths' parameter)
     %
     % Examples:
-    %       [Outs]=DetritalSamplePicker(DEM,FD,A,S);
-    %       [Outs]=DetritalSamplePicker(DEM,FD,A,S,'rlf_radius',5000);
-    %       [Outs]=DetritalSamplePicker(DEM,FD,A,S,,'rlf_grid',RLF);
+    %       [Outs]=BasinPicker(DEM,FD,A,S);
+    %       [Outs]=BasinPicker(DEM,FD,A,S,'rlf_radius',5000);
+    %       [Outs]=BasinPicker(DEM,FD,A,S,,'rlf_grid',RLF);
     %  
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Function Written by Adam M. Forte - Updated : 06/18/18 %
@@ -61,7 +61,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
 
     % Parse Inputs
     p = inputParser;
-    p.FunctionName = 'DetritalSamplePicker';
+    p.FunctionName = 'BasinPicker';
     addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
     addRequired(p,'FD',@(x) isa(x,'FLOWobj'));
     addRequired(p,'A',@(x) isa(x,'GRIDobj'));
