@@ -116,7 +116,7 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 		for kk=1:num_basins
 			basin_num=basin_nums(kk);
 			SearchAllString=['*_' num2str(basin_num) '_Data.mat'];
-			SearchSubString=[location_of_subbasins '/*_' num2str(basin_num) '_DataSubset*.mat'];
+			SearchSubString=[location_of_subbasins filesep '*_' num2str(basin_num) '_DataSubset*.mat'];
 
 			if numel(dir(SearchSubString))>0
 				Files=dir(SearchSubString);
@@ -133,7 +133,7 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	% Sort by drainage area to ensure proper drawing order
 	dalist=zeros(num_files,1);
 	for ii=1:num_files
-		FileName=[FileList(ii,1).folder '/' FileList(ii,1).name];
+		FileName=[FileList(ii,1).folder filesep FileList(ii,1).name];
 		load(FileName,'drainage_area');
 		dalist(ii,1)=drainage_area;
 	end
@@ -146,7 +146,7 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	% Begin main loop
 	w1=waitbar(0,'Building polygons');
 	for ii=1:num_files;
-		FileName=[FileList(ii,1).folder '/' FileList(ii,1).name];
+		FileName=[FileList(ii,1).folder filesep FileList(ii,1).name];
 		DB=GRIDobj(DEM);
 
 		load(FileName,'DEMoc','RiverMouth','drainage_area','out_el','KSNc_stats','Zc_stats','Gc_stats','Centroid','hyps','Chic','DEMcc','Sc','Ac','theta_ref');

@@ -86,7 +86,7 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 		for kk=1:num_basins
 			basin_num=basin_nums(kk);
 			SearchAllString=['*_' num2str(basin_num) '_Data.mat'];
-			SearchSubString=[location_of_subbasins '/*_' num2str(basin_num) '_DataSubset*.mat'];
+			SearchSubString=[location_of_subbasins filesep '*_' num2str(basin_num) '_DataSubset*.mat'];
 
 			if numel(dir(SearchSubString))>0
 				Files=dir(SearchSubString);
@@ -101,7 +101,7 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 
 		for ii=1:num_files;
 			disp(['Working on ' num2str(ii) ' of ' num2str(num_files)]);
-			FileName=[FileList(ii,1).folder '/' FileList(ii,1).name];
+			FileName=[FileList(ii,1).folder filesep FileList(ii,1).name];
 			switch valueOI
 			case 'ksn'
 				load(FileName,'DEMcc','KSNc_stats');
