@@ -5,8 +5,8 @@ function SegmentPlotter(basin_nums,varargin)
 	%	SegmentPloter(basin_nums,'name',value,...):
 	%
 	% Description:
-	% 	Function to plot all of the chi-Z relationships from a series of picked segments of river networks that result
-	% 	from the 'SegmentPicker' function. 
+	% 	Function to plot all of the chi-Z relationships, longitudinal profiles, and slope area plots from a series of picked segments of river networks 
+	%	that result from the 'SegmentPicker' function. 
 	%
 	% Required Input:
 	% 	basin_nums - row or column vector of basin numbers used for the SegmentPicker you wish to plot together. Code expects that

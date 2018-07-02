@@ -57,6 +57,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	%	Saves an output called 'PickedSegements_*.mat' with the provided basin number containing these results:
 	%		StreamSgmnts - Cell array of selected stream segments as STREAMobj
 	%		ChiSgmnts - Cell array of selected chi structures 
+	%		SlpAreaSgmnts - Cell array of slope area data
 	%		Sc - Single STREAMobj containing all the streams chosen.
 	%		and if 'down' is selected:
 	%			Heads - nx3 matrix of channel heads you picked with x cooord, y coordinate, and pick number as the columns
