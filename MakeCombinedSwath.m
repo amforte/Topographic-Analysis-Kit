@@ -85,7 +85,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
 	addRequired(p,'points',@(x) isnumeric(x) && size(x,1)>=2 && size(x,2)==2);
 	addRequired(p,'width',@(x) isscalar(x) && isnumeric(x));
-	addRequired(p,'data_type',@(x) ischar(validatestring(x,{'points3','points4','points5','eqs','STREAMobj','ksn_chandata','ksn_batch','ksn_profiler','basin_stats'})));
+	addRequired(p,'data_type',@(x) ischar(validatestring(x,{'points3','points4','points5','eqs','STREAMobj','ksn_chandata','ksn_batch','ksn_profiler','basin_stats','basin_knicks'})));
 	addRequired(p,'data');
 	addRequired(p,'data_width',@(x) isnumeric(x) && isscalar(x));
 

@@ -198,7 +198,7 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 			MS(ii,1).std_gradient=Gc_stats(3);
 		end
 
-		MS(ii,1).hyp_int=abs(trapz((hyps(:,2)-min(hyps(:,2)))/(max(hyps(:,2))-min(hyps(:,2))),hyps(:,1)/100));
+		MS(ii,1).hyp_int=double(abs(trapz((hyps(:,2)-min(hyps(:,2)))/(max(hyps(:,2))-min(hyps(:,2))),hyps(:,1)/100)));
 		MS(ii,1).theta=Chic.mn;
 
 		c=chiplot(Sc,DEMcc,Ac,'a0',1,'mn',theta_ref,'plot',false);

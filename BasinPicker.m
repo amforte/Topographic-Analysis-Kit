@@ -386,7 +386,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
         end
         
         Sn=klargestconncomps(Sn,1);
-        C=chiplot(Sn,DEM,A,'a0',1,'mn',theta_ref,'plot',false);
+        C=chiplot(Sn,DEMf,A,'a0',1,'mn',theta_ref,'plot',false);
 
         ksn=getnal(Sn,KSN);
         mksn=nanmean(ksn);

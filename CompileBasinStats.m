@@ -244,10 +244,10 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 
 		T.hypsometry{ii,1}=hyps;
 		T.hyp_integral(ii,1)=abs(trapz((hyps(:,2)-min(hyps(:,2)))/(max(hyps(:,2))-min(hyps(:,2))),hyps(:,1)/100));
-		T.concavity=Chic.mn;
+		T.concavity(ii,1)=Chic.mn;
 
 		c=chiplot(Sc,DEMcc,Ac,'a0',1,'mn',theta_ref,'plot',false);
-		T.chi_R_squared=c.R2;
+		T.chi_R_squared(ii,1)=c.R2;
 
 		% Check for additional grids within the process river basins output
 		VarList=whos('-file',FileName);

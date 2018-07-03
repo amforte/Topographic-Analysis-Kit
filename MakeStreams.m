@@ -31,7 +31,7 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	%		warned, but the code will continue and ignore this continue. If you provide 'auto' the code will use the log 
 	%		of the gradient to identify true connected flats and set these to nan. If you want more control on removing flat 
 	%		ares that are at multiple elevations (e.g. internally drained basins), consider using 'RemoveFlats'. 
-	%	min_flat_area [1e5] - minimum area (in m^2) for a portion of the DEM to be identified as flat (and set to nan) if 'no_data_exp'
+	%	min_flat_area [1e8] - minimum area (in m^2) for a portion of the DEM to be identified as flat (and set to nan) if 'no_data_exp'
 	%		is set to 'auto'. If 'no_data_exp' is not called or a valid logical expression is provided, the input to 'min_flat_area'
 	%		is ignored.
 	%	resample_grid [false] - flag to resample the grid. If no input is provided for new_cellsize, then the
@@ -65,7 +65,7 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 
 	addParameter(p,'file_name',[],@(x) ischar(x));
 	addParameter(p,'no_data_exp',[],@(x) ischar(x));
-	addParameter(p,'min_flat_area',1e5,@(x) isnumeric(x) && isscalar(x));
+	addParameter(p,'min_flat_area',1e8,@(x) isnumeric(x) && isscalar(x));
 	addParameter(p,'resample_grid',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'new_cellsize',[],@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'precip_grid',[],@(x) isa(x,'GRIDobj'));

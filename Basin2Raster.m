@@ -50,7 +50,7 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 	addRequired(p,'location_of_data_files',@(x) isdir(x));
 
 	addParameter(p,'location_of_subbasins','SubBasins',@(x) ischar(x));
-	addParameter(p,'file_name_prefix','basins','SubBasins',@(x) ischar(x));
+	addParameter(p,'file_name_prefix','basins',@(x) ischar(x));
 	addParameter(p,'method','subdivided',@(x) ischar(validatestring(x,{'subdivided','nested'})));
 	addParameter(p,'relief_radius',2500,@(x) isscalar(x) && isnumeric(x));
 
