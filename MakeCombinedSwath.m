@@ -12,7 +12,8 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	% 	points - n x 2 matrix containing x,y points for swath, minimum are two points (start and end points).
 	%		First row contains starting point and proceeds down rows, additional points besides a start and end are
 	%		treated as bends in the swath. Coordinates for points must be in the same coordinate system as DEM and must
-	%		lie within the DEM (cannot be coordinates on the very edge of the DEM)
+	%		lie within the DEM (cannot be coordinates on the very edge of the DEM).If you provide an empty array this
+	%		will invoke the SWATHobj behavior to display an image of the DEM on which to choose points.
 	% 	width - width of swath in map units
 	% 	data_type - the type of additional data you are providing to plot along with the swath, supported inputs are:
 	%		'points3' - generic point dataset, expects a n x 3 matrix with values of x, y, and z
@@ -83,7 +84,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	p = inputParser;
 	p.FunctionName = 'MakeCombinedSwath';
 	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
-	addRequired(p,'points',@(x) isnumeric(x) && size(x,1)>=2 && size(x,2)==2);
+	addRequired(p,'points',@(x) isempty(x) || isnumeric(x) & size(x,1)>=2 && size(x,2)==2);
 	addRequired(p,'width',@(x) isscalar(x) && isnumeric(x));
 	addRequired(p,'data_type',@(x) ischar(validatestring(x,{'points3','points4','points5','eqs','STREAMobj','ksn_chandata','ksn_batch','ksn_profiler','basin_stats','basin_knicks'})));
 	addRequired(p,'data');
@@ -121,6 +122,13 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	end
 
 	% Produce topo swath and associated datasets
+	if isempty(points)
+		SWt=SWATHobj(DEM);
+		points=SWt.xy0;
+		fig=gcf;
+		close(fig);
+	end
+	
 	[SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,wdth,'sample',sample,'smooth',smth);
 	swdist=SwathMat(:,1);
 	min_elevs=SwathMat(:,2);

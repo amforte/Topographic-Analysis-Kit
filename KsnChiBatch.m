@@ -26,7 +26,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	%		for the main required DEM input!) which will be used for extracting elevations. See 'ConditionDEM' function for options for making a 
 	%		hydrological conditioned DEM. If no input is provided the code defaults to using the mincosthydrocon function.
 	%	file_name_prefix ['batch'] - prefix for outputs, will append the type of output, i.e. 'ksn', 'chimap', etc
-	% 	segment_length [1000] - length of segments in map units for smoothing ksn values, equivalent to smoothing in Profiler
+	%	smooth_distance [1000] - distance in map units over which to smooth ksn measures when converting to shapefile
 	% 	ref_concavity [0.50] - reference concavity (as a positive value) for calculating ksn
 	% 	output [false]- switch to either output matlab files to the workspace (true) or to not only save the specified files
 	%		without any workspace output (false)
@@ -66,7 +66,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	addRequired(p,'product',@(x) ischar(validatestring(x,{'ksn','ksngrid','chimap','chigrid','all'})));
 
 	addParameter(p,'file_name_prefix','batch',@(x) ischar(x));
-	addParameter(p,'segment_length',1000,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'smooth_distance',1000,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'output',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'ksn_method','quick',@(x) ischar(validatestring(x,{'quick','trib'})));
@@ -84,7 +84,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	product=p.Results.product;
 
 	file_name_prefix=p.Results.file_name_prefix;
-	segment_length=p.Results.segment_length;
+	segment_length=p.Results.smooth_distance;
 	theta_ref=p.Results.ref_concavity;
 	output=p.Results.output;
 	ksn_method=p.Results.ksn_method;

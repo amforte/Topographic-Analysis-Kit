@@ -1,4 +1,4 @@
-function [cmap]=KsnColor(n)
+function [cmap]=ksncolor(n)
 	%
 	% Usage:
 	% 	[cmap]=KsnColor(n);

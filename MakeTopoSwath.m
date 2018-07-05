@@ -12,7 +12,8 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 	% 	points - n x 2 matrix containing x,y points for swath, minimum are two points (start and end points).
 	%		First row contains starting point and proceeds down rows, additional points besides a start and end are
 	%		treated as bends in the swath. Coordinates for points must be in the same coordinate system as DEM and must
-	%		lie within the DEM (cannot be coordinates on the very edge of the DEM)
+	%		lie within the DEM (cannot be coordinates on the very edge of the DEM). If you provide an empty array this
+	%		will invoke the SWATHobj behavior to display an image of the DEM on which to choose
 	% 	width - width of swath in map units
 	%
 	% Optional Inputs:
@@ -40,7 +41,7 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 	p = inputParser;
 	p.FunctionName = 'MakeTopoSwath';
 	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
-	addRequired(p,'points',@(x) isnumeric(x) && size(x,1)>=2 && size(x,2)==2);
+	addRequired(p,'points',@(x) isempty(x) || isnumeric(x) & size(x,1)>=2 && size(x,2)==2);
 	addRequired(p,'width',@(x) isscalar(x) && isnumeric(x));
 
 	addParameter(p,'sample',[],@(x) isscalar(x) && isnumeric(x));
@@ -98,6 +99,13 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 
 	% Make Swath 
 	% Deal with changes in versions of TopoToolbox
+	if isempty(points)
+		SWt=SWATHobj(DEM);
+		points=SWt.xy0;
+		fig=gcf;
+		close(fig);
+	end
+
 	try
 		SW=SWATHobj(DEM,points,'width',wdth,'dx',sample,'smooth',smth); % Older versions
 	catch

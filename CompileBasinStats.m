@@ -302,6 +302,9 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 					T.(std_prop_name)(ii,1)=double(rlf_stats(kk,3));
 				end
 			end
+			rlf_flag=true;
+		else
+			rlf_flag=false;
 		end		
 
 		% Calculate filtered values
@@ -392,24 +395,26 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 				end
 			end
 
-			rlf_grids=size(rlf,1);
-			for kk=1:rlf_grids
-				rlfG=rlf{kk,1};
-				mean_prop_name=['mean_rlf' num2str(rlf{kk,2}) '_f'];
-				T.(mean_prop_name)(ii,1)=nanmean(rlfG.Z(F.Z));
+			if rlf_flag
+				rlf_grids=size(rlf,1);
+				for kk=1:rlf_grids
+					rlfG=rlf{kk,1};
+					mean_prop_name=['mean_rlf' num2str(rlf{kk,2}) '_f'];
+					T.(mean_prop_name)(ii,1)=nanmean(rlfG.Z(F.Z));
 
-				switch uncertainty
-				case 'se'
-					se_prop_name=['se_rlf' num2str(rlf{kk,2}) '_f'];
-					T.(se_prop_name)(ii,1)=nanstd(rlfG.Z(F.Z))/sqrt(sum(~isnan(rlfG.Z(F.Z))));
-				case 'std'
-					std_prop_name=['std_rlf' num2str(rlf{kk,2}) '_f'];
-					T.(std_prop_name)(ii,1)=nanstd(rlfG.Z(F.Z));
-				case 'both'
-					se_prop_name=['se_rlf' num2str(rlf{kk,2}) '_f'];
-					T.(se_prop_name)(ii,1)=nanstd(rlfG.Z(F.Z))/sqrt(sum(~isnan(rlfG.Z(F.Z))));
-					std_prop_name=['std_rlf' num2str(rlf{kk,2})];
-					T.(std_prop_name)(ii,1)=nanstd(rlfG.Z(F.Z));
+					switch uncertainty
+					case 'se'
+						se_prop_name=['se_rlf' num2str(rlf{kk,2}) '_f'];
+						T.(se_prop_name)(ii,1)=nanstd(rlfG.Z(F.Z))/sqrt(sum(~isnan(rlfG.Z(F.Z))));
+					case 'std'
+						std_prop_name=['std_rlf' num2str(rlf{kk,2}) '_f'];
+						T.(std_prop_name)(ii,1)=nanstd(rlfG.Z(F.Z));
+					case 'both'
+						se_prop_name=['se_rlf' num2str(rlf{kk,2}) '_f'];
+						T.(se_prop_name)(ii,1)=nanstd(rlfG.Z(F.Z))/sqrt(sum(~isnan(rlfG.Z(F.Z))));
+						std_prop_name=['std_rlf' num2str(rlf{kk,2})];
+						T.(std_prop_name)(ii,1)=nanstd(rlfG.Z(F.Z));
+					end
 				end
 			end
 			% Generate column to record filter
