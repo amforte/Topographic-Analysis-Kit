@@ -51,6 +51,7 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 	addParameter(p,'plot_as_points',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'plot_as_heatmap',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'save_figure',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'make_shape',true,@(x) islogical(x)); % Hidden parameter to fix problems with generating shapefiles here for compiled version
 
 	parse(p,DEM,points,width,varargin{:});
 	DEM=p.Results.DEM;
@@ -64,6 +65,7 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 	plot_as_points=p.Results.plot_as_points;
 	plot_as_heatmap=p.Results.plot_as_heatmap;
 	save_figure=p.Results.save_figure;
+	make_shape=p.Results.make_shape;
 
 	if isempty(sample)
 		sample=DEM.cellsize;
@@ -198,20 +200,22 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 		end
 	end
 
-	% Make output shape
-	ms=struct;
-	ms(1,1).Geometry='Line';
-	ms(1,1).X=SW.xy0(:,1);
-	ms(1,1).Y=SW.xy0(:,2);
-	ms(1,1).Type='Center';
+	if make_shape
+		% Make output shape
+		ms=struct;
+		ms(1,1).Geometry='Line';
+		ms(1,1).X=SW.xy0(:,1);
+		ms(1,1).Y=SW.xy0(:,2);
+		ms(1,1).Type='Center';
 
-	verts=SwathPolygon(SW,wdth);
-	ms(2,1).Geometry='Line';
-	ms(2,1).X=verts(:,1);
-	ms(2,1).Y=verts(:,2);
-	ms(2,1).Type='TopoWdth';
+		verts=SwathPolygon(SW,wdth);
+		ms(2,1).Geometry='Line';
+		ms(2,1).X=verts(:,1);
+		ms(2,1).Y=verts(:,2);
+		ms(2,1).Type='TopoWdth';
 
-	shapewrite(ms,'SwathBounds.shp');
+		shapewrite(ms,'SwathBounds.shp');
+	end
 
 end
 
