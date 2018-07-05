@@ -296,7 +296,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	[ch]=streampoi(S,'channelheads','xy');
 
 	% Create master KSN colormap
-	KSN_col=KsnColor(100);
+	KSN_col=ksncolor(100);
 
 	% Perform some checks and reassign values as needed
 	if strcmp(input_method,'channel_heads')

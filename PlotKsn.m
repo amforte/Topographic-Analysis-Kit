@@ -75,7 +75,7 @@ function PlotKsn(DEM,FD,ksn,varargin)
 	imshow(flipud(RGB),R);
 	axis xy
 	hold on
-	colormap(KsnColor(20));
+	colormap(ksncolor(20));
 	plotc(S,sk);
 	caxis([0 max(sk)]);
 	c1=colorbar;
