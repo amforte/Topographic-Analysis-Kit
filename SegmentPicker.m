@@ -179,7 +179,9 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 		LA=log10(DA);
 	end
 
-	colcol=colorcube(10);
+	colcol=colorcube(25);
+	% Strip out greys and whites
+	colcol=colcol(1:20,:);
 	
 	switch method
 	case 'new_picks'
@@ -311,7 +313,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 					end
 
 					hold on
-					plot(Sn,'-r','LineWidth',2);
+					SP=plot(Sn,'-r','LineWidth',2);
 					hold off
 
 		            qa=questdlg('Is this the stream segment you wanted?','Stream Selection','No','Yes','Yes');
@@ -321,6 +323,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 		                str1 = 'Y';
 		            case 'No'
 		                str1 = 'N';
+		                delete(SP);
 		            end
 				end
 
@@ -358,7 +361,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				subplot(3,1,1);
 				hold on
-				plot(C.chi,C.elev,'Color',colcol(mod(ii,10)+1,:));
+				plot(C.chi,C.elev,'Color',colcol(mod(ii,20)+1,:));
 				xlabel('\chi')
 				ylabel('Elevation (m)')
 				title('\chi - Z')
@@ -368,18 +371,18 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				hold on
 				if isempty(p.Results.min_elev) && isempty(p.Results.max_area) 
 					plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-					plotdz(Sn,DEMc,'dunit','km','Color',colcol(mod(ii,10)+1,:));
+					plotdz(Sn,DEMc,'dunit','km','Color',colcol(mod(ii,20)+1,:));
 				elseif ~isempty(p.Results.min_elev) | ~isempty(p.Results.max_area) && p.Results.recalc
 					plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-					plotdz(Sn,DEMc,'dunit','km','Color',colcol(mod(ii,10)+1,:));
+					plotdz(Sn,DEMc,'dunit','km','Color',colcol(mod(ii,20)+1,:));
 				elseif short_circ==1;
 					plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
-					plotdz(Sn,DEMc,'dunit','km','Color',colcol(mod(ii,10)+1,:));
+					plotdz(Sn,DEMc,'dunit','km','Color',colcol(mod(ii,20)+1,:));
 				elseif ~isempty(p.Results.min_elev) | ~isempty(p.Results.max_area) && p.Results.recalc==0
 					Cu=chiplot(Sn_t,DEM,A,'a0',1,'mn',theta_ref,'plot',false);
 					plot((Cu.distance(ix3))./1000,Cu.elev(ix3),'Color',[0.5 0.5 0.5]);
 					% plot(C.distance./1000,C.elev,'-k');
-					plot(C.distance./1000,C.elev,'Color',colcol(mod(ii,10)+1,:));
+					plot(C.distance./1000,C.elev,'Color',colcol(mod(ii,20)+1,:));
 				end
 				xlabel('Distance from Mouth (km)')
 				ylabel('Elevation (m)')
@@ -400,7 +403,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				end
 
 				scatter(aa,ag,5,[0.5 0.5 0.5],'+');
-				scatter(ba,bs,20,colcol(mod(ii,10)+1,:));	
+				scatter(ba,bs,20,colcol(mod(ii,20)+1,:),'filled');	
 				set(saax,'Xscale','log','Yscale','log','XDir','reverse');
 				xlabel('Log Drainage Area');
 				ylabel('Log Slope');	
@@ -476,7 +479,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 					Sn=modify(S,'upstreamto',IX);
 
 					hold on
-					plot(Sn,'-r','LineWidth',2);
+					SP=plot(Sn,'-r','LineWidth',2);
 					hold off
 
 		            qa=questdlg('Is this the stream segment you wanted?','Stream Selection','No','Yes','Yes');
@@ -485,6 +488,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 		                str1 = 'Y';
 		            case 'No'
 		                str1 = 'N';
+		                delete(SP);
 		            end
 				end
 
@@ -495,7 +499,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				subplot(3,1,1);
 				hold on
-				plot(C.chi,C.elev);
+				plot(C.chi,C.elev,'Color',colcol(mod(ii,20)+1,:));
 				xlabel('\chi')
 				ylabel('Elevation (m)')
 				title('\chi - Z')
@@ -503,7 +507,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				subplot(3,1,2);
 				hold on
-				plotdz(Sn,DEMc,'dunit','km');
+				plotdz(Sn,DEMc,'dunit','km','Color',colcol(mod(ii,20)+1,:));
 				xlabel('Distance from Mouth (km)')
 				ylabel('Elevation (m)')
 				title('Long Profile')
@@ -513,7 +517,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				hold on
 				[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
 				scatter(aa,ag,5,[0.5 0.5 0.5],'+');
-				scatter(ba,bs,20,'filled');
+				scatter(ba,bs,20,colcol(mod(ii,20)+1,:),'filled');
 				set(saax,'Xscale','log','Yscale','log','XDir','reverse');
 				xlabel('Log Drainage Area');
 				ylabel('Log Slope');	
@@ -666,7 +670,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 					end
 
 					hold on
-					plot(Sn,'-r','LineWidth',2);
+					SP=plot(Sn,'-r','LineWidth',2);
 					hold off
 
 
@@ -676,6 +680,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 		                str1 = 'Y';
 		            case 'No'
 		                str1 = 'N';
+		                delete(SP);
 		            end
 
 				end
@@ -831,7 +836,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 					Sn=modify(S,'upstreamto',IX);
 
 					hold on
-					plot(Sn,'-r','LineWidth',2);
+					SP=plot(Sn,'-r','LineWidth',2);
 					hold off
 
 		            qa=questdlg('Is this the stream segment you wanted?','Stream Selection','No','Yes','Yes');
@@ -840,6 +845,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 		                str1 = 'Y';
 		            case 'No'
 		                str1 = 'N';
+		                delete(SP);
 		            end
 				end
 
@@ -1099,7 +1105,8 @@ function [bs,ba,a,g]=sa(DEM,S,A,bin_size)
 
 	an=getnal(S,A.*A.cellsize^2);
 	z=getnal(S,DEM);
-	gn=gradient(S,z,'unit','tangent'); % Already a conditioned DEM
+	gn=gradient(S,z,'unit','tangent','method','robust','drop',20);
+	gn=smooth(gn,3);
 
 	% Run through STREAMobj2XY so chi and everything else are same size
 	[~,~,a,g]=STREAMobj2XY(S,an,gn);

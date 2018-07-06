@@ -3038,7 +3038,8 @@ function [bs,ba,bc,bd,a,g,d,C]=sa(DEM,S,A,C,bin_size)
 
 	an=getnal(S,A.*A.cellsize^2);
 	z=getnal(S,DEM);
-	gn=gradient(S,z,'unit','tangent'); % Already a conditioned DEM
+	gn=gradient(S,z,'unit','tangent','method','robust','drop',20);
+	gn=smooth(gn,3);
 
 	% Run through STREAMobj2XY so chi and everything else are same size
 	[~,~,a,g,d]=STREAMobj2XY(S,an,gn,S.distance);
@@ -3092,7 +3093,8 @@ function [bs,ba,bc,bd,bk,a,g,d,C]=sa_ksn(DEM,S,A,C,ak,bin_size);
 
 	an=getnal(S,A.*A.cellsize^2);
 	z=getnal(S,DEM);
-	gn=gradient(S,z,'unit','tangent'); % Already a conditioned DEM
+	gn=gradient(S,z,'unit','tangent','method','robust','drop',20);
+	gn=smooth(gn,3);
 
 	% Run through STREAMobj2XY so chi and everything else are same size
 	[~,~,a,g,d,k]=STREAMobj2XY(S,an,gn,S.distance,ak);
