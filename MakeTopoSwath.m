@@ -121,9 +121,9 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 		elevs=SW.Z; % New
 	end
 
-	mean_elevs=nanmean(elevs);
-	min_elevs=nanmin(elevs);
-	max_elevs=nanmax(elevs);
+	mean_elevs=mean(elevs,'omitnan');
+	min_elevs=min(elevs,[],'omitnan');
+	max_elevs=max(elevs,[],'omitnan');
 	try
 		xypoints=cell2mat(SW.xy); % Old
 		swdist=cell2mat(SW.distx);

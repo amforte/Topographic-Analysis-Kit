@@ -995,15 +995,15 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			vals2=vals2(idx);
 
 			if ~isempty(vals1) & ~isempty(vals2)
-				rng_v1(ii,1)=nanmin(vals1);
-				rng_v2(ii,1)=nanmin(vals2);
-				rng_v1(ii,2)=nanmax(vals1);
-				rng_v2(ii,2)=nanmax(vals2);				
+				rng_v1(ii,1)=min(vals1,[],'omitnan');
+				rng_v2(ii,1)=min(vals2,[],'omitnan');
+				rng_v1(ii,2)=max(vals1,[],'omitnan');
+				rng_v2(ii,2)=max(vals2,[],'omitnan');				
 			end
 		end
 
-		rng_v1=[nanmin(rng_v1(:,1)) nanmax(rng_v1(:,2))];
-		rng_v2=[nanmin(rng_v2(:,1)) nanmax(rng_v2(:,2))];
+		rng_v1=[min(rng_v1(:,1),[],'omitnan') max(rng_v1(:,2),[],'omitnan')];
+		rng_v2=[min(rng_v2(:,1),[],'omitnan') max(rng_v2(:,2),[],'omitnan')];
 
 		for ii=1:numel(VNoi1)
 			vals1=T.(VNoi1{ii});

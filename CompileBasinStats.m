@@ -334,26 +334,26 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 			% Apply filter
 			load(FileName,'DEMoc','Goc','MSNc');
 
-			T.mean_el_f(ii,1)=nanmean(DEMoc.Z(F.Z));
+			T.mean_el_f(ii,1)=mean(DEMoc.Z(F.Z),'omitnan');
 			switch uncertainty
 			case 'se'
-				T.se_el_f(ii,1)=nanstd(DEMoc.Z(F.Z))/sqrt(sum(~isnan(DEMoc.Z(F.Z))));
+				T.se_el_f(ii,1)=std(DEMoc.Z(F.Z),'omitnan')/sqrt(sum(~isnan(DEMoc.Z(F.Z))));
 			case 'std'
-				T.std_el_f(ii,1)=nanstd(DEMoc.Z(F.Z));
+				T.std_el_f(ii,1)=std(DEMoc.Z(F.Z),'omitnan');
 			case 'both'
-				T.se_el_f(ii,1)=nanstd(DEMoc.Z(F.Z))/sqrt(sum(~isnan(DEMoc.Z(F.Z))));
-				T.std_el_f(ii,1)=nanstd(DEMoc.Z(F.Z));
+				T.se_el_f(ii,1)=std(DEMoc.Z(F.Z),'omitnan')/sqrt(sum(~isnan(DEMoc.Z(F.Z))));
+				T.std_el_f(ii,1)=std(DEMoc.Z(F.Z),'omitnan');
 			end
 
-			T.mean_gradient_f(ii,1)=nanmean(Goc.Z(F.Z));
+			T.mean_gradient_f(ii,1)=mean(Goc.Z(F.Z),'omitnan');
 			switch uncertainty
 			case 'se'
-				T.se_gradient_f(ii,1)=nanstd(Goc.Z(F.Z))/sqrt(sum(~isnan(Goc.Z(F.Z))));
+				T.se_gradient_f(ii,1)=std(Goc.Z(F.Z),'omitnan')/sqrt(sum(~isnan(Goc.Z(F.Z))));
 			case 'std'
-				T.std_gradient_f(ii,1)=nanstd(Goc.Z(F.Z));
+				T.std_gradient_f(ii,1)=std(Goc.Z(F.Z),'omitnan');
 			case 'both'
-				T.se_gradient_f(ii,1)=nanstd(Goc.Z(F.Z))/sqrt(sum(~isnan(Goc.Z(F.Z))));
-				T.std_gradient_f(ii,1)=nanstd(Goc.Z(F.Z));
+				T.se_gradient_f(ii,1)=std(Goc.Z(F.Z),'omitnan')/sqrt(sum(~isnan(Goc.Z(F.Z))));
+				T.std_gradient_f(ii,1)=std(Goc.Z(F.Z),'omitnan');
 			end
 
 			KSNG=GRIDobj(CG);
@@ -363,35 +363,35 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 				KSNG.Z(ix)=MSNc(kk).ksn;
 			end
 
-			T.mean_ksn_f(ii,1)=nanmean(KSNG.Z(F.Z));
+			T.mean_ksn_f(ii,1)=mean(KSNG.Z(F.Z),'omitnan');
 			switch uncertainty
 			case 'se'
-				T.se_ksn_f(ii,1)=nanstd(KSNG.Z(F.Z))/sqrt(sum(~isnan(KSNG.Z(F.Z))));
+				T.se_ksn_f(ii,1)=std(KSNG.Z(F.Z),'omitnan')/sqrt(sum(~isnan(KSNG.Z(F.Z))));
 			case 'std'
-				T.std_ksn_f(ii,1)=nanstd(KSNG.Z(F.Z));
+				T.std_ksn_f(ii,1)=std(KSNG.Z(F.Z),'omitnan');
 			case 'both'
-				T.se_ksn_f(ii,1)=nanstd(KSNG.Z(F.Z))/sqrt(sum(~isnan(KSNG.Z(F.Z))));
-				T.std_ksn_f(ii,1)=nanstd(KSNG.Z(F.Z));
+				T.se_ksn_f(ii,1)=std(KSNG.Z(F.Z),'omitnan')/sqrt(sum(~isnan(KSNG.Z(F.Z))));
+				T.std_ksn_f(ii,1)=std(KSNG.Z(F.Z),'omitnan');
 			end
 
 			ag_grids=size(AGc,1);
 			for kk=1:ag_grids
 				agG=AGc{kk,1};
 				mean_prop_name=['mean_' AGc{kk,2} '_f'];		
-				T.(mean_prop_name)(ii,1)=nanmean(agG.Z(F.Z));
+				T.(mean_prop_name)(ii,1)=mean(agG.Z(F.Z),'omitnan');
 
 				switch uncertainty
 				case 'se'
 					se_prop_name=['se_' AGc{kk,2} '_f'];
-					T.(se_prop_name)(ii,1)=nanstd(agG.Z(F.Z))/sqrt(sum(~isnan(agG.Z(F.Z))));
+					T.(se_prop_name)(ii,1)=std(agG.Z(F.Z),'omitnan')/sqrt(sum(~isnan(agG.Z(F.Z))));
 				case 'std'
 					std_prop_name=['std_' AGc{kk,2} '_f'];
-					T.(std_prop_name)(ii,1)=nanstd(agG.Z(F.Z));
+					T.(std_prop_name)(ii,1)=std(agG.Z(F.Z),'omitnan');
 				case 'both'
 					se_prop_name=['se_' AGc{kk,2} '_f'];
-					T.(se_prop_name)(ii,1)=nanstd(agG.Z(F.Z))/sqrt(sum(~isnan(agG.Z(F.Z))));
+					T.(se_prop_name)(ii,1)=std(agG.Z(F.Z),'omitnan')/sqrt(sum(~isnan(agG.Z(F.Z))));
 					std_prop_name=['std_' AGc{kk,2} '_f'];
-					T.(std_prop_name)(ii,1)=nanstd(agG.Z(F.Z));
+					T.(std_prop_name)(ii,1)=std(agG.Z(F.Z),'omitnan');
 				end
 			end
 
@@ -400,20 +400,20 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 				for kk=1:rlf_grids
 					rlfG=rlf{kk,1};
 					mean_prop_name=['mean_rlf' num2str(rlf{kk,2}) '_f'];
-					T.(mean_prop_name)(ii,1)=nanmean(rlfG.Z(F.Z));
+					T.(mean_prop_name)(ii,1)=mean(rlfG.Z(F.Z),'omitnan');
 
 					switch uncertainty
 					case 'se'
 						se_prop_name=['se_rlf' num2str(rlf{kk,2}) '_f'];
-						T.(se_prop_name)(ii,1)=nanstd(rlfG.Z(F.Z))/sqrt(sum(~isnan(rlfG.Z(F.Z))));
+						T.(se_prop_name)(ii,1)=std(rlfG.Z(F.Z),'omitnan')/sqrt(sum(~isnan(rlfG.Z(F.Z))));
 					case 'std'
 						std_prop_name=['std_rlf' num2str(rlf{kk,2}) '_f'];
-						T.(std_prop_name)(ii,1)=nanstd(rlfG.Z(F.Z));
+						T.(std_prop_name)(ii,1)=std(rlfG.Z(F.Z),'omitnan');
 					case 'both'
 						se_prop_name=['se_rlf' num2str(rlf{kk,2}) '_f'];
-						T.(se_prop_name)(ii,1)=nanstd(rlfG.Z(F.Z))/sqrt(sum(~isnan(rlfG.Z(F.Z))));
+						T.(se_prop_name)(ii,1)=std(rlfG.Z(F.Z),'omitnan')/sqrt(sum(~isnan(rlfG.Z(F.Z))));
 						std_prop_name=['std_rlf' num2str(rlf{kk,2})];
-						T.(std_prop_name)(ii,1)=nanstd(rlfG.Z(F.Z));
+						T.(std_prop_name)(ii,1)=std(rlfG.Z(F.Z),'omitnan');
 					end
 				end
 			end
@@ -507,25 +507,25 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 									KSNG.Z(ix)=MSNc(oo).ksn;
 								end
 								cat_nameN=['mksn_' cat_name];
-								T.(cat_nameN)(ii,1)=nanmean(KSNG.Z(IDX.Z));
+								T.(cat_nameN)(ii,1)=mean(KSNG.Z(IDX.Z),'omitnan');
 							elseif strcmp(dgOI,'gradient')
 								load(FileName,'Goc');
 								cat_nameN=['mgrad_' cat_name];
-								T.(cat_nameN)(ii,1)=nanmean(Goc.Z(IDX.Z));
+								T.(cat_nameN)(ii,1)=mean(Goc.Z(IDX.Z),'omitnan');
 							elseif regexp(dgOI,regexptranslate('wildcard','rlf*'))
 								rlfval=str2num(strrep(dgOI,'rlf',''));
 								rlfix=find(cell2mat(rlf(:,2))==rlfval);
 								if ~isempty(rlfix)
 									Rg=rlf{rlfix,1};
 									cat_nameN=['mr' num2str(rlfval) '_' cat_name];
-									T.(cat_nameN)(ii,1)=nanmean(Rg.Z(IDX.Z));	
+									T.(cat_nameN)(ii,1)=mean(Rg.Z(IDX.Z),'omitnan');	
 								end								
 							else 
 								try
 									dgix=find(strcmp(AGc(:,2),dgOI));
 									AGcOI=AGc{dgix,1};
 									cat_nameN=['m' AGc{dgix,2} '_' cat_name];
-									T.(cat_nameN)(ii,1)=nanmean(AGcOI.Z(IDX.Z));
+									T.(cat_nameN)(ii,1)=mean(AGcOI.Z(IDX.Z),'omitnan');
 								catch
 									warn_flag=true;
 								end

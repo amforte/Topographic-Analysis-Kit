@@ -973,7 +973,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					plot(res_list(:,1),ksn_list(:,4)+ksn_list(:,6),':k');
 					p2=plot(res_list(:,1),ksn_list(:,4),'-k','LineWidth',2);
 					[ksn_vals,~,ksn_ix]=unique(ksn_list(:,4));
-					chi_means=accumarray(ksn_ix,res_list(:,1),[],@nanmean);
+					chi_means=accumarray(ksn_ix,res_list(:,1),[],@(x) mean(x,'omitnan'));
 					for kk=1:numel(ksn_vals)
 						text(chi_means(kk),ksn_vals(kk),['k_{sn} = ' num2str(ksn_vals(kk))],...
 							'VerticalAlignment','bottom','HorizontalAlignment','center');
@@ -1285,7 +1285,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					plot(res_list(:,1)./1000,ksn_list(:,4)+ksn_list(:,6),':k');
 					p2=plot(res_list(:,1)./1000,ksn_list(:,4),'-k','LineWidth',2);
 					[ksn_vals,~,ksn_ix]=unique(ksn_list(:,4));
-					d_means=accumarray(ksn_ix,res_list(:,1),[],@nanmean);
+					d_means=accumarray(ksn_ix,res_list(:,1),[],@(x) mean(x,'omitnan'));
 					for kk=1:numel(ksn_vals)
 						text(d_means(kk)./1000,ksn_vals(kk),['k_{sn} = ' num2str(ksn_vals(kk))],...
 							'VerticalAlignment','bottom','HorizontalAlignment','center');
@@ -1408,7 +1408,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					else
 						% Sort knickpoint list and construct bounds list
 						avs=sortrows(av,'descend');
-						bnds=vertcat(nanmax(C.area),avs,nanmin(C.area));
+						bnds=vertcat(max(C.area,[],'omitnan'),avs,min(C.area,[],'omitnan'));
 
 						num_bnds=numel(bnds);
 						rc=C.chi;
@@ -1537,7 +1537,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					plot(log10(res_list(:,1)),ksn_list(:,4)+ksn_list(:,6),':k');
 					p2=plot(log10(res_list(:,1)),ksn_list(:,4),'-k','LineWidth',2);
 					[ksn_vals,~,ksn_ix]=unique(ksn_list(:,4));
-					a_means=accumarray(ksn_ix,res_list(:,1),[],@nanmean);
+					a_means=accumarray(ksn_ix,res_list(:,1),[],@(x) mean(x,'omitnan'));
 					for kk=1:numel(ksn_vals)
 						text(log10(a_means(kk)),ksn_vals(kk),['k_{sn} = ' num2str(ksn_vals(kk))],...
 							'VerticalAlignment','bottom','HorizontalAlignment','center');
@@ -2008,7 +2008,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					plot(res_list(:,1),ksn_list(:,4)+ksn_list(:,6),':k');
 					p2=plot(res_list(:,1),ksn_list(:,4),'-k','LineWidth',2);
 					[ksn_vals,~,ksn_ix]=unique(ksn_list(:,4));
-					chi_means=accumarray(ksn_ix,res_list(:,1),[],@nanmean);
+					chi_means=accumarray(ksn_ix,res_list(:,1),[],@(x) mean(x,'omitnan'));
 					for kk=1:numel(ksn_vals)
 						text(chi_means(kk),ksn_vals(kk),['k_{sn} = ' num2str(ksn_vals(kk))],...
 							'VerticalAlignment','bottom','HorizontalAlignment','center','Color','r');
@@ -2295,7 +2295,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					plot(res_list(:,1)./1000,ksn_list(:,4)+ksn_list(:,6),':k');
 					p2=plot(res_list(:,1)./1000,ksn_list(:,4),'-k','LineWidth',2);
 					[ksn_vals,~,ksn_ix]=unique(ksn_list(:,4));
-					d_means=accumarray(ksn_ix,res_list(:,1),[],@nanmean);
+					d_means=accumarray(ksn_ix,res_list(:,1),[],@(x) mean(x,'omitnan'));
 					for kk=1:numel(ksn_vals)
 						text(d_means(kk)./1000,ksn_vals(kk),['k_{sn} = ' num2str(ksn_vals(kk))],...
 							'VerticalAlignment','bottom','HorizontalAlignment','center');
@@ -2404,7 +2404,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					else
 						% Sort knickpoint list and construct bounds list
 						avs=sortrows(av,'descend');
-						bnds=vertcat(nanmax(C.area),avs,nanmin(C.area));
+						bnds=vertcat(max(C.area,[],'omitnan'),avs,min(C.area,[],'omitnan'));
 
 						num_bnds=numel(bnds);
 						rc=C.chi;
@@ -2519,7 +2519,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					plot(log10(res_list(:,1)),ksn_list(:,4)+ksn_list(:,6),':k');
 					p2=plot(log10(res_list(:,1)),ksn_list(:,4),'-k','LineWidth',2);
 					[ksn_vals,~,ksn_ix]=unique(ksn_list(:,4));
-					a_means=accumarray(ksn_ix,res_list(:,1),[],@nanmean);
+					a_means=accumarray(ksn_ix,res_list(:,1),[],@(x) mean(x,'omitnan'));
 					for kk=1:numel(ksn_vals)
 						text(log10(a_means(kk)),ksn_vals(kk),['k_{sn} = ' num2str(ksn_vals(kk))],...
 							'VerticalAlignment','bottom','HorizontalAlignment','center');
@@ -3163,7 +3163,7 @@ function [Sn]=RedefineThreshold(DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_size,c
 			% Find user selected threshold area
 			[c,~]=ginput(1);
 			if ~isempty(c)
-				[~,cix]=nanmin(abs(C.chi-c));
+				[~,cix]=min(abs(C.chi-c),[],'omitnan');
 				a=C.area(cix);
 			else
 				a=1e6;

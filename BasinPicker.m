@@ -389,10 +389,10 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
         C=chiplot(Sn,DEMf,A,'a0',1,'mn',theta_ref,'plot',false);
 
         ksn=getnal(Sn,KSN);
-        mksn=nanmean(ksn);
-        mrlf=nanmean(RLFc.Z(:));
+        mksn=mean(ksn,'omitnan');
+        mrlf=mean(RLFc.Z(:),'omitnan');
         if ~isempty(EG)
-            meg=nanmean(EGc.Z(:));
+            meg=mean(EGc.Z(:),'omitnan');
         end
 
         f2=figure(2);

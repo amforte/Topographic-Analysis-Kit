@@ -129,7 +129,7 @@ function [ds,db]=ProjectOntoSwath(SW,x,y,data_width)
 	end
 
 	% Find distances of points that are closest to their segment line
-	[db,c]=nanmin(dist_from_base,[],2);
+	[db,c]=min(dist_from_base,[],2,'omitnan');
 	r=[1:numel(c)]; r=r(:);
 	ix=sub2ind(size(dist_from_base),r,c);
 	ds=dist_in_swath(ix);

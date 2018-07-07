@@ -497,24 +497,24 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 				end
 
 				% Calculate basin wide ksn statistics
-				min_ksn=nanmin([MSNc.ksn]);
-				mean_ksn=nanmean([MSNc.ksn]);
-				max_ksn=nanmax([MSNc.ksn]);
-				std_ksn=nanstd([MSNc.ksn]);
+				min_ksn=min([MSNc.ksn],[],'omitnan');
+				mean_ksn=mean([MSNc.ksn],'omitnan');
+				max_ksn=max([MSNc.ksn],[],'omitnan');
+				std_ksn=std([MSNc.ksn],'omitnan');
 				se_ksn=std_ksn/sqrt(numel(MSNc)); % Standard error
 
 				% Calculate basin wide gradient statistics
-				min_grad=nanmin(Goc.Z(:));
-				mean_grad=nanmean(Goc.Z(:));
-				max_grad=nanmax(Goc.Z(:));
-				std_grad=nanstd(Goc.Z(:));
+				min_grad=min(Goc.Z(:),[],'omitnan');
+				mean_grad=mean(Goc.Z(:),'omitnan');
+				max_grad=max(Goc.Z(:),[],'omitnan');
+				std_grad=std(Goc.Z(:),'omitnan');
 				se_grad=std_grad/sqrt(sum(~isnan(Goc.Z(:)))); % Standard error
 
 				% Calculate basin wide elevation statistics
-				min_z=nanmin(DEMoc.Z(:));
-				mean_z=nanmean(DEMoc.Z(:));
-				max_z=nanmax(DEMoc.Z(:));
-				std_z=nanstd(DEMoc.Z(:));
+				min_z=min(DEMoc.Z(:),[],'omitnan');
+				mean_z=mean(DEMoc.Z(:),'omitnan');
+				max_z=max(DEMoc.Z(:),[],'omitnan');
+				std_z=std(DEMoc.Z(:,'omitnan');
 				se_z=std_z/sqrt(sum(~isnan(DEMoc.Z(:)))); % Standard error
 
 				KSNc_stats=[mean_ksn se_ksn std_ksn min_ksn max_ksn];
@@ -549,10 +549,10 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 						AGcOI=crop(AG{kk,1},I,nan);
 						AGc{kk,1}=AGcOI;
 						AGc{kk,2}=AG{kk,2};
-						mean_AGc=nanmean(AGcOI.Z(:));
-						min_AGc=nanmin(AGcOI.Z(:));
-						max_AGc=nanmax(AGcOI.Z(:));
-						std_AGc=nanstd(AGcOI.Z(:));
+						mean_AGc=mean(AGcOI.Z(:),'omitnan');
+						min_AGc=min(AGcOI.Z(:),[],'omitnan');
+						max_AGc=max(AGcOI.Z(:),[],'omitnan');
+						std_AGc=std(AGcOI.Z(:),'omitnan');
 						se_AGc=std_AGc/sqrt(sum(~isnan(AGcOI.Z(:))));
 						AGc_stats(kk,:)=[mean_AGc se_AGc std_AGc min_AGc max_AGc];
 					end
@@ -595,10 +595,10 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 						rlfOI=localtopography(DEMoc,radOI);
 						rlf{kk,1}=rlfOI;
 						% Calculate stats
-						mean_rlf=nanmean(rlfOI.Z(:));
-						min_rlf=nanmin(rlfOI.Z(:));
-						max_rlf=nanmax(rlfOI.Z(:));
-						std_rlf=nanstd(rlfOI.Z(:));
+						mean_rlf=mean(rlfOI.Z(:),'omitnan');
+						min_rlf=min(rlfOI.Z(:),[],'omitnan');
+						max_rlf=max(rlfOI.Z(:),[],'omitnan');
+						std_rlf=std(rlfOI.Z(:),'omitnan');
 						se_rlf=std_rlf/sqrt(sum(~isnan(rlfOI.Z(:))));
 						rlf_stats(kk,:)=[mean_rlf se_rlf std_rlf min_rlf max_rlf radOI];
 					end

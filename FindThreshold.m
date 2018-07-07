@@ -142,7 +142,7 @@ function [Sn,thresh_list,xd_list]=FindThreshold(DEM,FD,A,S,num_streams,varargin)
 
 				% Find user selected threshold area
 				[c,~]=ginput(1);
-				[~,cix]=nanmin(abs(C.chi-c));
+				[~,cix]=min(abs(C.chi-c),[],'omitnan');
 				a=C.area(cix);
 
 				% Find xd
@@ -179,7 +179,7 @@ function [Sn,thresh_list,xd_list]=FindThreshold(DEM,FD,A,S,num_streams,varargin)
 				[a,~]=ginput(1);
 
 				% Find xd
-				[~,cix]=nanmin(abs(C.area-a));
+				[~,cix]=min(abs(C.area-a),[],'omitnan');
 				cx=C.x(cix);
 				cy=C.y(cix);
 				ccix=coord2ind(DEM,cx,cy);
@@ -279,7 +279,7 @@ function [Sn,thresh_list,xd_list]=FindThreshold(DEM,FD,A,S,num_streams,varargin)
 
 				% Find user selected threshold area
 				[c,~]=ginput(1);
-				[~,cix]=nanmin(abs(C.chi-c));
+				[~,cix]=min(abs(C.chi-c),[],'omitnan');
 				a=C.area(cix);
 
 				% Find xd
@@ -321,7 +321,7 @@ function [Sn,thresh_list,xd_list]=FindThreshold(DEM,FD,A,S,num_streams,varargin)
 				[a,~]=ginput(1);
 
 				% Find xd
-				[~,cix]=nanmin(abs(C.area-a));
+				[~,cix]=min(abs(C.area-a),[],'omitnan');
 				cx=C.x(cix);
 				cy=C.y(cix);
 				ccix=coord2ind(DEM,cx,cy);
