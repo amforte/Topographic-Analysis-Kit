@@ -85,26 +85,9 @@ function cmpBasinStatsPlots(wdir,BasinTableMat,plots,varargin)
 	%		is set to 'compare_filtered'.
 	%
 	%%%%%%%%%%%%%%%%%%
-	% Examples:
-	%
-	%	% Plot of mean basin gradient vs 2500 m^2 relief using default relief radius
-	%	BasinStatsPlots(T,'grd_rlf');
-	%
-	%	% Plot of mean basin gradient vs mean basin channel steepness colored by mean elevation
-	%	BasinStatsPlots(T,'grd_ksn','color_by','mean_el');
-	%
-	%	% Plot of mean basin gradient vs mean basin channel steepenss colored by mode geology, where colormap has been scaled to provide unique colors for units
-	%	cmap=colorcube(numel(unique(T.mode_geology)));
-	%	BasinStatsPlots(T,'grd_ksn','color_by','mode_geology','cmap',cmap);
-	%
-	%	% Plot of mean basin channel steepenss vs basin drainage area
-	%	BasinStatsPlots(T,'xy','xval','drainage_area','yval','mean_ksn');
-	%
-	%	% Histograms of mean 2500 m^2 relief by individual categories (e.g. geology)
-	%	BasinStatsPlots(T,'category_mean_hist','cat_mean1','rlf');
-	%
-	%	% Plots of mean basin gradient vs mean basin channel steepness within individual categories
-	%	BasinStatsPlots(T,'category_mean_compare','cat_mean1','ksn','cat_mean2','gradient');
+	% Examples if running for the command line, minus OS specific way of calling main TAK function:
+	%	BasinStatsPlots /path/to/wdir BasinTable.mat grd_ksn
+	%	BasinStatsPlots /path/to/wdir BasinTable.mat xy xval mean_ksn yval center_x
 	% 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 06/18/18 %

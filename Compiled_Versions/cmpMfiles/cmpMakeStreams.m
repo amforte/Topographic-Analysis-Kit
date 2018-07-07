@@ -39,6 +39,11 @@ function cmpMakeStreams(wdir,dem,threshold_area,file_name,varargin)
 	% 		A - Flow accumulation grid (GRIDobj)
 	% 		S - STREAMobj derived from the DEM
 	%	Shapefile of streams
+	%
+    % Examples if running for the command line, minus OS specific way of calling main TAK function:
+    %   MakeStreams /path/to/wdir dem.txt 1e6 Topo
+    %   MakeStreams /path/to/wdir dem.txt 1e6 Topo no_data_exp auto min_flat_area 1e6
+   	%   MakeStreams /path/to/wdir dem.txt 1e6 Topo no_data_exp DEM<=0
 	% 
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

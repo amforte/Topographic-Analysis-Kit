@@ -6,12 +6,15 @@ function cmpPlotKsn(wdir,MatFile,ksn,varargin)
 	% Required Inputs:
 	%	DEM -  Digital Elevation as a GRIDobj used to produce the provided ksn data
 	%	FD - Flow routing as a FLOWobj used to proudce the provided ksn data
-	%	ksn - ksn data either as a shapefile (as ouput from KsnProfiler, ProcessRiverBasins
-	%		KsnChiBatch) or a mapstructure (as output from ProcessRiverBasins or KsnChiBatch)
+	%	ksn - ksn data as a shapefile (as ouput from KsnProfiler, ProcessRiverBasins
+	%		KsnChiBatch)
 	% 
 	% Optional Inputs:
 	% 	Can provide name of shapefile (as output by FindBasinKnicks or KsnProfiler) containing knickpoint locations 
 	%
+   	% Examples if running for the command line, minus OS specific way of calling main TAK function:
+    %   PlotKsn /path/to/wdir Topo.mat ksn.shp
+    %   PlotKsn /path/to/wdir Topo.mat ksn.shp knicks.shp
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 06/18/18 %

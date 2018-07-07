@@ -67,6 +67,10 @@ function cmpMakeCombinedSwath(wdir,MatFile,points,width,data_type,data,data_widt
 	%		'basin_stats' - distances, mean basin elevation, 'basin_value', 'basin_scale' (if provided), distance from base line, 
 	%						x coordinate, y coordinate
 	%
+    % Examples if running for the command line, minus OS specific way of calling main TAK function:
+    %   MakeCombinedSwath /path/to/wdir Topo.mat points.txt 10000 points3 data_points.txt 20000
+    %   MakeCombinedSwath /path/to/wdir Topo.mat points.txt 10000 basin_stats BasinTable.mat 20000 basin_value mean_ksn
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 06/18/18 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

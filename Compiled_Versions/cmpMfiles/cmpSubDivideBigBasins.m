@@ -48,6 +48,10 @@ function cmpSubDivideBigBasins(wdir,basin_dir,max_basin_size,divide_method,varar
 	%		these very small basins but it is not always effective and can occassionally result in errors. If you are encountering errors try running the drainage area
 	%		filtered versions
 	%
+   	% Examples if running for the command line, minus OS specific way of calling main TAK function:
+    %   SubDivideBigBasins /path/to/wdir Basins 100 trunk 
+    %   SubDivideBigBasins /path/to/wdir Basins 100 order SBFiles_Dir MySubBasins order 4
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 07/02/18 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

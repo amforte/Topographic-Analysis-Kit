@@ -9,7 +9,11 @@ function cmpPrepareAddGrids(wdir,out_file_name,varargin)
 	%			as the original grid you provided to 'cmpMakeStreams' and will use in 'cmpProcessRiverBasins')
 	%		2) a reference name for the produced grid
 	%
-	%	
+   	% Examples if running for the command line, minus OS specific way of calling main TAK function:
+    %   PrepareAddGrids /path/to/wdir AddGrids precip.tif precip
+    %   PrepareAddGrids /path/to/wdir AddGrids precip.tif precip ndvi.txt ndvi  
+    %
+    %
 	if isdeployed
 		if ~isempty(varargin)
 			varargin=varargin{1};

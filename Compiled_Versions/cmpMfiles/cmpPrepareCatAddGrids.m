@@ -11,6 +11,11 @@ function cmpPrepareAddCatGrids(wdir,out_file_name,MakeStreamsMat,varargin)
 	%		2) the field name within the shapefile you want to convert into a categorical grid
 	%		3) a reference name for the produced grid
 	%
+   	% Examples if running for the command line, minus OS specific way of calling main TAK function:
+    %   PrepareAddCatGrids /path/to/wdir AddCatGrids Topo.mat geo_polygons.shp RTYPE rock_type
+    %   PrepareAddCatGrids /path/to/wdir AddCatGrids Topo.mat geo_polygons.shp RTYPE rock_type geo_polygons.shp UNIT unit_name  
+    %
+    %
 	if isdeployed
 		if ~isempty(varargin)
 			varargin=varargin{1};

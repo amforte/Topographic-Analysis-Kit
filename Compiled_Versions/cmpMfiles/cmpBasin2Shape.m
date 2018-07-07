@@ -50,6 +50,10 @@ function cmpBasin2Shape(wdir,MakeStreamsMat,location_of_data_files,varargin)
 	%		Either standard errors, standard deviations or both will be populated for elevation, ksn, and gradient depending on value of 'uncertainty'
 	%		Mean and standard error / standard deviation / both values will be populated for any additional grids
 	%
+	% Examples if running for the command line, minus OS specific way of calling main TAK function:
+	%	Basin2Shape /path/to/wdir MakeStreams.mat MainBasins
+	%	Basin2Shape /path/to/wdir MakeStreams.mat MainBasins location_of_subbasins MySubbasins include subdivided	
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 07/02/18 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

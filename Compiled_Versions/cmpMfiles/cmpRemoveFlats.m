@@ -19,6 +19,9 @@ function cmpRemoveFlats(wdir,dem,strength,file_name)
 	%		georeferenced ascii file of the processed dem and mask (mask will have '_mask' appended to the
 	%		file name you provide).
 	%
+   	% Examples if running for the command line, minus OS specific way of calling main TAK function:
+    %   RemoveFlats /path/to/wdir dem.txt 1 dem_rm_flat
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 07/02/18 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

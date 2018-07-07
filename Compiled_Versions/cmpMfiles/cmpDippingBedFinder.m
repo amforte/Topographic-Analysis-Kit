@@ -16,6 +16,10 @@ function cmpDippingBedFinder(wdir,MatFile,xy,hght_abv_base,thickness,strike,dip)
     % 	Code will produce a figure showing expected location of bed and will an ascii text file with expected location of the bed 
     %   (1 where the bed should appear, 0 where it should not)
     %
+    % Examples if running for the command line, minus OS specific way of calling main TAK function:
+    %   DippingBedFinder /path/to/wdir Topo.mat [25600 234500] 250 500 100 10
+    %   DippingBedFinder /path/to/wdir Topo.mat [] 250 500 100 10   
+    %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Function Written by Adam M. Forte - Updated : 07/02/18 %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

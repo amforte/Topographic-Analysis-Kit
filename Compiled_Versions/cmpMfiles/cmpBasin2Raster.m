@@ -32,6 +32,10 @@ function cmpBasin2Raster(wdir,MakeStreamsMat,valueOI,location_of_data_files,vara
 	%		so you do not need to specify a value for this property. If you picked nested catchments manually and then
 	%		ran 'ProcessRiverBasins' you should use 'nested'.
 	%	relief_radius [2500] - relief radius to use if 'valueOI' is set to 'relief'
+	%
+	% Examples if running for the command line, minus OS specific way of calling main TAK function:
+	%	Basin2Raser /path/to/wdir MakeStreams.mat ksn MainBasins
+	%	Basin2Raster /path/to/wdir MakeStreams.mat ksn MainBasins location_of_subbasins MySubbasins file_name_prefix Test
 	%		 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 06/18/18 %

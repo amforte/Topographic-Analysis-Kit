@@ -140,6 +140,11 @@ function cmpKsnProfiler(wdir,MatFile,varargin)
 	%	-The '*_profiler.mat' that is saved out contains additional files besides the formal outputs of the code. These additional variables
 	%		are necessary to be able to restart a run using the 'restart' option.
 	%
+   % Examples if running for the command line, minus OS specific way of calling main TAK function:
+    %   KsnProfiler /path/to/wdir Topo.mat
+    %   KsnProfiler /path/to/wdir Topo.mat redefine_threshold true 
+    %	KsnProfiler /path/to/wdir Topo.mat conditioned_DEM CondDEM.mat
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 06/18/18 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

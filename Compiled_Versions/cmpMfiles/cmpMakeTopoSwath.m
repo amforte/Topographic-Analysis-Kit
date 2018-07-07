@@ -25,6 +25,10 @@ function cmpMakeTopoSwath(wdir,MatFile,points,width,varargin)
 	% 	SwathBends.txt - distances along swath of any bends, 0 if no bends
 	%	SwathBounds.shp - polyline shapefile showing outline of swath and center line of swath
 	%
+    % Examples if running for the command line, minus OS specific way of calling main TAK function:
+    %   MakeTopoSwath /path/to/wdir Topo.mat points.txt 10000
+    %   MakeTopoSwath /path/to/wdir Topo.mat points.txt 10000 vex 5 plot_as_heatmap true
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 07/02/18 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

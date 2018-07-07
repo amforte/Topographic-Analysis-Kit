@@ -40,6 +40,10 @@ function cmpBasinPicker(wdir,MatFile,varargin)
     % Outputs:
     %       Outlets - n x 3 matrix of sample locations with x coordinate, y coordinate, and basin ID number (valid input to 'ProcessRiverBasins'
     %           as 'river_mouths' parameter) saved as a mat file (for continuing a cmpBasinPicker run) and a text file
+    %
+    % Examples if running for the command line, minus OS specific way of calling main TAK function:
+    %   BasinPicker /path/to/wdir Topo.mat
+    %   BasinPicker /path/to/wdir Topo.mat conditioned_DEM CondDem.mat extra_grid precip.tif
     %  
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Function Written by Adam M. Forte - Updated : 06/18/18 %

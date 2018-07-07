@@ -40,6 +40,10 @@ function cmpKsnChiBatch(wdir,MatFile,product,varargin)
 	% Notes:
 	%	Please be aware that the production of the chigrid can be time consuming, so be patient...
 	%
+    % Examples if running for the command line, minus OS specific way of calling main TAK function:
+    %   KsnChiBatch /path/to/wdir Topo.mat ksn
+    %   KsnChiBatch /path/to/wdir Topo.mat ksn conditioned_DEM DEMcond.mat smooth_distance 500
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 07/02/18 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

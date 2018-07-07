@@ -33,6 +33,10 @@ function cmpSegmentProjector(wdir,MatFile,varargin);
 	%	Projected_Channel_*.txt - 10 column text file for each projected channel containing the x coordinate, y coordinate, drainage area, chi value,
 	%		concavity, true elevation, projected elevation, postive uncertainty on projected elevation, and negative uncertainty on projected elevation.
 	%
+   	% Examples if running for the command line, minus OS specific way of calling main TAK function:
+    %   SegmentProjector /path/to/wdir Topo.mat 
+    %   SegmentProjector /path/to/wdir Topo.mat new_stream_net ThresholdStreams.mat pick_method stream
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 07/02/18 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

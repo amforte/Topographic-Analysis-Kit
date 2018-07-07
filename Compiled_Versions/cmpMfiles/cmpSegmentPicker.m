@@ -60,6 +60,10 @@ function cmpSegmentPicker(wdir,MatFile,basin_num,varargin)
 	%			as 'river_mouths' parameter)
 	%	Also saves a shapefile of the selected stream network
 	%
+   	% Examples if running for the command line, minus OS specific way of calling main TAK function:
+    %   SegmentPicker /path/to/wdir Topo.mat 1
+    %   SegmentPicker /path/to/wdir Topo.mat 20 direction up picks Mouths.shp
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 07/02/18 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

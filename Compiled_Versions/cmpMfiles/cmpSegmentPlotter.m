@@ -19,6 +19,10 @@ function cmpSegmentPlotter(wdir,basin_nums,varargin)
 	% Ouptupt:
 	%	saves pdfs of all figures produced
 	%
+   	% Examples if running for the command line, minus OS specific way of calling main TAK function:
+    %   SegmentPlotter /path/to/wdir 1
+    %   SegmentPlotter /path/to/wdir [1 2 3 6] separate true
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 07/02/18 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

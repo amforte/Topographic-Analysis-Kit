@@ -11,6 +11,10 @@ function cmpPlotIndividualBasins(wdir,location_of_data_files,varargin)
 	%		"SubDivideBigBasins"), expected to be within the main Basin folder provided with "location_of_data_files"
 	%	bin_size [500] - bin size (in map units) for binning slope area data.
 	%
+   	% Examples if running for the command line, minus OS specific way of calling main TAK function:
+    %   PlotIndividualBasins /path/to/wdir Basins
+    %   PlotIndividualBasins /path/to/wdir Basins locations_of_subbasins MySubBasins
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 06/18/18 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

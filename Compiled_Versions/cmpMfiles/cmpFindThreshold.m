@@ -29,6 +29,11 @@ function cmpFindThreshold(wdir,MatFile,num_streams,varargin)
 	%	thresh_streams.shp - shapfile of new stream network
 	%	thresh_streams.mat - mat file containing new stream network for use with other cmp* codes.
 	%
+    % Examples if running for the command line, minus OS specific way of calling main TAK function:
+    %   FindThreshold /path/to/wdir Topo.mat 25
+    %   FindThreshold /path/to/wdir Topo.mat all
+    %   FindThreshold /path/to/wdir Topo.mat 25 pick_method chi
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 07/02/18 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

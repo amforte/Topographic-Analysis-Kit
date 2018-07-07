@@ -11,6 +11,9 @@ function cmpMat2Arc(wdir,MatFile,file_prefix)
 	%	MatFile - full path to matfile of interest
 	%	file_prefix - characters to add to the front of all output files
 	%
+   	% Examples if running for the command line, minus OS specific way of calling main TAK function:
+    %   Mat2Arc /path/to/wdir Topo.mat outputs
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 07/02/18 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

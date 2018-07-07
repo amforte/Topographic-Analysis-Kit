@@ -53,6 +53,10 @@ function cmpConditionDEM(wdir,MatFile,method,varargin)
 	% Outputs:
 	%		georeferenced ascii file of the processed dem
 	%
+	% Examples if running for the command line, minus OS specific way of calling main TAK function:
+	%	ConditionDEM /path/to/wdir Topo.mat mincost
+	%	ConditionDEM /path/to/wdir Topo.mat mincost fillp 0.5
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 07/02/18 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

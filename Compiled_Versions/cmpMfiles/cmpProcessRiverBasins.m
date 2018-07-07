@@ -55,6 +55,13 @@ function cmpProcessRiverBasins(wdir,MakeStreamsMat,river_mouths,basin_dir,vararg
 	%		-The code will perform a check of the river_mouths input to confirm that 1) there are no duplicate ID numbers (it will dump your ID numbers and create new
 	%			ID numbers if this is the case and output a text file contatining the river mouth locations with their new ID nubmers) and 2) that no provided river mouths 
 	%			are outside the boundaries of the DEM (it will remove these IDs if this the case).
+	%
+   	% Examples if running for the command line, minus OS specific way of calling main TAK function:
+    %   ProcessRiverBasins /path/to/wdir Topo.mat river_mouths.txt Basins
+    %   ProcessRiverBasins /path/to/wdir Topo.mat river_mouths.shp Basins
+	%   ProcessRiverBasins /path/to/wdir Topo.mat 500 Basins
+    %   ProcessRiverBasins /path/to/wdir Topo.mat river_mouths.txt Basins add_cat_grids AddCatGrids.mat add_grids AddGrids.mat
+    %   ProcessRiverBasins /path/to/wdir Topo.mat river_mouths.shp Basins calc_relief true relief_radii [1000 2500 5000]
 	%			
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 07/02/18 %

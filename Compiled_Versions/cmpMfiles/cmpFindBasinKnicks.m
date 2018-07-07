@@ -24,6 +24,10 @@ function cmpFindBasinKnicks(wdir,basin_dir,Basin_Data_File,plot_result,varargin)
 	%		column containing the classification of the knickpoints.
 	%	Also saves the KnickTable as a text file
 	%	Will output a shapefile as well if an argument is provided for the 'shape_name' parameter
+	%
+    % Examples if running for the command line, minus OS specific way of calling main TAK function:
+    %   FindBasinKnicks /path/to/wdir Basins Basin_56_Data.mat true
+    %   FindBasinKnicks /path/to/wdir Basins Basin_56_Data.mat true classify_knicks true
 	%	
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 07/02/18 %

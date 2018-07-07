@@ -20,6 +20,10 @@ function cmpClassifyKnicks(wdir,MatFile,KsnProfilerMat,varargin)
 	% Outputs:
 	%	saves a shapfile of knickpoints including the classification you assign using this tool
 	%
+	% Examples if running for the command line, minus OS specific way of calling main TAK function:
+	%	ClassifyKnicks /path/to/wdir Topo.mat KsnProfiler.mat
+	%	ClassifyKnicks /path/to/wdir Topo.mat KsnProfiler.mat shape_name my_knicks
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 07/02/18 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
