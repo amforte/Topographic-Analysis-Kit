@@ -208,7 +208,7 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 		ms(1,1).Y=SW.xy0(:,2);
 		ms(1,1).Type='Center';
 
-		if ~verLessThan('matlab','9.3')
+		if ~verLessThan('matlab','9.4')
 			verts=SwathPolygon(SW,wdth);
 			ms(2,1).Geometry='Line';
 			ms(2,1).X=verts(:,1);

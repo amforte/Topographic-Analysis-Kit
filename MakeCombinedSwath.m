@@ -665,7 +665,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	ms(1,1).Y=SW.xy0(:,2);
 	ms(1,1).Type='Center';
 
-	if ~verLessThan('matlab','9.3')
+	if ~verLessThan('matlab','9.4')
 		Tverts=SwathPolygon(SW,wdth);
 		ms(2,1).Geometry='Line';
 		ms(2,1).X=Tverts(:,1);
@@ -687,7 +687,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 		hold on
 		imageschs(DEM,DEM,'colormap','gray');
 		plot(SW.xy0(:,1),SW.xy0(:,2),'-g','LineWidth',0.5);
-		if ~verLessThan('matlab','9.3')
+		if ~verLessThan('matlab','9.4')
 			plot(Tverts(:,1),Tverts(:,2),'-g','LineWidth',0.5);
 			plot(Dverts(:,1),Dverts(:,2),'-r','LineWidth',0.5);	
 		end	
