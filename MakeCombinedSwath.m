@@ -129,7 +129,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 		close(fig);
 	end
 	
-	[SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,wdth,'sample',sample,'smooth',smth);
+	[SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,wdth,'sample',sample,'smooth',smth,'make_shape',false);
 	swdist=SwathMat(:,1);
 	min_elevs=SwathMat(:,2);
 	mean_elevs=SwathMat(:,3);
@@ -665,17 +665,19 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	ms(1,1).Y=SW.xy0(:,2);
 	ms(1,1).Type='Center';
 
-	Tverts=SwathPolygon(SW,wdth);
-	ms(2,1).Geometry='Line';
-	ms(2,1).X=Tverts(:,1);
-	ms(2,1).Y=Tverts(:,2);
-	ms(2,1).Type='TopoWdth';
+	if ~verLessThan('matlab','9.3')
+		Tverts=SwathPolygon(SW,wdth);
+		ms(2,1).Geometry='Line';
+		ms(2,1).X=Tverts(:,1);
+		ms(2,1).Y=Tverts(:,2);
+		ms(2,1).Type='TopoWdth';
 
-	Dverts=SwathPolygon(SW,data_width);
-	ms(3,1).Geometry='Line';
-	ms(3,1).X=Dverts(:,1);
-	ms(3,1).Y=Dverts(:,2);
-	ms(3,1).Type='DataWdth';
+		Dverts=SwathPolygon(SW,data_width);
+		ms(3,1).Geometry='Line';
+		ms(3,1).X=Dverts(:,1);
+		ms(3,1).Y=Dverts(:,2);
+		ms(3,1).Type='DataWdth';
+	end
 
 	shapewrite(ms,'SwathBounds.shp');
 
@@ -685,8 +687,10 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 		hold on
 		imageschs(DEM,DEM,'colormap','gray');
 		plot(SW.xy0(:,1),SW.xy0(:,2),'-g','LineWidth',0.5);
-		plot(Tverts(:,1),Tverts(:,2),'-g','LineWidth',0.5);
-		plot(Dverts(:,1),Dverts(:,2),'-r','LineWidth',0.5);		
+		if ~verLessThan('matlab','9.3')
+			plot(Tverts(:,1),Tverts(:,2),'-g','LineWidth',0.5);
+			plot(Dverts(:,1),Dverts(:,2),'-r','LineWidth',0.5);	
+		end	
 		scatter(x_coord(idx),y_coord(idx),20,'r','filled');
 		% To avoid situations with extremely large number of points
 		if ~any([strcmp(data_type,'STREAMobj') strcmp(data_type,'ksn_profiler') strcmp(data_type,'ksn_batch')])
