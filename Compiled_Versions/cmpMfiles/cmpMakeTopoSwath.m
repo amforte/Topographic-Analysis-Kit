@@ -244,6 +244,8 @@ function cmpMakeTopoSwath(wdir,MatFile,points,width,varargin)
 	BT.bends_distance=bends;
 	writetable(BT,fullfile(wdir,'SwathBends.txt'));
 
+	msgbox('Close all figures to complete code execution');
+
 end
 
 function [verts]=SwathPolygon(SW,w);

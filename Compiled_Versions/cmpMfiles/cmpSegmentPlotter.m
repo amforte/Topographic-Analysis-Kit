@@ -172,7 +172,7 @@ function cmpSegmentPlotter(wdir,basin_nums,varargin)
 				num_seg=numel(ChiSgmnts);
 
 				for jj=1:num_seg
-					f=figure(fig_num);
+					f1=figure(fig_num);
 					set(f,'Units','normalized','Position',[0.05 0.1 0.8 0.8],'renderer','painters');
 					C=ChiSgmnts{jj};
 					bSA=SlpAreaSgmnts{jj,1};
@@ -205,7 +205,7 @@ function cmpSegmentPlotter(wdir,basin_nums,varargin)
 					drawnow
 
 					figFile=fullfile(wdir,['StreamSegments_' num2str(basin_num) '_' num2str(fig_num) '_.pdf']);
-					print(f,'-dpdf',figFile,'-fillpage');
+					print(f1,'-dpdf',figFile,'-fillpage');
 
 					fig_num=fig_num+1;
 				end
@@ -323,7 +323,7 @@ function cmpSegmentPlotter(wdir,basin_nums,varargin)
 				num_seg=numel(ChiSgmnts);
 
 				for jj=1:num_seg
-					f=figure(fig_num);
+					f1=figure(fig_num);
 					set(f,'Units','normalized','Position',[0.05 0.1 0.8 0.8],'renderer','painters');
 					C=ChiSgmnts{jj};
 					bSA=SlpAreaSgmnts{jj,1};
@@ -354,7 +354,7 @@ function cmpSegmentPlotter(wdir,basin_nums,varargin)
 					hold off
 
 					figFile=fullfile(wdir,['StreamSegments_' num2str(basin_num) '_' num2str(fig_num) '_.pdf']);
-					print(f,'-dpdf',figFile,'-fillpage');
+					print(f1,'-dpdf',figFile,'-fillpage');
 
 					drawnow
 					fig_num=fig_num+1;
@@ -363,5 +363,7 @@ function cmpSegmentPlotter(wdir,basin_nums,varargin)
 			end
 		end
 	end
+
+	close(f1);
 
 end

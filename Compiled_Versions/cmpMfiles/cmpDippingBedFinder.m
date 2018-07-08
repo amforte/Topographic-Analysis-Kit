@@ -119,6 +119,8 @@ function cmpDippingBedFinder(wdir,MatFile,xy,hght_abv_base,thickness,strike,dip)
     hold off
 
     GRIDobj2ascii(BED,fullfile(wdir,'BedLocation.txt'));
+
+    msgbox('Close all figures to complete code execution');
 end
 
 

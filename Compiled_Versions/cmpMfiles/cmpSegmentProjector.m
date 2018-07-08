@@ -1105,6 +1105,7 @@ function cmpSegmentProjector(wdir,MatFile,varargin);
 				close(f1);
 				close(f2);
 			end
+
 			str1='N';
 		end
 	end
@@ -1135,6 +1136,10 @@ function cmpSegmentProjector(wdir,MatFile,varargin);
 		writetable(projT,fout_name);
 		clear projT;
 	end
+
+	close(f1);
+	close(f2);
+
 end
 
 function [OUT]=ChiCalc(S,DEM,A,a0,varargin)

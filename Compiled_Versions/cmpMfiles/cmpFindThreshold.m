@@ -390,6 +390,7 @@ function cmpFindThreshold(wdir,MatFile,num_streams,varargin)
 	shapewrite(MSn,fullfile(wdir,'thresh_streams.shp'));
 	% Output matfile containing new stream network
 	save(fullfile(wdir,'thresh_streams.mat'),'Sn');
+	close(f1);
 end
 
 function [bs,ba,bc,bd,a,g,C]=sa(DEM,S,A,C,bin_size)

@@ -1144,6 +1144,8 @@ function cmpSegmentPicker(wdir,MatFile,basin_num,varargin)
 		end
 	end
 
+	close all
+
 	% Clean up and generate outputs
 	num_picks=numel(StreamSgmnts);
 	if num_picks==1

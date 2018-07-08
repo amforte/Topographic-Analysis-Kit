@@ -199,4 +199,5 @@ function cmpClassifyKnicks(wdir,MatFile,KsnProfilerMat,varargin)
 	end
 	out_knick_name=fullfile(wdir,[shape_name '_knicks_classified.shp']);
 	shapewrite(KNK,out_knick_name);
+	close(f1);
 end

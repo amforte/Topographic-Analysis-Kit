@@ -256,6 +256,8 @@ function cmpFindBasinKnicks(wdir,basin_dir,Basin_Data_File,plot_result,varargin)
 		shapewrite(MS,shp_out);
 	end
 
+	msgbox('Close all figures to complete code execution');
+
 % Function End
 end
 

@@ -118,4 +118,6 @@ function cmpRemoveFlats(wdir,dem,strength,file_name)
 	hold on
 	imageschs(DEMn,MASK);
 	hold off
+
+	msgbox('Close all figures to complete code execution');
 end

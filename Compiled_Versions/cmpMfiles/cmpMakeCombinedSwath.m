@@ -743,7 +743,10 @@ function cmpMakeCombinedSwath(wdir,MatFile,points,width,data_type,data,data_widt
 	if save_figure
 		orient(f1,'Landscape')
 		print(f1,'-dpdf','-bestfit','Swath.pdf');
+		close(f1);
 	end
+
+	msgbox('Close all figures to complete code execution');
 
 end
 

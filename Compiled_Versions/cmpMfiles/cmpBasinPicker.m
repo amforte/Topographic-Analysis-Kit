@@ -479,4 +479,5 @@ function cmpBasinPicker(wdir,MatFile,varargin)
 
     T=array2table(Outlets);
     writetable(T,fullfile(wdir,'Outlets.txt'));
+    close figure 1;
 end   
