@@ -93,7 +93,7 @@ function PlotIndividualBasins(location_of_data_files,varargin)
 		hold on
 		scatter(aa,ag,5,'k','+');
 		scatter(ba,bs,'o','MarkerFaceColor','b','MarkerEdgeColor','k');
-		set(a1,'XScale','log','YScale','log');	
+		set(a1,'XScale','log','YScale','log','XDir','reverse');	
 		xlabel('Log Area');
 		ylabel('Log Slope');
 		hold off

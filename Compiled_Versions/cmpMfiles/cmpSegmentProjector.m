@@ -16,7 +16,7 @@ function cmpSegmentProjector(wdir,MatFile,varargin);
 	%	new_stream_net [] - option to provide name of a matfile containing a new stream network as as output from another function (e.g. cmpFindThreshold) to use
 	%		instead of the stream network saved in the MatFile provided to the function. This new stream network must have been generated from the
 	%		DEM stored in the provided MatFile
-	%	theta_method ['ref']- options for concavity
+	%	concavity_method ['ref']- options for concavity
 	%		'ref' - uses a reference concavity, the user can specify this value with the reference concavity option (see below)
 	%		'auto' - function finds a best fit concavity for the provided stream
 	%	pick_method ['chi'] - choice of how you want to pick the stream segment to be projected:
@@ -52,7 +52,7 @@ function cmpSegmentProjector(wdir,MatFile,varargin);
 	addRequired(p,'wdir',@(x) ischar(x));
 	addRequired(p,'MatFile',@(x) regexp(x,regexptranslate('wildcard','*.mat')));
 
-	addParameter(p,'theta_method','ref',@(x) ischar(validatestring(x,{'ref','auto'})));
+	addParameter(p,'concavity_method','ref',@(x) ischar(validatestring(x,{'ref','auto'})));
 	addParameter(p,'pick_method','chi',@(x) ischar(validatestring(x,{'chi','stream'})));
 	addParameter(p,'smooth_distance',1000,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
@@ -67,7 +67,7 @@ function cmpSegmentProjector(wdir,MatFile,varargin);
 	MatFile=p.Results.MatFile;
 
 	smooth_distance=p.Results.smooth_distance;
-	theta_method=p.Results.theta_method;
+	theta_method=p.Results.concavity_method;
 	ref_theta=p.Results.ref_concavity;
 	refit_streams=p.Results.refit_streams;
 	pick_method=p.Results.pick_method;

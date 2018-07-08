@@ -27,6 +27,9 @@ function cmpSegmentPicker(wdir,MatFile,basin_num,varargin)
 	%	plot_type ['vector'] - expects either 'vector' or 'grid', default is 'vector'. Controls whether all streams are drawn as individual lines ('vector') or if
 	%		   the stream network is plotted as a grid and downsampled ('grid'). The 'grid' option is much faster with large datasets, 
 	%			but can result in inaccurate choices. The 'vector' option is easier to see, but can be very slow to load and interact with.
+	%	calc_full_slope_area [false] - logical flag to either calculate and display the slope area data for just the trunk stream in the network (false, default),
+	%			or to calculate and display slope area data for all streams in the network (true). If direction is set to 'up' and you are choosing large stream
+	%			networks, it is strongly recommended that you leave this parameter set to false to speed code completion. 
 	%	complete_networks_only [false] - if true, the code will filter out portions of the stream network that are incomplete prior to choosing
 	%			streams
 	%	picks - expects name of a textfile containing a n x 3 matrix with columns as x coordinates, y coordinates, and an identifying number OR the name of a point shapefile 
@@ -84,6 +87,7 @@ function cmpSegmentPicker(wdir,MatFile,basin_num,varargin)
 	addParameter(p,'method','new_picks',@(x) ischar(validatestring(x,{'new_picks','prev_picks'})));
 	addParameter(p,'plot_type','vector',@(x) ischar(validatestring(x,{'vector','grid'})));	
 	addParameter(p,'plot_style','refresh',@(x) ischar(validatestring(x,{'refresh','keep'})));
+	addParameter(p,'calc_full_slope_area',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'complete_networks_only',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'min_elev',[],@(x) isscalar(x) && isnumeric(x));
@@ -104,6 +108,7 @@ function cmpSegmentPicker(wdir,MatFile,basin_num,varargin)
 	cno=p.Results.complete_networks_only;
 	direction=p.Results.direction;
 	method=p.Results.method;
+	csa=p.Results.calc_full_slope_area;
 	theta_ref=p.Results.ref_concavity;
 	plot_type=p.Results.plot_type;
 	plot_style=p.Results.plot_style;
@@ -428,13 +433,29 @@ function cmpSegmentPicker(wdir,MatFile,basin_num,varargin)
 				saax=subplot(3,1,3);
 				hold on
 				if isempty(p.Results.min_elev) && isempty(p.Results.max_area) 
-					[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
+					if csa
+						[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
+					else
+						[bs,ba,aa,ag]=sa(DEMc,trunk(Sn),A,bin_size);
+					end
 				elseif ~isempty(p.Results.min_elev) | ~isempty(p.Results.max_area) && p.Results.recalc								
-					[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
+					if csa
+						[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
+					else
+						[bs,ba,aa,ag]=sa(DEMc,trunk(Sn),A,bin_size);
+					end
 				elseif short_circ==1;
-					[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
+					if csa
+						[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
+					else
+						[bs,ba,aa,ag]=sa(DEMc,trunk(Sn),A,bin_size);
+					end
 				elseif ~isempty(p.Results.min_elev) | ~isempty(p.Results.max_area) && p.Results.recalc==0
-					[bs,ba,aa,ag]=sa(DEMc,Sn_t,A,bin_size);
+					if csa
+						[bs,ba,aa,ag]=sa(DEMc,Sn_t,A,bin_size);
+					else
+						[bs,ba,aa,ag]=sa(DEMc,trunk(Sn_t),A,bin_size);
+					end
 				end
 
 				scatter(aa,ag,5,[0.5 0.5 0.5],'+');
@@ -546,7 +567,11 @@ function cmpSegmentPicker(wdir,MatFile,basin_num,varargin)
 
 				saax=subplot(3,1,3);
 				hold on
-				[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
+				if csa
+					[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
+				else
+					[bs,ba,aa,ag]=sa(DEMc,trunk(Sn),A,bin_size);
+				end
 				scatter(aa,ag,5,[0.5 0.5 0.5],'+');
 				scatter(ba,bs,20,colcol(mod(ii,20)+1,:),'filled');
 				set(saax,'Xscale','log','Yscale','log','XDir','reverse');
@@ -778,13 +803,29 @@ function cmpSegmentPicker(wdir,MatFile,basin_num,varargin)
 				saax=subplot(3,1,3);
 				hold on
 				if isempty(p.Results.min_elev) && isempty(p.Results.max_area) 
-					[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
+					if csa
+						[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
+					else
+						[bs,ba,aa,ag]=sa(DEMc,trunk(Sn),A,bin_size);
+					end
 				elseif ~isempty(p.Results.min_elev) | ~isempty(p.Results.max_area) && p.Results.recalc								
-					[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
+					if csa
+						[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
+					else
+						[bs,ba,aa,ag]=sa(DEMc,trunk(Sn),A,bin_size);
+					end
 				elseif short_circ==1;
-					[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
+					if csa
+						[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
+					else
+						[bs,ba,aa,ag]=sa(DEMc,trunk(Sn),A,bin_size);
+					end
 				elseif ~isempty(p.Results.min_elev) | ~isempty(p.Results.max_area) && p.Results.recalc==0
-					[bs,ba,aa,ag]=sa(DEMc,Sn_t,A,bin_size);
+					if csa
+						[bs,ba,aa,ag]=sa(DEMc,Sn_t,A,bin_size);
+					else
+						[bs,ba,aa,ag]=sa(DEMc,trunk(Sn_t),A,bin_size);
+					end
 				end		
 				scatter(aa,ag,5,[0.5 0.5 0.5],'+');
 				scatter(ba,bs,20,'k','filled');
@@ -894,7 +935,11 @@ function cmpSegmentPicker(wdir,MatFile,basin_num,varargin)
 
 				saax=subplot(3,1,3);
 				hold on
-				[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
+				if csa
+					[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
+				else
+					[bs,ba,aa,ag]=sa(DEMc,trunk(Sn),A,bin_size);
+				end
 				scatter(aa,ag,5,[0.5 0.5 0.5],'+');
 				scatter(ba,bs,20,'k','filled');
 				set(saax,'Xscale','log','Yscale','log','XDir','reverse');
@@ -1019,7 +1064,11 @@ function cmpSegmentPicker(wdir,MatFile,basin_num,varargin)
 					Sn=Sn_t;
 				end
 
-				[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
+				if csa
+					[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
+				else
+					[bs,ba,aa,ag]=sa(DEMc,trunk(Sn),A,bin_size);
+				end
 
 				if isempty(p.Results.min_elev) && isempty(p.Results.max_area) 
 					C=chiplot(Sn,DEMc,A,'a0',1,'mn',theta_ref,'plot',false);
@@ -1076,7 +1125,11 @@ function cmpSegmentPicker(wdir,MatFile,basin_num,varargin)
 				Sn=modify(S,'upstreamto',IX);
 				Sn=klargestconncomps(Sn,1);
 				C=chiplot(Sn,DEMc,A,'a0',1,'mn',theta_ref,'plot',false);
-				[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
+				if csa
+					[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
+				else
+					[bs,ba,aa,ag]=sa(DEMc,trunk(Sn),A,bin_size);
+				end
 
 				StreamSgmnts{ii}=Sn;
 				ChiSgmnts{ii}=C;

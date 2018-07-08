@@ -17,7 +17,7 @@ function [KnickTable]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 	%
 	% Optional Inputs
 	%	classify_knicks [false] - logical flag to provide a classification for each chosen knickpoint
-	% 	theta_ref [0.5] - reference concavity for chi calculation
+	% 	ref_concavity [0.5] - reference concavity for chi calculation
 	%	save_mat [true] - logical flag to save output mat file containing the KnickPoints array. The name of the file will 
 	%		be 'Knicks_NUM.mat' where NUM is the river number. Do not change the file name if you want to plot knickpoints
 	%		using 'MakeCombinedSwath'.
@@ -41,7 +41,7 @@ function [KnickTable]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 	addRequired(p,'plot_result',@(x) islogical(x));
 
 	addParameter(p,'classify_knicks',false,@(x) isscalar(x) && islogical(x));
-	addParameter(p,'theta_ref',0.5,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'ref_concavity',0.5,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'shape_name',[],@(x) ischar(x));
 	addParameter(p,'save_mat',true,@(x) isscalar(x) && islogical(x));
 
@@ -50,7 +50,7 @@ function [KnickTable]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 	plot_result=p.Results.plot_result;
 
 	classify_knicks=p.Results.classify_knicks;
-	theta_ref=p.Results.theta_ref;
+	theta_ref=p.Results.ref_concavity;
 	shape_name=p.Results.shape_name;
 	save_mat=p.Results.save_mat;
 

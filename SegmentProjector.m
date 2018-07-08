@@ -6,8 +6,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 	%
 	% Description:
 	% 	Function to interactively select segments of a channel profile you wish to project (e.g. projecting a portion of the profile with a different ksn).
-	%	You can use the 'SegmentPicker' function to interactively choose channels to provide to the StreamProjector function. If the STREAMobj has more than 
-	%	one channel head, this code will iterate through all channel heads (i.e. make sure you're only providing it stream you want to project, not an entire
+	%	You can use the 'SegmentPicker' function to interactively choose channels to provide to the StreamProjector function. To do this, load the 
+	%	PickedSegments_*.mat file and supply the 'Sc' STREAMobj in place of 'S' when calling Segment Projector. If the STREAMobj has more than one 
+	%	channel head, this code will iterate through all channel heads (i.e. make sure you're only providing it stream you want to project, not an entire
 	%	network!). It calculates and will display 95% confidence bounds on this fit.
 	%	
 	% Required Inputs:
@@ -20,7 +21,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 	%	conditioned_DEM [] - option to provide a hydrologically conditioned DEM for use in this function (do not provide a conditoned DEM
 	%		for the main required DEM input!) which will be used for extracting elevations. See 'ConditionDEM' function for options for making a 
 	%		hydrological conditioned DEM. If no input is provided the code defaults to using the mincosthydrocon function.
-	%	theta_method ['ref']- options for concavity
+	%	concavity_method ['ref']- options for concavity
 	%		'ref' - uses a reference concavity, the user can specify this value with the reference concavity option (see below)
 	%		'auto' - function finds a best fit concavity for the provided stream
 	%	pick_method ['chi'] - choice of how you want to pick the stream segment to be projected:
@@ -55,7 +56,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 	addRequired(p,'A',@(x) isa(x,'GRIDobj'));
 	addRequired(p,'S',@(x) isa(x,'STREAMobj'));
 
-	addParameter(p,'theta_method','ref',@(x) ischar(validatestring(x,{'ref','auto'})));
+	addParameter(p,'concavity_method','ref',@(x) ischar(validatestring(x,{'ref','auto'})));
 	addParameter(p,'pick_method','chi',@(x) ischar(validatestring(x,{'chi','stream'})));
 	addParameter(p,'smooth_distance',1000,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
@@ -71,7 +72,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 	A=p.Results.A;
 
 	smooth_distance=p.Results.smooth_distance;
-	theta_method=p.Results.theta_method;
+	theta_method=p.Results.concavity_method;
 	ref_theta=p.Results.ref_concavity;
 	refit_streams=p.Results.refit_streams;
 	pick_method=p.Results.pick_method;

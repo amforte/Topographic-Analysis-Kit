@@ -29,7 +29,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	%					(just in case you have some sitting around)
 	%		'ksn_batch' - will plot swath through ksn values, expects the map structure output from 'KsnChiBatch' function 
 	%					(i.e. run 'KsnChiBatch' with product set to 'ksn' and 'output' set to true, and provide the second 
-	%					output here as 'data') 
+	%					output here as 'data', i.e. run like [~,data]=KsnChiBatch(DEM,FD,A,S,'ksn'); and provide data here) 
 	%		'ksn_profiler' - will plot swath through ksn values, expects the 'knl' output from 'KsnProfiler' function
 	%		'basin_stats' - will plot swath through selected mean basin values as calculated from 'ProcessRiverBasins', 
 	%					expects output from 'CompileBasinStats' and requires an entry to optional input 'basin_value' and  

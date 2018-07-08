@@ -151,6 +151,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%	-If no boundaries/knickpoints are selected for any of the streams selected, then a '_knicks.shp' shapefile will not be produced.
 	%	-The '*_profiler.mat' that is saved out contains additional files besides the formal outputs of the code. These additional variables
 	%		are necessary to be able to restart a run using the 'restart' option.
+	%	-If you have set 'save_figures' to true, DO NOT close figures manually as this will cause the code to error.
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 06/18/18 %
@@ -220,6 +221,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	restart=p.Results.restart;
 	stack_method=p.Results.stack_method;
 
+	wtb=waitbar(0,'Preparing inputs...');
+
 	% Set restart flag
 	if ~isempty(restart)
 		rf=true;
@@ -271,6 +274,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		mksn=input_params.max_ksn;	
 	end	
 
+	waitbar(1/4,wtb);
+
 	% Store out parameters in both final file and restart file
 	out_mat_name=[shape_name '_profiler.mat'];
 	out_restart_name=[shape_name '_restart.mat'];
@@ -297,6 +302,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 	% Create master KSN colormap
 	KSN_col=ksncolor(100);
+
+	waitbar(2/4,wtb);
 
 	% Perform some checks and reassign values as needed
 	if strcmp(input_method,'channel_heads')
@@ -383,6 +390,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	% Make drainage area
 	DA=A.*A.cellsize^2;
 
+	waitbar(3/4,wtb);
+
 	% Modify provided stream network if minimum elevation or maximum drainage area options are included
 	if ~isempty(min_elev)
 		zel=getnal(S,DEMc);
@@ -468,6 +477,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		hold off
 		set(f1,'Visible','on','Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');	
 	end
+
+	waitbar(1,wtb);
+	close(wtb);
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%% Main switch for graphical selection vs list of channel heads %%
@@ -2658,7 +2670,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		close figure 1
 	end
 
-	disp('Cleaning up and generating outputs...')
+	wtb=waitbar(0,'Cleaning up and generating outputs');
 	% Add stream numbers to bound list and convert bound list
 	bnd_list=cell(numel(bnd_master),1);
 	for jj=1:numel(bnd_master);
@@ -2686,6 +2698,8 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 	% Collapse bnd_list
 	bnd_list=vertcat(bnd_list{:});
+
+	waitbar(1/5,wtb);
 
 	% Build KSN Mapstructure
 	if strcmp(junction_method,'check')
@@ -2802,7 +2816,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 			{'ksn' ksnR @mean 'ksn_neg' ksnRn @mean 'ksn_pos' ksnRp @mean 'uparea' (A.*(A.cellsize^2)) @mean...
 			'gradient' G @mean 'theta' thetaR @mean 'seg_theta' segthetaR @mean 'thrsh_ar' threshaR @mean...
 			'resid' resR @mean 'riv_num' rivnumR @mode});
-	end		
+	end	
+
+	waitbar(2/5,wtb);	
 
 	% Create knickpoint map structure and prepare bound output
 	idx=~isnan(bnd_list(:,5));
@@ -2823,15 +2839,20 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		shapewrite(KNK,out_knick_name);
 	end
 
+	waitbar(3/5,wtb);
+
 	out_shape_name=[shape_name '.shp'];
 	shapewrite(KSN,out_shape_name);
+
+	waitbar(4/5,wtb);
 
 	% Save out file
 	save(out_mat_name,'knl','ksn_master','bnd_list','Sc','bnd_master','res_master','count','-append');
 	% Delete restart file after successful completion
 	delete(out_restart_name);
 
-
+	waitbar(5/5,wtb);
+	close(wtb);
 
 %FUNCTION END
 end
