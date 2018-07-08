@@ -4,7 +4,12 @@ function cmpFindBasinKnicks(wdir,basin_dir,Basin_Data_File,plot_result,varargin)
 	% 	Choose knickpoints on Chi-Elevation plot with mouse clicks and press return when you have selected
 	% 	all the knickpoints for a given stream segment. As you progress through, knickpoints you have already picked 
 	% 	(i.e. on shared portions of river profiles) will be displayed as red dots. If you're interested in trying out
-	%	an automated method of finding knickpoints, try 'knickpointfinder' included with TopoToolbox.
+	%	an automated method of finding knickpoints, try 'knickpointfinder' included with TopoToolbox. If you choose to 
+	%	classify knickpoints ('classify_knicks' = true) The code expects you to input a number or character 
+	%	to categorize the knickpoint higlighted in red. You must be consistent in your choice (i.e. you must either use 
+	%	numbers for all of the classifications or characters for all the classifications within a given run), mixing numbers 
+	%	and characters will result in an error at the end of the run. For entering characters, it's recommended you keep these 
+	%	short strings without spaces (i.e. entries supported into a shapefile a attribute table), e.g. knick or bound 
 	%
 	% Required Inputs:
 	%	wdir - full path of working directory
