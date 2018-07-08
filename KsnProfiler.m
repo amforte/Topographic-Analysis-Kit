@@ -1600,6 +1600,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					clear ksn_list ksn_nodes res_list bnd_ix kidx gix kmat;
 					ii=ii+1;
 				case 'Stop Picking'
+					wtb=waitbar(0,'Cleaning up and generating outputs, do not close windows');
 					str1 = 'N';
 					str2 = 'N';
 					str3 = 'C';
@@ -2586,6 +2587,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						str1 = 'R';
 						clear ksn_list ksn_nodes res_list bnd_ix;
 					case 'Ignore Remaining Streams'
+						wtb=waitbar(0,'Cleaning up and generating outputs, do not close windows');
 						str1=[];
 						str2=[];
 						% Add Gradient, Residual, and Riv Number to node list and clear NaNs
@@ -2617,6 +2619,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 					switch qa2
 					case 'Complete Routine'
+						wtb=waitbar(0,'Cleaning up and generating outputs, do not close windows');
 						str2 = 'Y';
 						str1 = [];
 						% Add Gradient, Residual, and Riv Number to node list and clear NaNs
@@ -2670,7 +2673,6 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		close figure 1
 	end
 
-	wtb=waitbar(0,'Cleaning up and generating outputs');
 	% Add stream numbers to bound list and convert bound list
 	bnd_list=cell(numel(bnd_master),1);
 	for jj=1:numel(bnd_master);
