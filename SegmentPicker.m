@@ -776,7 +776,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				saax=subplot(3,1,3);
 				hold on
 				if isempty(p.Results.min_elev) && isempty(p.Results.max_area) 
-					[if csa
+					if csa
 						[bs,ba,aa,ag]=sa(DEMc,Sn,A,bin_size);
 					else
 						[bs,ba,aa,ag]=sa(DEMc,trunk(Sn),A,bin_size);
