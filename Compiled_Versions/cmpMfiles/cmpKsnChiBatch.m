@@ -616,6 +616,8 @@ function [ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length)
 	zu=getnal(S,DEM);
 	z_res=z-zu;
 	waitbar(2/4,w1,'Calculating chi values');
+	G=gradient8(DEMc);
+	g=getnal(S,G);
 	c=chitransform(S,A,'a0',1,'mn',theta_ref);
 	d=S.distance;
 	da=getnal(S,A.*(A.cellsize^2));
@@ -666,16 +668,20 @@ function [ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length)
 				cOI=c(bin_ix);
 				zOI=z(bin_ix);
 					if numel(cOI)>2
-						[ksn_val]=Chi_Z_Spline(cOI,zOI);
+						[ksn_val,r2]=Chi_Z_Spline(cOI,zOI);
 						ksn_nal(bin_ix)=ksn_val;
 
 						% Build mapstructure
 						ksn_ms(seg_count).Geometry='Line';
+						ksm_ms(seg_count).BoundingBox=[min(S.x(bin_ix)),min(S.y(bin_ix));max(S.x(bin_ix)),max(S.y(bin_ix))];
 						ksn_ms(seg_count).X=S.x(bin_ix);
 						ksn_ms(seg_count).Y=S.y(bin_ix);
 						ksn_ms(seg_count).ksn=ksn_val;
+						ksn_ms(seg_count).uparea=mean(da(bin_ix));
+						ksn_ms(seg_count).gradient=mean(g(bin_ix));
 						ksn_ms(seg_count).cut_fill=mean(z_res(bin_ix));
-						ksn_ms(seg_count).area=mean(da(bin_ix));
+						ksn_ms(seg_count).chi_r2=r2;
+						
 						seg_count=seg_count+1;
 					end
 			end
@@ -730,7 +736,7 @@ function seg = networksegment_slim(DEM,FD,S)
 	seg.n=numel(IX(:,1));
 end
 
-function [KSN] = Chi_Z_Spline(c,z)
+function [KSN,R2] = Chi_Z_Spline(c,z)
 
 	% Resample chi-elevation relationship using cubic spline interpolation
 	[~,minIX]=min(c);
@@ -740,8 +746,13 @@ function [KSN] = Chi_Z_Spline(c,z)
 	chiS=linspace(0,max(chiF),numel(chiF)).';
 	zS=spline(chiF,zabsF,chiS);
 
-	%Calculate beta
-    BETA = chiS\(zS);
+	% Calculate ksn via slope
+	KSN= chiS\(zS); % mn not needed because a0 is fixed to 1
 
-	KSN= BETA; %Beta.*a0^mn - if a0 set to 1, not needed
+	% Calculate R^2
+	z_pred=chiF.*KSN;
+	sstot=sum((zabsF-mean(zabsF)).^2);
+	ssres=sum((zabsF-z_pred).^2);
+	R2=1-(ssres/sstot);
+
 end

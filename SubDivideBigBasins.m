@@ -514,7 +514,7 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 				min_z=min(DEMoc.Z(:),[],'omitnan');
 				mean_z=mean(DEMoc.Z(:),'omitnan');
 				max_z=max(DEMoc.Z(:),[],'omitnan');
-				std_z=std(DEMoc.Z(:,'omitnan');
+				std_z=std(DEMoc.Z(:),'omitnan');
 				se_z=std_z/sqrt(sum(~isnan(DEMoc.Z(:)))); % Standard error
 
 				KSNc_stats=[mean_ksn se_ksn std_ksn min_ksn max_ksn];
@@ -657,20 +657,22 @@ function [ksn_ms]=KSN_Quick(DEM,A,S,theta_ref,segment_length)
 	Z_RES=DEMc-DEM;
 
 	ksn=G./(A.*(A.cellsize^2)).^(-theta_ref);
-	
+
 	ksn_ms=STREAMobj2mapstruct(S,'seglength',segment_length,'attributes',...
 		{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'cut_fill' Z_RES @mean});
 end
 
-function [ksn_ms]=KSN_Trib(DEM,FD,A,S,theta_ref,segment_length)
+function [ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length)
 
 	% Define non-intersecting segments
 	[as]=networksegment_slim(DEM,FD,S);
 	seg_bnd_ix=as.ix;
 	% Precompute values or extract values needed for later
-	z=mincosthydrocon(S,DEM,'interp',0.1);
+	z=getnal(S,DEMc);
 	zu=getnal(S,DEM);
 	z_res=z-zu;
+	G=gradient8(DEMc);
+	g=getnal(S,G);
 	c=chitransform(S,A,'a0',1,'mn',theta_ref);
 	d=S.distance;
 	da=getnal(S,A.*(A.cellsize^2));
@@ -716,23 +718,26 @@ function [ksn_ms]=KSN_Trib(DEM,FD,A,S,theta_ref,segment_length)
 				bin_ix=seg_ix_oi(idx);
 				cOI=c(bin_ix);
 				zOI=z(bin_ix);
-					if numel(cOI)>2
-						[ksn_val]=Chi_Z_Spline(cOI,zOI);
-						ksn_nal(bin_ix)=ksn_val;
+				if numel(cOI)>2
+					[ksn_val,r2]=Chi_Z_Spline(cOI,zOI);
+					ksn_nal(bin_ix)=ksn_val;
 
-						% Build mapstructure
-						ksn_ms(seg_count).Geometry='Line';
-						ksn_ms(seg_count).X=S.x(bin_ix);
-						ksn_ms(seg_count).Y=S.y(bin_ix);
-						ksn_ms(seg_count).ksn=ksn_val;
-						ksn_ms(seg_count).cut_fill=mean(z_res(bin_ix));
-						ksn_ms(seg_count).area=mean(da(bin_ix));
-						seg_count=seg_count+1;
-					end
+					% Build mapstructure
+					ksn_ms(seg_count).Geometry='Line';
+					ksm_ms(seg_count).BoundingBox=[min(S.x(bin_ix)),min(S.y(bin_ix));max(S.x(bin_ix)),max(S.y(bin_ix))];
+					ksn_ms(seg_count).X=S.x(bin_ix);
+					ksn_ms(seg_count).Y=S.y(bin_ix);
+					ksn_ms(seg_count).ksn=ksn_val;
+					ksn_ms(seg_count).uparea=mean(da(bin_ix));
+					ksn_ms(seg_count).gradient=mean(g(bin_ix));
+					ksn_ms(seg_count).cut_fill=mean(z_res(bin_ix));
+					ksn_ms(seg_count).chi_r2=r2;
+					
+					seg_count=seg_count+1;
+				end
 			end
-		end	
+		end
 	end
-
 end
 
 function seg = networksegment_slim(DEM,FD,S)
@@ -774,9 +779,9 @@ function seg = networksegment_slim(DEM,FD,S)
 
 	% Number of segments
 	seg.n=numel(IX(:,1));
-end
+	end
 
-function [KSN] = Chi_Z_Spline(c,z)
+function [KSN,R2] = Chi_Z_Spline(c,z)
 
 	% Resample chi-elevation relationship using cubic spline interpolation
 	[~,minIX]=min(c);
@@ -786,33 +791,38 @@ function [KSN] = Chi_Z_Spline(c,z)
 	chiS=linspace(0,max(chiF),numel(chiF)).';
 	zS=spline(chiF,zabsF,chiS);
 
-	%Calculate beta
-    BETA = chiS\(zS);
+	% Calculate ksn via slope
+	KSN= chiS\(zS); % mn not needed because a0 is fixed to 1
 
-	KSN= BETA; %Beta.*a0^mn - if a0 set to 1, not needed
+	% Calculate R^2
+	z_pred=chiF.*KSN;
+	sstot=sum((zabsF-mean(zabsF)).^2);
+	ssres=sum((zabsF-z_pred).^2);
+	R2=1-(ssres/sstot);
+
 end
 
 function [KSNGrid] = KsnInt(DEM,ksn_ms)
-    [xx,yy]=getcoordinates(DEM);
-    [X,Y]=meshgrid(xx,yy);
+	[xx,yy]=getcoordinates(DEM);
+	[X,Y]=meshgrid(xx,yy);
 
-    ksn_cell=cell(numel(ksn_ms),1);
-    for ii=1:numel(ksn_ms)
-        ksn_cell{ii}=ones(numel(ksn_ms(ii).X),1)*ksn_ms(ii).ksn;
-    end
-    ksn_x=vertcat(ksn_ms.X); ksn_y=vertcat(ksn_ms.Y); ksn_ksn=vertcat(ksn_cell{:});
-    idx=isnan(ksn_ksn);
-    ksn_x(idx)=[];
-    ksn_y(idx)=[];
-    ksn_ksn(idx)=[];
-    
-    warning off
-    Fk=scatteredInterpolant(ksn_x,ksn_y,ksn_ksn,'natural');
-    ksn_int=Fk(X,Y);
-    KSNGrid=GRIDobj(xx,yy,ksn_int);
-    IDX=isnan(DEM);
-    KSNGrid.Z(IDX.Z)=NaN;
-    warning on
+	ksn_cell=cell(numel(ksn_ms),1);
+	for ii=1:numel(ksn_ms)
+	    ksn_cell{ii}=ones(numel(ksn_ms(ii).X),1)*ksn_ms(ii).ksn;
+	end
+	ksn_x=vertcat(ksn_ms.X); ksn_y=vertcat(ksn_ms.Y); ksn_ksn=vertcat(ksn_cell{:});
+	idx=isnan(ksn_ksn);
+	ksn_x(idx)=[];
+	ksn_y(idx)=[];
+	ksn_ksn(idx)=[];
+
+	warning off
+	Fk=scatteredInterpolant(ksn_x,ksn_y,ksn_ksn,'natural');
+	ksn_int=Fk(X,Y);
+	KSNGrid=GRIDobj(xx,yy,ksn_int);
+	IDX=isnan(DEM);
+	KSNGrid.Z(IDX.Z)=NaN;
+	warning on
 end
 
 function [x,y] = CheckUpstream(DEM,FD,ix)

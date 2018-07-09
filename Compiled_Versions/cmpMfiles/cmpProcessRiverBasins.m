@@ -501,31 +501,26 @@ end
 function [ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length)
 
 	% Define non-intersecting segments
-	w1=waitbar(0,'Finding network segments');
 	[as]=networksegment_slim(DEM,FD,S);
 	seg_bnd_ix=as.ix;
 	% Precompute values or extract values needed for later
-	waitbar(1/4,w1,'Calculating hydrologically conditioned stream elevations');
 	z=getnal(S,DEMc);
 	zu=getnal(S,DEM);
 	z_res=z-zu;
-	waitbar(2/4,w1,'Calculating chi values');
+	G=gradient8(DEMc);
+	g=getnal(S,G);
 	c=chitransform(S,A,'a0',1,'mn',theta_ref);
 	d=S.distance;
 	da=getnal(S,A.*(A.cellsize^2));
 	ixgrid=S.IXgrid;
-	waitbar(3/4,w1,'Extracting node ordered list');
 	% Extract ordered list of stream indices and find breaks between streams
 	s_node_list=S.orderednanlist;
 	streams_ix=find(isnan(s_node_list));
 	streams_ix=vertcat(1,streams_ix);
-	waitbar(1,w1,'Pre computations completed');
-	close(w1)
 	% Generate empty node attribute list for ksn values
 	ksn_nal=zeros(size(d));
 	% Begin main loop through channels
 	num_streams=numel(streams_ix)-1;
-	w1=waitbar(0,'Calculating k_{sn} values - 0% Done');
 	seg_count=1;
 	for ii=1:num_streams
 		% Extract node list for stream of interest
@@ -560,27 +555,25 @@ function [ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length)
 				cOI=c(bin_ix);
 				zOI=z(bin_ix);
 					if numel(cOI)>2
-						[ksn_val]=Chi_Z_Spline(cOI,zOI);
+						[ksn_val,r2]=Chi_Z_Spline(cOI,zOI);
 						ksn_nal(bin_ix)=ksn_val;
 
 						% Build mapstructure
 						ksn_ms(seg_count).Geometry='Line';
+						ksm_ms(seg_count).BoundingBox=[min(S.x(bin_ix)),min(S.y(bin_ix));max(S.x(bin_ix)),max(S.y(bin_ix))];
 						ksn_ms(seg_count).X=S.x(bin_ix);
 						ksn_ms(seg_count).Y=S.y(bin_ix);
 						ksn_ms(seg_count).ksn=ksn_val;
+						ksn_ms(seg_count).uparea=mean(da(bin_ix));
+						ksn_ms(seg_count).gradient=mean(g(bin_ix));
 						ksn_ms(seg_count).cut_fill=mean(z_res(bin_ix));
-						ksn_ms(seg_count).area=mean(da(bin_ix));
+						ksn_ms(seg_count).chi_r2=r2;
+						
 						seg_count=seg_count+1;
 					end
 			end
 		end
-	perc_of_total=round((ii/num_streams)*1000)/10;
-	if rem(perc_of_total,1)==0
-		waitbar((ii/num_streams),w1,['Calculating k_{sn} values - ' num2str(perc_of_total) '% Done']);
 	end
-	
-	end
-	close(w1);
 end
 
 function seg = networksegment_slim(DEM,FD,S)
@@ -624,7 +617,7 @@ function seg = networksegment_slim(DEM,FD,S)
 	seg.n=numel(IX(:,1));
 end
 
-function [KSN] = Chi_Z_Spline(c,z)
+function [KSN,R2] = Chi_Z_Spline(c,z)
 
 	% Resample chi-elevation relationship using cubic spline interpolation
 	[~,minIX]=min(c);
@@ -634,10 +627,15 @@ function [KSN] = Chi_Z_Spline(c,z)
 	chiS=linspace(0,max(chiF),numel(chiF)).';
 	zS=spline(chiF,zabsF,chiS);
 
-	%Calculate beta
-    BETA = chiS\(zS);
+	% Calculate ksn via slope
+	KSN= chiS\(zS); % mn not needed because a0 is fixed to 1
 
-	KSN= BETA; %Beta.*a0^mn - if a0 set to 1, not needed
+	% Calculate R^2
+	z_pred=chiF.*KSN;
+	sstot=sum((zabsF-mean(zabsF)).^2);
+	ssres=sum((zabsF-z_pred).^2);
+	R2=1-(ssres/sstot);
+
 end
 
 function [KSNGrid] = KsnInt(DEM,ksn_ms)
