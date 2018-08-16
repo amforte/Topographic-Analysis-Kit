@@ -28,7 +28,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	%	file_name_prefix ['batch'] - prefix for outputs, will append the type of output, i.e. 'ksn', 'chimap', etc
 	%	smooth_distance [1000] - distance in map units over which to smooth ksn measures when converting to shapefile
 	% 	ref_concavity [0.50] - reference concavity (as a positive value) for calculating ksn
-	% 	output [false]- switch to either output matlab files to the workspace (true) or to not only save the specified files
+	% 	output [false]- switch to either output matlab files to the workspace (true) or to only save the specified files
 	%		without any workspace output (false)
 	%	ksn_method [quick] - switch between method to calculate ksn values, options are 'quick' and 'trib', the 'trib' method takes 3-4 times longer 
 	%		than the 'quick' method. In most cases, the 'quick' method works well, but if values near tributary junctions are important, then 'trib'
@@ -294,20 +294,20 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 		
 		switch ksn_method
 		case 'quick'
-			[ksn_ms]=KSN_Quick(DEM,DEMc,A,S,theta_ref,segment_length);
+			[KSN]=KSN_Quick(DEM,DEMc,A,S,theta_ref,segment_length);
 		case 'trib'
-			[ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length);
+			[KSN]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length);
 		end
 
 		disp('Calculating interpolated ksn grid')
 		[xx,yy]=getcoordinates(DEM);
 		[X,Y]=meshgrid(xx,yy);
 
-		ksn_cell=cell(numel(ksn_ms),1);
-		for ii=1:numel(ksn_ms)
-			ksn_cell{ii}=ones(numel(ksn_ms(ii).X),1)*ksn_ms(ii).ksn;
+		ksn_cell=cell(numel(KSN),1);
+		for ii=1:numel(KSN)
+			ksn_cell{ii}=ones(numel(KSN(ii).X),1)*KSN(ii).ksn;
 		end
-		ksn_x=vertcat(ksn_ms.X); ksn_y=vertcat(ksn_ms.Y); ksn_ksn=vertcat(ksn_cell{:});
+		ksn_x=vertcat(KSN.X); ksn_y=vertcat(KSN.Y); ksn_ksn=vertcat(ksn_cell{:});
 
 		Fk=scatteredInterpolant(ksn_x,ksn_y,ksn_ksn);
 		ksn_int=Fk(X,Y);
@@ -322,7 +322,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 
 		disp('Writing ARC files')
 		out_file_ksn=[file_name_prefix '_ksn.shp'];
-		shapewrite(ksn_ms,out_file_ksn);
+		shapewrite(KSN,out_file_ksn);
 		out_file_ksng=[file_name_prefix '_ksngrid.txt'];
 		GRIDobj2ascii(KSNGrid,out_file_ksng);
 		out_file_cg=[file_name_prefix '_chigrid.txt'];
