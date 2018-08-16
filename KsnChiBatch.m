@@ -173,19 +173,19 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 		
 		switch ksn_method
 		case 'quick'
-			[ksn_ms]=KSN_Quick(DEM,DEMc,A,S,theta_ref,segment_length);
+			[KSN]=KSN_Quick(DEM,DEMc,A,S,theta_ref,segment_length);
 		case 'trib'
-			[ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length);
+			[KSN]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length);
 		end
 
 		[xx,yy]=getcoordinates(DEM);
 		[X,Y]=meshgrid(xx,yy);
 
-		ksn_cell=cell(numel(ksn_ms),1);
-		for ii=1:numel(ksn_ms)
-			ksn_cell{ii}=ones(numel(ksn_ms(ii).X),1)*ksn_ms(ii).ksn;
+		ksn_cell=cell(numel(KSN),1);
+		for ii=1:numel(KSN)
+			ksn_cell{ii}=ones(numel(KSN(ii).X),1)*KSN(ii).ksn;
 		end
-		ksn_x=vertcat(ksn_ms.X); ksn_y=vertcat(ksn_ms.Y); ksn_ksn=vertcat(ksn_cell{:});
+		ksn_x=vertcat(KSN.X); ksn_y=vertcat(KSN.Y); ksn_ksn=vertcat(ksn_cell{:});
 
 		Fk=scatteredInterpolant(ksn_x,ksn_y,ksn_ksn);
 		ksn_int=Fk(X,Y);
@@ -334,9 +334,9 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 		case true
 			KSNG=GRIDobj(DEM);
 			KSNG.Z(:,:)=NaN;
-			for ii=1:numel(ksn_ms)
-				ix=coord2ind(DEM,ksn_ms(ii).X,ksn_ms(ii).Y);
-				KSNG.Z(ix)=ksn_ms(ii).ksn;
+			for ii=1:numel(KSN)
+				ix=coord2ind(DEM,KSN(ii).X,KSN(ii).Y);
+				KSNG.Z(ix)=KSN(ii).ksn;
 			end
 			varargout{1}=KSNG;
 			varargout{2}=KSN;
@@ -614,17 +614,17 @@ function [ChiOBJ]=MakeChiGrid(DEM,FD,varargin)
 	ChiOBJ.Z(IXgrid)=c;
 end
 
-function [ksn_ms]=KSN_Quick(DEM,DEMc,A,S,theta_ref,segment_length)
+function [KSN]=KSN_Quick(DEM,DEMc,A,S,theta_ref,segment_length)
 	G=gradient8(DEMc);
 	Z_RES=DEMc-DEM;
 
 	ksn=G./(A.*(A.cellsize^2)).^(-theta_ref);
 	
-	ksn_ms=STREAMobj2mapstruct(S,'seglength',segment_length,'attributes',...
+	KSN=STREAMobj2mapstruct(S,'seglength',segment_length,'attributes',...
 		{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'cut_fill' Z_RES @mean});
 end
 
-function [ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length)
+function [KSN]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length)
 
 	% Define non-intersecting segments
 	w1=waitbar(0,'Finding network segments');
@@ -692,15 +692,15 @@ function [ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length)
 						ksn_nal(bin_ix)=ksn_val;
 
 						% Build mapstructure
-						ksn_ms(seg_count).Geometry='Line';
+						KSN(seg_count).Geometry='Line';
 						ksm_ms(seg_count).BoundingBox=[min(S.x(bin_ix)),min(S.y(bin_ix));max(S.x(bin_ix)),max(S.y(bin_ix))];
-						ksn_ms(seg_count).X=S.x(bin_ix);
-						ksn_ms(seg_count).Y=S.y(bin_ix);
-						ksn_ms(seg_count).ksn=ksn_val;
-						ksn_ms(seg_count).uparea=mean(da(bin_ix));
-						ksn_ms(seg_count).gradient=mean(g(bin_ix));
-						ksn_ms(seg_count).cut_fill=mean(z_res(bin_ix));
-						ksn_ms(seg_count).chi_r2=r2;
+						KSN(seg_count).X=S.x(bin_ix);
+						KSN(seg_count).Y=S.y(bin_ix);
+						KSN(seg_count).ksn=ksn_val;
+						KSN(seg_count).uparea=mean(da(bin_ix));
+						KSN(seg_count).gradient=mean(g(bin_ix));
+						KSN(seg_count).cut_fill=mean(z_res(bin_ix));
+						KSN(seg_count).chi_r2=r2;
 						
 						seg_count=seg_count+1;
 					end
