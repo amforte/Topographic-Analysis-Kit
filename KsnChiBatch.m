@@ -49,8 +49,8 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	%	Please be aware that the production of the chigrid can be time consuming, so be patient...
 	%
 	% Example:
-	%	KSN_Chi_Batch(DEM,FD,A,S,'ksn');
-	%	[KSN,ChiMap,ChiGrid]=KSN_Chi_Batch(DEM,FD,A,S,'output',true,'theta_ref',0.55);
+	%	KSNChiBatch(DEM,FD,A,S,'ksn');
+	%	[KSN,ChiMap,ChiGrid]=KSNChiBatch(DEM,FD,A,S,'output',true,'theta_ref',0.55);
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 06/18/18 %
