@@ -509,9 +509,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			% Loop through stream segments to extract x,y,ksn
 			streamData=zeros(numSegs,3);
 			for kk=1:numSegs
-				xx=mean(data(kk,1).X);
-				yy=mean(data(kk,1).Y);
-				ksn=mean(data(kk,1).ksn);
+				xx=mean(data(1,kk).X);
+				yy=mean(data(1,kk).Y);
+				ksn=mean(data(1,kk).ksn);
 				streamData(kk,:)=[xx yy ksn];
 			end	
 
