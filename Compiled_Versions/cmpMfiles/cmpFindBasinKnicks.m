@@ -234,7 +234,7 @@ function cmpFindBasinKnicks(wdir,basin_dir,Basin_Data_File,plot_result,varargin)
 	end
 
 
-	save(fullfile(wdir,basin_dir,['Knicks_' num2str(RiverMouth(:,3)) '.mat']),'KnickTable');
+	save(fullfile(wdir,basin_dir,['Knicks_' num2str(RiverMouth(:,3)) '.mat']),'KnickTable','-v7.3');
 	writetable(KnickTable,fullfile(wdir,basin_dir,['Knicks_' num2str(RiverMouth(:,3)) '.txt']));
 
 

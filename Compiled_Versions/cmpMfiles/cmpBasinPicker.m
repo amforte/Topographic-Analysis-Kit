@@ -462,7 +462,7 @@ function cmpBasinPicker(wdir,MatFile,varargin)
                 hold off
             end
             
-            save(fullfile(wdir,'Outlets.mat'),'Outlets');
+            save(fullfile(wdir,'Outlets.mat'),'Outlets','-v7.3');
         end
         
         qa3=questdlg('Keep choosing basins?','Basin Selection','No','Yes','Yes'); 

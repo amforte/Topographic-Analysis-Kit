@@ -280,16 +280,16 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	out_mat_name=[shape_name '_profiler.mat'];
 	out_restart_name=[shape_name '_restart.mat'];
 	if rf
-		save(out_mat_name,'input_params','-append');
+		save(out_mat_name,'input_params','-append','-v7.3');
 		if exist(out_restart_name)==2
-			save(out_restart_name,'input_params','-append');
+			save(out_restart_name,'input_params','-append','-v7.3');
 		else
-			save(out_restart_name,'input_params');
+			save(out_restart_name,'input_params','-v7.3');
 		end
 	else
 		input_params=p.Results;
-		save(out_mat_name,'input_params');
-		save(out_restart_name,'input_params');
+		save(out_mat_name,'input_params','-v7.3');
+		save(out_restart_name,'input_params','-v7.3');
 	end
 
     % Remove edges if flag is thrown
@@ -311,16 +311,18 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 			error('Selection method is "channel_heads", must provide an input for the "channel_head_list" parameter');
 		end
 
-		% Load in shapefile if provided
-		if logical(regexp(chl,regexptranslate('wildcard','*.shp')))
-			ch_ms=shaperead(chl);
-			ch_t=struct2table(ch_ms);
-			if ~strcmp(ch_t.Geometry(1),'Point')
-				error('Shapefile provided as "channel_heads" does not appear to be a point shapefile');
+		if ischar(chl)
+			% Load in shapefile if provided
+			if logical(regexp(chl,regexptranslate('wildcard','*.shp')))
+				ch_ms=shaperead(chl);
+				ch_t=struct2table(ch_ms);
+				if ~strcmp(ch_t.Geometry(1),'Point')
+					error('Shapefile provided as "channel_heads" does not appear to be a point shapefile');
+				end
+				xi=ch_t.X;
+				yi=ch_t.Y;
+				chl=[xi yi];
 			end
-			xi=ch_t.X;
-			yi=ch_t.Y;
-			chl=[xi yi];
 		end
 
 		% Snap to nearest channel heads
@@ -1590,7 +1592,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					bnd_master{ii,1}=bnd_ix;
 					res_master{ii,1}=res_list;
 					count=ii;
-					save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append');
+					save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append','-v7.3');
 					if save_figures
 						f2_name=['StreamFits_' num2str(ii) '.pdf'];
 						f3_name=['StreamRsds_' num2str(ii) '.pdf'];
@@ -1614,7 +1616,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					bnd_master{ii,1}=bnd_ix;
 					res_master{ii,1}=res_list;
 					count=ii;
-					save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append');					
+					save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append','-v7.3');					
 					if save_figures
 						f2_name=['StreamFits_' num2str(ii) '.pdf'];
 						f3_name=['StreamRsds_' num2str(ii) '.pdf'];
@@ -2574,7 +2576,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						res_master{ii,1}=res_list;		
 						Sc=Sct;
 						count=ii;
-						save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append');						
+						save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append','-v7.3');						
 						if save_figures
 							f2_name=['StreamFits_' num2str(ii) '.pdf'];
 							f3_name=['StreamRsds_' num2str(ii) '.pdf'];
@@ -2601,7 +2603,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						res_master{ii,1}=res_list;		
 						Sc=Sct;
 						count=ii;
-						save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append');
+						save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append','-v7.3');
 						if save_figures
 							f2_name=['StreamFits_' num2str(ii) '.pdf'];
 							f3_name=['StreamRsds_' num2str(ii) '.pdf'];
@@ -2633,7 +2635,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						res_master{ii,1}=res_list;		
 						Sc=Sct;
 						count=ii;
-						save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append');
+						save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append','-v7.3');
 						if save_figures
 							f2_name=['StreamFits_' num2str(ii) '.pdf'];
 							f3_name=['StreamRsds_' num2str(ii) '.pdf'];
@@ -2849,7 +2851,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	waitbar(4/5,wtb);
 
 	% Save out file
-	save(out_mat_name,'knl','ksn_master','bnd_list','Sc','bnd_master','res_master','count','-append');
+	save(out_mat_name,'knl','ksn_master','bnd_list','Sc','bnd_master','res_master','count','-append','-v7.3');
 	% Delete restart file after successful completion
 	delete(out_restart_name);
 

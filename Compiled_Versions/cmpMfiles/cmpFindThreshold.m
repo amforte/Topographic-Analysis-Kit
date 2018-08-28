@@ -111,7 +111,7 @@ function cmpFindThreshold(wdir,MatFile,num_streams,varargin)
 			chOI=chix(ii);
 
 			UP=dependencemap(FD,chOI);
-			FLDSt=DEM.*UP;
+			FLDSt=FLUS.*UP;
 
 			[~,ix]=max(FLDSt);
 
@@ -248,7 +248,7 @@ function cmpFindThreshold(wdir,MatFile,num_streams,varargin)
 			chOI=chix(ii);
 
 			UP=dependencemap(FD,chOI);
-			FLDSt=DEM.*UP;
+			FLDSt=FLUS.*UP;
 
 			[~,ix]=max(FLDSt);
 
@@ -389,7 +389,7 @@ function cmpFindThreshold(wdir,MatFile,num_streams,varargin)
 	MSn=STREAMobj2mapstruct(Sn);
 	shapewrite(MSn,fullfile(wdir,'thresh_streams.shp'));
 	% Output matfile containing new stream network
-	save(fullfile(wdir,'thresh_streams.mat'),'Sn');
+	save(fullfile(wdir,'thresh_streams.mat'),'Sn','-v7.3');
 	close(f1);
 end
 

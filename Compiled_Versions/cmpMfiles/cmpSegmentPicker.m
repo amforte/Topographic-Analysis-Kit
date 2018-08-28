@@ -1160,9 +1160,9 @@ function cmpSegmentPicker(wdir,MatFile,basin_num,varargin)
 	fileOut=fullfile(wdir,['PickedSegments_' num2str(basin_num) '.mat']);
 	switch direction
 	case 'up'
-		save(fileOut,'StreamSgmnts','ChiSgmnts','SlpAreaSgmnts','Outlets','Sc');
+		save(fileOut,'StreamSgmnts','ChiSgmnts','SlpAreaSgmnts','Outlets','Sc','-v7.3');
 	case 'down'
-		save(fileOut,'StreamSgmnts','ChiSgmnts','SlpAreaSgmnts','Heads','Sc');	
+		save(fileOut,'StreamSgmnts','ChiSgmnts','SlpAreaSgmnts','Heads','Sc','-v7.3');	
 	end
 
 	MSn=STREAMobj2mapstruct(Sc);

@@ -49,8 +49,8 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	%	Please be aware that the production of the chigrid can be time consuming, so be patient...
 	%
 	% Example:
-	%	KSN_Chi_Batch(DEM,FD,A,S,'ksn');
-	%	[KSN,ChiMap,ChiGrid]=KSN_Chi_Batch(DEM,FD,A,S,'output',true,'theta_ref',0.55);
+	%	KsnChiBatch(DEM,FD,A,S,'ksn');
+	%	[KSN,ChiMap,ChiGrid]=KsnChiBatch(DEM,FD,A,S,'output',true,'theta_ref',0.55);
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 06/18/18 %
@@ -192,6 +192,10 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 		KSNGrid=GRIDobj(xx,yy,ksn_int);
 		KSNGrid.Z(IDX.Z)=NaN;
 
+		M=GRIDobj(DEM,'logical');
+		M.Z(~isnan(DEM.Z))=true;
+		KSNGrid=crop(KSNGrid,DEM,NaN);
+
 		disp('Writing ARC files')
 		out_file_ksng=[file_name_prefix '_ksngrid.txt'];
 		GRIDobj2ascii(KSNGrid,out_file_ksng);
@@ -314,6 +318,10 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 		KSNGrid=GRIDobj(xx,yy,ksn_int);
 		KSNGrid.Z(IDX.Z)=NaN;
 
+		M=GRIDobj(DEM,'logical');
+		M.Z(~isnan(DEM.Z))=true;
+		KSNGrid=crop(KSNGrid,DEM,NaN);
+
 	    disp('Calculating chi map');
 		[ChiMap]=MakeChiMap(DEM,FD,A,S,theta_ref);
 
@@ -339,7 +347,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 				KSNG.Z(ix)=ksn_ms(ii).ksn;
 			end
 			varargout{1}=KSNG;
-			varargout{2}=KSN;
+			varargout{2}=ksn_ms;
 			varargout{3}=KSNGrid;
 			varargout{4}=ChiMap;
 			varargout{5}=ChiGrid;

@@ -459,7 +459,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
                 hold off
             end
             
-            save('Outlets.mat','Outlets');
+            save('Outlets.mat','Outlets','-v7.3');
         end
         
         qa3=questdlg('Keep choosing basins?','Basin Selection','No','Yes','Yes'); 

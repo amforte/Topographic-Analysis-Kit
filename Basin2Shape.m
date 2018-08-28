@@ -1,8 +1,8 @@
 function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	%
 	% Usage:
-	%	[MapStruct]=Basin2Sahpe(DEM,location_of_data_files);
-	%	[MapStruct]=Basin2Sahpe(DEM,location_of_data_files,'name',value,...);	
+	%	[MapStruct]=Basin2Shape(DEM,location_of_data_files);
+	%	[MapStruct]=Basin2Shape(DEM,location_of_data_files,'name',value,...);	
 	%
 	% Description:
 	% 	Function to take the outputs from 'ProcessRiverBasins' and 'SubDivideBigBasins' and produce a single shapefile showing the outlines of polygons

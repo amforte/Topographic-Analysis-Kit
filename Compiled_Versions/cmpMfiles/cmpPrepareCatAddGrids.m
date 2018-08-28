@@ -62,5 +62,5 @@ function cmpPrepareAddCatGrids(wdir,out_file_name,MakeStreamsMat,varargin)
 	end
 
 	fn=fullfile(wdir,[out_file_name '.mat']);
-	save(fn,'ACG');
+	save(fn,'ACG','-v7.3');
 end

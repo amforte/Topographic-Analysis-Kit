@@ -5,12 +5,11 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	%	[T]=CompileBasinStats(location_of_data_files,'name',value,...);
 	%
 	% Description:
-	% 	Function to take the outputs from 'ProcessRiverBasins' and 'SubDivideBigBasins' and produce a single shapefile showing the outlines of polygons
-	% 	and with commonly desired attributes from the results of 'ProcessRiverBasins' etc. See below for a full list of fields that the output shapefile
-	% 	will include. If additional grids were provided to 'ProcessRiverBasins', mean and standard error values for those grids will be auto-populated in
-	% 	the shapefile and the name of the fields will be the character array provided in the second column of additional grids input. This function also
-	% 	allows you to input a list of additional fields you wish to include (see Optional Inputs below). If you would rather create a GRIDobj with specified
-	% 	values, use 'Basin2Raster'.
+	% 	Function to take the outputs from 'ProcessRiverBasins' and 'SubDivideBigBasins' and produce a Matlab table that summarizes the results of ProcessRiverBasins
+	%	and optionally SubDivideBigBasins. This table is a required input for 'BasinStatsPlots'. If additional grids were provided to 'ProcessRiverBasins', mean and 
+	%	standard error values for those grids will be included in the table. This function also allows you to input a list of additional fields you wish to include 
+	%	(see Optional Inputs below). There are also a variety of additional parameters / quantities that can be calculated if you provided a categorical grid
+	%	to 'ProcessRiverBasins'.
 	%
 	% Required Inputs:
 	% 		location_of_data_files - full path of folder which contains the mat files from 'ProcessRiverBasins'

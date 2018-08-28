@@ -1066,7 +1066,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 		end
 	end
 
-	save('ProjectedSegments.mat','OUT');
+	save('ProjectedSegments.mat','OUT','-v7.3');
 end
 
 function [OUT]=ChiCalc(S,DEM,A,a0,varargin)

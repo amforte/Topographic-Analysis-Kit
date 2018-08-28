@@ -48,5 +48,5 @@ function cmpPrepareAddGrids(wdir,out_file_name,varargin)
 	end
 
 	fn=fullfile(wdir,[out_file_name '.mat']);
-	save(fn,'AG');
+	save(fn,'AG','-v7.3');
 end

@@ -58,8 +58,8 @@ function [Sn,thresh_list,xd_list]=FindThreshold(DEM,FD,A,S,num_streams,varargin)
 	parse(p,DEM,FD,A,S,num_streams,varargin{:});
 	DEM=p.Results.DEM;
 	FD=p.Results.FD;
-	S=p.Results.S;
 	A=p.Results.A;
+	S=p.Results.S;
 	num_streams=p.Results.num_streams;
 
 	pick_method=p.Results.pick_method;
@@ -97,7 +97,7 @@ function [Sn,thresh_list,xd_list]=FindThreshold(DEM,FD,A,S,num_streams,varargin)
 			chOI=chix(ii);
 
 			UP=dependencemap(FD,chOI);
-			FLDSt=DEM.*UP;
+			FLDSt=FLUS.*UP;
 
 			[~,ix]=max(FLDSt);
 
@@ -234,7 +234,7 @@ function [Sn,thresh_list,xd_list]=FindThreshold(DEM,FD,A,S,num_streams,varargin)
 			chOI=chix(ii);
 
 			UP=dependencemap(FD,chOI);
-			FLDSt=DEM.*UP;
+			FLDSt=FLUS.*UP;
 
 			[~,ix]=max(FLDSt);
 

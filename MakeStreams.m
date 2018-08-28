@@ -144,7 +144,7 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	FD=FLOWobj(DEM,'preprocess','carve','verbose',true);
 
 	if save_output
-		save(MatFileName,'FD','-append');
+		save(MatFileName,'FD','-append','-v7.3');
 	end
 
 	disp('Calculating Flow Accumulation')
@@ -185,7 +185,7 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 
 	if save_output
 		disp('Saving outputs')
-		save(MatFileName,'A','S','-append');
+		save(MatFileName,'A','S','-append','-v7.3');
 		MS=STREAMobj2mapstruct(S);
 		shapewrite(MS,ShpFileName);
 	end

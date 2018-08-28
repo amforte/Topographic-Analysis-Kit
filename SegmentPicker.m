@@ -1135,9 +1135,9 @@ end
 fileOut=['PickedSegments_' num2str(basin_num) '.mat'];
 switch direction
 case 'up'
-	save(fileOut,'StreamSgmnts','ChiSgmnts','SlpAreaSgmnts','Outlets','Sc');
+	save(fileOut,'StreamSgmnts','ChiSgmnts','SlpAreaSgmnts','Outlets','Sc','-v7.3');
 case 'down'
-	save(fileOut,'StreamSgmnts','ChiSgmnts','SlpAreaSgmnts','Heads','Sc');	
+	save(fileOut,'StreamSgmnts','ChiSgmnts','SlpAreaSgmnts','Heads','Sc','-v7.3');	
 end
 
 % Main Function End

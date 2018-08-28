@@ -215,6 +215,10 @@ function cmpKsnChiBatch(wdir,MatFile,product,varargin)
 		KSNGrid=GRIDobj(xx,yy,ksn_int);
 		KSNGrid.Z(IDX.Z)=NaN;
 
+		M=GRIDobj(DEM,'logical');
+		M.Z(~isnan(DEM.Z))=true;
+		KSNGrid=crop(KSNGrid,DEM,NaN);
+
 		disp('Writing ARC files')
 		out_file_ksng=[file_name_prefix '_ksngrid.txt'];
 		GRIDobj2ascii(KSNGrid,out_file_ksng);
@@ -308,6 +312,10 @@ function cmpKsnChiBatch(wdir,MatFile,product,varargin)
 		ksn_int=Fk(X,Y);
 		KSNGrid=GRIDobj(xx,yy,ksn_int);
 		KSNGrid.Z(IDX.Z)=NaN;
+
+		M=GRIDobj(DEM,'logical');
+		M.Z(~isnan(DEM.Z))=true;
+		KSNGrid=crop(KSNGrid,DEM,NaN);
 
 	    disp('Calculating chi map');
 		[ChiMap]=MakeChiMap(DEM,FD,A,S,theta_ref);

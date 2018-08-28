@@ -238,7 +238,7 @@ function cmpProcessRiverBasins(wdir,MakeStreamsMat,river_mouths,basin_dir,vararg
 		disp('Generating river mouths based on provided elevation')
 		sz=getnal(S,DEM);
 		ix1=S.IXgrid;
-		ix1(sz>=river_mouths)=[];
+		ix1(sz<river_mouths)=[];
 		W=GRIDobj(DEM,'logical');
 		W.Z(ix1)=true;
 		Stemp=STREAMobj(FD,W);
@@ -377,12 +377,12 @@ function cmpProcessRiverBasins(wdir,MakeStreamsMat,river_mouths,basin_dir,vararg
 
 		% Save base file
 		FileName=fullfile(basin_path,['Basin_' num2str(basin_num) '_Data.mat']);
-		save(FileName,'RiverMouth','DEMcc','DEMoc','out_el','drainage_area','hyps','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method','gradient_method','theta_ref');
+		save(FileName,'RiverMouth','DEMcc','DEMoc','out_el','drainage_area','hyps','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method','gradient_method','theta_ref','-v7.3');
 		
 		% Make interpolated ksn grid
 		try 
 			[KsnOBJc] = KsnInt(DEMoc,MSNc);
-			save(FileName,'KsnOBJc','-append');
+			save(FileName,'KsnOBJc','-append','-v7.3');
 		catch
 			warning(['Interpolation of KSN grid failed for basin ' num2str(RiverMouth(:,3))]);
 		end
@@ -402,7 +402,7 @@ function cmpProcessRiverBasins(wdir,MakeStreamsMat,river_mouths,basin_dir,vararg
 				se_AGc=std_AGc/sqrt(sum(~isnan(AGcOI.Z(:))));
 				AGc_stats(jj,:)=[mean_AGc se_AGc std_AGc min_AGc max_AGc];
 			end
-			save(FileName,'AGc','AGc_stats','-append');				
+			save(FileName,'AGc','AGc_stats','-append','-v7.3');				
 		end
 
 		if ~isempty(ACG)
@@ -421,7 +421,7 @@ function cmpProcessRiverBasins(wdir,MakeStreamsMat,river_mouths,basin_dir,vararg
 				ACGc{jj,2}=T;
 				ACGc_stats(jj,1)=[mode(ACGcOI.Z(:))];
 			end
-			save(FileName,'ACGc','ACGc_stats','-append');	
+			save(FileName,'ACGc','ACGc_stats','-append','-v7.3');	
 		end				
 
 		if calc_relief
@@ -442,7 +442,7 @@ function cmpProcessRiverBasins(wdir,MakeStreamsMat,river_mouths,basin_dir,vararg
 				se_rlf=std_rlf/sqrt(sum(~isnan(rlfOI.Z(:))));
 				rlf_stats(jj,:)=[mean_rlf se_rlf std_rlf min_rlf max_rlf radOI];
 			end
-			save(FileName,'rlf','rlf_stats','-append');
+			save(FileName,'rlf','rlf_stats','-append','-v7.3');
 		end
 
 		if write_arc_files

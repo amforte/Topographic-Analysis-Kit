@@ -275,16 +275,16 @@ function cmpKsnProfiler(wdir,MatFile,varargin)
 	out_mat_name=fullfile(wdir,[shape_name '_profiler.mat']);
 	out_restart_name=fullfile(wdir,[shape_name '_restart.mat']);
 	if rf
-		save(out_mat_name,'input_params','-append');
+		save(out_mat_name,'input_params','-append','-v7.3');
 		if exist(out_restart_name)==2
-			save(out_restart_name,'input_params','-append');
+			save(out_restart_name,'input_params','-append','-v7.3');
 		else
-			save(out_restart_name,'input_params');
+			save(out_restart_name,'input_params','-v7.3');
 		end
 	else
 		input_params=p.Results;
-		save(out_mat_name,'input_params');
-		save(out_restart_name,'input_params');
+		save(out_mat_name,'input_params','-v7.3');
+		save(out_restart_name,'input_params','-v7.3');
 	end
 
 	% Determine the type of input
@@ -382,7 +382,7 @@ function cmpKsnProfiler(wdir,MatFile,varargin)
 			xi=ch_t.X;
 			yi=ch_t.Y;
 			chl=[xi yi];
-		elseif istable(chl)
+		else
 			ChlT=readtable(chl);
 			chl=[ChlT.(1) ChlT.(2)];
 		end
@@ -1636,7 +1636,7 @@ function cmpKsnProfiler(wdir,MatFile,varargin)
 					bnd_master{ii,1}=bnd_ix;
 					res_master{ii,1}=res_list;
 					count=ii;
-					save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append');
+					save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append','-v7.3');
 					if save_figures
 						f2_name=fullfile(wdir,['StreamFits_' num2str(ii) '.pdf']);
 						f3_name=fullfile(wdir,['StreamRsds_' num2str(ii) '.pdf']);
@@ -1660,7 +1660,7 @@ function cmpKsnProfiler(wdir,MatFile,varargin)
 					bnd_master{ii,1}=bnd_ix;
 					res_master{ii,1}=res_list;
 					count=ii;
-					save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append');					
+					save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append','-v7.3');					
 					if save_figures
 						f2_name=fullfile(wdir,['StreamFits_' num2str(ii) '.pdf']);
 						f3_name=fullfile(wdir,['StreamRsds_' num2str(ii) '.pdf']);
@@ -2620,7 +2620,7 @@ function cmpKsnProfiler(wdir,MatFile,varargin)
 						res_master{ii,1}=res_list;		
 						Sc=Sct;
 						count=ii;
-						save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append');						
+						save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append','-v7.3');						
 						if save_figures
 							f2_name=fullfile(wdir,['StreamFits_' num2str(ii) '.pdf']);
 							f3_name=fullfile(wdir,['StreamRsds_' num2str(ii) '.pdf']);
@@ -2647,7 +2647,7 @@ function cmpKsnProfiler(wdir,MatFile,varargin)
 						res_master{ii,1}=res_list;		
 						Sc=Sct;
 						count=ii;
-						save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append');
+						save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append','-v7.3');
 						if save_figures
 							f2_name=fullfile(wdir,['StreamFits_' num2str(ii) '.pdf']);
 							f3_name=fullfile(wdir,['StreamRsds_' num2str(ii) '.pdf']);
@@ -2679,7 +2679,7 @@ function cmpKsnProfiler(wdir,MatFile,varargin)
 						res_master{ii,1}=res_list;		
 						Sc=Sct;
 						count=ii;
-						save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append');
+						save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append','-v7.3');
 						if save_figures
 							f2_name=fullfile(wdir,['StreamFits_' num2str(ii) '.pdf']);
 							f3_name=fullfile(wdir,['StreamRsds_' num2str(ii) '.pdf']);
@@ -2895,7 +2895,7 @@ function cmpKsnProfiler(wdir,MatFile,varargin)
 	waitbar(4/5,wtb);
 
 	% Save out file for restart option
-	save(out_mat_name,'knl','ksn_master','bnd_list','Sc','bnd_master','res_master','count','-append');
+	save(out_mat_name,'knl','ksn_master','bnd_list','Sc','bnd_master','res_master','count','-append','-v7.3');
 
 	knlT=array2table(knl,'VariableNames',{'x_coord','y_coord','drainage_area','ksn','neg_ksn_unc','pos_ksn_unc','ref_concavity',...
 		'best_fit_concavity','min_thresh_area','gradient','fit_residual','ID'});

@@ -228,7 +228,7 @@ function [KnickTable]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 	end
 
 	if save_mat
-		save(['Knicks_' num2str(RiverMouth(:,3)) '.mat'],'KnickTable');
+		save(['Knicks_' num2str(RiverMouth(:,3)) '.mat'],'KnickTable','-v7.3');
 	end
 
 	if ~isempty(shape_name)

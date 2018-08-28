@@ -527,12 +527,12 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 
 				SubFileName=[SBFiles_Dir '/Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '.mat'];
 
-				save(SubFileName,'RiverMouth','DEMcc','DEMoc','out_el','drainage_area','hyps','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method','gradient_method','theta_ref');
+				save(SubFileName,'RiverMouth','DEMcc','DEMoc','out_el','drainage_area','hyps','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method','gradient_method','theta_ref','-v7.3');
 				
 				% Make interpolated ksn grid
 				try 
 					[KsnOBJc] = KsnInt(DEMoc,MSNc);
-					save(FileName,'KsnOBJc','-append');
+					save(FileName,'KsnOBJc','-append','-v7.3');
 				catch
 					warning(['Interpolation of KSN grid failed for basin ' num2str(RiverMouth(:,3))]);
 				end
@@ -556,7 +556,7 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 						se_AGc=std_AGc/sqrt(sum(~isnan(AGcOI.Z(:))));
 						AGc_stats(kk,:)=[mean_AGc se_AGc std_AGc min_AGc max_AGc];
 					end
-					save(SubFileName,'AGc','AGc_stats','-append');
+					save(SubFileName,'AGc','AGc_stats','-append','-v7.3');
 				end
 
 				VarInd=find(strcmp(cellstr(char(VarList.name)),'ACGc'));
@@ -578,7 +578,7 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 						ACGc{kk,2}=T;
 						ACGc_stats(kk,1)=[mode(ACGcOI.Z(:))];
 					end
-					save(SubFileName,'ACGc','ACGc_stats','-append');	
+					save(SubFileName,'ACGc','ACGc_stats','-append','-v7.3');	
 				end	
 
 				VarInd=find(strcmp(cellstr(char(VarList.name)),'rlf'));
@@ -602,7 +602,7 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 						se_rlf=std_rlf/sqrt(sum(~isnan(rlfOI.Z(:))));
 						rlf_stats(kk,:)=[mean_rlf se_rlf std_rlf min_rlf max_rlf radOI];
 					end
-					save(SubFileName,'rlf','rlf_stats','-append');
+					save(SubFileName,'rlf','rlf_stats','-append','-v7.3');
 				end					
 
 				if write_arc_files

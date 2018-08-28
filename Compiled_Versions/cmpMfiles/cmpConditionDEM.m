@@ -228,7 +228,7 @@ function cmpConditionDEM(wdir,MatFile,method,varargin)
 	outFile=fullfile(wdir,'ConditionedDEM.txt');
 	GRIDobj2ascii(DEMc,outFile);
 	outMat=fullfile(wdir,'ConditionedDEM.mat');
-	save(outMat,'DEMc');
+	save(outMat,'DEMc','-v7.3');
 
 	msgbox('Close all figures to complete code execution');
 	
