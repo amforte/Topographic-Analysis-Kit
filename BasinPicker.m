@@ -44,6 +44,11 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
     %           the stream network is plotted as a grid and downsampled ('grid'). The 'grid' option is much faster for large datasets, 
     %           but can result in inaccurate site selections. The 'vector' option is easier to see, but can be very slow to load and interact with.
     %       threshold_area [1e6] - used to redraw downsampled stream network if 'plot_type' is set to 'grid'
+    %       refine_positions [] - expects a m x 2 array of x y positions that are near stream networks that you want to manually snap to the approrpiate stream
+    %           network. An example would be a series of GPS positions of river samples that don't quite lie on the stream network as determined by flow routing.
+    %           If you provide an entry for 'refine_positions', the code will iteratively work through the provided points, displaying their location one point
+    %           at a time along with a zoomed inset window (size controlled by 'window_size') on which you can precisely position the river mouth location.
+    %       window_size [1] - size of inset window (in km) if you have provided an entry for 'refine_positions'
     %
     % 
     % Outputs:
@@ -76,6 +81,8 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
     addParameter(p,'extra_grid',[],@(x) isa(x,'GRIDobj'));
     addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
     addParameter(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
+    addParameter(p,'refine_positions',[],@(x) isnumeric(x) && size(x,2)==2);
+    addParameter(p,'window_size',1,@(x) isnumeric(x) && isscalar(x));
 
     parse(p,DEM,FD,A,S,varargin{:});
     DEM=p.Results.DEM;
@@ -92,10 +99,12 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
     EG=p.Results.extra_grid;
     DEMf=p.Results.conditioned_DEM;
     iv=p.Results.interp_value;
+    rp=p.Results.refine_positions;
+    ws=p.Results.window_size;
 
-
-    % Check for outlets file from previous run
-    if exist('Outlets.mat','file')==2;
+    % Check for outlets file from previous run in current directory
+    current=pwd;
+    if exist([current filesep 'Outlets.mat'],'file')==2;
         load('Outlets.mat','Outlets');
         ii=max(Outlets(:,3))+1;
     else 
@@ -115,6 +124,15 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
     if isempty(RLF)
         disp('Calculating local relief')
         RLF=localtopography(DEM,rlf_radius);
+    end
+
+    % Set operation mode flag
+    if ~isempty(rp)
+        ws=ws*1000;
+        num_points=size(rp,1);
+        op_mode='refine';
+    else
+        op_mode='normal';
     end
 
     % Calculate gradient and simple KSN
@@ -243,7 +261,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             ax(3)=subplot(3,1,3);
             hold on
             imageschs(DEMr,EGr,'colormap',cmap)
-            plot(S,'-k','LineWidth',1.5);
+            plot(Sr,'-k','LineWidth',1.5);
             scatter(Outlets(:,1),Outlets(:,2),20,'r','filled');
             title('User Provided Extra Grid')
             hold off
@@ -269,210 +287,458 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
 
     end
     
-    % Start sample selection process
-    str1='N'; % Watershed choice
-    str2='Y'; % Continue choosing
+    switch op_mode
+    case 'normal'
 
-    while strcmpi(str2,'Y');
-        while strcmpi(str1,'N');	
+        % Start sample selection process
+        str1='N'; % Watershed choice
+        str2='Y'; % Continue choosing
+
+        while strcmpi(str2,'Y');
+            while strcmpi(str1,'N');	
+                
+                if isempty(EG)
+                    subplot(2,1,1);
+                    hold on
+                    title('Zoom and pan to area of interest and press "return/enter" when ready to pick')
+                    hold off
+                    pause()
+
+                    subplot(2,1,1);
+                    hold on
+                    title('Choose sample point on elevation map')
+                    hold off
+                else
+                    subplot(3,1,1);
+                    hold on
+                    title('Zoom and pan to area of interest and press "return/enter" when ready to pick')
+                    hold off
+                    pause()
+
+                    subplot(3,1,1);
+                    hold on
+                    title('Choose sample point on elevation map')
+                    hold off
+                end
+
+                [x,y]=ginput(1);
+
+                % Build logical raster
+                [xn,yn]=snap2stream(S,x,y);
+                ix=coord2ind(DEM,xn,yn);
+                IX=GRIDobj(DEM,'logical');
+                IX.Z(ix)=true;
+
+                % Clip out stream network
+                Sn=modify(S,'upstreamto',IX);
+                
+                % Clip out GRIDs
+                I=dependencemap(FD,xn,yn);
+                DEMc=crop(DEM,I,nan);
+                RLFc=crop(RLF,I,nan);
+                if ~isempty(EG)
+                    EGc=crop(EG,I,nan);
+                end
+                            
+                % Calculate drainage area
+                dep_map=GRIDobj2mat(I);
+                num_pix=sum(sum(dep_map));
+                drainage_area=(num_pix*DEMc.cellsize*DEMc.cellsize)/(1e6);
             
-            if isempty(EG)
-                subplot(2,1,1);
+                f2=figure(2);
+                clf
+                set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.45])
                 hold on
-                title('Zoom and pan to area of interest and press "return/enter" when ready to pick')
+                title(['Drainage Area = ' num2str(round(drainage_area)) 'km^2']);
+                colormap(cmap);
+                imagesc(DEMc)
+                plot(Sn,'-r','LineWidth',2);
+                scatter(xn,yn,20,'w','filled');
                 hold off
-                pause()
 
-                subplot(2,1,1);
-                hold on
-                title('Choose sample point on elevation map')
-                hold off
-            else
-                subplot(3,1,1);
-                hold on
-                title('Zoom and pan to area of interest and press "return/enter" when ready to pick')
-                hold off
-                pause()
+                if isempty(EG)
+                    figure(1);
 
-                subplot(3,1,1);
-                hold on
-                title('Choose sample point on elevation map')
-                hold off
+                    subplot(2,1,2);
+                    hold on
+                    pl(1)=plot(Sn,'-r','LineWidth',2);
+                    sc(1)=scatter(xn,yn,20,'w','filled');
+                    hold off
+                              
+                    subplot(2,1,1);
+                    hold on
+                    pl(2)=plot(Sn,'-r','LineWidth',2);        
+                    sc(2)=scatter(xn,yn,20,'w','filled');      
+                    hold off
+                else
+                    figure(1);
+
+                    subplot(3,1,3);
+                    hold on
+                    pl(1)=plot(Sn,'-r','LineWidth',2);
+                    sc(1)=scatter(xn,yn,20,'w','filled');
+                    hold off
+
+                    subplot(3,1,2);
+                    hold on
+                    pl(2)=plot(Sn,'-r','LineWidth',2);
+                    sc(2)=scatter(xn,yn,20,'w','filled');
+                    hold off
+                              
+                    subplot(3,1,1);
+                    hold on
+                    pl(3)=plot(Sn,'-r','LineWidth',2);
+                    sc(3)=scatter(xn,yn,20,'w','filled');
+                    hold off
+                end
+
+                qa=questdlg('Is this the watershed you wanted?','Basin Selection','No','Yes','Yes');
+
+                switch qa
+                case 'Yes'
+                    str1 = 'Y';
+                case 'No'
+                    str1 = 'N';
+                end
+
+                delete(pl);
+                delete(sc);
+                close figure 2
             end
-
-            [x,y]=ginput(1);
-
-            % Build logical raster
-            [xn,yn]=snap2stream(S,x,y);
-            ix=coord2ind(DEM,xn,yn);
-            IX=GRIDobj(DEM,'logical');
-            IX.Z(ix)=true;
-
-            % Clip out stream network
-            Sn=modify(S,'upstreamto',IX);
             
-            % Clip out GRIDs
-            I=dependencemap(FD,xn,yn);
-            DEMc=crop(DEM,I,nan);
-            RLFc=crop(RLF,I,nan);
+            Sn=klargestconncomps(Sn,1);
+            C=chiplot(Sn,DEMf,A,'a0',1,'mn',theta_ref,'plot',false);
+
+            ksn=getnal(Sn,KSN);
+            mksn=mean(ksn,'omitnan');
+            mrlf=mean(RLFc.Z(:),'omitnan');
             if ~isempty(EG)
-                EGc=crop(EG,I,nan);
+                meg=mean(EGc.Z(:),'omitnan');
             end
-                        
-            % Calculate drainage area
-            dep_map=GRIDobj2mat(I);
-            num_pix=sum(sum(dep_map));
-            drainage_area=(num_pix*DEMc.cellsize*DEMc.cellsize)/(1e6);
-        
+
             f2=figure(2);
             clf
-            set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.45])
+            set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
+            subplot(2,1,1);
             hold on
-            title(['Drainage Area = ' num2str(round(drainage_area)) 'km^2']);
-            colormap(cmap);
-            imagesc(DEMc)
-            plot(Sn,'-r','LineWidth',2);
-            scatter(xn,yn,20,'w','filled');
+            plot(C.chi,C.elev);
+            xlabel('\chi')
+            ylabel('Elevation (m)')
+            if isempty(EG)
+                title(['\chi - Z : Mean k_{sn} = ' num2str(round(mksn)) ' : Mean Relief = ' num2str(round(mrlf)) ' : Drainage Area = ' num2str(round(drainage_area)) 'km^2'])
+            else
+                title(['\chi - Z : Mean k_{sn} = ' num2str(round(mksn)) ' : Mean Relief = ' num2str(round(mrlf)) ' : Mean Extra Grid = ' num2str(round(meg)) ' : Drainage Area = ' num2str(round(drainage_area)) 'km^2'])
+            end
             hold off
 
-            if isempty(EG)
-                figure(1);
+            subplot(2,1,2);
+            hold on
+            plotdz(Sn,DEMf,'dunit','km','Color','k');
+            xlabel('Distance from Mouth (km)')
+            ylabel('Elevation (m)')
+            title('Long Profile')
+            hold off
 
-                subplot(2,1,2);
-                hold on
-                pl(1)=plot(Sn,'-r','LineWidth',2);
-                sc(1)=scatter(xn,yn,20,'w','filled');
-                hold off
-                          
-                subplot(2,1,1);
-                hold on
-                pl(2)=plot(Sn,'-r','LineWidth',2);        
-                sc(2)=scatter(xn,yn,20,'w','filled');      
-                hold off
-            else
-                figure(1);
+            qa2=questdlg('Keep this basin?','Basin Selection','No','Yes','Yes');       
 
-                subplot(3,1,3);
-                hold on
-                pl(1)=plot(Sn,'-r','LineWidth',2);
-                sc(1)=scatter(xn,yn,20,'w','filled');
-                hold off
-
-                subplot(3,1,2);
-                hold on
-                pl(2)=plot(Sn,'-r','LineWidth',2);
-                sc(2)=scatter(xn,yn,20,'w','filled');
-                hold off
-                          
-                subplot(3,1,1);
-                hold on
-                pl(3)=plot(Sn,'-r','LineWidth',2);
-                sc(3)=scatter(xn,yn,20,'w','filled');
-                hold off
-            end
-
-            qa=questdlg('Is this the watershed you wanted?','Basin Selection','No','Yes','Yes');
-
-            switch qa
+            switch qa2
             case 'Yes'
-                str1 = 'Y';
-            case 'No'
-                str1 = 'N';
+                Outlets(ii,1)=xn;
+                Outlets(ii,2)=yn;
+                Outlets(ii,3)=ii;
+                ii=ii+1;
+                
+                % Plot selected point on figures
+
+                if isempty(EG)
+                    figure(1);
+                    subplot(2,1,2);
+                    hold on
+                    scatter(xn,yn,20,'r','filled');
+                    hold off
+                              
+                    subplot(2,1,1);
+                    hold on
+                    scatter(xn,yn,20,'r','filled');
+                    hold off
+                else
+                    figure(1);
+
+                    subplot(3,1,3);
+                    hold on
+                    scatter(xn,yn,20,'r','filled');
+                    hold off
+
+                    subplot(3,1,2);
+                    hold on
+                    scatter(xn,yn,20,'r','filled');
+                    hold off
+                              
+                    subplot(3,1,1);
+                    hold on
+                    scatter(xn,yn,20,'r','filled');
+                    hold off
+                end
+                
+                save('Outlets.mat','Outlets','-v7.3');
             end
-
-            delete(pl);
-            delete(sc);
-            close figure 2
-        end
-        
-        Sn=klargestconncomps(Sn,1);
-        C=chiplot(Sn,DEMf,A,'a0',1,'mn',theta_ref,'plot',false);
-
-        ksn=getnal(Sn,KSN);
-        mksn=mean(ksn,'omitnan');
-        mrlf=mean(RLFc.Z(:),'omitnan');
-        if ~isempty(EG)
-            meg=mean(EGc.Z(:),'omitnan');
-        end
-
-        f2=figure(2);
-        clf
-        set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
-        subplot(2,1,1);
-        hold on
-        plot(C.chi,C.elev);
-        xlabel('\chi')
-        ylabel('Elevation (m)')
-        if isempty(EG)
-            title(['\chi - Z : Mean k_{sn} = ' num2str(round(mksn)) ' : Mean Relief = ' num2str(round(mrlf)) ' : Drainage Area = ' num2str(round(drainage_area)) 'km^2'])
-        else
-            title(['\chi - Z : Mean k_{sn} = ' num2str(round(mksn)) ' : Mean Relief = ' num2str(round(mrlf)) ' : Mean Extra Grid = ' num2str(round(meg)) ' : Drainage Area = ' num2str(round(drainage_area)) 'km^2'])
-        end
-        hold off
-
-        subplot(2,1,2);
-        hold on
-        plotdz(Sn,DEMf,'dunit','km','Color','k');
-        xlabel('Distance from Mouth (km)')
-        ylabel('Elevation (m)')
-        title('Long Profile')
-        hold off
-
-        qa2=questdlg('Keep this basin?','Basin Selection','No','Yes','Yes');       
-
-        switch qa2
-        case 'Yes'
-            Outlets(ii,1)=xn;
-            Outlets(ii,2)=yn;
-            Outlets(ii,3)=ii;
-            ii=ii+1;
             
-            % Plot selected point on figures
+            qa3=questdlg('Keep choosing basins?','Basin Selection','No','Yes','Yes'); 
+            switch qa3
+            case 'Yes'
+                str2='Y';
+                str1='N';
+            case 'No'
+                str2='N';
+            end  
+         
+            close figure 2;
+        end
 
-            if isempty(EG)
-                figure(1);
-                subplot(2,1,2);
-                hold on
-                scatter(xn,yn,20,'r','filled');
-                hold off
-                          
+    case 'refine'
+
+        for jj=1:num_points
+            pnt=rp(jj,:);
+
+            box_x=[pnt(1)-ws/2 pnt(1)+ws/2 pnt(1)+ws/2 pnt(1)-ws/2 pnt(1)-ws/2];
+            box_y=[pnt(2)-ws/2 pnt(2)-ws/2 pnt(2)+ws/2 pnt(2)+ws/2 pnt(2)-ws/2];
+
+
+            % Start sample selection process
+            str1='N'; % Watershed choice
+            str2='Y'; % Continue choosing
+
+            while strcmpi(str2,'Y');
+                while strcmpi(str1,'N');    
+                    
+                    if isempty(EG)
+                        figure(1);
+                        subplot(2,1,1);
+                        hold on
+                        bb(1)=plot(box_x,box_y,'-r','LineWidth',2);
+                        hold off
+
+                        subplot(2,1,2);
+                        hold on
+                        bb(2)=plot(box_x,box_y,'-r','LineWidth',2);
+                        hold off
+
+                    else
+                        figure(1);
+                        subplot(3,1,1);
+                        hold on
+                        bb(1)=plot(box_x,box_y,'-r','LineWidth',2);
+                        hold off
+
+                        subplot(3,1,2);
+                        hold on
+                        bb(2)=plot(box_x,box_y,'-r','LineWidth',2);
+                        hold off
+
+                        subplot(3,1,3);
+                        hold on
+                        bb(3)=plot(box_x,box_y,'-r','LineWidth',2);
+                        hold off
+                    end
+
+                    f2=figure(2);
+                    clf
+                    set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.45])
+                    hold on
+                    title(['Choose sample point on inset elevation map']);
+                    xlim([pnt(1)-ws/2 pnt(1)+ws/2]);
+                    ylim([pnt(2)-ws/2 pnt(2)+ws/2]);
+                    colormap(cmap);
+                    switch plot_type
+                    case 'vector'
+                        imageschs(DEM,RLF,'colormap',cmap);
+                        plot(S,'-k','LineWidth',1.5);
+                    case 'grid'
+                        imageschs(DEMr,EGr,'colormap',cmap)
+                        plot(Sr,'-k','LineWidth',1.5);
+                    end
+                    scatter(pnt(1),pnt(2),20,'r','filled');
+                    xlim([pnt(1)-ws/2 pnt(1)+ws/2]);
+                    ylim([pnt(2)-ws/2 pnt(2)+ws/2]);
+                    hold off
+
+                    [x,y]=ginput(1);
+
+                    close figure 2
+
+                    % Build logical raster
+                    [xn,yn]=snap2stream(S,x,y);
+                    ix=coord2ind(DEM,xn,yn);
+                    IX=GRIDobj(DEM,'logical');
+                    IX.Z(ix)=true;
+
+                    % Clip out stream network
+                    Sn=modify(S,'upstreamto',IX);
+                    
+                    % Clip out GRIDs
+                    I=dependencemap(FD,xn,yn);
+                    DEMc=crop(DEM,I,nan);
+                    RLFc=crop(RLF,I,nan);
+                    if ~isempty(EG)
+                        EGc=crop(EG,I,nan);
+                    end
+                                
+                    % Calculate drainage area
+                    dep_map=GRIDobj2mat(I);
+                    num_pix=sum(sum(dep_map));
+                    drainage_area=(num_pix*DEMc.cellsize*DEMc.cellsize)/(1e6);
+                
+                    f2=figure(2);
+                    clf
+                    set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.45])
+                    hold on
+                    title(['Drainage Area = ' num2str(round(drainage_area)) 'km^2']);
+                    colormap(cmap);
+                    imagesc(DEMc)
+                    plot(Sn,'-r','LineWidth',2);
+                    scatter(xn,yn,20,'w','filled');
+                    hold off
+
+                    if isempty(EG)
+                        figure(1);
+
+                        subplot(2,1,2);
+                        hold on
+                        pl(1)=plot(Sn,'-r','LineWidth',2);
+                        sc(1)=scatter(xn,yn,20,'w','filled');
+                        hold off
+                                  
+                        subplot(2,1,1);
+                        hold on
+                        pl(2)=plot(Sn,'-r','LineWidth',2);        
+                        sc(2)=scatter(xn,yn,20,'w','filled');      
+                        hold off
+                    else
+                        figure(1);
+
+                        subplot(3,1,3);
+                        hold on
+                        pl(1)=plot(Sn,'-r','LineWidth',2);
+                        sc(1)=scatter(xn,yn,20,'w','filled');
+                        hold off
+
+                        subplot(3,1,2);
+                        hold on
+                        pl(2)=plot(Sn,'-r','LineWidth',2);
+                        sc(2)=scatter(xn,yn,20,'w','filled');
+                        hold off
+                                  
+                        subplot(3,1,1);
+                        hold on
+                        pl(3)=plot(Sn,'-r','LineWidth',2);
+                        sc(3)=scatter(xn,yn,20,'w','filled');
+                        hold off
+                    end
+
+                    qa=questdlg('Is this the watershed you wanted?','Basin Selection','No','Yes','Yes');
+
+                    switch qa
+                    case 'Yes'
+                        str1 = 'Y';
+                    case 'No'
+                        str1 = 'N';
+                    end
+
+                    delete(pl);
+                    delete(sc);
+                    delete(bb);
+                    close figure 2
+                end
+                
+                Sn=klargestconncomps(Sn,1);
+                C=chiplot(Sn,DEMf,A,'a0',1,'mn',theta_ref,'plot',false);
+
+                ksn=getnal(Sn,KSN);
+                mksn=mean(ksn,'omitnan');
+                mrlf=mean(RLFc.Z(:),'omitnan');
+                if ~isempty(EG)
+                    meg=mean(EGc.Z(:),'omitnan');
+                end
+
+                f2=figure(2);
+                clf
+                set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
                 subplot(2,1,1);
                 hold on
-                scatter(xn,yn,20,'r','filled');
+                plot(C.chi,C.elev);
+                xlabel('\chi')
+                ylabel('Elevation (m)')
+                if isempty(EG)
+                    title(['\chi - Z : Mean k_{sn} = ' num2str(round(mksn)) ' : Mean Relief = ' num2str(round(mrlf)) ' : Drainage Area = ' num2str(round(drainage_area)) 'km^2'])
+                else
+                    title(['\chi - Z : Mean k_{sn} = ' num2str(round(mksn)) ' : Mean Relief = ' num2str(round(mrlf)) ' : Mean Extra Grid = ' num2str(round(meg)) ' : Drainage Area = ' num2str(round(drainage_area)) 'km^2'])
+                end
                 hold off
-            else
-                figure(1);
 
-                subplot(3,1,3);
+                subplot(2,1,2);
                 hold on
-                scatter(xn,yn,20,'r','filled');
+                plotdz(Sn,DEMf,'dunit','km','Color','k');
+                xlabel('Distance from Mouth (km)')
+                ylabel('Elevation (m)')
+                title('Long Profile')
                 hold off
 
-                subplot(3,1,2);
-                hold on
-                scatter(xn,yn,20,'r','filled');
-                hold off
-                          
-                subplot(3,1,1);
-                hold on
-                scatter(xn,yn,20,'r','filled');
-                hold off
+                qa2=questdlg('Keep this basin?','Basin Selection','No','Yes','Yes');       
+
+                switch qa2
+                case 'Yes'
+                    Outlets(ii,1)=xn;
+                    Outlets(ii,2)=yn;
+                    Outlets(ii,3)=ii;
+                    ii=ii+1;
+                    
+                    % Plot selected point on figures
+
+                    if isempty(EG)
+                        figure(1);
+                        subplot(2,1,2);
+                        hold on
+                        scatter(xn,yn,20,'r','filled');
+                        hold off
+                                  
+                        subplot(2,1,1);
+                        hold on
+                        scatter(xn,yn,20,'r','filled');
+                        hold off
+                    else
+                        figure(1);
+
+                        subplot(3,1,3);
+                        hold on
+                        scatter(xn,yn,20,'r','filled');
+                        hold off
+
+                        subplot(3,1,2);
+                        hold on
+                        scatter(xn,yn,20,'r','filled');
+                        hold off
+                                  
+                        subplot(3,1,1);
+                        hold on
+                        scatter(xn,yn,20,'r','filled');
+                        hold off
+                    end
+                    
+                    save('Outlets.mat','Outlets','-v7.3');
+                end
+                
+                % Break while loop to continue for loop
+                str2='N';
+             
+                close figure 2;
+            % While End
             end
-            
-            save('Outlets.mat','Outlets','-v7.3');
+        % For Loop End
         end
-        
-        qa3=questdlg('Keep choosing basins?','Basin Selection','No','Yes','Yes'); 
-        switch qa3
-        case 'Yes'
-            str2='Y';
-            str1='N';
-        case 'No'
-            str2='N';
-        end  
-     
-        close figure 2;
+    % Switch End
     end
+    close figure 1;
+% Function End
 end   
     
     
