@@ -24,9 +24,13 @@ function cmpProcessRiverBasins(wdir,MakeStreamsMat,river_mouths,basin_dir,vararg
 	% 		threshold_area [1e6] - minimum accumulation area to define streams in meters squared
 	% 		segment_length [1000] - smoothing distance in meters for averaging along ksn, suggested value is 1000 meters
 	% 		ref_concavity [0.5] - reference concavity for calculating ksn, suggested value is 0.45
-	%		ksn_method [quick] - switch between method to calculate ksn values, options are 'quick' and 'trib', the 'trib' method takes 3-4 times longer 
+	%		ksn_method [quick] - switch between method to calculate ksn values, options are 'quick', 'trunk', or 'trib', the 'trib' method takes 3-4 times longer 
 	%			than the 'quick' method. In most cases, the 'quick' method works well, but if values near tributary junctions are important, then 'trib'
-	%			may be better as this calculates ksn values for individual channel segments individually
+	%			may be better as this calculates ksn values for individual channel segments individually. The 'trunk' option calculates steepness values
+	%			of large streams independently (streams considered as trunks are controlled by the stream order value supplied to 'min_order'). The 'trunk' option
+	%			may be of use if you notice anomaoloulsy high channel steepness values on main trunk streams that can result because of the way values are reach
+	%			averaged.
+	%		min_order [4] - minimum stream order for a stream to be considered a trunk stream, only used if 'ksn_method' is set to 'trunk'
 	% 		write_arc_files [false] - set value to true to output a ascii's of various grids and a shapefile of the ksn, false to not output arc files
 	%		clip_method ['clip'] - flag to determine how the code clips out stream networks, expects either 'clip' or 'segment'. The 'clip' option 
 	%			(default) will clip out DEMs and rerun the flow algorithm on this clipped DEM and proceed from there to get a new stream network. 
@@ -85,7 +89,8 @@ function cmpProcessRiverBasins(wdir,MakeStreamsMat,river_mouths,basin_dir,vararg
 	addParamValue(p,'segment_length',1000,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'write_arc_files',false,@(x) isscalar(x));
 	addParamValue(p,'clip_method','clip',@(x) ischar(validatestring(x,{'clip','segment'})));
-	addParamValue(p,'ksn_method','quick',@(x) ischar(validatestring(x,{'quick','trib'})));
+	addParamValue(p,'ksn_method','quick',@(x) ischar(validatestring(x,{'quick','trunk','trib'})));
+	addParamValue(p,'min_order',4,@(x) isscalar(x) && isnumeric(x));
 	addParamValue(p,'add_grids',[],@(x) ~isempty(regexp(x,regexptranslate('wildcard','*.mat'))));
 	addParamValue(p,'add_cat_grids',[],@(x) ~isempty(regexp(x,regexptranslate('wildcard','*.mat'))));
 	addParamValue(p,'resample_method','nearest',@(x) ischar(validatestring(x,{'nearest','bilinear','bicubic'})));
@@ -107,6 +112,7 @@ function cmpProcessRiverBasins(wdir,MakeStreamsMat,river_mouths,basin_dir,vararg
 	write_arc_files=p.Results.write_arc_files;
 	clip_method=p.Results.clip_method;
 	ksn_method=p.Results.ksn_method;
+	min_order=p.Results.min_order;
 	AGmat=p.Results.add_grids;
 	ACGmat=p.Results.add_cat_grids;
 	resample_method=p.Results.resample_method;
@@ -154,6 +160,12 @@ function cmpProcessRiverBasins(wdir,MakeStreamsMat,river_mouths,basin_dir,vararg
 		end
 	else 
 		AG=[];
+	end
+
+	% Peform check on segment length
+	if (DEM.cellsize*3)>segment_length
+		segment_length=DEM.cellsize*3;
+		warning(['Provided segment_length is incompatible with DEM resolution, segment_length reset to ' num2str(segment_length)])
 	end
 
 	% Load Additional Categorical Grids if present
@@ -335,6 +347,9 @@ function cmpProcessRiverBasins(wdir,MakeStreamsMat,river_mouths,basin_dir,vararg
 		case 'quick'
 			[MSc]=KSN_Quick(DEMoc,DEMcc,Ac,Sc,Chic.mn,segment_length);
 			[MSNc]=KSN_Quick(DEMoc,DEMcc,Ac,Sc,theta_ref,segment_length);
+		case 'trunk'
+			[MSc]=KSN_Trunk(DEMoc,DEMcc,Ac,Sc,Chic.mn,segment_length,min_order);
+			[MSNc]=KSN_Trunk(DEMoc,DEMcc,Ac,Sc,theta_ref,segment_length,min_order);
 		case 'trib'
 			% Overide choice if very small basin as KSN_Trib will fail for small basins
 			if drainage_area>2.5
@@ -378,11 +393,15 @@ function cmpProcessRiverBasins(wdir,MakeStreamsMat,river_mouths,basin_dir,vararg
 		% Save base file
 		FileName=fullfile(basin_path,['Basin_' num2str(basin_num) '_Data.mat']);
 		save(FileName,'RiverMouth','DEMcc','DEMoc','out_el','drainage_area','hyps','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method','gradient_method','theta_ref','-v7.3');
+
+		if strcmp(ksn_method,'trunk')
+			save(FileName,'min_order','-append');
+		end
 		
 		% Make interpolated ksn grid
 		try 
 			[KsnOBJc] = KsnInt(DEMoc,MSNc);
-			save(FileName,'KsnOBJc','-append','-v7.3');
+			save(FileName,'KsnOBJc','-append');
 		catch
 			warning(['Interpolation of KSN grid failed for basin ' num2str(RiverMouth(:,3))]);
 		end
@@ -402,7 +421,7 @@ function cmpProcessRiverBasins(wdir,MakeStreamsMat,river_mouths,basin_dir,vararg
 				se_AGc=std_AGc/sqrt(sum(~isnan(AGcOI.Z(:))));
 				AGc_stats(jj,:)=[mean_AGc se_AGc std_AGc min_AGc max_AGc];
 			end
-			save(FileName,'AGc','AGc_stats','-append','-v7.3');				
+			save(FileName,'AGc','AGc_stats','-append');				
 		end
 
 		if ~isempty(ACG)
@@ -421,7 +440,7 @@ function cmpProcessRiverBasins(wdir,MakeStreamsMat,river_mouths,basin_dir,vararg
 				ACGc{jj,2}=T;
 				ACGc_stats(jj,1)=[mode(ACGcOI.Z(:))];
 			end
-			save(FileName,'ACGc','ACGc_stats','-append','-v7.3');	
+			save(FileName,'ACGc','ACGc_stats','-append');	
 		end				
 
 		if calc_relief
@@ -442,7 +461,7 @@ function cmpProcessRiverBasins(wdir,MakeStreamsMat,river_mouths,basin_dir,vararg
 				se_rlf=std_rlf/sqrt(sum(~isnan(rlfOI.Z(:))));
 				rlf_stats(jj,:)=[mean_rlf se_rlf std_rlf min_rlf max_rlf radOI];
 			end
-			save(FileName,'rlf','rlf_stats','-append','-v7.3');
+			save(FileName,'rlf','rlf_stats','-append');
 		end
 
 		if write_arc_files
@@ -496,6 +515,27 @@ function [ksn_ms]=KSN_Quick(DEM,DEMc,A,S,theta_ref,segment_length)
 	
 	ksn_ms=STREAMobj2mapstruct(S,'seglength',segment_length,'attributes',...
 		{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'cut_fill' Z_RES @mean});
+end
+
+function [ksn_ms]=KSN_Trunk(DEM,DEMc,A,S,theta_ref,segment_length,min_order)
+
+	order_exp=['>=' num2str(min_order)];
+
+    Smax=modify(S,'streamorder',order_exp);
+	Smin=modify(S,'rmnodes',Smax);
+
+	G=gradient8(DEMc);
+	Z_RES=DEMc-DEM;
+
+	ksn=G./(A.*(A.cellsize^2)).^(-theta_ref);
+
+	ksn_ms_min=STREAMobj2mapstruct(Smin,'seglength',segment_length,'attributes',...
+		{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'cut_fill' Z_RES @mean});
+
+	ksn_ms_max=STREAMobj2mapstruct(Smax,'seglength',segment_length,'attributes',...
+		{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'cut_fill' Z_RES @mean});
+
+	ksn_ms=vertcat(ksn_ms_min,ksn_ms_max);
 end
 
 function [ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length)
