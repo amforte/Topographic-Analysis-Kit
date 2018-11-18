@@ -74,7 +74,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	addRequired(p,'FD', @(x) isa(x,'FLOWobj'));
 	addRequired(p,'A', @(x) isa(x,'GRIDobj'));
 	addRequired(p,'S',@(x) isa(x,'STREAMobj'));
-	addRequired(p,'product',@(x) ischar(validatestring(x,{'ksn','ksngrid','chimap','chigrid','all'})));
+	addRequired(p,'product',@(x) ischar(validatestring(x,{'ksn','ksngrid','chimap','chigrid','chi','all'})));
 
 	addParameter(p,'file_name_prefix','batch',@(x) ischar(x));
 	addParameter(p,'smooth_distance',1000,@(x) isscalar(x) && isnumeric(x));
