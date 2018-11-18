@@ -211,7 +211,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 
 		M=GRIDobj(DEM,'logical');
 		M.Z(~isnan(DEM.Z))=true;
-		KSNGrid=crop(KSNGrid,DEM,NaN);
+		KSNGrid=crop(KSNGrid,M,NaN);
 
 		disp('Writing ARC files')
 		out_file_ksng=[file_name_prefix '_ksngrid.txt'];
@@ -339,7 +339,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 
 		M=GRIDobj(DEM,'logical');
 		M.Z(~isnan(DEM.Z))=true;
-		KSNGrid=crop(KSNGrid,DEM,NaN);
+		KSNGrid=crop(KSNGrid,M,NaN);
 
 	    disp('Calculating chi map');
 		[ChiMap]=MakeChiMap(DEM,FD,A,S,theta_ref);
