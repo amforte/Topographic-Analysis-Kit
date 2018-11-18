@@ -22,9 +22,13 @@ function cmpKsnChiBatch(wdir,MatFile,product,varargin)
 	%	file_name_prefix ['batch'] - prefix for outputs, will append the type of output, i.e. 'ksn', 'chimap', etc
 	%	smooth_distance [1000] - distance in map units over which to smooth ksn measures when converting to shapefile
 	% 	ref_concavity [0.50] - reference concavity (as a positive value) for calculating ksn
-	%	ksn_method [quick] - switch between method to calculate ksn values, options are 'quick' and 'trib', the 'trib' method takes 3-4 times longer 
+	%	ksn_method [quick] - switch between method to calculate ksn values, options are 'quick', 'trunk', or 'trib', the 'trib' method takes 3-4 times longer 
 	%		than the 'quick' method. In most cases, the 'quick' method works well, but if values near tributary junctions are important, then 'trib'
-	%		may be better as this calculates ksn values for individual channel segments individually
+	%		may be better as this calculates ksn values for individual channel segments individually. The 'trunk' option calculates steepness values
+	%		of large streams independently (streams considered as trunks are controlled by the stream order value supplied to 'min_order'). The 'trunk' option
+	%		may be of use if you notice anomaoloulsy high channel steepness values on main trunk streams that can result because of the way values are reach
+	%		averaged.
+	%	min_order [4] - minimum stream order for a stream to be considered a trunk stream, only used if 'ksn_method' is set to 'trunk'
 	%	output_level_method [] - parameter to control how stream network base level is adjusted. Options for control of output elevation are:
 	%			'elevation' - extract streams only above a given elevation (provided by the user using the 'min_elevation' parameter) to ensure that base level
 	%				elevation for all streams is uniform. If the provided elevation is too low (i.e. some outlets of the unaltered stream network are above this
@@ -63,7 +67,8 @@ function cmpKsnChiBatch(wdir,MatFile,product,varargin)
 	addParameter(p,'file_name_prefix','batch',@(x) ischar(x));
 	addParameter(p,'smooth_distance',1000,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
-	addParameter(p,'ksn_method','quick',@(x) ischar(validatestring(x,{'quick','trib'})));
+	addParameter(p,'ksn_method','quick',@(x) ischar(validatestring(x,{'quick','trunk','trib'})));
+	addParameter(p,'min_order',4,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'output_level_method',[],@(x) ischar(validatestring(x,{'elevation','max_out_elevation'})));
 	addParameter(p,'min_elevation',[],@(x) isnumeric(x));
 	addParameter(p,'conditioned_DEM',[],@(x) ~isempty(regexp(x,regexptranslate('wildcard','*.mat'))));
@@ -80,6 +85,7 @@ function cmpKsnChiBatch(wdir,MatFile,product,varargin)
 	segment_length=p.Results.smooth_distance;
 	theta_ref=p.Results.ref_concavity;
 	ksn_method=p.Results.ksn_method;
+	min_order=p.Results.min_order;
 	blm=p.Results.output_level_method;
 	me=p.Results.min_elevation;
 	iv=p.Results.interp_value;
@@ -167,6 +173,8 @@ function cmpKsnChiBatch(wdir,MatFile,product,varargin)
 		switch ksn_method
 		case 'quick'
 			[KSN]=KSN_Quick(DEM,DEMc,A,S,theta_ref,segment_length);
+		case 'trunk'
+			[ksn_ms]=KSN_Trunk(DEM,DEMc,A,S,theta_ref,segment_length,min_order);
 		case 'trib'
 			[KSN]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length);
 		end
@@ -197,6 +205,8 @@ function cmpKsnChiBatch(wdir,MatFile,product,varargin)
 		switch ksn_method
 		case 'quick'
 			[ksn_ms]=KSN_Quick(DEM,DEMc,A,S,theta_ref,segment_length);
+		case 'trunk'
+			[ksn_ms]=KSN_Trunk(DEM,DEMc,A,S,theta_ref,segment_length,min_order);
 		case 'trib'
 			[ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length);
 		end
@@ -294,6 +304,8 @@ function cmpKsnChiBatch(wdir,MatFile,product,varargin)
 		switch ksn_method
 		case 'quick'
 			[ksn_ms]=KSN_Quick(DEM,DEMc,A,S,theta_ref,segment_length);
+		case 'trunk'
+			[ksn_ms]=KSN_Trunk(DEM,DEMc,A,S,theta_ref,segment_length,min_order);
 		case 'trib'
 			[ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length);
 		end
@@ -610,6 +622,27 @@ function [ksn_ms]=KSN_Quick(DEM,DEMc,A,S,theta_ref,segment_length)
 	
 	ksn_ms=STREAMobj2mapstruct(S,'seglength',segment_length,'attributes',...
 		{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'cut_fill' Z_RES @mean});
+end
+
+function [ksn_ms]=KSN_Trunk(DEM,DEMc,A,S,theta_ref,segment_length,min_order)
+
+	order_exp=['>=' num2str(min_order)];
+
+    Smax=modify(S,'streamorder',order_exp);
+	Smin=modify(S,'rmnodes',Smax);
+
+	G=gradient8(DEMc);
+	Z_RES=DEMc-DEM;
+
+	ksn=G./(A.*(A.cellsize^2)).^(-theta_ref);
+
+	ksn_ms_min=STREAMobj2mapstruct(Smin,'seglength',segment_length,'attributes',...
+		{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'cut_fill' Z_RES @mean});
+
+	ksn_ms_max=STREAMobj2mapstruct(Smax,'seglength',segment_length,'attributes',...
+		{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'cut_fill' Z_RES @mean});
+
+	ksn_ms=vertcat(ksn_ms_min,ksn_ms_max);
 end
 
 function [ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length)

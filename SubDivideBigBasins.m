@@ -130,6 +130,15 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 			RM=RiverMouth;	
 			basin_num=RM(:,3);
 
+			if strcmp(ksn_method,'trunk')
+				load(FileName,'min_order');
+			end
+
+			% Peform check on segment length
+			if (DEM.cellsize*3)>segment_length
+				segment_length=DEM.cellsize*3;
+			end
+
 			waitbar(ii/num_files,w1,['Subdividing basin number ' num2str(basin_num) ' - Determining number of subdivisions']);
 
 			DAG=(A.*(A.cellsize^2))/1e6;
@@ -253,40 +262,44 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 				num_new_basins=numel(x);
 
 				if recursive
-					rec_count=1;
-					while any(DAG.Z(cons_ix)>=max_basin_size) & rec_count<=10;
-						nidx=DAG.Z(cons_ix)>=max_basin_size;
-						if any(nidx)
-							x(nidx)=[];
-							y(nidx)=[];
-							ixs=cons_ix(nidx);
-							for jj=1:numel(ixs)
-								TIX=GRIDobj(DEM,'logical');
-								TIX.Z(ixs(jj))=true;
-								S_sub=modify(S,'upstreamto',TIX);
-								S_sub=removeshortstreams(S_sub,DEM.cellsize*10);
-								ST_sub=trunk(S_sub);
-								tix=streampoi(S_sub,'bconfluences','ix');
-								tix=ismember(ST_sub.IXgrid,tix);
-								ds=ST_sub.distance;
-								ds(~tix)=NaN;
-								[~,tix]=max(ds);
-								SupT_sub=modify(S_sub,'tributaryto',ST_sub);
-								cons=streampoi(SupT_sub,'outlets','xy');
-								cons_ix=streampoi(SupT_sub,'outlets','ix');
-								cons_ix=vertcat(cons_ix,ST_sub.IXgrid(tix));
-								xx=cons(:,1); xx=vertcat(xx,ST_sub.x(tix));
-								yy=cons(:,2); yy=vertcat(yy,ST_sub.y(tix));
-								x=vertcat(x,xx);
-								y=vertcat(y,yy);
+					try
+						rec_count=1;
+						while any(DAG.Z(cons_ix)>=max_basin_size) & rec_count<=10;
+							nidx=DAG.Z(cons_ix)>=max_basin_size;
+							if any(nidx)
+								x(nidx)=[];
+								y(nidx)=[];
+								ixs=cons_ix(nidx);
+								for jj=1:numel(ixs)
+									TIX=GRIDobj(DEM,'logical');
+									TIX.Z(ixs(jj))=true;
+									S_sub=modify(S,'upstreamto',TIX);
+									S_sub=removeshortstreams(S_sub,DEM.cellsize*10);
+									ST_sub=trunk(S_sub);
+									tix=streampoi(S_sub,'bconfluences','ix');
+									tix=ismember(ST_sub.IXgrid,tix);
+									ds=ST_sub.distance;
+									ds(~tix)=NaN;
+									[~,tix]=max(ds);
+									SupT_sub=modify(S_sub,'tributaryto',ST_sub);
+									cons=streampoi(SupT_sub,'outlets','xy');
+									cons_ix=streampoi(SupT_sub,'outlets','ix');
+									cons_ix=vertcat(cons_ix,ST_sub.IXgrid(tix));
+									xx=cons(:,1); xx=vertcat(xx,ST_sub.x(tix));
+									yy=cons(:,2); yy=vertcat(yy,ST_sub.y(tix));
+									x=vertcat(x,xx);
+									y=vertcat(y,yy);
+								end
+							end
+							rec_count=rec_count+1;
+							if rec_count>10
+								warning(['Subdivision of basin number ' num2str(basin_num) ' ended prematurely to avoid an infinite loop']);
 							end
 						end
-						rec_count=rec_count+1;
-						if rec_count>10
-							warning(['Subdivision of basin number ' num2str(basin_num) ' ended prematurely to avoid an infinite loop']);
-						end
+						num_new_basins=numel(x);
+					catch
+						warning(['Recursvie subdivision of basin number ' num2str(basin_num) ' failed, proceeding with regular subdivision']);
 					end
-					num_new_basins=numel(x);
 				end
 
 			case 'filtered_trunk'
@@ -311,42 +324,46 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 				num_new_basins=numel(x);
 
 				if recursive
-					rec_count=1;
-					while any(DAG.Z(cons_ix)>=max_basin_size) & rec_count<=10;
-						nidx=DAG.Z(cons_ix)>=max_basin_size;
-						if any(nidx)
-							x(nidx)=[];
-							y(nidx)=[];
-							ixs=cons_ix(nidx);
-							for jj=1:numel(ixs)
-								TIX=GRIDobj(DEM,'logical');
-								TIX.Z(ixs(jj))=true;
-								S_sub=modify(S,'upstreamto',TIX);
-								S_sub=removeshortstreams(S_sub,DEM.cellsize*10);
-								ST_sub=trunk(S_sub);
-								tix=streampoi(S_sub,'bconfluences','ix');
-								tix=ismember(ST_sub.IXgrid,tix);
-								ds=ST_sub.distance;
-								ds(~tix)=NaN;
-								[~,tix]=max(ds);
-								SupT_sub=modify(S_sub,'tributaryto',ST_sub);
-								cons=streampoi(SupT_sub,'outlets','xy');
-								cons_ix=streampoi(SupT_sub,'outlets','ix');
-								cons_ix=vertcat(cons_ix,ST_sub.IXgrid(tix));
-								xx=cons(:,1); xx=vertcat(xx,ST_sub.x(tix));
-								yy=cons(:,2); yy=vertcat(yy,ST_sub.y(tix));
-								da_cons=DAG.Z(cons_ix);
-								da_idx=da_cons>=min_basin_size;
-								x=vertcat(x,xx(da_idx));
-								y=vertcat(y,yy(da_idx));
+					try
+						rec_count=1;
+						while any(DAG.Z(cons_ix)>=max_basin_size) & rec_count<=10;
+							nidx=DAG.Z(cons_ix)>=max_basin_size;
+							if any(nidx)
+								x(nidx)=[];
+								y(nidx)=[];
+								ixs=cons_ix(nidx);
+								for jj=1:numel(ixs)
+									TIX=GRIDobj(DEM,'logical');
+									TIX.Z(ixs(jj))=true;
+									S_sub=modify(S,'upstreamto',TIX);
+									S_sub=removeshortstreams(S_sub,DEM.cellsize*10);
+									ST_sub=trunk(S_sub);
+									tix=streampoi(S_sub,'bconfluences','ix');
+									tix=ismember(ST_sub.IXgrid,tix);
+									ds=ST_sub.distance;
+									ds(~tix)=NaN;
+									[~,tix]=max(ds);
+									SupT_sub=modify(S_sub,'tributaryto',ST_sub);
+									cons=streampoi(SupT_sub,'outlets','xy');
+									cons_ix=streampoi(SupT_sub,'outlets','ix');
+									cons_ix=vertcat(cons_ix,ST_sub.IXgrid(tix));
+									xx=cons(:,1); xx=vertcat(xx,ST_sub.x(tix));
+									yy=cons(:,2); yy=vertcat(yy,ST_sub.y(tix));
+									da_cons=DAG.Z(cons_ix);
+									da_idx=da_cons>=min_basin_size;
+									x=vertcat(x,xx(da_idx));
+									y=vertcat(y,yy(da_idx));
+								end
 							end
+							rec_count=rec_count+1;
+							if rec_count>10
+								warning(['Subdivision of basin number ' num2str(basin_num) ' ended prematurely to avoid an infinite loop']);
+							end						
 						end
-						rec_count=rec_count+1;
-						if rec_count>10
-							warning(['Subdivision of basin number ' num2str(basin_num) ' ended prematurely to avoid an infinite loop']);
-						end						
+						num_new_basins=numel(x);
+					catch
+						warning(['Recursvie subdivision of basin number ' num2str(basin_num) ' failed, proceeding with regular subdivision']);
 					end
-					num_new_basins=numel(x);
 				end
 
 			case 'p_filtered_trunk'
@@ -372,42 +389,46 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 				num_new_basins=numel(x);
 
 				if recursive
-					rec_count=1;
-					while any(DAG.Z(cons_ix)>=max_basin_size) & rec_count<=10;
-						nidx=DAG.Z(cons_ix)>=max_basin_size;
-						if any(nidx)
-							x(nidx)=[];
-							y(nidx)=[];
-							ixs=cons_ix(nidx);
-							for jj=1:numel(ixs)
-								TIX=GRIDobj(DEM,'logical');
-								TIX.Z(ixs(jj))=true;
-								S_sub=modify(S,'upstreamto',TIX);
-								S_sub=removeshortstreams(S_sub,DEM.cellsize*10);
-								ST_sub=trunk(S_sub);
-								tix=streampoi(S_sub,'bconfluences','ix');
-								tix=ismember(ST_sub.IXgrid,tix);
-								ds=ST_sub.distance;
-								ds(~tix)=NaN;
-								[~,tix]=max(ds);
-								SupT_sub=modify(S_sub,'tributaryto',ST_sub);
-								cons=streampoi(SupT_sub,'outlets','xy');
-								cons_ix=streampoi(SupT_sub,'outlets','ix');
-								cons_ix=vertcat(cons_ix,ST_sub.IXgrid(tix));
-								xx=cons(:,1); xx=vertcat(xx,ST_sub.x(tix));
-								yy=cons(:,2); yy=vertcat(yy,ST_sub.y(tix));
-								da_cons=DAG.Z(cons_ix);
-								da_idx=da_cons>=mbz;
-								x=vertcat(x,xx(da_idx));
-								y=vertcat(y,yy(da_idx));
+					try
+						rec_count=1;
+						while any(DAG.Z(cons_ix)>=max_basin_size) & rec_count<=10;
+							nidx=DAG.Z(cons_ix)>=max_basin_size;
+							if any(nidx)
+								x(nidx)=[];
+								y(nidx)=[];
+								ixs=cons_ix(nidx);
+								for jj=1:numel(ixs)
+									TIX=GRIDobj(DEM,'logical');
+									TIX.Z(ixs(jj))=true;
+									S_sub=modify(S,'upstreamto',TIX);
+									S_sub=removeshortstreams(S_sub,DEM.cellsize*10);
+									ST_sub=trunk(S_sub);
+									tix=streampoi(S_sub,'bconfluences','ix');
+									tix=ismember(ST_sub.IXgrid,tix);
+									ds=ST_sub.distance;
+									ds(~tix)=NaN;
+									[~,tix]=max(ds);
+									SupT_sub=modify(S_sub,'tributaryto',ST_sub);
+									cons=streampoi(SupT_sub,'outlets','xy');
+									cons_ix=streampoi(SupT_sub,'outlets','ix');
+									cons_ix=vertcat(cons_ix,ST_sub.IXgrid(tix));
+									xx=cons(:,1); xx=vertcat(xx,ST_sub.x(tix));
+									yy=cons(:,2); yy=vertcat(yy,ST_sub.y(tix));
+									da_cons=DAG.Z(cons_ix);
+									da_idx=da_cons>=mbz;
+									x=vertcat(x,xx(da_idx));
+									y=vertcat(y,yy(da_idx));
+								end
+							end
+							rec_count=rec_count+1;
+							if rec_count>10
+								warning(['Subdivision of basin number ' num2str(basin_num) ' ended prematurely to avoid an infinite loop']);
 							end
 						end
-						rec_count=rec_count+1;
-						if rec_count>10
-							warning(['Subdivision of basin number ' num2str(basin_num) ' ended prematurely to avoid an infinite loop']);
-						end
+						num_new_basins=numel(x);
+					catch
+						warning(['Recursvie subdivision of basin number ' num2str(basin_num) ' failed, proceeding with regular subdivision']);
 					end
-					num_new_basins=numel(x);
 				end
 
 			end
@@ -485,6 +506,9 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 				case 'quick'
 					[MSc]=KSN_Quick(DEMoc,Ac,Sc,Chic.mn,segment_length);
 					[MSNc]=KSN_Quick(DEMoc,Ac,Sc,theta_ref,segment_length);
+				case 'trunk'
+					[MSc]=KSN_Trunk(DEMoc,DEMcc,Ac,Sc,Chic.mn,segment_length,min_order);
+					[MSNc]=KSN_Trunk(DEMoc,DEMcc,Ac,Sc,theta_ref,segment_length,min_order);
 				case 'trib'
 					% Overide choice if very small basin as KSN_Trib will fail for small basins
 					if drainage_area>2.5
@@ -528,11 +552,15 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 				SubFileName=[SBFiles_Dir '/Basin_' num2str(basin_num) '_DataSubset_' num2str(jj) '.mat'];
 
 				save(SubFileName,'RiverMouth','DEMcc','DEMoc','out_el','drainage_area','hyps','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method','gradient_method','theta_ref','-v7.3');
+
+				if strcmp(ksn_method,'trunk')
+					save(SubFileName,'min_order','-append');
+				end
 				
 				% Make interpolated ksn grid
 				try 
 					[KsnOBJc] = KsnInt(DEMoc,MSNc);
-					save(FileName,'KsnOBJc','-append','-v7.3');
+					save(FileName,'KsnOBJc','-append');
 				catch
 					warning(['Interpolation of KSN grid failed for basin ' num2str(RiverMouth(:,3))]);
 				end
@@ -556,7 +584,7 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 						se_AGc=std_AGc/sqrt(sum(~isnan(AGcOI.Z(:))));
 						AGc_stats(kk,:)=[mean_AGc se_AGc std_AGc min_AGc max_AGc];
 					end
-					save(SubFileName,'AGc','AGc_stats','-append','-v7.3');
+					save(SubFileName,'AGc','AGc_stats','-append');
 				end
 
 				VarInd=find(strcmp(cellstr(char(VarList.name)),'ACGc'));
@@ -578,7 +606,7 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 						ACGc{kk,2}=T;
 						ACGc_stats(kk,1)=[mode(ACGcOI.Z(:))];
 					end
-					save(SubFileName,'ACGc','ACGc_stats','-append','-v7.3');	
+					save(SubFileName,'ACGc','ACGc_stats','-append');	
 				end	
 
 				VarInd=find(strcmp(cellstr(char(VarList.name)),'rlf'));
@@ -602,7 +630,7 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 						se_rlf=std_rlf/sqrt(sum(~isnan(rlfOI.Z(:))));
 						rlf_stats(kk,:)=[mean_rlf se_rlf std_rlf min_rlf max_rlf radOI];
 					end
-					save(SubFileName,'rlf','rlf_stats','-append','-v7.3');
+					save(SubFileName,'rlf','rlf_stats','-append');
 				end					
 
 				if write_arc_files
@@ -660,6 +688,27 @@ function [ksn_ms]=KSN_Quick(DEM,A,S,theta_ref,segment_length)
 
 	ksn_ms=STREAMobj2mapstruct(S,'seglength',segment_length,'attributes',...
 		{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'cut_fill' Z_RES @mean});
+end
+
+function [ksn_ms]=KSN_Trunk(DEM,DEMc,A,S,theta_ref,segment_length,min_order)
+
+	order_exp=['>=' num2str(min_order)];
+
+    Smax=modify(S,'streamorder',order_exp);
+	Smin=modify(S,'rmnodes',Smax);
+
+	G=gradient8(DEMc);
+	Z_RES=DEMc-DEM;
+
+	ksn=G./(A.*(A.cellsize^2)).^(-theta_ref);
+
+	ksn_ms_min=STREAMobj2mapstruct(Smin,'seglength',segment_length,'attributes',...
+		{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'cut_fill' Z_RES @mean});
+
+	ksn_ms_max=STREAMobj2mapstruct(Smax,'seglength',segment_length,'attributes',...
+		{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'cut_fill' Z_RES @mean});
+
+	ksn_ms=vertcat(ksn_ms_min,ksn_ms_max);
 end
 
 function [ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length)
