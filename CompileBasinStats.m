@@ -32,6 +32,8 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	%		extra_field_names [] - a 1 x m cell array of field names, as characters (no spaces as this won't work with shapefile attributes), associated with the field values. 
 	%			These must be in the same order as values are given in extra_field_values. If for example your extra_field_values cell array is 3 columns with the river number, 
 	%			sample name, and erosion rate then your extra_field_names cell array should include entries for 'sample_name' and 'erosion_rate' in that order. 
+	%		new_concavity [] - a 1 x m array of concavity values to recalculate normalized channel steepness statistics (mean, standard error and/or standard deviation) using the
+	%			provided concavities.
 	%		uncertainty ['se'] - parameter to control which measure of uncertainty is included, expects 'se' for standard error (default), 'std' for standard deviation, or 'both'
 	%			to include both standard error and deviation.
 	%		dist_along_azimuth [] - option to calculate distances along a given azimuth for all basins. Expects an single numeric input, interpreted as an azimuth in degrees 
@@ -83,6 +85,9 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	%		[T]=CompileBasinStats('/Users/You/basin_files');
 	%		[T]=CompileBasinStats('/Users/You/basin_files','means_by_category',{'geology','gradient','rlf2500','rlf5000'})
 	%
+	%		To include recalculated channel steepness values at difference reference concavities
+	%		[T]=CompileBasinStats('/Users/You/basin_files','new_concavity',[0.45 0.55 0.60]);
+	%
 	%		To recalculate means excluding any area of watersheds that are mapped as either 'Q' or 'Water' in the geology dataset provided to ProcessRiverBasins
 	%		[T]=CompileBasinStats('/Users/You/basin_files','filter_by_categories',true,'cat_grid','geology','cat_values',{'Q','Water'},'filter_type','exclude'); 
 	%
@@ -108,6 +113,7 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	addParameter(p,'include','all',@(x) ischar(validatestring(x,{'all','subdivided','bigonly'})));
 	addParameter(p,'extra_field_values',[],@(x) isa(x,'cell'));
 	addParameter(p,'extra_field_names',[],@(x) isa(x,'cell') && size(x,1)==1);
+	addParameter(p,'new_concavity',[],@(x) isnumeric(x));
 	addParameter(p,'dist_along_azimuth',[],@(x) isnumeric(x) && isscalar(x) && x>=0 && x<=360);
 	addParameter(p,'uncertainty','se',@(x) ischar(validatestring(x,{'se','std','both'})));
 	addParameter(p,'populate_categories',false,@(x) isscalar(x) && islogical(x))
@@ -125,6 +131,7 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	include=p.Results.include;
 	efv=p.Results.extra_field_values;
 	efn=p.Results.extra_field_names;
+	new_concavity=p.Results.new_concavity;
 	az=p.Results.dist_along_azimuth;
 	uncertainty=p.Results.uncertainty;
 	pc=p.Results.populate_categories;
@@ -228,6 +235,28 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 		case 'both'
 			T.se_ksn(ii,1)=KSNc_stats(2);
 			T.std_ksn(ii,1)=KSNc_stats(3);
+		end
+
+		if ~isempty(new_concavity)
+			load(FileName,'MSNc');
+			for jj=1:numel(new_concavity)
+				[mean_ksn,std_ksn,se_ksn]=ksn_convert(MSNc,new_concavity(jj));
+				ksn_cat_name=matlab.lang.makeValidName(['mean_ksn_' num2str(new_concavity(jj))]);
+				T.(ksn_cat_name)(ii,1)=mean_ksn;
+				switch uncertainty
+				case 'se'
+					ksn_cat_name_se=matlab.lang.makeValidName(['se_ksn_' num2str(new_concavity(jj))]);
+					T.(ksn_cat_name_se)(ii,1)=se_ksn;
+				case 'std'
+					ksn_cat_name_std=matlab.lang.makeValidName(['std_ksn_' num2str(new_concavity(jj))]);
+					T.(ksn_cat_name_std)(ii,1)=std_ksn;
+				case 'both'
+					ksn_cat_name_se=matlab.lang.makeValidName(['se_ksn_' num2str(new_concavity(jj))]);
+					T.(ksn_cat_name_se)(ii,1)=se_ksn;
+					ksn_cat_name_std=matlab.lang.makeValidName(['std_ksn_' num2str(new_concavity(jj))]);
+					T.(ksn_cat_name_std)(ii,1)=std_ksn;					
+				end
+			end
 		end
 
 		T.mean_gradient(ii,1)=Gc_stats(1);
@@ -444,7 +473,7 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 					field_value=efvOI{kk};
 					% Check to see if field value is a number or string
 					if ischar(field_value)
-						T.(field_name)(ii,1)=field_value;
+						T.(field_name){ii,1}=field_value;
 					elseif isnumeric(field_value)
 						T.(field_name)(ii,1)=double(field_value);
 					else
@@ -474,8 +503,8 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 					ACG_T=ACGc{kk,2};
 					total_nodes=sum(ACG_T.Counts);
 					for ll=1:numel(ACG_T.Categories)
-						cat_name=matlab.lang.makeValidName(ACG_T.Categories{ll});
-						cat_name=[ACGc{kk,3} '_perc_' cat_name];
+						cat_name=ACG_T.Categories{ll};
+						cat_name=matlab.lang.makeValidName([ACGc{kk,3} '_perc_' cat_name]);
 						T.(cat_name)(ii,1)=double((ACG_T.Counts(ll)/total_nodes)*100);
 					end
 				end
@@ -494,7 +523,7 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 					for ll=1:numel(ACG_T.Categories)
 						IDX=GRIDobj(ACG,'logical');
 						IDX.Z=ismember(ACG.Z,ACG_T.Numbers(ll));
-						cat_name=matlab.lang.makeValidName(ACG_T.Categories{ll});
+						cat_name=ACG_T.Categories{ll};
 						for mm=1:num_dg
 							dgOI=dg{mm};
 							if strcmp(dgOI,'ksn')
@@ -505,25 +534,25 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 									ix=coord2ind(ACG,MSNc(oo).X,MSNc(oo).Y);
 									KSNG.Z(ix)=MSNc(oo).ksn;
 								end
-								cat_nameN=['mksn_' cat_name];
+								cat_nameN=matlab.lang.makeValidName(['mksn_' cat_name]);
 								T.(cat_nameN)(ii,1)=mean(KSNG.Z(IDX.Z),'omitnan');
 							elseif strcmp(dgOI,'gradient')
 								load(FileName,'Goc');
-								cat_nameN=['mgrad_' cat_name];
+								cat_nameN=matlab.lang.makeValidName(['mgrad_' cat_name]);
 								T.(cat_nameN)(ii,1)=mean(Goc.Z(IDX.Z),'omitnan');
 							elseif regexp(dgOI,regexptranslate('wildcard','rlf*'))
 								rlfval=str2num(strrep(dgOI,'rlf',''));
 								rlfix=find(cell2mat(rlf(:,2))==rlfval);
 								if ~isempty(rlfix)
 									Rg=rlf{rlfix,1};
-									cat_nameN=['mr' num2str(rlfval) '_' cat_name];
+									cat_nameN=matlab.lang.makeValidName(['mr' num2str(rlfval) '_' cat_name]);
 									T.(cat_nameN)(ii,1)=mean(Rg.Z(IDX.Z),'omitnan');	
 								end								
 							else 
 								try
 									dgix=find(strcmp(AGc(:,2),dgOI));
 									AGcOI=AGc{dgix,1};
-									cat_nameN=['m' AGc{dgix,2} '_' cat_name];
+									cat_nameN=matlab.lang.makeValidName(['m' AGc{dgix,2} '_' cat_name]);
 									T.(cat_nameN)(ii,1)=mean(AGcOI.Z(IDX.Z),'omitnan');
 								catch
 									warn_flag=true;
@@ -565,5 +594,18 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	close(w1);
 
 	cd(current);
+
+end
+
+function [mean_ksn,std_ksn,se_ksn]=ksn_convert(okm,new_ref_concavity)
+
+	g=[okm.gradient];
+	a=[okm.uparea];
+
+	ksn_calc=g./a.^-new_ref_concavity);
+
+	mean_ksn=mean(ksn_calc,'omitnan');
+	std_ksn=std(ksn_calc,'omitnan');
+	se_ksn=std_ksn/sqrt(numel(ksn_calc));
 
 end

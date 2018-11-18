@@ -34,7 +34,9 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	%			arrays or numbers, other values will results in an error. 
 	%		extra_field_names [] - a 1 x m cell array of field names, as characters (no spaces as this won't work with shapefile attributes), associated with the field values. 
 	%			These must be in the same order as values are given in extra_field_values. If for example your extra_field_values cell array is 3 columns with the river number, 
-	%			sample name, and erosion rate then your extra_field_names cell array should include entries for 'sample_name' and 'erosion_rate' in that order. 
+	%			sample name, and erosion rate then your extra_field_names cell array should include entries for 'sample_name' and 'erosion_rate' in that order.
+	%		new_concavity [] - a 1 x m array of concavity values to recalculate normalized channel steepness statistics (mean, standard error and/or standard deviation) using the
+	%			provided concavities. 
 	%		uncertainty ['se'] - parameter to control which measure of uncertainty is included, expects 'se' for standard error (default), 'std' for standard deviation, or 'both'
 	%			to include both standard error and deviation.
 	%		populate_categories [false] - logical flag to add entries that indicate the percentage of a watershed occupied by each category from a categorical grid, e.g. if you
@@ -73,6 +75,7 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	addParameter(p,'include','all',@(x) ischar(validatestring(x,{'all','subdivided','bigonly'})));
 	addParameter(p,'extra_field_values',[],@(x) isa(x,'cell'));
 	addParameter(p,'extra_field_names',[],@(x) isa(x,'cell') & size(x,1)==1);
+	addParameter(p,'new_concavity',[],@(x) isnumeric(x));
 	addParameter(p,'uncertainty','se',@(x) ischar(validatestring(x,{'se','std','both'})));
 	addParameter(p,'populate_categories',false,@(x) isscalar(x) && islogical(x))
 	addParameter(p,'suppress_shape_write',false,@(x) isscalar(x) && islogical(x))
@@ -86,6 +89,7 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	include=p.Results.include;
 	efv=p.Results.extra_field_values;
 	efn=p.Results.extra_field_names;
+	new_concavity=p.Results.new_concavity;
 	uncertainty=p.Results.uncertainty;
 	pc=p.Results.populate_categories;
 	ssw=p.Results.suppress_shape_write;
@@ -197,6 +201,28 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 			MS(ii,1).std_ksn=KSNc_stats(3);
 			MS(ii,1).std_gradient=Gc_stats(3);
 		end
+
+		if ~isempty(new_concavity)
+			load(FileName,'MSNc');
+			for jj=1:numel(new_concavity)
+				[mean_ksn,std_ksn,se_ksn]=ksn_convert(MSNc,new_concavity(jj));
+				ksn_cat_name=matlab.lang.makeValidName(['mean_ksn_' num2str(new_concavity(jj))]);
+				MS(ii,1).(ksn_cat_name)=mean_ksn;
+				switch uncertainty
+				case 'se'
+					ksn_cat_name_se=matlab.lang.makeValidName(['se_ksn_' num2str(new_concavity(jj))]);
+					MS(ii,1).(ksn_cat_name_se)=se_ksn;
+				case 'std'
+					ksn_cat_name_std=matlab.lang.makeValidName(['std_ksn_' num2str(new_concavity(jj))]);
+					MS(ii,1).(ksn_cat_name_std)=std_ksn;
+				case 'both'
+					ksn_cat_name_se=matlab.lang.makeValidName(['se_ksn_' num2str(new_concavity(jj))]);
+					MS(ii,1).(ksn_cat_name_se)=se_ksn;
+					ksn_cat_name_std=matlab.lang.makeValidName(['std_ksn_' num2str(new_concavity(jj))]);
+					MS(ii,1).(ksn_cat_name_std)=std_ksn;					
+				end
+			end
+		end		
 
 		MS(ii,1).hyp_int=double(abs(trapz((hyps(:,2)-min(hyps(:,2)))/(max(hyps(:,2))-min(hyps(:,2))),hyps(:,1)/100)));
 		MS(ii,1).theta=Chic.mn;
@@ -344,5 +370,18 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 
 	out_shape_name=[shape_name '.shp'];
 	shapewrite(MS,out_shape_name);
+
+end
+
+function [mean_ksn,std_ksn,se_ksn]=ksn_convert(okm,new_ref_concavity)
+
+	g=[okm.gradient];
+	a=[okm.uparea];
+
+	ksn_calc=g./a.^-new_ref_concavity);
+
+	mean_ksn=mean(ksn_calc,'omitnan');
+	std_ksn=std(ksn_calc,'omitnan');
+	se_ksn=std_ksn/sqrt(numel(ksn_calc));
 
 end
