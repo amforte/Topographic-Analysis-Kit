@@ -156,7 +156,7 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 
 	if ischar(river_mouths)
 		disp('Reading shapefile and snapping river mouths to stream network')
-		rm_ms=shaperead(river_mouths);
+		rm_ms=shaperead(fullfile(current,river_mouths));
 		rm_t=struct2table(rm_ms);
 		if ~strcmp(rm_t.Geometry(1),'Point')
 			error('Shapefile provided as "river_mouths" does not appear to be a point shapefile');
