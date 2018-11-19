@@ -380,7 +380,7 @@ function [mean_ksn,std_ksn,se_ksn]=ksn_convert(okm,new_ref_concavity)
 	g=[okm.gradient];
 	a=[okm.uparea];
 
-	ksn_calc=g./a.^-new_ref_concavity);
+	ksn_calc=g./a.^-new_ref_concavity;
 
 	mean_ksn=mean(ksn_calc,'omitnan');
 	std_ksn=std(ksn_calc,'omitnan');
