@@ -37,6 +37,8 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	%	resample_grid [false] - flag to resample the grid. If no input is provided for new_cellsize, then the
 	%		grid will be resampled to the nearest whole number of the native cellsize.
 	%	new_cellsize [] - value (in map units) for new cellsize.
+	%	mex [false] - logical flag to use compiled mex routines for flow routing, will only work if you have compiled the mex files
+	%		for TopoToolbox on the machine of interest, see 'compilemexfiles.m' within TopoToolbox for more information.
 	%
 	% Outputs:
 	% 	DEM - GRIDobj of the DEM
@@ -70,6 +72,7 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	addParameter(p,'new_cellsize',[],@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'precip_grid',[],@(x) isa(x,'GRIDobj'));
 	addParameter(p,'rr_grid',[],@(x) isa(x,'GRIDobj'));
+	addParameter(p,'mex',false,@(x) isscalar(x) && islogical(x));
 
 	parse(p,dem,threshold_area,varargin{:});
 	dem=p.Results.dem;
@@ -82,6 +85,7 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	new_cellsize=p.Results.new_cellsize;
 	precip_grid=p.Results.precip_grid;
 	rr_grid=p.Results.rr_grid;
+	mexP=p.Results.mex;
 
 	% Check for filename
 	if isempty(file_name)
@@ -141,10 +145,19 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	end
 
 	disp('Calculating Flow Direction')
-	FD=FLOWobj(DEM,'preprocess','carve','verbose',true);
+	if mexP
+		try % control for setting to true without checking if mex is compiled
+			FD=FLOWobj(DEM,'preprocess','carve','verbose',true,'mex',true);
+		catch
+			FD=FLOWobj(DEM,'preprocess','carve','verbose',true);
+			disp('There was a problem using the compiled mex files associated with FLOWobj, proceeding without compiled mex files')
+		end
+	else
+		FD=FLOWobj(DEM,'preprocess','carve','verbose',true);
+	end
 
 	if save_output
-		save(MatFileName,'FD','-append','-v7.3');
+		save(MatFileName,'FD','-append');
 	end
 
 	disp('Calculating Flow Accumulation')
@@ -185,7 +198,7 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 
 	if save_output
 		disp('Saving outputs')
-		save(MatFileName,'A','S','-append','-v7.3');
+		save(MatFileName,'A','S','-append');
 		MS=STREAMobj2mapstruct(S);
 		shapewrite(MS,ShpFileName);
 	end
