@@ -453,6 +453,8 @@ function TAK(func_name,wdir,varargin)
 					opt_args{evens(ii)}=str2num(pv);
 				case 'threshold_area'
 					opt_args{evens(ii)}=str2num(pv);
+				case 'min_order'
+					opt_args{evens(ii)}=str2num(pv);
 				case 'write_arc_files'
 					if strcmpi(pv,'false')
 						opt_args{evens(ii)}=false;
@@ -710,6 +712,8 @@ function TAK(func_name,wdir,varargin)
 				pn=opt_args{odds(ii)};
 				pv=opt_args{evens(ii)};
 				switch pn
+				case 'new_concavity'
+					opt_args{evens(ii)}=str2num(pv);	
 				case 'populate_categories'
 					if strcmpi(pv,'false')
 						opt_args{evens(ii)}=false;
@@ -738,6 +742,8 @@ function TAK(func_name,wdir,varargin)
 				pv=opt_args{evens(ii)};
 				switch pn
 				case 'dist_along_azimuth'
+					opt_args{evens(ii)}=str2num(pv);
+				case 'new_concavity'
 					opt_args{evens(ii)}=str2num(pv);
 				case 'filter_by_category'
 					if strcmpi(pv,'false')
@@ -865,6 +871,9 @@ function TAK(func_name,wdir,varargin)
 		req_args=varargin(1:num_req);
 		if nf_args==num_req
 			cmpMat2Arc(wdir,req_args{1},req_args{2});
+		else
+			opt_args=varargin(num_req+1:end);
+			cmpMat2Arc(wdir,req_args{1},req_args{2},opt_args);
 		end
 		disp('Function Successfully Completed')
 	case 'PlotKsn'
@@ -878,9 +887,9 @@ function TAK(func_name,wdir,varargin)
 		end
 		disp('Function Successfully Completed')
 	case 'CatPoly2GRIDobj'
-		disp('There is no compiled version of the CatPoly2GRIDobj function')
+		disp('There is no compiled version of the CatPoly2GRIDobj function, use the compiled PrepareAddCatGrids function')
 	case 'ksncolor'
-		disp('There is no compiled version of the KsnColor function')
+		disp('There is no compiled version of the ksncolor function')
 	case 'ProjectOntoSwath'
 		disp('There is no compiled version of the ProjectOntoSwath function, use the compiled MakeCombinedSwath function')
 	otherwise
