@@ -173,7 +173,9 @@ where 'MakeStreams' is the name of the function you want to use, '/location/of/w
 
 %%%%%%%%
 \section{Preparing Datasets for TAK} \label{sec:exmpl}
-\paragraph{}TopoToolbox and TAK functions are designed assuming that data is supplied to them are in a projected coordinate system with meters as linear units (e.g. UTM ) and will produce unexpected results (or may error out) if you do not reproject your data into a suitable projection and coordinate system. Similarly, for functions that take multiple datasets as inputs (e.g. \nameref{sec:PrcRvBsn}) it is expected that all of the datasets your provide are in the same projection system. We would generally recommend doing the reprojections in a GIS environment (e.g. ArcGIS, QGIS, GDAL, etc), but TopoToolbox does include some functions to reproject data (e.g. \textit{reproject2utm}, \textit{projectGRIDobj}).
+\paragraph{}TopoToolbox and TAK functions are designed assuming that data is supplied to them are in a projected coordinate system with meters as linear units (e.g. UTM ) and will produce unexpected results (or may error out) if you do not reproject your data into a suitable projection and coordinate system. Similarly, for functions that take multiple datasets as inputs (e.g. \nameref{sec:PrcRvBsn}) it is expected that all of the datasets you provide are in the same projection system. We would generally recommend doing the reprojections in a GIS environment (e.g. ArcGIS, QGIS, GDAL, etc), but TopoToolbox does include some functions to reproject data (e.g. \textit{reproject2utm}, \textit{projectGRIDobj}).
+
+\paragraph{}TAK relies on either TopoToolbox or Matlab functions for importing geographic data and thus is limited to the data types supported by these. Specifically, for raster data (e.g. digital elevation models, other gridded data), TAK can interpret and/or export data that are GeoTiffs or ESRI ArcGIS ASCII files (both of which are readable by a variety of GIS programs including ArcGIS, QGIS, and GDAL). For importing or exporting vector data, TAK uses shapefiles (which are again readable and writable by a variety of GIS programs including ArcGIS, QGIS, or OGR).
 
 \paragraph{}It's important to note that projected data (e.g. geotiffs, ascii grids, shapefiles, etc) exported from Matlab will not include georeferencing information. The data is still projected (in the same projection as the original input data), but you will need to define the projection in the GIS program you are using.
 
@@ -1337,7 +1339,7 @@ The \textit{'color\_by'} parameter is a valid input for \nameref{sec:grdksn}, \n
 
 %%%%%%%%%%%%%%%%%%%%%
 \section{Headers for Compiled Functions}\label{sec:CmpFuncCalls}
-\paragraph{} The following section reproduces the headers of each compiled function. Please refer to the \nameref{sec:CmpFunc} section of the user manual for additional information
+\paragraph{} The following section reproduces the headers of each compiled function. Please refer to the \nameref{sec:CmpFunc} section of the user manual for additional information on how to use the compiled versions of the functions.
 
 \subsection{Basin2Raster}
 \paragraph{Description:}
@@ -2389,9 +2391,15 @@ to shapefiles.
 \item file\_prefix - characters to add to the front of all output files
 \end{itemize}
 
+\paragraph{Optional Inputs:}
+\begin{itemize}
+	\item raster\_type ['ascii'] - option to specify the format of the raster export, valid inputs are 'tif' or 'ascii'
+\end{itemize}
+
 \paragraph{Examples} if running for the command line, minus OS specific way of calling main TAK function:
 \begin{lstlisting}[language=bash]
 Mat2Arc /path/to/wdir Topo.mat outputs
+Mat2Arc /path/to/wdir Topo.mat outputs raster_type tif
 \end{lstlisting}
 
 \subsection{PlotIndividualBasins}
