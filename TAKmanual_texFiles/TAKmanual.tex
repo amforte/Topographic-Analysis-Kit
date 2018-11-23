@@ -49,7 +49,66 @@
 	volume = {493},
 	year = {2018}
 }
-
+@article{Snyder2003,
+	author = {Snyder, Noah P and Whipple, Kelin X and Tucker, Gregory E and Merrits, Dorothy J},
+	doi = {10.1029/2001JB001655},
+	file = {:Users/amforte/Documents/PaperLibrary/Mendeley/Snyder et al/Journal of Geophysical Research/jgrb13348.pdf:pdf},
+	journal = {Journal of Geophysical Research},
+	number = {B2},
+	title = {{Importance of a stochastic distribution of floods and erosion thresholds in the bedrock river incision problem}},
+	volume = {108},
+	year = {2003}
+}
+@article{Ouimet2009,
+	author = {Ouimet, William B and Whipple, Kelin X and Granger, Darryl E},
+	file = {:Users/amforte/Documents/PaperLibrary/Mendeley/Ouimet, Whipple, Granger/Geology/Geology-2009-Ouimet-579-82.pdf:pdf;:Users/amforte/Documents/PaperLibrary/Mendeley/Ouimet, Whipple, Granger/Geology/2009137.pdf:pdf},
+	journal = {Geology},
+	number = {7},
+	pages = {579--582},
+	title = {{Beyond threshold hillslopes: Channel adjustment to base-level fall in tectonically active mountain ranges}},
+	volume = {37},
+	year = {2009}
+}
+@article{Roering2007,
+	author = {Roering, Joshua J and Perron, J Taylor and Kirchner, James W},
+	file = {:Users/amforte/Documents/PaperLibrary/Mendeley/Roering, Perron, Kirchner/Earth and Planetary Science Letters/2007{\_}80{\_}Roering{\_}functional{\_}relationships.pdf:pdf},
+	journal = {Earth and Planetary Science Letters},
+	pages = {245--258},
+	title = {{Functional relationships between denudation and hillslope form and relief}},
+	volume = {264},
+	year = {2007}
+}
+@article{Howard1997,
+	author = {Howard, Alan D},
+	file = {:Users/amforte/Documents/PaperLibrary/Mendeley/Howard/Earth Surface Processes and Landforms/Howard ESPL 97.pdf:pdf},
+	journal = {Earth Surface Processes and Landforms},
+	pages = {211--227},
+	title = {{Badland morphology and evolution: Interpretation using a simulation model}},
+	volume = {22},
+	year = {1997}
+}
+@article{Perron2008,
+	author = {Perron, J Taylor and Dietrich, William E and Kirchner, James W},
+	doi = {10.1029/2007JF000977},
+	file = {:Users/amforte/Documents/PaperLibrary/Mendeley/Perron, Dietrich, Kirchner/Journal of Geophysical Research/PerronValleySpacing.pdf:pdf},
+	journal = {Journal of Geophysical Research},
+	pages = {F04016},
+	title = {{Controls on the spacing of first-order valleys}},
+	volume = {113},
+	year = {2008}
+}
+@article{Schwanghart2017,
+	author = {Schwanghart, Wolfgang and Scherler, Dirk},
+	doi = {10.5194/esurf-5-821-2017},
+	file = {:Users/amforte/Documents/PaperLibrary/Mendeley/Schwanghart, Scherler/Unknown/esurf-5-821-2017.pdf:pdf},
+	issn = {2196632X},
+	journal = {Earth Surface Dynamics},
+	number = {4},
+	pages = {821--839},
+	title = {{Bumps in river profiles: Uncertainty assessment and smoothing using quantile regression techniques}},
+	volume = {5},
+	year = {2017}
+}
 
 \end{filecontents}
 
@@ -170,6 +229,9 @@ As described in the readme associated with the Mac version, you can avoid having
 where 'MakeStreams' is the name of the function you want to use, '/location/of/working/directory' is the working directory where input data will be read from and output data will be stored, 'dem.tif' is the first required input of MakeStreams and is the name of the dem file to import, '1e6' is the second required input of MakeStreams and is the threshold accumulation area to use, 'topo\_files' is the third required input of MakeStreams and is the name for output files (note that this is NOT a required input for the non-compiled version of MakeStreams), 'no\_data\_exp' is the name of an optional parameter for MakeStreams, and 'auto' is the value being passed to that optional parameter. Some standards for the inputs; 1)  when the function requires that you provide a name of an input file, it expects that the file includes the file extension (e.g. .txt, .mat, .shp, etc) because it will use this file extension to make sure you're providing the correct kind of file, 2) any text file input is expected to have a .txt extension, 3) theoretically comma or tab delimited data are both fine for text file inputs, but in practice, comma delimited files are preferred, and 4) when the function requires (or allows as an optional input) the name of an output file, DO NOT include a file extension as this name will likely be used for several different files with different extensions and the function will handle appending the proper file extensions. The header of 'cmp*.m' files for each function contain example inputs to the command line to run that function.
 
 \paragraph{}The compiled versions are designed to mostly behave exactly the same as the non-compiled functions running Matlab with a few minor exceptions (e.g. the compiled versions of \nameref{sec:KsnProfiler} and \nameref{sec:BsnPckr} do not allow for you to zoom into a location on the DEM before you start picking). All function names described in later sections are valid functions to invoke in the compiled version of TAK except \textit{ksncolor}, \textit{CatPoly2GRIDobj}, or \textit{ProjectOntoSwath}. Also note that two functions exist in compiled TAK which do not in the regular versions. These functions, called as \textit{PrepareAddGrids} and \textit{PrepareCatAddGrids} at the command lines, are designed to prepare inputs for additional grids and additional categorical grids, respectively, for use in the compiled version of \nameref{sec:PrcRvBsn}. Refer to the 'cmp' files for these two functions ('cmpPrepareAddGrids.m' and 'cmpPrepareCatAddGrids.m') for instructions for use. 
+
+\section{Error Reporting}
+\paragraph{}We have tried to ensure that all options work properly within both the Matlab and compiled versions of TAK, but unexpected errors may occur. The preferred method of error reporting is to use the built in \href{https://github.com/amforte/Topographic-Analysis-Kit/issues}{'Issues'} function on the GitHub page for TAK so that there is a record of user encountered errors. If you have forked a version of the code and think you can fix an error, issue a pull request with the change, collaboration is welcome! If all else fails, you can email \href{mailto:aforte8@lsu.edu}{Adam Forte} as well. Before submitting an issue or contacting Adam, please check both open and closed issues to see if the bug has already been reported or fixed in an updated version. Whether submitting an issue or emailing Adam, please provide as much information as possible on the error (e.g. cut and paste the error message you received) and what you were doing when it occurred.
 
 %%%%%%%%
 \section{Preparing Datasets for TAK} \label{sec:exmpl}
@@ -526,14 +588,16 @@ There is also a built in auto filter that will identify true flats (i.e. areas o
 [DEM,FD,A,S]=MakeStreams('/Users/aforte/GISdata/SoCal_UTM_DEM.txt',1e6,'no_data_exp','auto');
 \end{lstlisting}
 
-\noindent
-Using this auto filter produces a more reasonable stream network and removes the Pacific Ocean and Salton Sea from the areas where streams are defined. (Figure \ref{fig:NoFlatsStreams}). The auto filter can be controlled by setting a minimum area to identify as a flat to avoid finding small flat areas of DEMs that you do not wish to remove. This is set to a default minimum area of 1e8 m\textsuperscript{2}. Setting this minimum flat area to small values may result in a discontinuous stream network (Figure \ref{fig:min_flat}).
+
 
 \begin{figure}[H]
 	\includegraphics[width=16.5cm]{PNGs/NoFlatsStreams2.png}
 	\caption{Result of running \nameref{sec:MakeStreams} with auto removal of flat areas and \textit{min\_flat\_area} set to 1e8.}
 	\label{fig:NoFlatsStreams}
 \end{figure}
+
+\noindent
+Using this auto filter produces a more reasonable stream network and removes the Pacific Ocean and Salton Sea from the areas where streams are defined. (Figure \ref{fig:NoFlatsStreams}). The auto filter considers an area 'flat' if the log of the gradient is undefined and then looks for connected pixels that are identified as 'flat.' The number of connected pixels which will subsequently be treated as a flat area, and set to 'NaN' in the resulting DEM, is controlled by setting a minimum area with the \textit{'min\_flat\_area'} in m\textsuperscript{2}. This is set to a default minimum area of 1e8 m\textsuperscript{2}. Setting this minimum flat area to small values may result in a discontinuous stream network (Figure \ref{fig:min_flat}).
 
 \begin{figure}[H]
 	\centering
@@ -566,13 +630,15 @@ PRECIP=GRIDobj('/Users/aforte/GISdata/prism_precip.tif');
 
 \subsection{\textit{ConditionDEM}}
 
-\paragraph{}DEMs can be extremely noisy and thus can produce very jagged stream profiles. This is both visually unappealing, but more importantly is problematic for calculations that use stream gradient (e.g. normalized channel steepness). TopoToolbox includes a variety of different algorithms to condition or smooth DEMs, either as an entire grid or specifically along specified stream networks. The \textit{ConditionDEM} function is a wrapper around all of these different routines. Some are very computationally intensive and require several parameters, so you are advised to spend some time 'playing' with the parameters and choices to see the outcome. \textit{ConditionDEM} produces example stream profiles comparing the unconditioned and conditioned result along with a map showing where elevations were changed to aid you in understanding what the chosen algorithm has done. 
+\paragraph{}DEMs can be extremely noisy and thus can produce very jagged stream profiles. This is both visually unappealing, but more importantly is problematic for calculations that use stream gradient (e.g. normalized channel steepness). TopoToolbox includes a variety of different algorithms to condition or smooth DEMs, either as an entire grid or specifically along specified stream networks. The \textit{ConditionDEM} function is a wrapper around all of these different routines. We refer readers to the TopoToolbox documentation for detailed discussions of these smoothing routines, including \cite{Schwanghart2017} for consideration of the 'crs' algorithm. Some are very computationally intensive and require several parameters, so you are advised to spend some time 'playing' with the parameters and choices to see the outcome. \textit{ConditionDEM} produces example stream profiles comparing the unconditioned and conditioned result along with a map showing where elevations were changed to aid you in understanding what the chosen algorithm has done. 
 
 \paragraph{}It is not strictly required to use the \textit{ConditionDEM} function. All TAK functions that need smoothed channel profiles have built in conditioning, using the \textit{mincosthydrocon} algorithm with an interpolation value of 0.1. If you want to use a different conditioning algorithm, you can use \textit{ConditionDEM} to produce a conditioned DEM that you can then supply as an optional input to TAK functions that need a conditioned DEM.
 
 \subsection{\textit{RemoveFlats}}
 
-\paragraph{}For topographic analysis, we are often not interested in flat areas and it can be helpful to remove these from DEMs or set them to no data to restrict stream definition. Some of this can be accomplished with the simple controls built into \nameref{sec:MakeStreams}, but when these flat areas are not perfectly flat or occur at multiple elevations, they can be problematic to remove without manual clipping of DEMs. The \textit{RemoveFlats} function is an attempt to partially automate this process. It allows you to graphically identify areas (with a single click for each connected flat area) that you consider flats and the function will attempt to find contiguous areas. This function can sometimes be overly aggressive and remove areas of interest, so it is always best to inspect the results of the function before using it for subsequent processing (e.g. providing the filtered DEM produced here to \textit{MakeStreams} to regenerate a stream network) and compare it with the basic output of \textit{MakeStreams} to determine whether the results of \textit{RemoveFlats} are suitable for use.
+\paragraph{}For topographic analysis, we are often not interested in flat areas and it can be helpful to remove these from DEMs or set them to no data to restrict stream definition. Some of this can be accomplished with the simple controls built into \nameref{sec:MakeStreams}, but when these flat areas are not perfectly flat or occur at multiple elevations, they can be problematic to remove without manual clipping of DEMs. The \textit{RemoveFlats} function is an attempt to partially automate this process. It allows you to graphically identify areas (with a single click for each connected flat area) that you consider flats and the function will attempt to find contiguous areas. The function first fills all sinks in the DEM and then performs a morhpological erosion on the filled DEM with a 3x3 neighborhood. This means that any pixel will be set to the lowest elevation in a 3x3 neighborhood centered on that pixel. The eroded DEM is then morphologically dilated, with a neighborhood of between 3x3 to 9x9 depending on the users selection for the \textit{'strength'} parameter. This dilation sets pixels within the neighborhood to the maximum value. When the user then selects a location on the DEM, all pixels which are connected (using the dilated DEM) are identified as a flat and set to NaN.
+
+\paragraph{}This function can sometimes be overly aggressive and remove areas of interest, so it is always best to inspect the results of the function before using it for subsequent processing (e.g. providing the filtered DEM produced here to \textit{MakeStreams} to regenerate a stream network) and compare it with the basic output of \textit{MakeStreams} to determine whether the results of \textit{RemoveFlats} are suitable for use.
 
 \subsection{\textit{FindThreshold}} \label{sec:FindThresh}
 
@@ -586,14 +652,14 @@ PRECIP=GRIDobj('/Users/aforte/GISdata/prism_precip.tif');
 \paragraph{}The three functions for stream selection and projection have some overlap with similar functions in TopoToolbox, but are slightly different in implementation or style of outputs. Exploring both to see which set better fits your needs is advisable.
 
 \subsection{\textit{SegmentPicker}} \label{sec:SegPick}
-\paragraph{}\textit{SegmentPicker} is a function designed to select portions of larger stream networks. In terms of stream selection, the function has two primary modes, either 'down', i.e. you select individual streams based on a channel head location, or 'up', i.e. you select portions of networks above a given pour point. Channel selection can be done interactively within Matlab or by providing coordinates of channel heads or pour points as an array or a point shapefile. \textit{SegmentPicker} shares some similarity to the TopoToolbox function \textit{flowpathapp} or functionality available in \textit{topoapp}.
+\paragraph{}\textit{SegmentPicker} is a function designed to select portions of larger stream networks. In terms of stream selection, the function has two primary modes, either 'down', i.e. you select individual streams based on a channel head location, or 'up', i.e. you select portions of networks above a given pour point. If selecting on the basis of channel head location, the function will interpret your selection to be the channel head that is the minimum euclidean distance between your selection and the actual channel heads. Channel selection can be done interactively within Matlab or by providing coordinates of channel heads or pour points as an array or a point shapefile. \textit{SegmentPicker} shares some similarity to the TopoToolbox function \textit{flowpathapp} or functionality available in \textit{topoapp}.
 
 \subsection{\textit{SegmentPlotter}}
-\paragraph{}\textit{SegmentPlotter} takes the output of \nameref{sec:SegPick} and plots each selected stream individually. The stream network is plotted as $\chi$-elevation, longitudinal profile, and slope-area plots. There are various options for subsetting portions of picked streams, producing individual or single figures, and labeling.
+\paragraph{}\textit{SegmentPlotter} takes the output of \nameref{sec:SegPick} and plots each selected stream individually. The stream network is plotted as $\chi$-elevation, longitudinal profile, and slope-area plots. With the logical \textit{'separate'} flag, you can produce individual figures for each segment. Alternatively, you can provide a list of identifying numbers (i.e. the ID number in the third column of the \nameref{sec:SegPick} output) to the \textit{'subset'} parameter to only plot specific segments. You can also initiate and control labeling of stream segments with the \textit{'label'} and \textit{'names'} parameters.
 
 \subsection{\textit{SegmentProjector}}
 
-\paragraph{}\textit{SegmentProjector} allows you to select a portion of a stream to project along the length of the entire stream (i.e. from the mouth to the channel head of the provided stream). This can be useful for a variety of questions, e.g. estimating the amount of uplift of a low relief portion of a landscape (Figure \ref{fig:proj1}) or identifying portions of a stream profile that may be tectonically deformed or otherwise disturbed (Figure \ref{fig:proj2}).
+\paragraph{}\textit{SegmentProjector} allows you to interactively select a portion of a stream to project along the length of the entire stream (i.e. from the mouth to the channel head of the provided stream). This can be useful for a variety of questions, e.g. estimating the amount of uplift of a low relief portion of a landscape (Figure \ref{fig:proj1}) or identifying portions of a stream profile that may be tectonically deformed or otherwise disturbed (Figure \ref{fig:proj2}). In detail, the function clips out the portion of the stream you select and performs a least squares linear fit on the $\chi$-elevation relationship along with a 95\% confidence interval on this fit. 
 
 \begin{figure}[H]
 	\centering
@@ -658,9 +724,15 @@ PRECIP=GRIDobj('/Users/aforte/GISdata/prism_precip.tif');
 [KSN_STREAM_GRID,ksn_ms,KSN_GRID,CHI_MAP,CHI_GRID]=KsnChiBatch(DEM,FD,A,S,'all');
 \end{lstlisting}
 
-\paragraph{}Values of k\textsubscript{sn} can be calculated in three primary ways. The default \textit{'ksn\_method'} (and the same method used in the original Profiler51 or the TopoToolbox \textit{ksn} function) is denoted \textit{'quick'} and calculates k\textsubscript{sn} across the entire stream network simultaneously by solving the equation \begin{math} S=k_{sn}*A^{-\theta}\end{math}, where \textit{S} is the gradient, \textit{A} is the drainage area, and \textit{$\theta$} is a reference concavity. This result will typically be extremely noisy because of small variations in gradient, so k\textsubscript{sn} values are usually averaged over some length, depending on the resolution of the data. This \textit{'smooth\_distance'} is a user controlled parameter in \textit{KsnChiBatch}. 
+\paragraph{}Values of k\textsubscript{sn} can be calculated in three primary ways. The default \textit{'ksn\_method'} (and the same method used in the original Profiler51 or the TopoToolbox \textit{ksn} function) is denoted \textit{'quick'} and calculates k\textsubscript{sn} across the entire stream network simultaneously by solving the equation, 
 
-\paragraph{}Because of the way the averaging is done over a given smoothing distance, sometimes portions of trunk streams can end up with anomalously high k\textsubscript{sn} values as their values are influenced by smaller, steeper side tributaries. To partially control for this, we include an additional method of k\textsubscript{sn} calculation where averaged k\textsubscript{sn} values for trunk streams are calculated separately. This option can be used by setting \textit{'ksn\_method'} to \textit{'trunk'}. The determination of whether a stream is a trunk stream or not is based on stream order, which is controllable with the optional \textit{'min\_order'} parameter. By default, the \textit{'min\_order'} is set to 4, meaning that any stream of order 4 or greater is considered a trunk stream.
+\begin{equation}
+ S=k_{sn}*A^{-\theta}
+\end{equation}
+
+\noindent where $S$ is the gradient, $A$ is the drainage area, and $\theta$ is a reference concavity. This result will typically be extremely noisy because of small variations in gradient, so k\textsubscript{sn} values are usually averaged over some length, depending on the resolution of the data, \citep[e.g.,][]{Wobus2006}. This \textit{'smooth\_distance'} is a user controlled parameter in \textit{KsnChiBatch}. 
+
+\paragraph{}Because of the way the averaging is done over a given smoothing distance by the underlying TopoToolbox \textit{STREAMobj2mapstruct} function, sometimes portions of trunk streams can end up with anomalously high k\textsubscript{sn} values as their values are influenced by smaller, steeper side tributaries. To partially control for this, we include an additional method of k\textsubscript{sn} calculation where averaged k\textsubscript{sn} values for trunk streams are calculated separately. This option can be used by setting \textit{'ksn\_method'} to \textit{'trunk'}. The determination of whether a stream is a trunk stream or not is based on stream order, which is controllable with the optional \textit{'min\_order'} parameter. By default, the \textit{'min\_order'} is set to 4, meaning that any stream of order 4 or greater is considered a trunk stream.
 
 \paragraph{}Both the default \textit{'quick'} and \textit{'trunk'} methods described above are rapid to calculate, but can sometimes smear out true abrupt changes in k\textsubscript{sn} at confluences. For this reason, by setting \textit{'ksn\_method'} to \textit{'trib'}, k\textsubscript{sn} can also be calculated with \textit{KsnChiBatch} where network segments (i.e. stream segments between confluences) are selected, divided into sub-segments determined by the \textit{'smooth\_distance'}, and then the average k\textsubscript{sn} of each sub-segment is calculated by finding the best fit slope on the $\chi$-elevation relationship for this sub-segment (k\textsubscript{sn} is equivalent to the slope of the $\chi$-elevation relationship when the reference drainage area is set to 1). The \textit{'quick'} and \textit{'trib'} methods do produce different k\textsubscript{sn} patterns, though while subtle, do show some systematic behavior (Figure \ref{fig:BatchComp}).
 
@@ -670,13 +742,13 @@ PRECIP=GRIDobj('/Users/aforte/GISdata/prism_precip.tif');
 	\label{fig:BatchComp}
 \end{figure}
 
-\paragraph{}While we have not conducted a full study of the differences of these two methods, the southern California example suggests that generally the regular \textit{'quick'} method of k\textsubscript{sn} calculation may be slightly biased towards higher k\textsubscript{sn} values, though 90\% of k\textsubscript{sn} values of the two methods are within $\pm$50 of each other (this is with a reference concavity of 0.50, so absolute magnitudes of k\textsubscript{sn} and thus magnitudes of deviations between these two methods will scale with choice of reference concavity). The k\textsubscript{sn} values from the regular method are generally systematically larger than the tributary method values in low relief areas, where as generally k\textsubscript{sn} values from the tributary method tend to be higher than regular values in higher relief portions of the landscape (Figure \ref{fig:BatchComp}). 
+\paragraph{}While we have not conducted a full study of the differences of the basic \textit{'quick'} vs \textit{'trib'} methods, the southern California example suggests that generally the regular \textit{'quick'} method of k\textsubscript{sn} calculation may be slightly biased towards higher k\textsubscript{sn} values, though 90\% of k\textsubscript{sn} values of the two methods are within $\pm$50 of each other (this is with a reference concavity of 0.50, so absolute magnitudes of k\textsubscript{sn} and thus magnitudes of deviations between these two methods will scale with choice of reference concavity). The k\textsubscript{sn} values from the regular method are generally systematically larger than the tributary method values in low relief areas, where as generally k\textsubscript{sn} values from the tributary method tend to be higher than regular values in higher relief portions of the landscape (Figure \ref{fig:BatchComp}). 
 
 \paragraph{}The geographic information structure (and shapefile) produced from both methods for each segment (controlled by the \textit{'smooth\_distance'}) will have fields containing values for k\textsubscript{sn} (\textit{'ksn'}), mean drainage area (\textit{'uparea'}), mean gradient (\textit{'gradient'}), and the difference between the conditioned stream elevation and non-conditioned stream elevation (\textit{'cut\_fill'}) to inform the user whether an anomalous k\textsubscript{sn} value may because of an overly aggressive conditioning scheme. If the \textit{'trib'} method is used, the geographic information structure and shapefile will include an extra field, \textit{'chi\_r2'}, which is the R\textsuperscript{2} value on the $\chi$-elevation fit and can be interpreted as a measure of the linearity of each sub-segment. 
 
 \subsection{\textit{KsnProfiler}} \label{sec:KsnProfiler}
 
-\paragraph{}For detailed analysis of streams, it is often necessary to manually select knickpoint bounded steam segments for which you wish to calculate average k\textsubscript{sn} values. This was the primary purpose of the original Profiler51 code and we have produced the \textit{KsnProfiler} function to replicate and improve upon the original Profiler51 methodology. In detail, \textit{KsnProfiler} calculates k\textsubscript{sn} of user selected segments by finding the best fit linear slope of the $\chi$-elevation relationship for the segment in question. It should be noted that 1) calculation of k\textsubscript{sn} via this method will produce identical results to finding the intercept of a fit in slope-area space (providing that the reference area in the $\chi$ calculation is set to 1, as it is in \textit{KsnProfiler}) so there is no need to distinguish between k\textsubscript{sn} values calculated by a $\chi$-elevation slope or a slope-area intercept and 2) though the publication associated with the original Profiler51 codes discussed k\textsubscript{sn} calculation in terms of slope intercepts (\cite{Wobus2006}), internally, the code used the slope of a linear fit on a $\chi$-elevation relationship to calculate k\textsubscript{sn}. \textit{KsnProfiler} has a large number of optional inputs, so you should familiarize yourself with all of the ways in which it can be run by reading through the header of the function. We highlight some of the main options in the following sections.
+\paragraph{}For detailed analysis of streams, it is often necessary to manually select knickpoint bounded steam segments for which you wish to calculate average k\textsubscript{sn} values. This was the primary purpose of the original Profiler51 code and we have produced the \textit{KsnProfiler} function to replicate and improve upon the original Profiler51 methodology. In detail, \textit{KsnProfiler} calculates k\textsubscript{sn} of user selected segments by finding the best fit linear slope of the $\chi$-elevation relationship for the segment in question. It should be noted that 1) calculation of k\textsubscript{sn} via this method will produce identical results to finding the intercept of a fit in slope-area space (providing that the reference area in the $\chi$ calculation is set to 1, as it is in \textit{KsnProfiler}) so there is no need to distinguish between k\textsubscript{sn} values calculated by a $\chi$-elevation slope or a slope-area intercept and 2) though the publication associated with the original Profiler51 codes discussed k\textsubscript{sn} calculation in terms of slope intercepts \citep{Wobus2006}, internally, the code used the slope of a linear fit on a $\chi$-elevation relationship to calculate k\textsubscript{sn}. \textit{KsnProfiler} has a large number of optional inputs, so you should familiarize yourself with all of the ways in which it can be run by reading through the header of the function. We highlight some of the main options in the following sections.
 
 \subsubsection{Stream Selection}
 \paragraph{}There are four different ways in which you can define which streams you would like to fit. The default is an interactive channel selection method where you choose streams (from all of the streams in the provided \textit{STREAMobj}) manually by clicking near a channel head of interest. In this case, the call of \textit{KsnProfiler} is relatively simple:
@@ -823,9 +895,12 @@ The \textit{ClassifyKnicks} is a companion function to \nameref{sec:KsnProfiler}
 \noindent
  and displays the DEM along with a map of local relief (radius of relief can be specified with optional \textit{'rlf\_radius'} parameter) and the provided stream network and prompts the user to choose a pour point / river mouth. The function will first confirm that you choose the correct portion of the stream network and then, if you answer in the affirmative, will display the plot of the $\chi$-elevation and longitudinal profile for the streams within the selected basin and will also print out the mean local relief, mean channel steepness, and drainage area of the selected basin. The function will then ask if you wish to keep or discard this basin from the running list of outlets. The rationale being that if you are using this for sample site selection, you may not want to include basins that have major knickpoints, are below/above a particular drainage area, or do not meet some user defined morphometric criteria. 
 
-\paragraph{}After each confirmed selection, \textit{BasinPicker} will append this to an \textit{'Outlets.mat'} file. If you run \textit{BasinPicker} when an \textit{'Outlets.mat'} file is in the active directory (or on your path), the code will attempt to populate the map with previous outlet selections. You can also provide an additional \textit{GRIDobj} if you wish to consider an additional gridded dataset in selecting basin outlet locations:
+\paragraph{}After each confirmed selection, \textit{BasinPicker} will append this to an \textit{'Outlets.mat'} file. If you run \textit{BasinPicker} when an \textit{'Outlets.mat'} file is in the active directory (or on your path), the code will attempt to populate the map with previous outlet selections. If you have already calculated local relief for your area of interest, you can skip the recalculation by providing a \textit{GRIDobj} of local relief to the optional \textit{'rlf\_grid'} parameter. You can also provide an additional \textit{GRIDobj} if you wish to consider an additional gridded dataset in selecting basin outlet locations:
 
 \begin{lstlisting}[language=Matlab]
+% Providing a precomputed relief grid
+[Outlets]=BasinPicker(DEM,FD,A,S,'rlf_grid',RLF);
+% Providing an extra grid
 PRECIP=GRIDobj('/Users/aforte/GISdata/precip.tif');
 [Outlets]=BasinPicker(DEM,FD,A,S,'extra_grid',PRECIP);
 \end{lstlisting}
@@ -833,7 +908,16 @@ PRECIP=GRIDobj('/Users/aforte/GISdata/precip.tif');
 \noindent
 The provided extra grid does not need to the same dimensions as the input DEM, etc, but it does need to be in the same projection. If you provide an extra grid, the mean values of this grid within the selected basin(s) will also be displayed in the plots. 
 
-\paragraph{}In some instances, you may be selecting basins for specific locations, e.g. if you want to calculate basin averaged statistics for watersheds above detrital sample sites for which you have GPS coordinates. Very often, the true location of streams, and samples from them, will be slightly different than the location of the stream that results from flow routing, such that just using the GPS location of a sample site will result in incorrect basin selection, requiring a laborious process of nudging true locations to lie on stream lines. This process can be sped by providing the list of coordinates to the optional \textit{'refine\_positions'} argument in \textit{BasinPicker}. After providing these locations, the code will iterate through each position and show its location on the main map but also the location of the sample and the stream network in a separate zoomed in window, allowing you to precisely reposition the river mouth. The amount of zoom is controlled by the \textit{'window\_size'} parameter, where you can specify the size of the zoomed in window in kilometers.
+\paragraph{}In some instances, you may be selecting basins that are upstream of specific locations, e.g. if you want to calculate basin averaged statistics for watersheds above detrital sample sites for which you have GPS coordinates. Very often, the true location of streams, and samples from them, will be slightly different than the location of the stream that results from flow routing, such that just using the GPS location of a sample site will result in incorrect basin selection, requiring a laborious process of nudging true locations to lie on stream lines. This process can be sped by providing the list of coordinates to the optional \textit{'refine\_positions'} argument in \textit{BasinPicker}. After providing these locations, the code will iterate through each position and show its location on the main map but also the location of the sample and the stream network in a separate zoomed in window, allowing you to precisely reposition the river mouth. The amount of zoom is controlled by the \textit{'window\_size'} parameter, where you can specify the size of the zoomed in window in kilometers. For example:
+
+\begin{lstlisting}[language=Matlab]
+% Load a shapefile containing your GPS coordinates
+ms=shaperead('my_gps_points.shp');
+% Extract the X and Y coordinates and put them into a m x 2 array
+gps_pnts=[[ms.X] [ms.Y]]
+% Run BasinPicker with window size of the zoomed window set to 2 km
+[Outlets]=BasinPicker(DEM,FD,A,S,'refine_positions',gps_pnts,'window_size',2);
+\end{lstlisting}
 
 %%%%%%%%
 \section{Basin Average Maps and Plots}
@@ -871,7 +955,7 @@ ProcessRiverBasins(DEM,FD,A,S,1000,'basin_dir');
 
 \paragraph{}River mouths provided to \textit{ProcessRiverBasins} can be non-nested or nested as each basin is processed independently of all other basins. If you're goal is to simply to generate a large dataset of arbitrary small basins within a landscape, we recommend placing river mouths at strategic locations (e.g. where streams exit a mountain range, Figure \ref{fig:BasinsComp}) and use \textit{ProcessRiverBasins} to process these large basins and then use \nameref{sec:SbDvdBsn} to automatically subdivide basins as opposed to manually selecting large numbers of nested, sub-basins.
 
-\paragraph{}The function will use the river mouth locations to extract basins. Each basin will have its own basic TopoToolbox files along with various derived quantities, e.g. geographic data structure of k\textsubscript{sn} using a reference concavity, geographic data structure of k\textsubscript{sn} using a best fit concavity for that watershed (remember that k\textsubscript{sn} values calculated with different concavities are not comparable when considering these outputs!), hypsometry and hypsometric integral for the basin, slope map, and statistics (mean, standard deviation or standard errors) on the majority of these quantities. Because it is time consuming, local relief is not calculated by default, but you can specify that you wish to calculate relief at a variety of radii using the \textit{'calc\_relief'} and \textit{'relief\_radii'} parameters:
+\paragraph{}The \textit{ProcessRiverBasins} function will use the river mouth locations to extract basins. For each basin there will be a Matlab .mat file which will contain its own basic TopoToolbox files along with various derived quantities, e.g. geographic data structure of k\textsubscript{sn} using a reference concavity, geographic data structure of k\textsubscript{sn} using a best fit concavity for that watershed (remember that k\textsubscript{sn} values calculated with different concavities are not comparable when considering these outputs!), hypsometry and hypsometric integral for the basin, slope map, and statistics (mean, standard deviation or standard errors) on the majority of these quantities. See the \nameref{sec:UndOuts} for a complete list of outputs stored within the .mat file. Because it is time consuming, local relief is not calculated by default, but you can specify that you wish to calculate relief at a variety of radii using the \textit{'calc\_relief'} and \textit{'relief\_radii'} parameters:
 
 \begin{lstlisting}[language=Matlab]
 % Calculate relief with a radius of 2500 m for all basins
@@ -903,7 +987,9 @@ ProcessRiverBasins(DEM,FD,A,S,Outlets,'basin_dir','add_grids',AG);
 \end{lstlisting}
 
 \noindent
-As a note, it is not recommended that you provide a local relief grid as an extra grid, but rather use the \textit{'calc\_relief'} option. The reason for this is twofold, 1) because local relief is calculated with a moving window, simply clipping out watersheds from a larger local relief raster will bias the statistics within the clipped watersheds as edge pixels will be influenced by neighboring basins and 2) subsequent codes explicitly look for the relief datasets in \textit{ProcessRiverBasins} outputs to determine behaviors.
+As a note, it is not recommended that you provide a local relief grid as an extra grid, but rather use the \textit{'calc\_relief'} option. The reason for this is twofold, 1) because local relief is calculated with a moving window, simply clipping out watersheds from a larger local relief raster will bias the statistics within the clipped watersheds as edge pixels will be influenced by neighboring basins and 2) subsequent codes explicitly look for the relief datasets in \textit{ProcessRiverBasins} outputs to determine behaviors. 
+
+\paragraph{Note for Compiled Versions:} If you are running the compiled version of \textit{ProcessRiverBasins}, the procedure for adding extra grids is slightly different. Instead of directly providing the extra grids to \textit{ProcessRiverBasins}, you must first use the \nameref{sec:PrepAdd} function to prepare a .mat file containing these extra grids, the name of which is then provided to the compiled \textit{ProcessRiverBasins} function.
 
 \subsubsection{Categorical Grids} \label{sec:PRB_ACG}
 \paragraph{}Some data that you may want to include in ProcessRiverBasins is not natively supported as a \textit{GRIDobj}, specifically non-numeric data stored in polygonal shapefiles, e.g. units from a geologic map or vegetation types. You can provide this data as a usable input to ProcessRiverBasins via the optional \textit{'add\_cat\_grids'} parameter and with the help of the \nameref{sec:CatGrid} function. The input to the \textit{'add\_cat\_grids'} parameter is expected as a 3 column Matlab cell array, where the first column is the \textit{GRIDobj}, the second column is the lookup table (both of these are generated by \textit{CatPoly2GRIDobj}), and a name for the grid:
@@ -927,7 +1013,9 @@ ProcessRiverBasins(DEM,FD,A,S,Outlets,'basin_dir','add_cat_grids',{GEO geo_table
 \noindent
 As with extra grids, more than one categorical grid can be provided, simply add additional rows to the input cell array. The remaining functions in this section all are either designed to operate on the products of \textit{ProcessRiverBasins} or serve as helper functions for \textit{ProcessRiverBasins}, e.g. \nameref{sec:CatGrid}. Because it is assumed that mean values of a category are not meaningful, the mode category value for each basin is found and used as the statistic. The function also calculates the number of pixels of each basin that belong to each category and saves this within the outputs.
 
-\subsubsection{Understanding Outputs}
+\paragraph{Note for Compiled Versions:} If you are running the compiled version of \textit{ProcessRiverBasins}, the procedure for adding categorical grids is slightly different. Instead of running \nameref{sec:CatGrid} and providing the result directly to \textit{ProcessRiverBasins}, you must instead use the \nameref{sec:PrepCat} function to prepare a .mat file containing these categorical grids, the name of which is then provided to the compiled \textit{ProcessRiverBasins} function.
+
+\subsubsection{Understanding Outputs} \label{sec:UndOuts}
 \paragraph{}Each basin .mat file (or sub-basin file if considering the outputs of the related \nameref{sec:SbDvdBsn}) contains a lot of outputs. For the most part, subsequent functions are designed to use and process these basin files, but in some cases you may wish to use products directly so we provide a list of all the outputs and a brief description of each below.
 
 \begin{enumerate}
@@ -985,6 +1073,8 @@ As with extra grids, more than one categorical grid can be provided, simply add 
 \noindent
 The output \textit{GRIDobj} will have the same dimensions as the input DEM. The provided shapefile does not need to have the same dimensions (it can be larger or smaller than the input DEM), but it does need to be in the same coordinate system and projection.  \textit{CatPoly2GRIDobj} can only handle one field within a shapefile, so if you have a shapefile that has multiple fields you wish to convert to \textit{GRIDobj}s, you will need to run \textit{CatPoly2GRIDobj} multiple times. Any node of the input DEM that does not have categorical values associated with it will be set to '0' in the \textit{GRIDobj}, which will correspond to a value of 'undef' in the lookup table. As a note, this function relies heavily on the underlying TopoToolbox function \textit{polygon2GRIDobj}. At the time of writing, \textit{polygon2GRIDobj} sometimes has issues dealing with nested or overlapping polygons that will result in areas being set to '0' and 'undef'.
 
+\paragraph{Note for Compiled Versions:} There is no compiled version of \textit{CatPoly2GRIDobj}. The \nameref{sec:PrepCat} function replaces it and prepares inputs directly for the compiled version of \nameref{sec:PrcRvBsn}.
+
 \subsection{\textit{SubDivideBigBasins}} \label{sec:SbDvdBsn}
 \paragraph{}The \textit{SubDivideBigBasins} function is designed to automatically divide up basins output from \nameref{sec:PrcRvBsn} greater than a user specified drainage area. There are a variety of different methods for subdividing basins, including on the basis of stream order (i.e. outlets of streams of a user specified order within a basin are used as new river mouths above which to extract new sub-basins), confluences or upstream confluences (i.e. the former using the confluence as a river mouth, the latter using points immediately upstream of a confluences as river mouths), filtered confluences (i.e. using confluences as river mouths if those confluence points are above a user defined drainage area or percentage of the input basin drainage area), confluence points with trunk stream (i.e. river mouths will be points immediately upstream of every confluence with the main trunk within each specified basin), or filtered confluences with the trunk stream. Some examples:
 
@@ -1000,13 +1090,13 @@ SubDivideBigBasins('basin_dir',50,'filtered_trunk','min_basin_size',5);
 \noindent
 These different subdivision schemes will result in the selection of different sub-basins (Figure \ref{fig:BasinsComp}) which in turn will result in different populations of basin statistics (Figure \ref{fig:GrdKsnComp}). Identical statistics and operations are performed on each sub-basin as were for the main basins produced by \textit{ProcessRiverBasins}.
 
+\paragraph{}We refer you to the function header for a full list of optional parameters for running \textit{SubDivideBigBasins}, but it is important to highlight the \textit{'SBFiles\_Dir'} optional parameter. This parameter allows the user to specify the name of the folder that will contain the sub-basin mat files and is set to 'SubBasins' by default. This folder will be placed within the main basin directory (specified with required \textit{'basin\_dir'} parameter). If you want to generate different sets of sub-basins based on different subdivision schemes, it is important to provide unique folder names in which to place your different sub-basin datasets, otherwise overwriting and mixing of different subdivision schemes may occur. Sub-basin mat files are saved as \textit{'Basin\_\#\_DataSubset\_\#\#.mat'} where \# is the original basin number that is being subdivided and \#\# is a sequential number based on the number of sub-basins produced within that main basin. It is important that you do not change these file names as this will cause other functions which use these as inputs to fail or behave unexpectedly. River mouth IDs for sub-basins are assembled by appending the sequential number of the sub-basin as at least a 3 digit number (i.e. with the appropriate number of leading zeros) to the main basin number. For example, river mouth ID for the 7th sub-basin of basin number 50 will be 50007, where as the 14th sub-basin for basin number 156 will be 156014. If there are more than 999 sub-basins, the function will still work fine, e.g. the river ID number for the 1200 sub-basin of basin number 156 would be 1561200.
+
 \begin{figure}[H]
 	\includegraphics[width=16.5cm]{PNGs/Basin_Comparisons.png}
 	\caption{Comparison of mean k\textsubscript{sn} values calculated for manually selected basins (upper left panel) from \nameref{sec:PrcRvBsn} and for a variety of sub-basin division schemes using \textit{SubDivideBigBasins}.}
 	\label{fig:BasinsComp}
 \end{figure}
-
-\paragraph{}We refer you to the function header for a full list of optional parameters for running \textit{SubDivideBigBasins}, but it is important to highlight the \textit{'SBFiles\_Dir'} optional parameter. This parameter allows the user to specify the name of the folder that will contain the sub-basin mat files and is set to 'SubBasins' by default. This folder will be placed within the main basin directory (specified with required \textit{'basin\_dir'} parameter). If you want to generate different sets of sub-basins based on different subdivision schemes, it is important to provide unique folder names in which to place your different sub-basin datasets, otherwise overwriting and mixing of different subdivision schemes may occur. Sub-basin mat files are saved as \textit{'Basin\_\#\_DataSubset\_\#\#.mat'} where \# is the original basin number that is being subdivided and \#\# is a sequential number based on the number of sub-basins produced within that main basin. It is important that you do not change these file names as this will cause other functions which use these as inputs to fail or behave unexpectedly. River mouth IDs for sub-basins are assembled by appending the sequential number of the sub-basin as at least a 3 digit number (i.e. with the appropriate number of leading zeros) to the main basin number. For example, river mouth ID for the 7th sub-basin of basin number 50 will be 50007, where as the 14th sub-basin for basin number 156 will be 156014. If there are more than 999 sub-basins, the function will still work fine, e.g. the river ID number for the 1200 sub-basin of basin number 156 would be 1561200.
 
 \subsection{\textit{FindBasinKnicks}} \label{sec:BsnKncks}
 \paragraph{}\textit{FindBasinKnicks} allows you to find, mark, and optionally classify knickpoints within a basin file produced by \nameref{sec:PrcRvBsn} or \nameref{sec:SbDvdBsn}. Function will iterate through each stream in a given basin and allow the user to select knickpoint locations on a $\chi$-elevation plot. If you set the optional \textit{'classify\_knicks'} parameter to true, you can also input a classification for each selected knickpoints. As with the \textit{ClassifyKnicks} function for use with \textit{KsnProfiler}, classification can be numeric or short character strings. The \textit{FindBasinKnicks} function will output a Matlab table with location information for the selected knickpoints and optionally produce a shapefile by providing a valid character string to the optional \textit{'shape\_name'} parameter.
@@ -1065,6 +1155,8 @@ shapewrite(MS,'shape_name.shp');
 \noindent
 but the function will automatically produce a shapefile saved in the active directory unless you suppress this with the optional \textit{'suppress\_shape\_write'} parameter. 
 
+\paragraph{Note for Compiled Versions:} In the compiled version of \nameref{sec:CmpBsn2Shp}, extra field values are dealt with differently. Instead of providing separate inputs for the values and names for those values, a text file is provided to the \textit{'extra\_field\_values'} parameter and the names of columns in that text file are used as the names of the resulting categories. 
+
 \subsection{\textit{Basin2Raster}}
 \paragraph{}The \textit{Basin2Raster} is a simpler alternative to \nameref{sec:B2S} that will output a \textit{GRIDobj} and save out an ascii raster of the basin extents filled with values specified by the user. Possible values are mean k\textsubscript{sn}, mean gradient, mean elevation, mean relief (you must specify which radius you want to use), R\textsuperscript{2} value on the $\chi$-elevation relationship (this can be a useful metric for assessing how well adjusted a basin is, R\textsuperscript{2} values closer to 1 should have fewer significant deviations from a linear $\chi$-elevation relationship, though this will also be influenced by the reference concavity used for calculating $\chi$), drainage area in km\textsuperscript{2}, hypsometric intergral, basin ID number, best fit concavity, or the name of any additional grid or additional categorical grid originally provided to \textit{ProcessRiverBasins}. If the name of an additional grid is provided, value will be the basin mean and if the name of a categorical grid is provided , value will be the basin mode. 
 
@@ -1112,6 +1204,8 @@ where the argument provided to \textit{'cat\_grid'} is the name of the additiona
 \noindent
 where the first column in the cell array provided to \textit{'means\_by\_category'} must be the name of the categorical grid provided to \textit{ProcessRiverBasins} (in the example, \textit{'geology'}) followed by valid names of particular quantities (see header of the function for full list).
 
+\paragraph{Note for Compiled Versions:} If using the compiled version \nameref{sec:CmpCmpBsnStats} and you wish to supply extra fields, the procedure is identical as described for the the compiled version of \nameref{sec:CmpBsn2Shp}.
+
 \subsection{\textit{BasinStatsPlots}} \label{sec:BSPlots}
 \paragraph{}Using the Matlab table output from \nameref{sec:CompStats}, you can quickly plot a variety of basin averaged statistics, but we have written the \textit{BasinStatsPlots} function to aid in you producing some potentially useful plots. These plot types are designed to allow you to explore populations of basins quickly and efficiently and are envisioned as primarily data exploration tools (i.e. you will probably want to design your own functions to analyze and plot data output from \textit{'CompileBasinStats'}, with these plots as easy ways to guide further analysis). In the following sections, we describe the different plotting options available to you in \textit{BasinStatsPlots} and provide some examples of outputs using the example dataset.
 
@@ -1148,7 +1242,35 @@ The \textit{'color\_by'} parameter is a valid input for \nameref{sec:grdksn}, \n
 \end{figure}
 
 
-\paragraph{}Via the optional \textit{'fit\_grd\_ksn'} parameter, you can also use the relationship between to mean hillslope gradient and mean k\textsubscript{sn} to estimate some morphometric parameters for the populations of basins, specifically the erosional efficiency, hillslope diffusivity, and limiting gradient. The fits are done via a constrained minimization of least absolute deviation on a relatively complicated equation which means that to successfully run the fits, you need access to the Optimization Toolbox in Matlab and that the fits are sensitive to the choice of initial parameters, which you can control with the optional \textit{'start\_diffusivity'}, \textit{'start\_erodibility'}, and \textit{'start\_threshold\_gradient'} parameters. Also important is the optional \textit{'n\_val'} parameter (equivalent to the slope exponent in the stream power model of incision) which is not a free parameter in the fits, but will control the shape of the fluvial portion of the relationship. We refer readers who are more interested in the nuances of this fit and the (large) assumptions that go into it to \href{https://www.sciencedirect.com/science/article/pii/S0012821X16303004}{Forte et al., 2016} and references therein. Exploring the shape of this relationship (and thus the estimated values for the parameters that control it) also highlights that choosing different methods of subdivision of basins using \nameref{sec:SbDvdBsn} can produce statistically different populations of basins (e.g. Figure \ref{fig:GrdKsnComp}). 
+\paragraph{}Via the optional \textit{'fit\_grd\_ksn'} parameter, you can also use the relationship between mean hillslope gradient and mean k\textsubscript{sn} to estimate some morphometric parameters for the populations of basins, specifically the erosional efficiency, hillslope diffusivity, and limiting gradient. In detail, the analysis relies on the idea that the morphology of both the hillslope and fluvial portions of a landscape vary as a function of erosion rate. We can use these relationships with erosion rates, even if the erosion rates are unknown, to estimate these parameters. For the fluvial portion of the landscape, we use:
+
+\begin{equation}
+E=K(k_{sn})^{n}
+\end{equation}
+
+\noindent
+where $E$ is mean erosion rate, $K$ is fluvial erosional efficiency, $k_{sn}$ is basin mean normalized channel steepness, and $n$ is the slope exponent from the stream power law \citep[e.g.,][]{Snyder2003,Ouimet2009}. For the hillslope portion of the basin, we use the combination of two equations from \cite{Roering2007}, first an equation for variation of hillslope elevation $z$ as a function of distance $x$:
+
+\begin{equation}
+z(x) = \frac{-{S_{c}}^{2}}{2\beta E}  \bigg[ \sqrt{D^{2} + (2\beta Ex / S_{c})^{2}} -D\ln\bigg( \frac{ \sqrt{D^{2} + (2\beta Ex / S_{c})^{2}} + D}{2\beta E/S_{c}} \bigg)   \bigg]
+\end{equation}
+
+\noindent
+where $S_{c}$ is a limiting hillslope gradient where sediment flux becomes infinite, $D$ is a diffusivity coefficient, $\beta = (\rho_{r}/\rho_{s})$ and $\rho_{r}$ and $\rho_{s}$ are the densities of rock and sediment and $\beta$ is set to 2. This equation is in turn used to determine a mean hillslope gradient, $S_{avg}$, (as a function of erosion rate):
+
+\begin{equation}
+S_{avg}=\frac{z(0)-z(L_{H})}{L_{H}}
+\end{equation}
+
+\noindent where $L_{H}$ is a characteristic hillslope length, which is found by numerically solving the following expression:
+
+\begin{equation}
+\bigg(  \frac{E}{2K{L_{H}}^{2}}  \bigg)^{\frac{1}{n}} = \frac{K{S_{c}}^{2}}{\beta E |L_{H}|} \Bigg( \sqrt{1 + \bigg( \frac{\beta E L_{H}}{KS_{c}} \bigg)^{2} } - 1 \Bigg)
+\end{equation}
+
+\noindent which is effectively finding the distance from the divide where the slope of the hillslope portion and fluvial portions of the landscape are equal \citep[e.g.,][]{Howard1997,Perron2008}. The fits are done via a constrained minimization of least absolute deviation on the above set of equations, and to successfully run the fits, you need access to the Optimization Toolbox in Matlab. The fits are sensitive to the choice of initial parameters, which you can control with the optional \textit{'start\_diffusivity'}, \textit{'start\_erodibility'}, and \textit{'start\_threshold\_gradient'} parameters, which are starting values for $D$, $K$, and $S_{c}$ respectively. Also important is the optional \textit{'n\_val'} parameter (i.e. $n$) which is not a free parameter  (i.e. you must provide a value for \textit{'n\_val'} are use the default value of 2) in the fits, but will control the shape of the fluvial portion of the relationship. We refer readers who are more interested in the nuances of this fit and the (large) assumptions that go into it to \href{https://www.sciencedirect.com/science/article/pii/S0012821X16303004}{Forte et al., 2016} and references therein. Exploring the shape of this relationship (and thus the estimated values for the parameters that control it) also highlights that choosing different methods of subdivision of basins using \nameref{sec:SbDvdBsn} can produce statistically different populations of basins (e.g. Figure \ref{fig:GrdKsnComp}). 
+
+
 
 \subsubsection{Mean Gradient vs Mean Relief - \textit{'grd\_rlf'}} \label{sec:grdrlf}
 \paragraph{}You can also plot mean gradient vs. mean local relief via the \textit{'grd\_rlf'} plot option. This should be similar to the result of \nameref{sec:grdksn} plot as mean local relief and mean k\textsubscript{sn} are typically linearly related (depending on the relief radius). You can test the nature of the relationship between mean local relief and mean k\textsubscript{sn} with the \nameref{sec:rlfksn} plot option. The \textit{'grd\_rlf'} plot will use the relief radius specified with the optional \textit{'rlf\_radius'} parameter. If this specifies a relief radius that you did not calculate when running \nameref{sec:PrcRvBsn}, this will result in an error.
@@ -1291,13 +1413,13 @@ The \textit{'color\_by'} parameter is a valid input for \nameref{sec:grdksn}, \n
 \paragraph{}Importantly, the \textit{MakeCombinedSwath} function is setup so that the width to sample the topography to produce the topographic swath is decoupled from the width from which to sample the provided data (you can of course make these equal if you want). By default the function will also plot a map displaying which data points are included in the projected data on the swath figure, you can suppress the drawing of this map with the optional \textit{'plot\_map'} parameter.
 
 \subsection{\textit{ProjectOntoSwath}}
-\paragraph{}The \textit{ProjectOntoSwath} function is used in \nameref{sec:CombSwath} to do the data projection, but we include it as a separate function as it may be useful for users. \textit{ProjectOntoSwath} finds the distance of a list of x and y points along and from the centerline of a provided \textit{SWATHobj} based on a user defined width within which to sample the data. Distances of points that lie beyond the extent of the swath or lie outside of the data sampling width will be set to NaN. The function projects data onto each swath segment (i.e. if the swath line is bent) and finds the swath segment that data are closest to in tangential distance to avoid duplication of  points.
+\paragraph{}The \textit{ProjectOntoSwath} function is used in \nameref{sec:CombSwath} to do the data projection, but we include it as a separate function as it may be useful for users. \textit{ProjectOntoSwath} finds the distance of a list of x and y points along and from the centerline of a provided \textit{SWATHobj} based on a user defined width within which to sample the data. Distances of points that lie beyond the extent of the swath or lie outside of the data sampling width will be set to NaN. The function projects data onto each swath segment (i.e. if the swath line is bent) and finds the swath segment that data are closest to in tangential distance to avoid duplication of points. Note that there is no compiled version of \textit{ProjectOntoSwath}.
 
 %%%%%%%%
 \section{Miscellaneous}
 
 \subsection{\textit{ksncolor}} \label{sec:ksncolor}
-\paragraph{}Function to generate a colormap that roughly approximates the stereotypical green-yellow-red color progression commonly used for k\textsubscript{sn} data in publications, see Figure \ref{fig:KsnSwath} for an example of the color map. 
+\paragraph{}Function to generate a colormap that roughly approximates the stereotypical green-yellow-red color progression commonly used for k\textsubscript{sn} data in publications, see Figure \ref{fig:KsnSwath} for an example of the color map. Note that there is no compiled version of \textit{ksncolor}.
 
 \subsection{\textit{PlotKsn}} \label{sec:plotksn}
 \paragraph{}The \textit{PlotKsn} function will quickly plot a stream network colored by k\textsubscript{sn} overlaying a hillshade colored by elevation. Uses the \nameref{sec:ksncolor} colormap. You can provide a valid geographic data structure output from \nameref{sec:KsnBatch} or  \nameref{sec:PrcRvBsn} or a shapefile output from \nameref{sec:KsnBatch}, \nameref{sec:KsnProfiler}, or  \nameref{sec:PrcRvBsn}. Optionally can also include a set of knickpoints output from \nameref{sec:PrcRvBsn} or \nameref{sec:BsnKncks} to plot knickpoint locations. 
@@ -1326,11 +1448,7 @@ The \textit{'color\_by'} parameter is a valid input for \nameref{sec:grdksn}, \n
 \paragraph{}You can provide an empty array for the location of observation to choose a point on the provided DEM to use as the location. The location of the observation is marked on the figure with a white dot.
 
 \subsection{\textit{Mat2Arc}} \label{sec:Mat2Arc}
-\paragraph{}\textit{Mat2Arc} is a helper function that takes any matfile as an input and will search its contents and produce ascii grids and shapefiles from any valid datasets. Specifically, will make ascii grids of any \textit{GRIDobj}, will convert any \textit{FLOWobj} to an Arc style flow raster an export as an ascii grid, and output any \textit{STREAMobj} or recognizable geographic data structure as a shapefile.
-
-
-\section{Error Reporting}
-\paragraph{}We have tried to ensure that all options work properly within TAK, but unexpected errors may occur. The preferred method of error reporting is to use the built in \href{https://github.com/amforte/Topographic-Analysis-Kit/issues}{'Issues'} function on the GitHub page for TAK so that there is a record of user encountered errors. If you have forked a version of the code and think you can fix an error, issue a pull request with the change, collaboration is welcome! If all else fails, you can email \href{mailto:aforte8@lsu.edu}{Adam Forte} as well. Before submitting an issue or contacting Adam, please check both open and closed issues to see if the bug has already been reported or fixed in an updated version. Whether submitting an issue or emailing Adam, please provide as much information as possible on the error (e.g. cut and paste the error message you received) and what you were doing when it occurred.
+\paragraph{}\textit{Mat2Arc} is a helper function that takes any matfile as an input and will search its contents and produce either ESRI ascii grids or geotiffs and shapefiles from any valid datasets. Specifically, will make ascii grids or geotiffs of any \textit{GRIDobj}, will convert any \textit{FLOWobj} to an Arc style flow raster an export as an ascii grid or geotiff, and output any \textit{STREAMobj} or recognizable geographic data structure as a shapefile. Whether rasters are saved as ESRI ascii grids or geotiffs is controlled with the optional \textit{'raster\_type'} parameter.
 
 % Uncomment to regenerate bbl file
 \bibliography{TAKmanualREF.bib}
@@ -1389,7 +1507,7 @@ Basin2Raser /path/to/wdir MakeStreams.mat ksn MainBasins
 Basin2Raster /path/to/wdir MakeStreams.mat ksn MainBasins location_of_subbasins MySubbasins file_name_prefix Test
 \end{lstlisting}
 
-\subsection{Basin2Shape}
+\subsection{Basin2Shape} \label{sec:CmpBsn2Shp}
 
 \paragraph{Description:}
 Function to take the outputs from 'ProcessRiverBasins' and 'SubDivideBigBasins' and produce a single shapefile showing the outlines of polygons
@@ -1658,7 +1776,7 @@ ClassifyKnicks /path/to/wdir Topo.mat KsnProfiler.mat
 ClassifyKnicks /path/to/wdir Topo.mat KsnProfiler.mat shape_name my_knicks
 \end{lstlisting}
 
-\subsection{CompileBasinStats}
+\subsection{CompileBasinStats} \label{sec:CmpCmpBsnStats}
 \paragraph{Description:}
 Function to take the outputs from 'ProcessRiverBasins' and 'SubDivideBigBasins' and produce a Matlab table that summarizes the results of ProcessRiverBasins
 and optionally SubDivideBigBasins. This table is a required input for 'BasinStatsPlots'. If additional grids were provided to 'ProcessRiverBasins', mean and 
@@ -2446,7 +2564,7 @@ PlotKsn /path/to/wdir Topo.mat ksn.shp
 PlotKsn /path/to/wdir Topo.mat ksn.shp knicks.shp
 \end{lstlisting}
 
-\subsection{PrepareAddGrids}
+\subsection{PrepareAddGrids} \label{sec:PrepAdd}
 \paragraph{Description:}
 Function to prepare additional grids for use in 'cmpProcessRiverBasins'
 
@@ -2469,7 +2587,7 @@ PrepareAddGrids /path/to/wdir AddGrids precip.tif precip ndvi.txt ndvi
 \end{lstlisting}
 
 
-\subsection{PrepareCatAddGrids}
+\subsection{PrepareCatAddGrids} \label{sec:PrepCat}
 \paragraph{Description}
 Function to prepare categorical grids for input to 'cmpProcessRiverBasins'
 
