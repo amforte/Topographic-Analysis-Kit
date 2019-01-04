@@ -619,7 +619,7 @@ function cmpKsnProfiler(wdir,MatFile,varargin)
 
 						delete(p1);
 
-						[Sn]=RedefineThreshold(wdir,DEM,FD,A,Sn,FLUS,ref_theta,rd_pick_method,smooth_distance,ii,save_figures);
+						[Sn]=RedefineThreshold(wdir,DEM,FD,A,Sn,FLUS,ref_theta,rd_pick_method,smooth_distance,ii,save_figures,shape_name);
 						% Update DEMc
 						if any(isnan(getnal(Sn,DEMc)));
 							zc=mincosthydrocon(Sn,DEM,'interp',iv);
@@ -1638,8 +1638,8 @@ function cmpKsnProfiler(wdir,MatFile,varargin)
 					count=ii;
 					save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append');
 					if save_figures
-						f2_name=fullfile(wdir,['StreamFits_' num2str(ii) '.pdf']);
-						f3_name=fullfile(wdir,['StreamRsds_' num2str(ii) '.pdf']);
+						f2_name=fullfile(wdir,[shape_name '_stream_fits_' num2str(ii) '.pdf']);
+						f3_name=fullfile(wdir,[shape_name '_stream_rsds_' num2str(ii) '.pdf']);
 						print(f2,f2_name,'-dpdf','-fillpage');
 						print(f3,f3_name,'-dpdf','-fillpage');
 					end
@@ -1662,8 +1662,8 @@ function cmpKsnProfiler(wdir,MatFile,varargin)
 					count=ii;
 					save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append');					
 					if save_figures
-						f2_name=fullfile(wdir,['StreamFits_' num2str(ii) '.pdf']);
-						f3_name=fullfile(wdir,['StreamRsds_' num2str(ii) '.pdf']);
+						f2_name=fullfile(wdir,[shape_name '_stream_fits_' num2str(ii) '.pdf']);
+						f3_name=fullfile(wdir,[shape_name '_stream_rsds_' num2str(ii) '.pdf']);
 						print(f2,f2_name,'-dpdf','-fillpage');
 						print(f3,f3_name,'-dpdf','-fillpage');
 					end
@@ -1733,7 +1733,7 @@ function cmpKsnProfiler(wdir,MatFile,varargin)
 				Sn=modify(S,'downstreamto',IX);
 
 				if redefine_thresh
-					[Sn]=RedefineThreshold(wdir,DEM,FD,A,Sn,FLUS,ref_theta,rd_pick_method,smooth_distance,ii,save_figures);
+					[Sn]=RedefineThreshold(wdir,DEM,FD,A,Sn,FLUS,ref_theta,rd_pick_method,smooth_distance,ii,save_figures,shape_name);
 					% Update DEMc
 					if any(isnan(getnal(Sn,DEMc)));
 						zc=mincosthydrocon(Sn,DEM,'interp',iv);
@@ -2622,8 +2622,8 @@ function cmpKsnProfiler(wdir,MatFile,varargin)
 						count=ii;
 						save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append');						
 						if save_figures
-							f2_name=fullfile(wdir,['StreamFits_' num2str(ii) '.pdf']);
-							f3_name=fullfile(wdir,['StreamRsds_' num2str(ii) '.pdf']);
+							f2_name=fullfile(wdir,[shape_name '_stream_fits_' num2str(ii) '.pdf']);
+							f3_name=fullfile(wdir,[shape_name '_stream_rsds_' num2str(ii) '.pdf']);
 							print(f2,f2_name,'-dpdf','-fillpage');
 							print(f3,f3_name,'-dpdf','-fillpage');
 						end
@@ -2649,8 +2649,8 @@ function cmpKsnProfiler(wdir,MatFile,varargin)
 						count=ii;
 						save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append');
 						if save_figures
-							f2_name=fullfile(wdir,['StreamFits_' num2str(ii) '.pdf']);
-							f3_name=fullfile(wdir,['StreamRsds_' num2str(ii) '.pdf']);
+							f2_name=fullfile(wdir,[shape_name '_stream_fits_' num2str(ii) '.pdf']);
+							f3_name=fullfile(wdir,[shape_name '_stream_rsds_' num2str(ii) '.pdf']);
 							print(f2,f2_name,'-dpdf','-fillpage');
 							print(f3,f3_name,'-dpdf','-fillpage');
 						end
@@ -2681,8 +2681,8 @@ function cmpKsnProfiler(wdir,MatFile,varargin)
 						count=ii;
 						save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append');
 						if save_figures
-							f2_name=fullfile(wdir,['StreamFits_' num2str(ii) '.pdf']);
-							f3_name=fullfile(wdir,['StreamRsds_' num2str(ii) '.pdf']);
+							f2_name=fullfile(wdir,[shape_name '_stream_fits_' num2str(ii) '.pdf']);
+							f3_name=fullfile(wdir,[shape_name '_tream_rsds_' num2str(ii) '.pdf']);
 							print(f2,f2_name,'-dpdf','-fillpage');
 							print(f3,f3_name,'-dpdf','-fillpage');
 						end
@@ -3168,7 +3168,7 @@ function [bs,ba,bc,bd,bk,a,g,d,C]=sa_ksn(DEM,S,A,C,ak,bin_size);
 	k=k(idx);
 end
 
-function [Sn]=RedefineThreshold(wdir,DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_size,count,figure_flag)
+function [Sn]=RedefineThreshold(wdir,DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_size,count,figure_flag,shape_name)
 
 	% Find channel head and flow distances
 	chix=streampoi(S,'channelheads','ix');
@@ -3320,7 +3320,7 @@ function [Sn]=RedefineThreshold(wdir,DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_s
 	end
 
 	if figure_flag
-		f4_name=fullfile(wdir,['StreamThresh_' num2str(count) '.pdf']);
+		f4_name=fullfile(wdir,[shape_name '-stream_thresh_' num2str(count) '.pdf']);
 		print(f4,f4_name,'-dpdf','-fillpage');
 	end
 
