@@ -2559,7 +2559,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				end
 
 				if ii<num_ch
-					qa2=questdlg('What would you like to do?','Stream Fitting','Ignore Remaining Streams','Redo Fit','Continue Picking','Continue Picking');
+
+					ignore_str=['Ignore ' num2str(num_ch-ii) ' Remaining Streams'];
+					qa2=questdlg('What would you like to do?','Stream Fitting',ignore_str,'Redo Fit','Continue Picking','Continue Picking');
 
 					switch qa2
 					case 'Continue Picking'
@@ -2588,7 +2590,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						str2 = 'R';
 						str1 = 'R';
 						clear ksn_list ksn_nodes res_list bnd_ix;
-					case 'Ignore Remaining Streams'
+					case ignore_str
 						wtb=waitbar(0,'Cleaning up and generating outputs, do not close windows');
 						str1=[];
 						str2=[];
