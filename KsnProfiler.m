@@ -2994,15 +2994,14 @@ function [Xavg,Yavg]=BinAverage(X,Y,bin_size);
 end
 
 function [ksn]=KSN_Quick(DEM,A,S,theta_ref)
-
 	zc=mincosthydrocon(S,DEM,'interp',0.1);
-	DEMc=GRIDobj(DEM);
-	DEMc.Z(DEMc.Z==0)=NaN;
-	DEMc.Z(S.IXgrid)=zc;
-	G=gradient8(DEMc);
+
+	g=gradient(S,zc);
+	G=GRIDobj(DEM);
+	G.Z(G.Z==0)=NaN;
+	G.Z(S.IXgrid)=g;
 
 	ksn=G./(A.*(A.cellsize^2)).^(-theta_ref);
-	
 end
 
 function [bs,ba,bc,bd,a,g,d,C]=sa(DEM,S,A,C,bin_size)

@@ -498,7 +498,10 @@ end
 
 
 function [ksn_ms]=KSN_Quick(DEM,DEMc,A,S,theta_ref,segment_length)
-	G=gradient8(DEMc);
+	g=gradient(S,DEMc);
+	G=GRIDobj(DEM);
+	G.Z(S.IXgrid)=g;
+
 	Z_RES=DEMc-DEM;
 
 	ksn=G./(A.*(A.cellsize^2)).^(-theta_ref);
@@ -514,7 +517,10 @@ function [ksn_ms]=KSN_Trunk(DEM,DEMc,A,S,theta_ref,segment_length,min_order)
     Smax=modify(S,'streamorder',order_exp);
 	Smin=modify(S,'rmnodes',Smax);
 
-	G=gradient8(DEMc);
+	g=gradient(S,DEMc);
+	G=GRIDobj(DEM);
+	G.Z(S.IXgrid)=g;
+
 	Z_RES=DEMc-DEM;
 
 	ksn=G./(A.*(A.cellsize^2)).^(-theta_ref);
@@ -537,8 +543,7 @@ function [ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length)
 	z=getnal(S,DEMc);
 	zu=getnal(S,DEM);
 	z_res=z-zu;
-	G=gradient8(DEMc);
-	g=getnal(S,G);
+	g=gradient(S,DEMc);
 	c=chitransform(S,A,'a0',1,'mn',theta_ref);
 	d=S.distance;
 	da=getnal(S,A.*(A.cellsize^2));

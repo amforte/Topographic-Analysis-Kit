@@ -507,19 +507,19 @@ function cmpSubDivideBigBasins(wdir,basin_dir,max_basin_size,divide_method,varar
 				% Calculate ksn
 				switch ksn_method
 				case 'quick'
-					[MSc]=KSN_Quick(DEMoc,Ac,Sc,Chic.mn,segment_length);
-					[MSNc]=KSN_Quick(DEMoc,Ac,Sc,theta_ref,segment_length);
+					[MSc]=KSN_Quick(DEMoc,DEMcc,Ac,Sc,Chic.mn,segment_length);
+					[MSNc]=KSN_Quick(DEMoc,DEMcc,Ac,Sc,theta_ref,segment_length);
 				case 'trunk'
 					[MSc]=KSN_Trunk(DEMoc,DEMcc,Ac,Sc,Chic.mn,segment_length,min_order);
 					[MSNc]=KSN_Trunk(DEMoc,DEMcc,Ac,Sc,theta_ref,segment_length,min_order);
 				case 'trib'
 					% Overide choice if very small basin as KSN_Trib will fail for small basins
 					if drainage_area>2.5
-						[MSc]=KSN_Trib(DEMoc,FDc,Ac,Sc,Chic.mn,segment_length);
-						[MSNc]=KSN_Trib(DEMoc,FDc,Ac,Sc,theta_ref,segment_length);
+						[MSc]=KSN_Trib(DEMoc,DEMcc,FDc,Ac,Sc,Chic.mn,segment_length);
+						[MSNc]=KSN_Trib(DEMoc,DEMcc,FDc,Ac,Sc,theta_ref,segment_length);
 					else
-						[MSc]=KSN_Quick(DEMoc,Ac,Sc,Chic.mn,segment_length);
-						[MSNc]=KSN_Quick(DEMoc,Ac,Sc,theta_ref,segment_length);
+						[MSc]=KSN_Quick(DEMoc,DEMcc,Ac,Sc,Chic.mn,segment_length);
+						[MSNc]=KSN_Quick(DEMoc,DEMcc,Ac,Sc,theta_ref,segment_length);
 					end
 				end
 
@@ -677,13 +677,12 @@ function cmpSubDivideBigBasins(wdir,basin_dir,max_basin_size,divide_method,varar
 	close(w1);
 end % Main Function End
 
-function [ksn_ms]=KSN_Quick(DEM,A,S,theta_ref,segment_length)
+function [ksn_ms]=KSN_Quick(DEM,DEMc,A,S,theta_ref,segment_length)
 
-	zc=mincosthydrocon(S,DEM,'interp',0.1);
-	DEMc=GRIDobj(DEM);
-	DEMc.Z(DEMc.Z==0)=NaN;
-	DEMc.Z(S.IXgrid)=zc;
-	G=gradient8(DEMc);
+	g=gradient(S,DEMc);
+	G=GRIDobj(DEM);
+	G.Z(S.IXgrid)=g;
+
 	Z_RES=DEMc-DEM;
 
 	ksn=G./(A.*(A.cellsize^2)).^(-theta_ref);
@@ -699,7 +698,10 @@ function [ksn_ms]=KSN_Trunk(DEM,DEMc,A,S,theta_ref,segment_length,min_order)
     Smax=modify(S,'streamorder',order_exp);
 	Smin=modify(S,'rmnodes',Smax);
 
-	G=gradient8(DEMc);
+	g=gradient(S,DEMc);
+	G=GRIDobj(DEM);
+	G.Z(S.IXgrid)=g;
+
 	Z_RES=DEMc-DEM;
 
 	ksn=G./(A.*(A.cellsize^2)).^(-theta_ref);
@@ -722,8 +724,7 @@ function [ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length)
 	z=getnal(S,DEMc);
 	zu=getnal(S,DEM);
 	z_res=z-zu;
-	G=gradient8(DEMc);
-	g=getnal(S,G);
+	g=gradient(S,DEMc);
 	c=chitransform(S,A,'a0',1,'mn',theta_ref);
 	d=S.distance;
 	da=getnal(S,A.*(A.cellsize^2));
