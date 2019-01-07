@@ -2684,7 +2684,7 @@ function cmpKsnProfiler(wdir,MatFile,varargin)
 						save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append');
 						if save_figures
 							f2_name=fullfile(wdir,[shape_name '_stream_fits_' num2str(ii) '.pdf']);
-							f3_name=fullfile(wdir,[shape_name '_tream_rsds_' num2str(ii) '.pdf']);
+							f3_name=fullfile(wdir,[shape_name '_stream_rsds_' num2str(ii) '.pdf']);
 							print(f2,f2_name,'-dpdf','-fillpage');
 							print(f3,f3_name,'-dpdf','-fillpage');
 						end

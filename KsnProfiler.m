@@ -1619,7 +1619,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append');					
 					if save_figures
 						f2_name=[shape_name '_stream_fits_' num2str(ii) '.pdf'];
-						f3_name=[shape_name '-stream_rsds_' num2str(ii) '.pdf'];
+						f3_name=[shape_name '_stream_rsds_' num2str(ii) '.pdf'];
 						print(f2,f2_name,'-dpdf','-fillpage');
 						print(f3,f3_name,'-dpdf','-fillpage');
 					end
@@ -2640,7 +2640,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append');
 						if save_figures
 							f2_name=[shape_name '_stream_fits_' num2str(ii) '.pdf'];
-							f3_name=[shape_name '-stream_rsds_' num2str(ii) '.pdf'];
+							f3_name=[shape_name '_stream_rsds_' num2str(ii) '.pdf'];
 							print(f2,f2_name,'-dpdf','-fillpage');
 							print(f3,f3_name,'-dpdf','-fillpage');
 						end
