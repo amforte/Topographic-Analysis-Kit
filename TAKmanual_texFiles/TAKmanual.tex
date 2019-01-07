@@ -141,11 +141,14 @@
 
 %opening
 \title{Topographic Analysis Kit (TAK) Manual v1.0}
+
 \author[1]{Adam M. Forte}
 \author[2]{Kelin X. Whipple}
 
 \affil[1]{Department of Geology and Geophysics, Louisiana State University, Baton Rouge, LA}
 \affil[2]{School of Earth and Space Exploration, Arizona State University, Tempe, AZ}
+
+\date{TAK Release Version 1.0.2}
 
 \titlepic{\includegraphics[width=12cm]{PNGs/TAKlogo.png}}
 
@@ -353,7 +356,7 @@ name10=T.sample_names{10,1};
 \end{lstlisting}
 
 \subsubsection{Structures}
-\paragraph{}Structures allow you to group similar data and store them in containers referred to as fields. Structures can also have multiple dimensions like an array. In TAK, structures are used within the context of geographic data structures, which are a special subset of structures that contain specific fields and can be written out as shapefiles using the \textit{shapewrite} command. Geographic data structures must have fields named, Geometry, X and Y (or Lon and Lat), and BoundingBox (unless the Geometry is Point). We refer interested readers to the Matlab Help documents for the specific requirements of the data stored in these fields if you wish to generate a valid geographic data structure that can be output as a shapefile on your own. Geographic information structures can also have additional fields which will be interpreted as fields in the output shapefile. Several functions produce geographic data structures, e.g. \nameref{sec:PrcRvBsn} or \nameref{sec:KsnBatch}. Consider the example of interacting with the \textit{'MSNc'} geographic information structure stored within the outputs of \nameref{sec:PrcRvBsn} that contains information related to k\textsubscript{sn}:
+\paragraph{}Structures allow you to group similar data and store them in containers referred to as fields. Structures can also have multiple dimensions like an array. In TAK, structures are used within the context of geographic data structures, which are a special subset of structures that contain specific fields and can be written out as shapefiles using the \textit{shapewrite} command. Geographic data structures must have fields named, Geometry, X and Y (or Lon and Lat), and BoundingBox (unless the Geometry is Point). We refer interested readers to the Matlab Help documents for the specific requirements of the data stored in these fields if you wish to generate a valid geographic data structure that can be output as a shapefile on your own. Geographic information structures can also have additional fields which will be interpreted as fields in the output shapefile. Several functions produce geographic data structures, e.g. \nameref{sec:PrcRvBsn} or \nameref{sec:KsnBatch}. Consider the example of interacting with the \textit{'MSNc'} geographic information structure stored within the outputs of \nameref{sec:PrcRvBsn} that contains information related to \textit{k\textsubscript{sn}}:
 
 \begin{lstlisting}[language=Matlab]
 % You can querry the dimensions of a structure with size
@@ -562,7 +565,7 @@ CheckTAKDependencies
 TAK requires licenses for the Image Processing Toolbox, Mapping Toolbox, Optimization Toolbox, and Statistics and Machine Learning Toolbox. If you do not have all licenses for all of these, you may need to use the \nameref{sec:CmpFunc}.
 
 \subsection{\textit{MakeStreams}} \label{sec:MakeStreams}
-\paragraph{}\textit{MakeStreams} is a simple wrapper around creating the basic TopoToolbox objects needed for the majority of other TAK functions, specifically a digital elevation model (DEM) as a \textit{GRIDobj}, a flow direction dataset as a \textit{FLOWobj}, a flow accumulation grid as a \textit{GRIDobj}, and a stream network as a \textit{STREAMobj}. The minimum inputs are the location of a valid DEM as either a geotiff or ascii grid and a minimum threshold drainage area (in square map units) for beginning stream network definition:
+\paragraph{}\textit{MakeStreams} is a simple wrapper around creating the basic TopoToolbox objects needed for the majority of other TAK functions, specifically a digital elevation model (DEM) as a \textit{GRIDobj}, a flow direction dataset as a \textit{FLOWobj}, a flow accumulation grid as a \textit{GRIDobj}, and a stream network as a \textit{STREAMobj}. It should be noted that while, as described in more detail in \cite{Schwanghart2014}, TopoToolbox supports flow routing using either D8 or D$\infty$ algorithms, TAK functions use the simpler D8 flow routing scheme. The minimum inputs to \textit{MakeStreams} are the location of a valid DEM as either a geotiff or ascii grid and a minimum threshold drainage area (in square map units) for beginning stream network definition:
 	
 \begin{lstlisting}[language=Matlab]
 [DEM,FD,A,S]=MakeStreams('/Users/aforte/GISdata/SoCal_UTM_DEM.txt',1e6);
@@ -704,7 +707,7 @@ PRECIP=GRIDobj('/Users/aforte/GISdata/prism_precip.tif');
 \section{Channel Steepness and $\chi$ Maps}
 
 \subsection{\textit{KsnChiBatch}} \label{sec:KsnBatch}
-\paragraph{}\textit{KsnChiBatch} is designed to be similar to the original 'batch' mode in Profiler51 for creating normalized channel steepness (k\textsubscript{sn}) maps, but has many more options. \textit{KsnChiBatch} can be used to produce stream networks with values of k\textsubscript{sn}  or $\chi$ or continuous grids of either k\textsubscript{sn} or $\chi$. There are options to produce outputs as either shapefiles or ascii grids for use in a GIS program or matlab outputs for display (e.g. using \nameref{sec:plotksn}) or for analysis. There are also options to remove incomplete portions of stream networks (which can be problematic for both $\chi$ and k\textsubscript{sn} calculations) and control outlet elevation (which can be important for correctly interpreting $\chi$ anomalies). The methodology employed for dealing with $\chi$ in \textit{KsnChiBatch} is identical to that as in the companion \href{https://github.com/amforte/DivideTools}{DivideTools GitHub repository}, the details of which are described in \cite{Forte2018a} \href{https://www.sciencedirect.com/science/article/pii/S0012821X18302292}{[Link to Journal Site]} .
+\paragraph{}\textit{KsnChiBatch} is designed to be similar to the original 'batch' mode in Profiler51 for creating normalized channel steepness (\textit{k\textsubscript{sn}}) maps, but has many more options. \textit{KsnChiBatch} can be used to produce stream networks with values of \textit{k\textsubscript{sn}}  or $\chi$ or continuous grids of either \textit{k\textsubscript{sn}} or $\chi$. There are options to produce outputs as either shapefiles or ascii grids for use in a GIS program or matlab outputs for display (e.g. using \nameref{sec:plotksn}) or for analysis. There are also options to remove incomplete portions of stream networks (which can be problematic for both $\chi$ and \textit{k\textsubscript{sn}} calculations) and control outlet elevation (which can be important for correctly interpreting $\chi$ anomalies). The methodology employed for dealing with $\chi$ in \textit{KsnChiBatch} is identical to that as in the companion \href{https://github.com/amforte/DivideTools}{DivideTools GitHub repository}, the details of which are described in \cite{Forte2018a} \href{https://www.sciencedirect.com/science/article/pii/S0012821X18302292}{[Link to Journal Site]} .
 
 \paragraph{}The outputs of the \textit{KsnChiBatch} function differ depending on the type of map being calculated. If the required \textit{'product'} input is set to \textit{'ksn'}, then the function will save a polyline shapefile, but if the \textit{'product'} is \textit{'chi'}, \textit{'chigrid'}, or \textit{'ksngrid'} the function will save an ascii grid. $\chi$ maps are output as grids to avoid averaging of chi values along a stream network during the production of a shapefile. If you wish to create a shapefile of a $\chi$ map, you can use a GIS program to create a shapefile from the ascii grid (e.g. in ArcGIS, convert the ascii to a raster and then use the raster to polyline function).
 
@@ -725,31 +728,31 @@ PRECIP=GRIDobj('/Users/aforte/GISdata/prism_precip.tif');
 [KSN_STREAM_GRID,ksn_ms,KSN_GRID,CHI_MAP,CHI_GRID]=KsnChiBatch(DEM,FD,A,S,'all');
 \end{lstlisting}
 
-\paragraph{}Values of k\textsubscript{sn} can be calculated in three primary ways. The default \textit{'ksn\_method'} (and the same method used in the original Profiler51 or the TopoToolbox \textit{ksn} function) is denoted \textit{'quick'} and calculates k\textsubscript{sn} across the entire stream network simultaneously by solving the equation, 
+\paragraph{}Values of \textit{k\textsubscript{sn}} can be calculated in three primary ways. The default \textit{'ksn\_method'} (and the same method used in the original Profiler51 or the TopoToolbox \textit{ksn} function) is denoted \textit{'quick'} and calculates \textit{k\textsubscript{sn}} across the entire stream network simultaneously by solving the equation, 
 
 \begin{equation}
  S=k_{sn}*A^{-\theta}
 \end{equation}
 
-\noindent where $S$ is the gradient, $A$ is the drainage area, and $\theta$ is a reference concavity. This result will typically be extremely noisy because of small variations in gradient, so k\textsubscript{sn} values are usually averaged over some length, depending on the resolution of the data, \citep[e.g.,][]{Wobus2006}. This \textit{'smooth\_distance'} is a user controlled parameter in \textit{KsnChiBatch}. 
+\noindent where $S$ is the gradient, $A$ is the drainage area, and $\theta$ is a reference concavity. This result will typically be extremely noisy because of small variations in gradient, so \textit{k\textsubscript{sn}} values are usually averaged over some length, depending on the resolution of the data, \citep[e.g.,][]{Wobus2006}. This \textit{'smooth\_distance'} is a user controlled parameter in \textit{KsnChiBatch}. 
 
-\paragraph{}Because of the way the averaging is done over a given smoothing distance by the underlying TopoToolbox \textit{STREAMobj2mapstruct} function, sometimes portions of trunk streams can end up with anomalously high k\textsubscript{sn} values as their values are influenced by smaller, steeper side tributaries. To partially control for this, we include an additional method of k\textsubscript{sn} calculation where averaged k\textsubscript{sn} values for trunk streams are calculated separately. This option can be used by setting \textit{'ksn\_method'} to \textit{'trunk'}. The determination of whether a stream is a trunk stream or not is based on stream order, which is controllable with the optional \textit{'min\_order'} parameter. By default, the \textit{'min\_order'} is set to 4, meaning that any stream of order 4 or greater is considered a trunk stream.
+\paragraph{}Because of the way the averaging is done over a given smoothing distance by the underlying TopoToolbox \textit{STREAMobj2mapstruct} function, sometimes portions of trunk streams can end up with anomalously high \textit{k\textsubscript{sn}} values as their values are influenced by smaller, steeper side tributaries. To partially control for this, we include an additional method of \textit{k\textsubscript{sn}} calculation where averaged \textit{k\textsubscript{sn}} values for trunk streams are calculated separately. This option can be used by setting \textit{'ksn\_method'} to \textit{'trunk'}. The determination of whether a stream is a trunk stream or not is based on stream order, which is controllable with the optional \textit{'min\_order'} parameter. By default, the \textit{'min\_order'} is set to 4, meaning that any stream of order 4 or greater is considered a trunk stream.
 
-\paragraph{}Both the default \textit{'quick'} and \textit{'trunk'} methods described above are rapid to calculate, but can sometimes smear out true abrupt changes in k\textsubscript{sn} at confluences. For this reason, by setting \textit{'ksn\_method'} to \textit{'trib'}, k\textsubscript{sn} can also be calculated with \textit{KsnChiBatch} where network segments (i.e. stream segments between confluences) are selected, divided into sub-segments determined by the \textit{'smooth\_distance'}, and then the average k\textsubscript{sn} of each sub-segment is calculated by finding the best fit slope on the $\chi$-elevation relationship for this sub-segment (k\textsubscript{sn} is equivalent to the slope of the $\chi$-elevation relationship when the reference drainage area is set to 1). The \textit{'quick'} and \textit{'trib'} methods do produce different k\textsubscript{sn} patterns, though while subtle, do show some systematic behavior (Figure \ref{fig:BatchComp}).
+\paragraph{}Both the default \textit{'quick'} and \textit{'trunk'} methods described above are rapid to calculate, but can sometimes smear out true abrupt changes in \textit{k\textsubscript{sn}} at confluences. For this reason, by setting \textit{'ksn\_method'} to \textit{'trib'}, \textit{k\textsubscript{sn}} can also be calculated with \textit{KsnChiBatch} where network segments (i.e. stream segments between confluences) are selected, divided into sub-segments determined by the \textit{'smooth\_distance'}, and then the average \textit{k\textsubscript{sn}} of each sub-segment is calculated by finding the best fit slope on the $\chi$-elevation relationship for this sub-segment (\textit{k\textsubscript{sn}} is equivalent to the slope of the $\chi$-elevation relationship when the reference drainage area is set to 1). The \textit{'quick'} and \textit{'trib'} methods do produce different \textit{k\textsubscript{sn}} patterns, though while subtle, do show some systematic behavior (Figure \ref{fig:BatchComp}).
 
 \begin{figure}[H]
 	\includegraphics[width=16.5cm]{PNGs/Batch_Comparison.png}
-	\caption{Comparison of the regular 'quick' method vs the 'tributary' method of calculating k\textsubscript{sn} using \textit{KsnChiBatch}.}
+	\caption{Comparison of the regular 'quick' method vs the 'tributary' method of calculating \textit{k\textsubscript{sn}} using \textit{KsnChiBatch}.}
 	\label{fig:BatchComp}
 \end{figure}
 
-\paragraph{}While we have not conducted a full study of the differences of the basic \textit{'quick'} vs \textit{'trib'} methods, the southern California example suggests that generally the regular \textit{'quick'} method of k\textsubscript{sn} calculation may be slightly biased towards higher k\textsubscript{sn} values, though 90\% of k\textsubscript{sn} values of the two methods are within $\pm$50 of each other (this is with a reference concavity of 0.50, so absolute magnitudes of k\textsubscript{sn} and thus magnitudes of deviations between these two methods will scale with choice of reference concavity). The k\textsubscript{sn} values from the regular method are generally systematically larger than the tributary method values in low relief areas, where as generally k\textsubscript{sn} values from the tributary method tend to be higher than regular values in higher relief portions of the landscape (Figure \ref{fig:BatchComp}). 
+\paragraph{}While we have not conducted a full study of the differences of the basic \textit{'quick'} vs \textit{'trib'} methods, the southern California example suggests that generally the regular \textit{'quick'} method of \textit{k\textsubscript{sn}} calculation may be slightly biased towards higher \textit{k\textsubscript{sn}} values, though 90\% of \textit{k\textsubscript{sn}} values of the two methods are within $\pm$50 of each other (this is with a reference concavity of 0.50, so absolute magnitudes of \textit{k\textsubscript{sn}} and thus magnitudes of deviations between these two methods will scale with choice of reference concavity). The \textit{k\textsubscript{sn}} values from the regular method are generally systematically larger than the tributary method values in low relief areas, where as generally \textit{k\textsubscript{sn}} values from the tributary method tend to be higher than regular values in higher relief portions of the landscape (Figure \ref{fig:BatchComp}). 
 
-\paragraph{}The geographic information structure (and shapefile) produced from both methods for each segment (controlled by the \textit{'smooth\_distance'}) will have fields containing values for k\textsubscript{sn} (\textit{'ksn'}), mean drainage area (\textit{'uparea'}), mean gradient (\textit{'gradient'}), and the difference between the conditioned stream elevation and non-conditioned stream elevation (\textit{'cut\_fill'}) to inform the user whether an anomalous k\textsubscript{sn} value may because of an overly aggressive conditioning scheme. If the \textit{'trib'} method is used, the geographic information structure and shapefile will include an extra field, \textit{'chi\_r2'}, which is the R\textsuperscript{2} value on the $\chi$-elevation fit and can be interpreted as a measure of the linearity of each sub-segment. 
+\paragraph{}The geographic information structure (and shapefile) produced from both methods for each segment (controlled by the \textit{'smooth\_distance'}) will have fields containing values for \textit{k\textsubscript{sn}} (\textit{'ksn'}), mean drainage area (\textit{'uparea'}), mean gradient (\textit{'gradient'}), and the difference between the conditioned stream elevation and non-conditioned stream elevation (\textit{'cut\_fill'}) to inform the user whether an anomalous \textit{k\textsubscript{sn}} value may because of an overly aggressive conditioning scheme. If the \textit{'trib'} method is used, the geographic information structure and shapefile will include an extra field, \textit{'chi\_r2'}, which is the R\textsuperscript{2} value on the $\chi$-elevation fit and can be interpreted as a measure of the linearity of each sub-segment. 
 
 \subsection{\textit{KsnProfiler}} \label{sec:KsnProfiler}
 
-\paragraph{}For detailed analysis of streams, it is often necessary to manually select knickpoint bounded steam segments for which you wish to calculate average k\textsubscript{sn} values. This was the primary purpose of the original Profiler51 code and we have produced the \textit{KsnProfiler} function to replicate and improve upon the original Profiler51 methodology. In detail, \textit{KsnProfiler} calculates k\textsubscript{sn} of user selected segments by finding the best fit linear slope of the $\chi$-elevation relationship for the segment in question. It should be noted that 1) calculation of k\textsubscript{sn} via this method will produce identical results to finding the intercept of a fit in slope-area space (providing that the reference area in the $\chi$ calculation is set to 1, as it is in \textit{KsnProfiler}) so there is no need to distinguish between k\textsubscript{sn} values calculated by a $\chi$-elevation slope or a slope-area intercept and 2) though the publication associated with the original Profiler51 codes discussed k\textsubscript{sn} calculation in terms of slope intercepts \citep{Wobus2006}, internally, the code used the slope of a linear fit on a $\chi$-elevation relationship to calculate k\textsubscript{sn}. \textit{KsnProfiler} has a large number of optional inputs, so you should familiarize yourself with all of the ways in which it can be run by reading through the header of the function. We highlight some of the main options in the following sections.
+\paragraph{}For detailed analysis of streams, it is often necessary to manually select knickpoint bounded steam segments for which you wish to calculate average \textit{k\textsubscript{sn}} values. This was the primary purpose of the original Profiler51 code and we have produced the \textit{KsnProfiler} function to replicate and improve upon the original Profiler51 methodology. In detail, \textit{KsnProfiler} calculates \textit{k\textsubscript{sn}} of user selected segments by finding the best fit linear slope of the $\chi$-elevation relationship for the segment in question. It should be noted that 1) calculation of \textit{k\textsubscript{sn}} via this method will produce identical results to finding the intercept of a fit in slope-area space (providing that the reference area in the $\chi$ calculation is set to 1, as it is in \textit{KsnProfiler}) so there is no need to distinguish between \textit{k\textsubscript{sn}} values calculated by a $\chi$-elevation slope or a slope-area intercept and 2) though the publication associated with the original Profiler51 codes discussed \textit{k\textsubscript{sn}} calculation in terms of slope intercepts \citep{Wobus2006}, internally, the code used the slope of a linear fit on a $\chi$-elevation relationship to calculate \textit{k\textsubscript{sn}}. \textit{KsnProfiler} has a large number of optional inputs, so you should familiarize yourself with all of the ways in which it can be run by reading through the header of the function. We highlight some of the main options in the following sections.
 
 \subsubsection{Stream Selection}
 \paragraph{}There are four different ways in which you can define which streams you would like to fit. The default is an interactive channel selection method where you choose streams (from all of the streams in the provided \textit{STREAMobj}) manually by clicking near a channel head of interest. In this case, the call of \textit{KsnProfiler} is relatively simple:
@@ -759,7 +762,7 @@ PRECIP=GRIDobj('/Users/aforte/GISdata/prism_precip.tif');
 \end{lstlisting}
 
 \noindent
- While this can be nice especially as it will update the map with k\textsubscript{sn} values as you continue to pick and fit streams, it can be unstable or slow if you are trying to analyze a very large area (though you can use the \textit{'plot\_type'} parameter to switch to a map plot that is more optimized for larger datasets). The three other selection methods do not involve a map of streams, so is generally more stable for large datasets. The other options are called like:
+ While this can be nice especially as it will update the map with \textit{k\textsubscript{sn}} values as you continue to pick and fit streams, it can be unstable or slow if you are trying to analyze a very large area (though you can use the \textit{'plot\_type'} parameter to switch to a map plot that is more optimized for larger datasets). The three other selection methods do not involve a map of streams, so is generally more stable for large datasets. The other options are called like:
  
  \begin{lstlisting}[language=Matlab]
  % To iterate through all streams in the provided STREAMobj:
@@ -801,11 +804,11 @@ In this mode, the first time a particular stream segment within a given connecte
  \end{lstlisting}
  
  \noindent
- The two different junction methods (i.e. \textit{'check'} vs \textit{'ignore'}) will produce slightly different results, but are generally more similar to each other than when compared to k\textsubscript{sn} values calculated via batch processing using \textit{KsnChiBatch} (Figure \ref{fig:ProfilerComp}).
+ The two different junction methods (i.e. \textit{'check'} vs \textit{'ignore'}) will produce slightly different results, but are generally more similar to each other than when compared to \textit{k\textsubscript{sn}} values calculated via batch processing using \textit{KsnChiBatch} (Figure \ref{fig:ProfilerComp}).
 
 \begin{figure}[H]
 	\includegraphics[width=16.5cm]{PNGs/Basin56_ksn_comparison.png}
-	\caption{Comparison of k\textsubscript{sn} values for Basin 56, calculated using the batch method (using \textit{KsnChiBatch})  or \textit{KsnProfiler} either ignoring or checking stream junctions.}
+	\caption{Comparison of \textit{k\textsubscript{sn}} values for Basin 56, calculated using the batch method (using \textit{KsnChiBatch})  or \textit{KsnProfiler} either ignoring or checking stream junctions.}
 	\label{fig:ProfilerComp}
 \end{figure}
 
@@ -839,9 +842,9 @@ In this mode, the first time a particular stream segment within a given connecte
 \paragraph{}The \textit{KsnProfiler} function is designed to be very robust in case of errors (both actual errors and user error). Throughout the normal operation of the function, the user is able to redo any step in the stream selection or fitting processes. While the function is running, a temporary mat file is also saved that stores all the values necessary to restart if the code fails for some reason. A failed run can be restart by using the \textit{'restart'} optional parameter. The \textit{'restart'} option can also be used to pick up where you left off from a user terminated session (i.e. you indicated to the function that you were done, but subsequently decided you wanted to keep fitting streams). Whether you are restarting a run because of failure or simply picking up where you left off, you do not need to recreate the exact call to the function as the function also saves a record of all parameter values and uses these saved values during a restart run (note though that you still need to provide the required datasets).
 
 \subsubsection{General Use}
-\paragraph{}\textit{KsnProfiler} can be run either with a user provided reference concavity or in a mode where the best fit concavity is found for each selected stream individually. Note that k\textsubscript{sn} values can only be compared between streams if the same reference concavity is used, so it is generally recommended that unless you are explicitly only interested in the concavity of streams, that you leave the \textit{concavity\_method} set to the default \textit{ref} mode. Regardless of your choice for \textit{concavity\_method}, a best fit concavity is calculated for each stream segment and is recorded in the outputs. During general use of \textit{KsnProfiler}, for any stream that is selected, you will be prompted to select segment boundaries on a plot (Figure \ref{fig:SegSelSub1}). 
+\paragraph{}\textit{KsnProfiler} can be run either with a user provided reference concavity or in a mode where the best-fit concavity is found for each selected stream individually. Note that \textit{k\textsubscript{sn}} values can only be compared between streams if the same reference concavity is used, so it is generally recommended that unless you are explicitly only interested in the concavity of streams, that you leave the \textit{concavity\_method} set to the default \textit{ref} mode. Regardless of your choice for \textit{concavity\_method}, a best-fit concavity is calculated for each stream segment and is recorded in the outputs. Finding the best-fit concavity relies on the TopoToolbox \textit{chiplot} function, where this function searches for the concavity value that minimizes the difference between the true $\chi$-elevation relationship of the stream segment and a linear $\chi$-elevation relationship. During general use of \textit{KsnProfiler}, for any stream that is selected, you will be prompted to select segment boundaries on a plot (Figure \ref{fig:SegSelSub1}). These manually selected segment boundaries will be output as both a matlab array and a point shapefile. It should be noted that because the selection of these segments is manual, individual selections are not strictly reproducible. However, because the code restricts segment boundaries to stream nodes, there are a limited number of options for segment boundaries so in practice, while tedious, results for a given stream can be mostly reproduced (i.e. if you were trying to reproduce previous segment location choices).
 
-\paragraph{}The exact construction of the plot will depend on a variety of optional input parameters. You can choose segment boundaries on either a $\chi$-elevation plot, a longitudinal profile plot, or a slope-area plot. In detail, regardless of the plot on which you choose to select segments, the calculation of best fit k\textsubscript{sn} is performed on the $\chi$-elevation relationship for that segment. To ensure that the fit is not biased by the spacing of $\chi$ values that vary as a function of drainage area, the fit is performed on a spline interpolated version of the $\chi$-elevation relationship for the segment with equal point spacing in $\chi$. The function also produces a residual plot to aid in your assessment of the goodness of fit (Figure \ref{fig:ProfilerRes}).
+\paragraph{}The exact construction of the plot will depend on a variety of optional input parameters. You can choose segment boundaries on either a $\chi$-elevation plot, a longitudinal profile plot, or a slope-area plot. In detail, regardless of the plot on which you choose to select segments, the calculation of best fit \textit{k\textsubscript{sn}} is performed on the $\chi$-elevation relationship for that segment. To ensure that the fit is not biased by the spacing of $\chi$ values that vary as a function of drainage area, the fit is performed on a spline interpolated version of the $\chi$-elevation relationship for the segment with equal point spacing in $\chi$. The function also produces a residual plot to aid in your assessment of the goodness of fit (Figure \ref{fig:ProfilerRes}).
 
 \begin{figure}[H]
 	\centering
@@ -861,12 +864,12 @@ In this mode, the first time a particular stream segment within a given connecte
 	\label{fig:SegSelect}
 \end{figure}
 
-\paragraph{}For all options, a plot of the batch k\textsubscript{sn} vs a relevant quantity (i.e. either $\chi$, distance, or log area) will be displayed to aid you in picking out potential segments. The plot on which you need to make your selection will be highlighted with red axes, though for all options, the choice is recorded internally based on the position of the cursor in the x coordinate, so in the example (Figure \ref{fig:SegSelSub1}) you could click on segment boundaries based on values of $\chi$ on either the $\chi$-elevation or $\chi$-Auto k\textsubscript{sn} plots and produce an accurate choice. The order in which you select segment boundaries doesn't matter and the outlet and channel head are automatically considered segment boundaries (i.e. you don't need to define these as segment boundaries). If you do not click anywhere in the plot, the function will treat the selected stream as one segment and fit a single k\textsubscript{sn} value to the entire stream segment. Once you are done selecting segment boundaries, the function will find the best fit k\textsubscript{sn} for each segment and display these (Figure \ref{fig:SegSelSub2}).
+\paragraph{}For all options, a plot of the batch \textit{k\textsubscript{sn}} vs a relevant quantity (i.e. either $\chi$, distance, or log area) will be displayed to aid you in picking out potential segments. The plot on which you need to make your selection will be highlighted with red axes, though for all options, the choice is recorded internally based on the position of the cursor in the x coordinate, so in the example (Figure \ref{fig:SegSelSub1}) you could click on segment boundaries based on values of $\chi$ on either the $\chi$-elevation or $\chi$-Auto \textit{k\textsubscript{sn}} plots and produce an accurate choice. The order in which you select segment boundaries doesn't matter and the outlet and channel head are automatically considered segment boundaries (i.e. you don't need to define these as segment boundaries). If you do not click anywhere in the plot, the function will treat the selected stream as one segment and fit a single \textit{k\textsubscript{sn}} value to the entire stream segment. Once you are done selecting segment boundaries, the function will find the best fit \textit{k\textsubscript{sn}} for each segment and display these (Figure \ref{fig:SegSelSub2}).
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=10cm]{PNGs/B92_StreamRsds_9.png}
-	\caption{Residuals on k\textsubscript{sn} fit. Note that uncertainty values on the k\textsubscript{sn} fits are calculated and plotted, but in this example, the uncertainties are small enough that they are not distinguishable from the main k\textsubscript{sn} lines.} 
+	\caption{Residuals on \textit{k\textsubscript{sn}} fit. Note that uncertainty values on the \textit{k\textsubscript{sn}} fits are calculated and plotted, but in this example, the uncertainties are small enough that they are not distinguishable from the main \textit{k\textsubscript{sn}} lines.} 
 	\label{fig:ProfilerRes}
 \end{figure}
 
@@ -878,7 +881,7 @@ In this mode, the first time a particular stream segment within a given connecte
 \end{lstlisting}
 
 \noindent
- where \textit{knl} is an array of all stream locations with best fit k\textsubscript{sn}, uncertainty values on this fit, concavity values, gradient, drainage area information, and reference ID numbers for the streams. This same output is also provided as a cell array, \textit{ksn\_master}, where individual streams are separated into cells. The segment boundaries are provided as an array of x, y, and z, locations in \textit{bnd\_list} and a \textit{STREAMobj} of the selected streams is provided as \textit{Sc}. Two shapefiles are produced, one as a polyline of the selected streams and containing all the information in the \textit{knl} output and a point shapefile of segment boundaries (i.e. knickpoints) is also produced (assuming segment boundaries were selected for any stream). Depending on the setup of your \textit{KsnProfiler} run, all of the plots generated during the fitting process may also be saved automatically.
+ where \textit{knl} is an array of all stream locations with best fit \textit{k\textsubscript{sn}}, uncertainty values on this fit, concavity values, gradient, drainage area information, and reference ID numbers for the streams. This same output is also provided as a cell array, \textit{ksn\_master}, where individual streams are separated into cells. The segment boundaries are provided as an array of x, y, and z, locations in \textit{bnd\_list} and a \textit{STREAMobj} of the selected streams is provided as \textit{Sc}. Two shapefiles are produced, one as a polyline of the selected streams and containing all the information in the \textit{knl} output and a point shapefile of segment boundaries (i.e. knickpoints) is also produced (assuming segment boundaries were selected for any stream). Depending on the setup of your \textit{KsnProfiler} run, all of the plots generated during the fitting process may also be saved automatically.
 
 \subsection{\textit{ClassifyKnicks}}
 The \textit{ClassifyKnicks} is a companion function to \nameref{sec:KsnProfiler} that allows you to iterate through all segment boundaries selected during a \textit{KsnProfiler} run and provide a classification. This classification can either be numeric (e.g. 1, 2, 3, etc) or a character string (e.g., 'bound', 'slopebreak', 'knick', etc). If using character strings, these should be short (the shapefile format restricts entries in fields to 254 characters). The function will generate a new version of the knickpoint shapefile with this classification appended.
@@ -956,7 +959,7 @@ ProcessRiverBasins(DEM,FD,A,S,1000,'basin_dir');
 
 \paragraph{}River mouths provided to \textit{ProcessRiverBasins} can be non-nested or nested as each basin is processed independently of all other basins. If your goal is to simply to generate a large dataset of arbitrary small basins within a landscape, we recommend placing river mouths at strategic locations (e.g. where streams exit a mountain range, Figure \ref{fig:BasinsComp}) and use \textit{ProcessRiverBasins} to process these large basins and then use \nameref{sec:SbDvdBsn} to automatically subdivide basins as opposed to manually selecting large numbers of nested, sub-basins.
 
-\paragraph{}The \textit{ProcessRiverBasins} function will use the river mouth locations to extract basins. For each basin there will be a Matlab .mat file which will contain its own basic TopoToolbox files along with various derived quantities, e.g. geographic data structure of k\textsubscript{sn} using a reference concavity, geographic data structure of k\textsubscript{sn} using a best fit concavity for that watershed (remember that k\textsubscript{sn} values calculated with different concavities are not comparable when considering these outputs!), hypsometry and hypsometric integral for the basin, slope map, and statistics (mean, standard deviation or standard errors) on the majority of these quantities. See the \nameref{sec:UndOuts} for a complete list of outputs stored within the .mat file. Because it is time consuming, local relief is not calculated by default, but you can specify that you wish to calculate relief at a variety of radii using the \textit{'calc\_relief'} and \textit{'relief\_radii'} parameters:
+\paragraph{}The \textit{ProcessRiverBasins} function will use the river mouth locations to extract basins. For each basin there will be a Matlab .mat file which will contain its own basic TopoToolbox files along with various derived quantities, e.g. geographic data structure of \textit{k\textsubscript{sn}} using a reference concavity, geographic data structure of \textit{k\textsubscript{sn}} using a best-fit concavity for that watershed (remember that \textit{k\textsubscript{sn}} values calculated with different concavities are not comparable when considering these outputs!), hypsometry and hypsometric integral for the basin, slope map, and statistics (mean, standard deviation or standard errors) on the majority of these quantities. See the \nameref{sec:UndOuts} for a complete list of outputs stored within the .mat file. Because it is time consuming, local relief is not calculated by default, but you can specify that you wish to calculate relief at a variety of radii using the \textit{'calc\_relief'} and \textit{'relief\_radii'} parameters:
 
 \begin{lstlisting}[language=Matlab]
 % Calculate relief with a radius of 2500 m for all basins
@@ -1034,17 +1037,17 @@ As with extra grids, more than one categorical grid can be provided, simply add 
 		\item \textit{SLc} - \textit{STREAMobj} containing the largest connected full stream network of the basin (should be identical to \textit{Sc} in almost all cases).
 		\item \textit{Chic} - structure containing information regarding chi, direct output of the TopoToolbox function \textit{chiplot}.
 		\item \textit{Goc} - clipped \textit{GRIDobj} of the gradient of the basin
-		\item \textit{MSc} - geographic data structure of the stream network containing k\textsubscript{sn} information using a best fit concavity
-		\item \textit{MSNc} - geographic data structure of the stream network containing k\textsubscript{sn} information using the user supplied reference concavity
-		\item \textit{KSNc\_stats} - 5 column array containing the mean k\textsubscript{sn}, standard error on the mean k\textsubscript{sn}, standard deviation on the  mean k\textsubscript{sn}, minimum k\textsubscript{sn}, and maximum k\textsubscript{sn} of the clipped basin.
+		\item \textit{MSc} - geographic data structure of the stream network containing \textit{k\textsubscript{sn}} information using a best-fit concavity
+		\item \textit{MSNc} - geographic data structure of the stream network containing \textit{k\textsubscript{sn}} information using the user supplied reference concavity
+		\item \textit{KSNc\_stats} - 5 column array containing the mean \textit{k\textsubscript{sn}}, standard error on the mean \textit{k\textsubscript{sn}}, standard deviation on the  mean \textit{k\textsubscript{sn}}, minimum \textit{k\textsubscript{sn}}, and maximum \textit{k\textsubscript{sn}} of the clipped basin.
 		\item \textit{Gc\_stats} - 5 column array containing the mean gradient, standard error on the mean gradient, standard deviation on the mean gradient, minimum gradient, and maximum gradient of the clipped basin.
 		\item \textit{Zc\_stats} - 5 column array containing the mean elevation, standard error on the mean elevation, standard deviation on the mean elevation, minimum elevation, and maximum elevation of the clipped basin.
 		\item \textit{Centroid} - two column array containing the weighted x and y coordinate of the center of the basin.
 		\item \textit{ChiOBJc} - clipped \textit{GRIDobj} with $\chi$ values along the stream network as defined by \textit{Sc}.
-		\item \textit{ksn\_method} - character array indicating whether k\textsubscript{sn} was calculated with the quick or tributary method
+		\item \textit{ksn\_method} - character array indicating whether \textit{k\textsubscript{sn}} was calculated with the quick or tributary method
 		\item \textit{gradient\_method} - character array indicating whether the gradient was calculated using \textit{gradient8} or \textit{arcslope}.
-		\item \textit{KsnOBJc} - clipped \textit{GRIDobj} with interpolated k\textsubscript{sn} values for the entire watershed, note construction of this can sometimes fail for small basins so this may not appear in all basin files, but the user will be warned that particular basins do not included this output if that is the case.
-		\item \textit{theta\_ref} - scalar value recording the reference concavity used for calculating k\textsubscript{sn} and $\chi$.
+		\item \textit{KsnOBJc} - clipped \textit{GRIDobj} with interpolated \textit{k\textsubscript{sn}} values for the entire watershed, note construction of this can sometimes fail for small basins so this may not appear in all basin files, but the user will be warned that particular basins do not included this output if that is the case.
+		\item \textit{theta\_ref} - scalar value recording the reference concavity used for calculating \textit{k\textsubscript{sn}} and $\chi$.
 	\end{itemize}
 	\item Outputs included if relief is calculated using the optional \textit{'calc\_relief'} parameter:
 	\begin{itemize}
@@ -1062,6 +1065,8 @@ As with extra grids, more than one categorical grid can be provided, simply add 
 		\item \textit{ACGc\_stats} - one column array containing the mode of the clipped categorical grid. This array will have the same number of rows as the number of additional categorical grids provided to \textit{ProcessRiverBasins} and will be in the same order as the \textit{ACGc} output.
 	\end{itemize}	
 \end{enumerate}
+
+\paragraph{Note for Compiled Versions:} The compiled version of \nameref{sec:PrcRvBsn} (and the related \nameref{sec:SbDvdBsn} function) will still produce the .mat file described above for use in other functions. However, if you wish to directly access the contents of each .mat file, there are several options available to you. For accessing the raster and vector data stored for each basin, you can run \textit{ProcessRiverBasins} with the optional \textit{'write\_arc\_files'} parameter set to true or alternatively use the compiled version of \nameref{sec:Mat2Arc} after the completion of \textit{ProcessRiverBasins} to extract and save versions of these files usable in a GIS program. For accessing the statistics, running the compiled version of \nameref{sec:CompStats} will produce a table (that is output as a text file) that contains the majority of these statistics. As an alternative, you can also read the individual .mat files directly using the \href{https://docs.scipy.org/doc/scipy/reference/tutorial/io.html}{scipy.io module of python}.
 
 \subsection{\textit{CatPoly2GRIDobj}} \label{sec:CatGrid}
 \paragraph{}As discussed in section \ref{sec:PRB_ACG}, sometimes it is helpful to have categorical data stored as a \textit{GRIDobj}, but \textit{GRIDobj}s  do not natively support non numeric values for cells. \textit{CatPoly2GRIDobj} is designed to get around that by generating a valid \textit{GRIDobj} with numeric values replacing categorical values and bundling this with a lookup table that serves as a key for the numeric values in the \textit{GRIDobj}. \textit{CatPoly2GRIDobj} requires a DEM input along with the name of a valid polygonal shapefile that contains the categorical data of interest and the name of the field within that shapefile that contains the specific data. 
@@ -1095,12 +1100,12 @@ These different subdivision schemes will result in the selection of different su
 
 \begin{figure}[H]
 	\includegraphics[width=16.5cm]{PNGs/Basin_Comparisons.png}
-	\caption{Comparison of mean k\textsubscript{sn} values calculated for manually selected basins (upper left panel) from \nameref{sec:PrcRvBsn} and for a variety of sub-basin division schemes using \textit{SubDivideBigBasins}.}
+	\caption{Comparison of mean \textit{k\textsubscript{sn}} values calculated for manually selected basins (upper left panel) from \nameref{sec:PrcRvBsn} and for a variety of sub-basin division schemes using \textit{SubDivideBigBasins}. Data is from the Southern California sample dataset.}
 	\label{fig:BasinsComp}
 \end{figure}
 
 \subsection{\textit{FindBasinKnicks}} \label{sec:BsnKncks}
-\paragraph{}\textit{FindBasinKnicks} allows you to find, mark, and optionally classify knickpoints within a basin file produced by \nameref{sec:PrcRvBsn} or \nameref{sec:SbDvdBsn}. Function will iterate through each stream in a given basin and allow the user to select knickpoint locations on a $\chi$-elevation plot. If you set the optional \textit{'classify\_knicks'} parameter to true, you can also input a classification for each selected knickpoints. As with the \textit{ClassifyKnicks} function for use with \textit{KsnProfiler}, classification can be numeric or short character strings. The \textit{FindBasinKnicks} function will output a Matlab table with location information for the selected knickpoints and optionally produce a shapefile by providing a valid character string to the optional \textit{'shape\_name'} parameter.
+\paragraph{}\textit{FindBasinKnicks} allows you to find, mark, and optionally classify knickpoints within a basin file produced by \nameref{sec:PrcRvBsn} or \nameref{sec:SbDvdBsn}. Function will iterate through each stream in a given basin and allow the user to manually select knickpoint locations on a $\chi$-elevation plot. If you set the optional \textit{'classify\_knicks'} parameter to true, you can also input a classification for each selected knickpoints. As with the \textit{ClassifyKnicks} function for use with \textit{KsnProfiler}, classification can be numeric or short character strings. The \textit{FindBasinKnicks} function will output a Matlab table with location information for the selected knickpoints and optionally produce a shapefile by providing a valid character string to the optional \textit{'shape\_name'} parameter. Similar to other options in TAK where you manually define the location of a feature (on the basis of clicking on a plot), choices of basin knickpoints are not strictly reproducible, but because the code restricts the location of a knickpoint to being on a stream node, they are in practice closer to being reproducible.
 
 \subsection{\textit{PlotIndividualBasins}}
 \paragraph{}\textit{PlotIndividualBasins} will iterate through a directory containing basin files output from \nameref{sec:PrcRvBsn} and produce a three panel plot displaying the $\chi$-elevation, longitudinal profile, and slope-area relationships for each basin. Each plot will be titled with the basin number and the drainage area of the basin. If you wish to produce plots for sub-basins, you must provide the location of the sub-basins of interest with the optional \textit{'location\_of\_subbasins'} parameter. Note that if a valid sub-basin directory is supplied, plots for a subdivided main basin will not be produced, i.e. if main basin 100 was subdivided, a plot for this basin will not be produced, but plots for all of its subbasins will be produced. If you want to produce plots for all main basins and sub-basins, you will need to run the code twice, one time providing a folder name for \textit{'location\_of\_subbasins'}  that is either empty or doesn't exist.
@@ -1117,11 +1122,11 @@ These different subdivision schemes will result in the selection of different su
  [MS]=Basin2Shape(DEM,'basin_dir','include','subdivided','location_of_subbasins','my_sub_basins');
 \end{lstlisting}
 
-\paragraph{}The function will include information from the various statistics (e.g. mean elevation, mean k\textsubscript{sn}, mean gradient) and will also include uncertainty values of the users choice (i.e. either standard deviations, standard errors, or both) on these statistics. The code detects whether statistics exist for relief or any extra grids and will include those as well. 
+\paragraph{}The function will include information from the various statistics (e.g. mean elevation, mean \textit{k\textsubscript{sn}}, mean gradient) and will also include uncertainty values of the users choice (i.e. either standard deviations, standard errors, or both) on these statistics. The code detects whether statistics exist for relief or any extra grids and will include those as well. 
 
 \paragraph{}If categorical grids were provided, the function will produce fields reporting the modal value for these but will save the modal values as the original categories (e.g. if rock types from a geologic map were provided and the most prevalent unit in a given basin is 'granite' then within the relevant field for that basin). The function will also produce a field to record what percentage of the basin is occupied by that modal category. There is also an optional parameter \textit{'populate\_categories'} that if set to true will produce a field for each category in the original categorical grid and for each basin will record the percentage of the basin occupied by that category.
 
-\paragraph{}You can also have the code do some limited extra calculations while producing the shapefile as well, specifically, you can recalculate mean and standard deviations and/or standard errors of k\textsubscript{sn} using difference reference concavities by providing an argument to the \textit{'new\_concavity'} parameter:
+\paragraph{}You can also have the code do some limited extra calculations while producing the shapefile as well, specifically, you can recalculate mean and standard deviations and/or standard errors of \textit{k\textsubscript{sn}} using difference reference concavities by providing an argument to the \textit{'new\_concavity'} parameter:
 
 \begin{lstlisting}[language=Matlab]
 % To recaculate mean normalized channel steepness with a reference concavity of 0.45
@@ -1159,7 +1164,7 @@ but the function will automatically produce a shapefile saved in the active dire
 \paragraph{Note for Compiled Versions:} In the compiled version of \nameref{sec:CmpBsn2Shp}, extra field values are dealt with differently. Instead of providing separate inputs for the values and names for those values, a text file is provided to the \textit{'extra\_field\_values'} parameter and the names of columns in that text file are used as the names of the resulting categories. 
 
 \subsection{\textit{Basin2Raster}}
-\paragraph{}The \textit{Basin2Raster} is a simpler alternative to \nameref{sec:B2S} that will output a \textit{GRIDobj} and save out an ascii raster of the basin extents filled with values specified by the user. Possible values are mean k\textsubscript{sn}, mean gradient, mean elevation, mean relief (you must specify which radius you want to use), R\textsuperscript{2} value on the $\chi$-elevation relationship (this can be a useful metric for assessing how well adjusted a basin is, R\textsuperscript{2} values closer to 1 should have fewer significant deviations from a linear $\chi$-elevation relationship, though this will also be influenced by the reference concavity used for calculating $\chi$), drainage area in km\textsuperscript{2}, hypsometric intergral, basin ID number, best fit concavity, or the name of any additional grid or additional categorical grid originally provided to \textit{ProcessRiverBasins}. If the name of an additional grid is provided, value will be the basin mean and if the name of a categorical grid is provided , value will be the basin mode. 
+\paragraph{}The \textit{Basin2Raster} is a simpler alternative to \nameref{sec:B2S} that will output a \textit{GRIDobj} and save out an ascii raster of the basin extents filled with values specified by the user. Possible values are mean \textit{k\textsubscript{sn}}, mean gradient, mean elevation, mean relief (you must specify which radius you want to use), R\textsuperscript{2} value on the $\chi$-elevation relationship (this can be a useful metric for assessing how well adjusted a basin is, R\textsuperscript{2} values closer to 1 should have fewer significant deviations from a linear $\chi$-elevation relationship, though this will also be influenced by the reference concavity used for calculating $\chi$), drainage area in km\textsuperscript{2}, hypsometric intergral, basin ID number, best-fit concavity, or the name of any additional grid or additional categorical grid originally provided to \textit{ProcessRiverBasins}. If the name of an additional grid is provided, value will be the basin mean and if the name of a categorical grid is provided , value will be the basin mode. 
 
 \paragraph{}If the basins provided to \textit{Basin2Raster} were manually nested (i.e. you provided a list of river mouths to \nameref{sec:PrcRvBsn} that included nested catchments and did not run \nameref{sec:SbDvdBsn}), then you should set the optional \textit{'method'} parameter to \textit{'nested'} to ensure that all basins are visible in the output raster. If you did not manually nest any basins or ran \textit{SubDivideBigBasins}, then you do not need to provide an argument to \textit{'method'}.
 
@@ -1174,7 +1179,7 @@ writetable(T,'basin_stats.txt');
 \end{lstlisting}
 
 \noindent
-The inputs for and behavior of several optional parameters for \textit{CompileBasinStats} are identical to those for \nameref{sec:B2S} (e.g. including extra fields, controlling which basins are included in the output, specifying which type of uncertainty to include, and recalculating mean k\textsubscript{sn} values at new concavities) and the Matlab table that \textit{CompileBasinStats} outputs shares some similarities with the geographic data structure output by \textit{Basin2Shape}, but \textit{CompileBasinStats} has several additional options that \textit{Basin2Shape} does not, mostly related to to categorical grids.
+The inputs for and behavior of several optional parameters for \textit{CompileBasinStats} are identical to those for \nameref{sec:B2S} (e.g. including extra fields, controlling which basins are included in the output, specifying which type of uncertainty to include, and recalculating mean \textit{k\textsubscript{sn}} values at new concavities) and the Matlab table that \textit{CompileBasinStats} outputs shares some similarities with the geographic data structure output by \textit{Basin2Shape}, but \textit{CompileBasinStats} has several additional options that \textit{Basin2Shape} does not, mostly related to to categorical grids.
 
 \subsubsection{Recalculating Means Based on Categories}
 \paragraph{}If categorical grids were provided to \nameref{sec:PrcRvBsn}, then particular categories can be used to recalculate means within the basins based on subsets of these categories. Specifically, means can be recalculated by either applying an inclusive or an exclusive filter. For example, if you created a categorical grid for the rock type from a geologic map, you could use this functionality to recalculate means only for parts the landscape occupied by particular units (i.e. an inclusive filter) or recalculate means for the entire landscape except those covered by particular units (i.e. an exclusive filter):
@@ -1189,13 +1194,13 @@ The inputs for and behavior of several optional parameters for \textit{CompileBa
 \noindent
 where the argument provided to \textit{'cat\_grid'} is the name of the additional categorical grid of interest as originally supplied to \textit{ProcessRiverBasins}, \textit{'cat\_values'} is a cell array containing the list of categories to use in the filter, and \textit{'filter\_type'} is either \textit{'include'} or \textit{'exclude'} depending on desired behavior.
 
-\paragraph{}Recalculated means will be produced for properties for which means were originally calculated (i.e. k\textsubscript{sn}, elevation, gradient, relief (if it was calculated), and any additional grids (if provided)). Names for these recalculated means will appear in the table with '\_f' appended to the column name, e.g. 'mean\_ksn\_f'. The original mean values calculated for the entirety of each basin will still appear in the table.
+\paragraph{}Recalculated means will be produced for properties for which means were originally calculated (i.e. \textit{k\textsubscript{sn}}, elevation, gradient, relief (if it was calculated), and any additional grids (if provided)). Names for these recalculated means will appear in the table with '\_f' appended to the column name, e.g. 'mean\_ksn\_f'. The original mean values calculated for the entirety of each basin will still appear in the table.
 
 \subsubsection{Populating Categories}
 \paragraph{}Setting the optional \textit{'populate\_categories'} parameter to true will result in a column for each category in the provided categorical grids where the value in that column for a given basin is the percentage of pixels in that basin which belong to that category. For example, if the categorical grid was a geologic map with rock types, this would mean that there would be a column for each rock type and an entry for what percentage of each basin was covered by that rock type.
 
 \subsubsection{Means by Category}
-\paragraph{}This functionality allows you to calculate means of particular metrics within each category. Using the rock type example, this would allow you to calculate things like mean k\textsubscript{sn} within each rock type, within each basin. If a basin is not covered by a particular category, then the value for that category mean will be 'NaN'. To calculate means by category, you can use the \textit{'means\_by\_category'} parameter:
+\paragraph{}This functionality allows you to calculate means of particular metrics within each category. Using the rock type example, this would allow you to calculate things like mean \textit{k\textsubscript{sn}} within each rock type, within each basin. If a basin is not covered by a particular category, then the value for that category mean will be 'NaN'. To calculate means by category, you can use the \textit{'means\_by\_category'} parameter:
 
 \begin{lstlisting}[language=Matlab]
 % To calculate means using the geology additional grid for ksn and 2500 m local relief
@@ -1228,22 +1233,22 @@ The \textit{'color\_by'} parameter is a valid input for \nameref{sec:grdksn}, \n
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=10cm]{PNGs/BasinStats.png}
-	\caption{Selected outputs of \nameref{sec:BSPlots} showing some options for plots using the \textit{'color\_by'} optional parameter.}
+	\caption{Selected outputs of \nameref{sec:BSPlots} showing some options for plots using the \textit{'color\_by'} optional parameter. Data is from the Southern California sample dataset using the basins $>$ 100 km\textsuperscript{2}  filtered by trunk confluences $>$ 5 km\textsuperscript{2}.}
 	\label{fig:BsnSts}
 \end{figure}
 
-\subsubsection{Mean Gradient vs Mean k\textsubscript{sn} - \textit{'grd\_ksn'}} \label{sec:grdksn}
-\paragraph{}Both mean hillslope gradient and mean k\textsubscript{sn} have previously been shown to correlate to mean erosion rate  and reflect the morphologic response of hillslope and fluvial domains to the erosion rate, respectively. Thus, in the absence of quantitative erosion rate data for a portions of basins, there can be utility in examining the relationship between mean hillslope gradient and mean k\textsubscript{sn}, see \href{https://www.sciencedirect.com/science/article/pii/S0012821X16303004}{Forte et al., 2016} for a full discussion of the nuances of interpreting these relationships. The \textit{'grd\_ksn'} plot option will plot these two quantities against each other (Figure \ref{fig:GrdKsnComp}). 
+\subsubsection{Mean Gradient vs Mean \textit{k\textsubscript{sn}} - \textit{'grd\_ksn'}} \label{sec:grdksn}
+\paragraph{}Both mean hillslope gradient and mean \textit{k\textsubscript{sn}} have previously been shown to correlate to mean erosion rate  and reflect the morphologic response of hillslope and fluvial domains to the erosion rate, respectively. Thus, in the absence of quantitative erosion rate data for a portions of basins, there can be utility in examining the relationship between mean hillslope gradient and mean \textit{k\textsubscript{sn}}, see \href{https://www.sciencedirect.com/science/article/pii/S0012821X16303004}{Forte et al., 2016} for a full discussion of the nuances of interpreting these relationships. The \textit{'grd\_ksn'} plot option will plot these two quantities against each other (Figure \ref{fig:GrdKsnComp}). 
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=15cm]{PNGs/grd_ksn_basinCompare.png}
-	\caption{Comparisons of mean k\textsubscript{sn} vs mean basin gradient and associated fits  for a variety of sub-basin division schemes using \nameref{sec:SbDvdBsn} using the \textit{'grd\_ksn'} plot from \nameref{sec:BSPlots}. See Figure \ref{fig:BasinsComp} for a map view of these different basin division schemes.}
+	\includegraphics[width=13cm]{PNGs/grd_ksn_basinCompare.png}
+	\caption{Comparisons of mean \textit{k\textsubscript{sn}} vs mean basin gradient and associated fits  for a variety of sub-basin division schemes using \nameref{sec:SbDvdBsn} using the \textit{'grd\_ksn'} plot from \nameref{sec:BSPlots}. See Figure \ref{fig:BasinsComp} for a map view of these different basin division schemes.}
 	\label{fig:GrdKsnComp}
 \end{figure}
 
 
-\paragraph{}Via the optional \textit{'fit\_grd\_ksn'} parameter, you can also use the relationship between mean hillslope gradient and mean k\textsubscript{sn} to estimate some morphometric parameters for the populations of basins, specifically the erosional efficiency, hillslope diffusivity, and limiting gradient. In detail, the analysis relies on the idea that the morphology of both the hillslope and fluvial portions of a landscape vary as a function of erosion rate. We can use these relationships with erosion rates, even if the erosion rates are unknown, to estimate these parameters. For the fluvial portion of the landscape, we use:
+\paragraph{}Via the optional \textit{'fit\_grd\_ksn'} parameter, you can also use the relationship between mean hillslope gradient and mean \textit{k\textsubscript{sn}} to estimate some morphometric parameters for the populations of basins, specifically the erosional efficiency, hillslope diffusivity, and limiting gradient. In detail, the analysis relies on the idea that the morphology of both the hillslope and fluvial portions of a landscape vary as a function of erosion rate. We can use these relationships with erosion rates, even if the erosion rates are unknown, to estimate these parameters. For the fluvial portion of the landscape, we use:
 
 \begin{equation}
 E=K(k_{sn})^{n}
@@ -1266,40 +1271,38 @@ S_{avg}=\frac{z(0)-z(L_{H})}{L_{H}}
 \noindent where $L_{H}$ is a characteristic hillslope length, which is found by numerically solving the following expression:
 
 \begin{equation}
-\bigg(  \frac{E}{2K{L_{H}}^{2}}  \bigg)^{\frac{1}{n}} = \frac{K{S_{c}}^{2}}{\beta E |L_{H}|} \Bigg( \sqrt{1 + \bigg( \frac{\beta E L_{H}}{KS_{c}} \bigg)^{2} } - 1 \Bigg)
+\bigg(  \frac{E}{2K{L_{H}}^{2}}  \bigg)^{\frac{1}{n}} = \frac{D{S_{c}}^{2}}{\beta E |L_{H}|} \Bigg( \sqrt{1 + \bigg( \frac{\beta E L_{H}}{DS_{c}} \bigg)^{2} } - 1 \Bigg)
 \end{equation}
 
-\noindent which is effectively finding the distance from the divide where the slope of the hillslope portion and fluvial portions of the landscape are equal \citep[e.g.,][]{Howard1997,Perron2008}. The fits are done via a constrained minimization of least absolute deviation on the above set of equations, and to successfully run the fits, you need access to the Optimization Toolbox in Matlab. The fits are sensitive to the choice of initial parameters, which you can control with the optional \textit{'start\_diffusivity'}, \textit{'start\_erodibility'}, and \textit{'start\_threshold\_gradient'} parameters, which are starting values for $D$, $K$, and $S_{c}$ respectively. Also important is the optional \textit{'n\_val'} parameter (i.e. $n$) which is not a free parameter  (i.e. you must provide a value for \textit{'n\_val'} are use the default value of 2) in the fits, but will control the shape of the fluvial portion of the relationship. We refer readers who are more interested in the nuances of this fit and the (large) assumptions that go into it to \href{https://www.sciencedirect.com/science/article/pii/S0012821X16303004}{Forte et al., 2016} and references therein. Exploring the shape of this relationship (and thus the estimated values for the parameters that control it) also highlights that choosing different methods of subdivision of basins using \nameref{sec:SbDvdBsn} can produce statistically different populations of basins (e.g. Figure \ref{fig:GrdKsnComp}). 
-
-
+\noindent which is effectively finding the distance from the divide where the slope of the hillslope portion and fluvial portions of the landscape are equal and that the contributions from erosion of the hillslope and fluvial portions of the landscape are also equal \citep[e.g.,][]{Howard1997,Perron2008}. The fits are done via a constrained minimization of least absolute deviation on the above set of equations, and to successfully run the fits, you need access to the Optimization Toolbox in Matlab. The fits are sensitive to the choice of initial parameters, which you can control with the optional \textit{'start\_diffusivity'}, \textit{'start\_erodibility'}, and \textit{'start\_threshold\_gradient'} parameters, which are starting values for $D$, $K$, and $S_{c}$ respectively. Also important is the optional \textit{'n\_val'} parameter (i.e. $n$) which is not a free parameter  (i.e. you must provide a value for \textit{'n\_val'} are use the default value of 2) in the fits, but will control the shape of the fluvial portion of the relationship. We refer readers who are more interested in the nuances of this fit and the (large) assumptions that go into it to \href{https://www.sciencedirect.com/science/article/pii/S0012821X16303004}{Forte et al., 2016} and references therein. Exploring the shape of this relationship (and thus the estimated values for the parameters that control it) also highlights that choosing different methods of subdivision of basins using \nameref{sec:SbDvdBsn} can produce statistically different populations of basins (e.g. Figure \ref{fig:GrdKsnComp}). It should be emphasized that the values for the limiting gradient, fluvial erodibility, and hillslope diffusivity extracted from this fit should be considered with some level of skepticism. If quantitative erosion rates are available for a region of interest, using these erosion rates to estimate the referenced parameters will always yield a more reliable result. The purpose of using the relationships here is mostly for relative comparison between basins within a study region.
 
 \subsubsection{Mean Gradient vs Mean Relief - \textit{'grd\_rlf'}} \label{sec:grdrlf}
-\paragraph{}You can also plot mean gradient vs. mean local relief via the \textit{'grd\_rlf'} plot option. This should be similar to the result of \nameref{sec:grdksn} plot as mean local relief and mean k\textsubscript{sn} are typically linearly related (depending on the relief radius). You can test the nature of the relationship between mean local relief and mean k\textsubscript{sn} with the \nameref{sec:rlfksn} plot option. The \textit{'grd\_rlf'} plot will use the relief radius specified with the optional \textit{'rlf\_radius'} parameter. If this specifies a relief radius that you did not calculate when running \nameref{sec:PrcRvBsn}, this will result in an error.
+\paragraph{}You can also plot mean gradient vs. mean local relief via the \textit{'grd\_rlf'} plot option. This should be similar to the result of \nameref{sec:grdksn} plot as mean local relief and mean \textit{k\textsubscript{sn}} are typically linearly related (depending on the relief radius). You can test the nature of the relationship between mean local relief and mean \textit{k\textsubscript{sn}} with the \nameref{sec:rlfksn} plot option. The \textit{'grd\_rlf'} plot will use the relief radius specified with the optional \textit{'rlf\_radius'} parameter. If this specifies a relief radius that you did not calculate when running \nameref{sec:PrcRvBsn}, this will result in an error.
 
-\subsubsection{Mean Relief vs Mean k\textsubscript{sn} - \textit{'rlf\_ksn'}} \label{sec:rlfksn}
-\paragraph{}Depending on the relief radius, the relationship between mean local relief and mean k\textsubscript{sn} should be linear, but you can quickly test this with the \textit{'rlf\_ksn'} option which will plot these two quantities against each other. The \textit{'rlf\_ksn'} plot will use the relief radius specified with the optional \textit{'rlf\_radius'} parameter. If this specifies a relief radius that you did not calculate when running \nameref{sec:PrcRvBsn}, this will result in an error. 
+\subsubsection{Mean Relief vs Mean \textit{k\textsubscript{sn}} - \textit{'rlf\_ksn'}} \label{sec:rlfksn}
+\paragraph{}Depending on the relief radius, the relationship between mean local relief and mean \textit{k\textsubscript{sn}} should be linear, but you can quickly test this with the \textit{'rlf\_ksn'} option which will plot these two quantities against each other. The \textit{'rlf\_ksn'} plot will use the relief radius specified with the optional \textit{'rlf\_radius'} parameter. If this specifies a relief radius that you did not calculate when running \nameref{sec:PrcRvBsn}, this will result in an error. 
 
 \subsubsection{Comparing Filtered and Non-Filtered Means - \textit{'compare\_filtered'}} \label{sec:compfilt}
 
-\paragraph{}If you calculated filtered means when running \nameref{sec:CompStats}, the \textit{'compare\_filtered'} option will plot the filtered means against the unfiltered means and visually highlight basins that imply higher filtered values compared to non-filtered with red dots and basins that imply lower filtered values compared to non-filtered with blue dots (e.g. Figure \ref{fig:FiltBsnComp}). This plot option will produce an individual plot for any quantity for which a mean and a filtered mean was calculated (obviously, if filtered means were not calculated, this option will produce an error). In the example, we present examples of mean k\textsubscript{sn} and mean gradient in the case of a filter excluding quaternary units from the means and an inclusive filter calculating means from granites, metamorphic rocks, and other 'basement' rocks (Figure \ref{fig:FiltBsnComp}). This allows you to assess relatively quickly that removing areas covered by quaternary units shifts means toward higher values, where as only calculating means based on 'hard rocks' also shifts many basins to higher means values, but not in all cases. This will of course depend on the nature of the filter and like the majority of the plots, this is designed as a data exploration tool to determine what aspects warrant deeper analysis.
+\paragraph{}If you calculated filtered means when running \nameref{sec:CompStats}, the \textit{'compare\_filtered'} option will plot the filtered means against the unfiltered means and visually highlight basins that imply higher filtered values compared to non-filtered with red dots and basins that imply lower filtered values compared to non-filtered with blue dots (e.g. Figure \ref{fig:FiltBsnComp}). This plot option will produce an individual plot for any quantity for which a mean and a filtered mean was calculated (obviously, if filtered means were not calculated, this option will produce an error). In the example, we present examples of mean \textit{k\textsubscript{sn}} and mean gradient in the case of a filter excluding quaternary units from the means and an inclusive filter calculating means from granites, metamorphic rocks, and other 'basement' rocks (Figure \ref{fig:FiltBsnComp}). This allows you to assess relatively quickly that removing areas covered by quaternary units shifts means toward higher values, where as only calculating means based on 'hard rocks' also shifts many basins to higher means values, but not in all cases. This will of course depend on the nature of the filter and like the majority of the plots, this is designed as a data exploration tool to determine what aspects warrant deeper analysis.
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=16.5cm]{PNGs/Filtered_Basin_Comparison.png}
-	\caption{Selected outputs of \textit{'compare\_filtered'} plot from \nameref{sec:BSPlots} comparing results of an excluding quaternary, water, and undefined areas vs including basement rocks.}
+	\caption{Selected outputs of \textit{'compare\_filtered'} plot from \nameref{sec:BSPlots} comparing results of an excluding quaternary, water, and undefined areas vs including basement rocks. Data is from the Southern California sample dataset using the basins $>$ 100 km\textsuperscript{2}  filtered by trunk confluences $>$ 5 km\textsuperscript{2}.}
 	\label{fig:FiltBsnComp}
 \end{figure}
 
 \subsubsection{Histograms of Category Means - \textit{'category\_mean\_hist'}} \label{sec:cathist}
-\paragraph{}If you calculate means by categories when running \nameref{sec:CompStats}, you can use the \textit{'category\_mean\_hist'} option to plot histograms of the means across all basins within given categories for a statistic of interest. Using this option requires providing an argument to the optional \textit{'cat\_mean1'} parameter to specify which statistic (e.g. mean k\textsubscript{sn}) for which you wish to produce histograms.
+\paragraph{}If you calculate means by categories when running \nameref{sec:CompStats}, you can use the \textit{'category\_mean\_hist'} option to plot histograms of the means across all basins within given categories for a statistic of interest. Using this option requires providing an argument to the optional \textit{'cat\_mean1'} parameter to specify which statistic (e.g. mean \textit{k\textsubscript{sn}}) for which you wish to produce histograms.
 
 \subsubsection{Comparisons of Category Means - \textit{'category\_mean\_compare'}} \label{sec:catcomp}
-\paragraph{}If you calculate means by categories when running \nameref{sec:CompStats}, you can use the \textit{'category\_mean\_compare'} option to compare two statistics of interest within the categories (e.g. plots of mean basin k\textsubscript{sn} vs mean gradient as a function of rock type). Using this option requires providing arguments to the optional \textit{'cat\_mean1'}  and \textit{cat\_mean2'} parameters to specify which statistics you want to compare.
+\paragraph{}If you calculate means by categories when running \nameref{sec:CompStats}, you can use the \textit{'category\_mean\_compare'} option to compare two statistics of interest within the categories (e.g. plots of mean basin \textit{k\textsubscript{sn}} vs mean gradient as a function of rock type). Using this option requires providing arguments to the optional \textit{'cat\_mean1'}  and \textit{cat\_mean2'} parameters to specify which statistics you want to compare.
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=12cm]{PNGs/BasinHypsometry.png}
-	\caption{Selected output of \textit{'stacked\_hypsometry'} plots from \nameref{sec:BSPlots}.}
+	\caption{Selected output of \textit{'stacked\_hypsometry'} plots from \nameref{sec:BSPlots}. Data is from the Southern California sample dataset using the basins $>$ 100 km\textsuperscript{2}  filtered by trunk confluences $>$ 5 km\textsuperscript{2}.}
 	\label{fig:Hyps}
 \end{figure}
 
@@ -1314,7 +1317,7 @@ S_{avg}=\frac{z(0)-z(L_{H})}{L_{H}}
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=12cm]{PNGs/Gradient_Dist.png}
-	\caption{Sample output of \textit{'compare\_mean\_and\_dist'} plot from \nameref{sec:BSPlots} comparing the distribution of gradient across all nodes in all basins (blue) to the distribution of mean gradients across all basins (orange).}
+	\caption{Sample output of \textit{'compare\_mean\_and\_dist'} plot from \nameref{sec:BSPlots} comparing the distribution of gradient across all nodes in all basins (blue) to the distribution of mean gradients across all basins (orange). Data is from the Southern California sample dataset using the basins $>$ 100 km\textsuperscript{2}  filtered by trunk confluences $>$ 5 km\textsuperscript{2}.}
 	\label{fig:GradDist}
 \end{figure}
 
@@ -1323,7 +1326,7 @@ S_{avg}=\frac{z(0)-z(L_{H})}{L_{H}}
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=12cm]{PNGs/Basin56_ksn_dist.png}
-	\caption{Sample output of \textit{'compare\_mean\_and\_dist'} plot from \nameref{sec:BSPlots} comparing the distribution of k\textsubscript{sn} within Basin 56 to the mean k\textsubscript{sn} within that basin (the thick black line).}
+	\caption{Sample output of \textit{'compare\_mean\_and\_dist'} plot from \nameref{sec:BSPlots} comparing the distribution of \textit{k\textsubscript{sn}} within Basin 56 (in the Southern California dataset) to the mean \textit{k\textsubscript{sn}} within that basin (the thick black line).}
 	\label{fig:KsnDist}
 \end{figure}
 
@@ -1336,7 +1339,7 @@ S_{avg}=\frac{z(0)-z(L_{H})}{L_{H}}
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=16.5cm]{PNGs/ScatterPlotMatrix.png}
-	\caption{Sample output of \textit{'scatterplot\_matrix'} plot from \nameref{sec:BSPlots}.}
+	\caption{Sample output of \textit{'scatterplot\_matrix'} plot from \nameref{sec:BSPlots}. Data is from the Southern California sample dataset using the basins $>$ 100 km\textsuperscript{2}  filtered by trunk confluences $>$ 5 km\textsuperscript{2}.}
 	\label{fig:ScatterMatrix}
 \end{figure}
 
@@ -1377,7 +1380,7 @@ S_{avg}=\frac{z(0)-z(L_{H})}{L_{H}}
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=16.5cm]{PNGs/Cross_SwathHeatmap.png}
-	\caption{Swath output from \nameref{sec:Swath} showing the result of plotting as a heatmap.}
+	\caption{Swath output from \nameref{sec:Swath} showing the result of plotting as a heatmap colored by the density of points at a given elevation.}
 	\label{fig:HeatSwath}
 \end{figure}
 
@@ -1390,9 +1393,9 @@ S_{avg}=\frac{z(0)-z(L_{H})}{L_{H}}
 	\item \textit{'points5'} - generic point dataset with x, y, and z coordinates with two additional values. The resulting plots will color the points by the first additional value and scale the points by the second value.
 	\item \textit{'eqs'} - plot optimized for earthquakes for data with x, y, depth, and magnitude. Points will be scaled by magnitude and colored by the distance from the center of the swath line (e.g. Figure \ref{fig:EqSwath}).
 	\item \textit{'STREAMobj'} - will project portions of a provided STREAMobj onto the swath.
-	\item \textit{'ksn\_chandata'} - will project the k\textsubscript{sn} values from a 'chandata' mat file produced by the old Profiler51 code (some of us have A LOT of these sitting around).
-	\item \textit{'ksn\_batch'} - will project the k\textsubscript{sn} values contained in the geographic data structure output from the \nameref{sec:KsnBatch} function.
-	\item \textit{'ksn\_profiler'} - will project the k\textsubscript{sn} values contained in the \textit{'knl'} array output from \nameref{sec:KsnProfiler}.
+	\item \textit{'ksn\_chandata'} - will project the \textit{k\textsubscript{sn}} values from a 'chandata' mat file produced by the old Profiler51 code (some of us have A LOT of these sitting around).
+	\item \textit{'ksn\_batch'} - will project the \textit{k\textsubscript{sn}} values contained in the geographic data structure output from the \nameref{sec:KsnBatch} function.
+	\item \textit{'ksn\_profiler'} - will project the \textit{k\textsubscript{sn}} values contained in the \textit{'knl'} array output from \nameref{sec:KsnProfiler}.
 	\item \textit{'basin\_stats'} - will project basin data output from \nameref{sec:CompStats}. You must specify a quantity to color basins by with the \textit{'basin\_value'} parameter and can optionally also scale point size by an additional quantity with the \textit{'basin\_scale'} parameter (e.g. Figure \ref{fig:KsnSwath}).
 	\item \textit{'basin\_knicks'} - will project knickpoint locations as produced by \nameref{sec:BsnKncks}.
 \end{itemize}
@@ -1407,7 +1410,7 @@ S_{avg}=\frac{z(0)-z(L_{H})}{L_{H}}
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=16.5cm]{PNGs/SanGabes_KsnSwath.png}
-	\caption{Swath output from \nameref{sec:CombSwath} projecting basin locations from \nameref{sec:CompStats} and colored by mean k\textsubscript{sn} and scaled by mean precipitation.}
+	\caption{Swath output from \nameref{sec:CombSwath} projecting basin locations from \nameref{sec:CompStats} and colored by mean \textit{k\textsubscript{sn}} and scaled by mean precipitation.}
 	\label{fig:KsnSwath}
 \end{figure}
 
@@ -1420,10 +1423,10 @@ S_{avg}=\frac{z(0)-z(L_{H})}{L_{H}}
 \section{Miscellaneous}
 
 \subsection{\textit{ksncolor}} \label{sec:ksncolor}
-\paragraph{}Function to generate a colormap that roughly approximates the stereotypical green-yellow-red color progression commonly used for k\textsubscript{sn} data in publications, see Figure \ref{fig:KsnSwath} for an example of the color map. Note that there is no compiled version of \textit{ksncolor}.
+\paragraph{}Function to generate a colormap that roughly approximates the stereotypical green-yellow-red color progression commonly used for \textit{k\textsubscript{sn}} data in publications, see Figure \ref{fig:KsnSwath} for an example of the color map. Note that there is no compiled version of \textit{ksncolor}.
 
 \subsection{\textit{PlotKsn}} \label{sec:plotksn}
-\paragraph{}The \textit{PlotKsn} function will quickly plot a stream network colored by k\textsubscript{sn} overlaying a hillshade colored by elevation. Uses the \nameref{sec:ksncolor} colormap. You can provide a valid geographic data structure output from \nameref{sec:KsnBatch} or  \nameref{sec:PrcRvBsn} or a shapefile output from \nameref{sec:KsnBatch}, \nameref{sec:KsnProfiler}, or  \nameref{sec:PrcRvBsn}. Optionally can also include a set of knickpoints output from \nameref{sec:PrcRvBsn} or \nameref{sec:BsnKncks} to plot knickpoint locations. 
+\paragraph{}The \textit{PlotKsn} function will quickly plot a stream network colored by \textit{k\textsubscript{sn}} overlaying a hillshade colored by elevation. Uses the \nameref{sec:ksncolor} colormap. You can provide a valid geographic data structure output from \nameref{sec:KsnBatch} or  \nameref{sec:PrcRvBsn} or a shapefile output from \nameref{sec:KsnBatch}, \nameref{sec:KsnProfiler}, or  \nameref{sec:PrcRvBsn}. Optionally can also include a set of knickpoints output from \nameref{sec:PrcRvBsn} or \nameref{sec:BsnKncks} to plot knickpoint locations. 
 
 \subsection{\textit{DippingBedFinder}} \label{sec:BedFinder}
 \paragraph{}\textit{DippingBedFinder} is a simple function to estimate where a planar dipping bed should occur within a landscape based on a known occurrence and some information about the bed (Figure \ref{fig:Bed}). Specifically, you need to provide a location for the observation, a total thickness for the bed, an estimate of the height above the base of the bed at the point of observation, the strike of the bed (it's assumed you give this using the right hand rule), and the dip of the bed. 
@@ -1479,7 +1482,7 @@ basins (as selected by 'ProcessRiverBasins' and 'SubDivideBigBasins') assinged v
 \item 'drainage\_area' - drainage area in km2 of basin
 \item 'hypsometric\_integral' - hypsometric integral of basin
 \item 'id' - basin ID number (i.e third column RiverMouth output)
-\item 'theta' - best fit concavity resultant from the topo toolbox chiplot function 
+\item 'theta' - best-fit concavity resultant from the topo toolbox chiplot function 
 \item 'NAME' - where name is the name provided for an extra grid (i.e. entry to second column of 'add\_grid' or entry to 
 third column of 'add\_cat\_grid'), value input will be mean for additional grid names or mode for additional 
 categorical grid names
@@ -2203,7 +2206,7 @@ with ksn, concavity, area, and gradient.
 	\item concavity\_method ['ref']- options for concavity:
 	\begin{itemize}
 		\item 'ref' - uses a reference concavity, the user can specify this value with the reference concavity option (see below)
-		\item 'auto' - function finds a best fit concavity for each selected stream, if used in conjunction with 'junction\_method','check'
+		\item 'auto' - function finds a best-fit concavity for each selected stream, if used in conjunction with 'junction\_method','check'
 		this means that short sections of streams picked will auto fit concavity that may differ from downstream portions of the same
 		streams
 	\end{itemize}
@@ -2288,8 +2291,8 @@ parameter is ignored.
 \paragraph{Outputs:}
 \begin{itemize}
 \item *\_KsnFit.txt - n x 12 array of node list for selected stream segments, columns are x coordinate, y coordinate, drainage area, ksn, negative ksn error,
-positive ksn error, reference concavity, best fit concavity, mininum threshold area, gradient, fit residual, and an identifying number. Note
-that if using the code in 'concavity\_method','auto' mode then the reference concavity and best fit concavity columns will be the same.
+positive ksn error, reference concavity, best-fit concavity, mininum threshold area, gradient, fit residual, and an identifying number. Note
+that if using the code in 'concavity\_method','auto' mode then the reference concavity and best-fit concavity columns will be the same.
 \item *\_KsnBounds.txt - n x 4 array of selected bounds for fitting ksn, columns are x coordinate, y coordinate, elevation, and the stream identifying number 
 (this could be thought of as a list of knickpoints), also output as a seperate shapefile. If x y and z values appear as NaN, this indicates
 that bounds for this stream were not selected. 
@@ -2845,7 +2848,7 @@ DEM stored in the provided MatFile
 \item concavity\_method ['ref']- options for concavity:
 \begin{itemize}
 \item 'ref' - uses a reference concavity, the user can specify this value with the reference concavity option (see below)
-\item 'auto' - function finds a best fit concavity for the provided stream
+\item 'auto' - function finds a best-fit concavity for the provided stream
 \end{itemize}
 \item pick\_method ['chi'] - choice of how you want to pick the stream segment to be projected:
 \begin{itemize}
