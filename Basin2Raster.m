@@ -38,7 +38,7 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 	%	relief_radius [2500] - relief radius to use if 'valueOI' is set to 'relief'
 	%		 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	% Function Written by Adam M. Forte - Updated : 01/27/19 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -78,8 +78,8 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 		num_basins=numel(AllFullFiles);
 		basin_nums=zeros(num_basins,1);
 		for jj=1:num_basins
-			fileName=AllFullFiles(jj,1).name;
-			basin_nums(jj)=sscanf(fileName,'%*6s %i'); %%%
+			FileName=AllFullFiles(jj,1).name;
+			basin_nums(jj)=sscanf(FileName,'%*6s %i'); %%%
 		end
 
 		FileCell=cell(num_basins,1);
@@ -96,8 +96,8 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 
 			FileCell{kk}=Files;
 		end
-		fileList=vertcat(FileCell{:});
-		num_files=numel(fileList);
+		FileList=vertcat(FileCell{:});
+		num_files=numel(FileList);
 
 		for ii=1:num_files;
 			disp(['Working on ' num2str(ii) ' of ' num2str(num_files)]);
@@ -182,17 +182,17 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 
 	case 'nested'
 		% Build list of indices
-		allfiles=dir('*_Data.mat');
-		num_basins=numel(allfiles);
+		AllFiles=dir('*_Data.mat');
+		num_basins=numel(AllFiles);
 
 		ix_cell=cell(num_basins,1);
 		basin_list=zeros(num_basins,1);
 		fileCell=cell(num_basins,1);
 		for jj=1:num_basins
-			fileName=allfiles(jj,1).name;
-			fileCell{jj}=fileName;
+			FileName=AllFiles(jj,1).name;
+			FileCell{jj}=FileName;
 
-			load(fileName,'DEMcc');
+			load(FileName,'DEMcc');
 			[x,y]=getcoordinates(DEMcc);
 			xg=repmat(x,numel(y),1);
 			yg=repmat(y,1,numel(x));
@@ -208,11 +208,11 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 		% Sort basin size list in descending order
 		[~,six]=sort(basin_list,'descend');
 		% Apply sorting index to fileCell and ix_cell
-		fileCell=fileCell(six);
+		FileCell=FileCell(six);
 		ix_cell=ix_cell(six);
 
 		for ii=1:num_basins
-			FileName=fileCell{ii};
+			FileName=FileCell{ii};
 			disp(['Working on ' num2str(ii) ' of ' num2str(num_files)]);
 
 			switch valueOI

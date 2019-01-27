@@ -84,8 +84,8 @@ function cmpBasin2Raster(wdir,MakeStreamsMat,valueOI,location_of_data_files,vara
 		num_basins=numel(AllFullFiles);
 		basin_nums=zeros(num_basins,1);
 		for jj=1:num_basins
-			fileName=AllFullFiles(jj,1).name;
-			basin_nums(jj)=sscanf(fileName,'%*6s %i'); %%%
+			FileName=AllFullFiles(jj,1).name;
+			basin_nums(jj)=sscanf(FileName,'%*6s %i'); %%%
 		end
 
 		FileCell=cell(num_basins,1);
@@ -102,13 +102,13 @@ function cmpBasin2Raster(wdir,MakeStreamsMat,valueOI,location_of_data_files,vara
 
 			FileCell{kk}=Files;
 		end
-		fileList=vertcat(FileCell{:});
-		num_files=numel(fileList);
+		FileList=vertcat(FileCell{:});
+		num_files=numel(FileList);
 
 		% Begin main loop
 		w1=waitbar(0,'Generating raster...');
 		for ii=1:num_files;
-			FileName=fullfile(fileList(ii,1).folder,fileList(ii,1).name);
+			FileName=fullfile(FileList(ii,1).folder,FileList(ii,1).name);
 			switch valueOI
 			case 'ksn'
 				load(FileName,'DEMcc','KSNc_stats');
@@ -191,17 +191,17 @@ function cmpBasin2Raster(wdir,MakeStreamsMat,valueOI,location_of_data_files,vara
 
 	case 'nested'
 		% Build list of indices
-		allfiles=dir(fullfile(location_of_data_files,'*_Data.mat'));
-		num_basins=numel(allfiles);
+		AllFiles=dir(fullfile(location_of_data_files,'*_Data.mat'));
+		num_basins=numel(AllFiles);
 
 		ix_cell=cell(num_basins,1);
 		basin_list=zeros(num_basins,1);
-		fileCell=cell(num_basins,1);
+		FileCell=cell(num_basins,1);
 		for jj=1:num_basins
-			fileName=fullfile(allfiles(jj,1).folder,allfiles(jj,1).name);
-			fileCell{jj}=fileName;
+			FileName=fullfile(AllFiles(jj,1).folder,AllFiles(jj,1).name);
+			FileCell{jj}=fileName;
 
-			load(fileName,'DEMcc');
+			load(FileName,'DEMcc');
 			[x,y]=getcoordinates(DEMcc);
 			xg=repmat(x,numel(y),1);
 			yg=repmat(y,1,numel(x));
@@ -217,12 +217,12 @@ function cmpBasin2Raster(wdir,MakeStreamsMat,valueOI,location_of_data_files,vara
 		% Sort basin size list in descending order
 		[~,six]=sort(basin_list,'descend');
 		% Apply sorting index to fileCell and ix_cell
-		fileCell=fileCell(six);
+		FileCell=FileCell(six);
 		ix_cell=ix_cell(six);
 
 		w1=waitbar(0,'Generating raster...');
 		for ii=1:num_basins
-			FileName=fileCell{ii};
+			FileName=FileCell{ii};
 
 			switch valueOI
 			case 'ksn'
