@@ -862,22 +862,47 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							lb_chidist=sqrt(sum(bsxfun(@minus, rc, lb).^2,2));
 							rb_chidist=sqrt(sum(bsxfun(@minus, rc, rb).^2,2));
 
-							lbx=rx(lb_chidist==min(lb_chidist));
-							lby=ry(lb_chidist==min(lb_chidist));
+							[~,lbix]=min(lb_chidist);
+							[~,rbix]=min(rb_chidist);
 
-							rbx=rx(rb_chidist==min(rb_chidist));
-							rby=ry(rb_chidist==min(rb_chidist));	
+							lbx=rx(lbix);
+							lby=ry(lbix);
+
+							rbx=rx(rbix);
+							rby=ry(rbix);
 
 							lix=coord2ind(DEM,lbx,lby);
-							LIX=GRIDobj(DEM,'logical');
-							LIX.Z(lix)=true;	
-
 							rix=coord2ind(DEM,rbx,rby);
-							RIX=GRIDobj(DEM,'logical');
-							RIX.Z(rix)=true;	
 
-							Seg=modify(Sn,'downstreamto',RIX);
-							Seg=modify(Seg,'upstreamto',LIX);
+							Seg=modify(Sn,'downstreamto',rix);
+							Seg=modify(Seg,'upstreamto',lix);
+
+							%Remake stream with downstream bound node added back in
+							WSEG=GRIDobj(DEM,'logical');
+							WSEG.Z(Seg.IXgrid)=true;
+							WSEG.Z(lix)=true;
+							% Add back in upstream node if it's the end of the stream
+							if jj==num_bnds-1
+								WSEG.Z(rix)=true;
+							end
+							Seg=STREAMobj(FD,WSEG);
+
+							% Check length of stream, if it's less than two nodes,
+							% move down stream until it's greater than two nodes
+							lbix_new=lbix+1;
+							first_time=true;
+							while numel(Seg.IXgrid)<=2
+								if first_time
+									wrn_mssg=['Segment ' num2str(jj) ' of chosen segments was too short, segment bound was expanded downstream'];
+									wd=warndlg(wrn_mssg);
+									uiwait(wd);
+								end
+								lix_new=coord2ind(DEM,rx(lbix_new),ry(lbix_new));
+								WSEG.Z(lix_new)=true;
+								Seg=STREAMobj(FD,WSEG);
+								lbix_new=lbix_new+1;
+								first_time=false;
+							end
 
 							% Construct bound list
 							if jj<num_bnds-1
@@ -1175,27 +1200,52 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							lb_dist=sqrt(sum(bsxfun(@minus, rd, lb).^2,2));
 							rb_dist=sqrt(sum(bsxfun(@minus, rd, rb).^2,2));
 
-							lbx=rx(lb_dist==min(lb_dist));
-							lby=ry(lb_dist==min(lb_dist));
+							[~,lbix]=min(lb_dist);
+							[~,rbix]=min(rb_dist);
 
-							rbx=rx(rb_dist==min(rb_dist));
-							rby=ry(rb_dist==min(rb_dist));	
+							lbx=rx(lbix);
+							lby=ry(lbix);
 
-							lix=coord2ind(DEM,lbx,lby);
-							LIX=GRIDobj(DEM,'logical');
-							LIX.Z(lix)=true;	
+							rbx=rx(rbix);
+							rby=ry(rbix);	
 
+							lix=coord2ind(DEM,lbx,lby);	
 							rix=coord2ind(DEM,rbx,rby);
-							RIX=GRIDobj(DEM,'logical');
-							RIX.Z(rix)=true;
+
+							Seg=modify(Sn,'downstreamto',rix);
+							Seg=modify(Seg,'upstreamto',lix);
+
+							%Remake stream with downstream bound node added back in
+							WSEG=GRIDobj(DEM,'logical');
+							WSEG.Z(Seg.IXgrid)=true;
+							WSEG.Z(lix)=true;
+							% Add back in upstream node if it's the end of the stream
+							if jj==num_bnds-1
+								WSEG.Z(rix)=true;
+							end
+							Seg=STREAMobj(FD,WSEG);
+
+							% Check length of stream, if it's less than two nodes,
+							% move down stream until it's greater than two nodes
+							lbix_new=lbix+1;
+							first_time=true;
+							while numel(Seg.IXgrid)<=2
+								if first_time
+									wrn_mssg=['Segment ' num2str(jj) ' of chosen segments was too short, segment bound was expanded downstream'];
+									wd=warndlg(wrn_mssg);
+									uiwait(wd);
+								end
+								lix_new=coord2ind(DEM,rx(lbix_new),ry(lbix_new));
+								WSEG.Z(lix_new)=true;
+								Seg=STREAMobj(FD,WSEG);
+								lbix_new=lbix_new+1;
+								first_time=false;
+							end
 
 							% Construct bound list
 							if jj<num_bnds-1
 								bnd_ix(jj,1)=rix;
 							end	
-
-							Seg=modify(Sn,'downstreamto',RIX);
-							Seg=modify(Seg,'upstreamto',LIX);
 
 							% Calculate chi to find ksn and bestfit concavity 
 							if strcmp(theta_method,'ref')
@@ -1439,22 +1489,47 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							lb_dadist=sqrt(sum(bsxfun(@minus, ra, lb).^2,2));
 							rb_dadist=sqrt(sum(bsxfun(@minus, ra, rb).^2,2));
 
-							lbx=rx(lb_dadist==min(lb_dadist));
-							lby=ry(lb_dadist==min(lb_dadist));
+							[~,lbix]=min(lb_dadist);
+							[~,rbix]=min(rb_dadist);
 
-							rbx=rx(rb_dadist==min(rb_dadist));
-							rby=ry(rb_dadist==min(rb_dadist));	
+							lbx=rx(lbix);
+							lby=ry(lbix);
+
+							rbx=rx(rbix);
+							rby=ry(rbix);	
 
 							lix=coord2ind(DEM,lbx,lby);
-							LIX=GRIDobj(DEM,'logical');
-							LIX.Z(lix)=true;	
-
 							rix=coord2ind(DEM,rbx,rby);
-							RIX=GRIDobj(DEM,'logical');
-							RIX.Z(rix)=true;	
 
-							Seg=modify(Sn,'downstreamto',RIX);
-							Seg=modify(Seg,'upstreamto',LIX);
+							Seg=modify(Sn,'downstreamto',rix);
+							Seg=modify(Seg,'upstreamto',lix);
+
+							%Remake stream with downstream bound node added back in
+							WSEG=GRIDobj(DEM,'logical');
+							WSEG.Z(Seg.IXgrid)=true;
+							WSEG.Z(lix)=true;
+							% Add back in upstream node if it's the end of the stream
+							if jj==num_bnds-1
+								WSEG.Z(rix)=true;
+							end
+							Seg=STREAMobj(FD,WSEG);
+
+							% Check length of stream, if it's less than two nodes,
+							% move down stream until it's greater than two nodes
+							lbix_new=lbix+1;
+							first_time=true;
+							while numel(Seg.IXgrid)<=2
+								if first_time
+									wrn_mssg=['Segment ' num2str(jj) ' of chosen segments was too short, segment bound was expanded downstream'];
+									wd=warndlg(wrn_mssg);
+									uiwait(wd);
+								end
+								lix_new=coord2ind(DEM,rx(lbix_new),ry(lbix_new));
+								WSEG.Z(lix_new)=true;
+								Seg=STREAMobj(FD,WSEG);
+								lbix_new=lbix_new+1;
+								first_time=false;
+							end							
 
 							% Construct bound list
 							if jj<num_bnds-1
@@ -1912,22 +1987,47 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							lb_chidist=sqrt(sum(bsxfun(@minus, rc, lb).^2,2));
 							rb_chidist=sqrt(sum(bsxfun(@minus, rc, rb).^2,2));
 
-							lbx=rx(lb_chidist==min(lb_chidist));
-							lby=ry(lb_chidist==min(lb_chidist));
+							[~,lbix]=min(lb_chidist);
+							[~,rbix]=min(rb_chidist);
 
-							rbx=rx(rb_chidist==min(rb_chidist));
-							rby=ry(rb_chidist==min(rb_chidist));	
+							lbx=rx(lbix);
+							lby=ry(lbix);
+
+							rbx=rx(rbix);
+							rby=ry(rbix);
 
 							lix=coord2ind(DEM,lbx,lby);
-							LIX=GRIDobj(DEM,'logical');
-							LIX.Z(lix)=true;	
-
 							rix=coord2ind(DEM,rbx,rby);
-							RIX=GRIDobj(DEM,'logical');
-							RIX.Z(rix)=true;	
 
-							Seg=modify(Sn,'downstreamto',RIX);
-							Seg=modify(Seg,'upstreamto',LIX);
+							Seg=modify(Sn,'downstreamto',rix);
+							Seg=modify(Seg,'upstreamto',lix);
+
+							%Remake stream with downstream bound node added back in
+							WSEG=GRIDobj(DEM,'logical');
+							WSEG.Z(Seg.IXgrid)=true;
+							WSEG.Z(lix)=true;
+							% Add back in upstream node if it's the end of the stream
+							if jj==num_bnds-1
+								WSEG.Z(rix)=true;
+							end
+							Seg=STREAMobj(FD,WSEG);
+
+							% Check length of stream, if it's less than two nodes,
+							% move down stream until it's greater than two nodes
+							lbix_new=lbix+1;
+							first_time=true;
+							while numel(Seg.IXgrid)<=2
+								if first_time
+									wrn_mssg=['Segment ' num2str(jj) ' of chosen segments was too short, segment bound was expanded downstream'];
+									wd=warndlg(wrn_mssg);
+									uiwait(wd);
+								end
+								lix_new=coord2ind(DEM,rx(lbix_new),ry(lbix_new));
+								WSEG.Z(lix_new)=true;
+								Seg=STREAMobj(FD,WSEG);
+								lbix_new=lbix_new+1;
+								first_time=false;
+							end
 
 							% Construct bound list
 							if jj<num_bnds-1
@@ -2199,27 +2299,47 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							lb_dist=sqrt(sum(bsxfun(@minus, rd, lb).^2,2));
 							rb_dist=sqrt(sum(bsxfun(@minus, rd, rb).^2,2));
 
-							lbx=rx(lb_dist==min(lb_dist));
-							lby=ry(lb_dist==min(lb_dist));
+							[~,lbix]=min(lb_dist);
+							[~,rbix]=min(rb_dist);
 
-							rbx=rx(rb_dist==min(rb_dist));
-							rby=ry(rb_dist==min(rb_dist));	
+							lbx=rx(lbix);
+							lby=ry(lbix);
 
-							lix=coord2ind(DEM,lbx,lby);
-							LIX=GRIDobj(DEM,'logical');
-							LIX.Z(lix)=true;	
+							rbx=rx(rbix);
+							rby=ry(rbix);	
 
+							lix=coord2ind(DEM,lbx,lby);	
 							rix=coord2ind(DEM,rbx,rby);
-							RIX=GRIDobj(DEM,'logical');
-							RIX.Z(rix)=true;
 
-							% Construct bound list
-							if jj<num_bnds-1
-								bnd_ix(jj,1)=rix;
-							end	
+							Seg=modify(Sn,'downstreamto',rix);
+							Seg=modify(Seg,'upstreamto',lix);
 
-							Seg=modify(Sn,'downstreamto',RIX);
-							Seg=modify(Seg,'upstreamto',LIX);
+							%Remake stream with downstream bound node added back in
+							WSEG=GRIDobj(DEM,'logical');
+							WSEG.Z(Seg.IXgrid)=true;
+							WSEG.Z(lix)=true;
+							% Add back in upstream node if it's the end of the stream
+							if jj==num_bnds-1
+								WSEG.Z(rix)=true;
+							end
+							Seg=STREAMobj(FD,WSEG);
+
+							% Check length of stream, if it's less than two nodes,
+							% move down stream until it's greater than two nodes
+							lbix_new=lbix+1;
+							first_time=true;
+							while numel(Seg.IXgrid)<=2
+								if first_time
+									wrn_mssg=['Segment ' num2str(jj) ' of chosen segments was too short, segment bound was expanded downstream'];
+									wd=warndlg(wrn_mssg);
+									uiwait(wd);
+								end
+								lix_new=coord2ind(DEM,rx(lbix_new),ry(lbix_new));
+								WSEG.Z(lix_new)=true;
+								Seg=STREAMobj(FD,WSEG);
+								lbix_new=lbix_new+1;
+								first_time=false;
+							end
 
 							% Calculate chi to find ksn and bestfit concavity 
 							if strcmp(theta_method,'ref')
@@ -2436,22 +2556,47 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							lb_dadist=sqrt(sum(bsxfun(@minus, ra, lb).^2,2));
 							rb_dadist=sqrt(sum(bsxfun(@minus, ra, rb).^2,2));
 
-							lbx=rx(lb_dadist==min(lb_dadist));
-							lby=ry(lb_dadist==min(lb_dadist));
+							[~,lbix]=min(lb_dadist);
+							[~,rbix]=min(rb_dadist);
 
-							rbx=rx(rb_dadist==min(rb_dadist));
-							rby=ry(rb_dadist==min(rb_dadist));	
+							lbx=rx(lbix);
+							lby=ry(lbix);
+
+							rbx=rx(rbix);
+							rby=ry(rbix);	
 
 							lix=coord2ind(DEM,lbx,lby);
-							LIX=GRIDobj(DEM,'logical');
-							LIX.Z(lix)=true;	
-
 							rix=coord2ind(DEM,rbx,rby);
-							RIX=GRIDobj(DEM,'logical');
-							RIX.Z(rix)=true;	
 
-							Seg=modify(Sn,'downstreamto',RIX);
-							Seg=modify(Seg,'upstreamto',LIX);
+							Seg=modify(Sn,'downstreamto',rix);
+							Seg=modify(Seg,'upstreamto',lix);
+
+							%Remake stream with downstream bound node added back in
+							WSEG=GRIDobj(DEM,'logical');
+							WSEG.Z(Seg.IXgrid)=true;
+							WSEG.Z(lix)=true;
+							% Add back in upstream node if it's the end of the stream
+							if jj==num_bnds-1
+								WSEG.Z(rix)=true;
+							end
+							Seg=STREAMobj(FD,WSEG);
+
+							% Check length of stream, if it's less than two nodes,
+							% move down stream until it's greater than two nodes
+							lbix_new=lbix+1;
+							first_time=true;
+							while numel(Seg.IXgrid)<=2
+								if first_time
+									wrn_mssg=['Segment ' num2str(jj) ' of chosen segments was too short, segment bound was expanded downstream'];
+									wd=warndlg(wrn_mssg);
+									uiwait(wd);
+								end
+								lix_new=coord2ind(DEM,rx(lbix_new),ry(lbix_new));
+								WSEG.Z(lix_new)=true;
+								Seg=STREAMobj(FD,WSEG);
+								lbix_new=lbix_new+1;
+								first_time=false;
+							end
 
 							% Construct bound list
 							if jj<num_bnds-1
@@ -2883,7 +3028,11 @@ function [OUT]=ChiCalc(S,DEM,A,a0,varargin)
 	% elevation values at nodes
 	zx   = double(DEM.Z(S.IXgrid));
 	% elevation at outlet
-	zb   = double(DEM.Z(S.IXgrid(outlet)));
+	if nnz(outlet)==0
+		zb=min(zx);
+	else
+		zb   = double(DEM.Z(S.IXgrid(outlet)));
+	end
 	% a is the term inside the brackets of equation 6b 
 	a    = double(a0./(A.Z(S.IXgrid)*(A.cellsize.^2)));
 	% x is the cumulative horizontal distance in upstream direction
