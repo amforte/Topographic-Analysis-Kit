@@ -134,6 +134,8 @@ function TAK(func_name,wdir,varargin)
 		if nf_args==num_req
 			if strcmp(req_args{2},'all')
 				cmpFindThreshold(wdir,req_args{1},req_args{2});
+			elseif strcmp(req_args{2},'auto')
+				cmpFindThreshold(wdir,req_args{1},req_args{2});
 			else
 				cmpFindThreshold(wdir,req_args{1},str2num(req_args{2}));
 			end
@@ -148,10 +150,22 @@ function TAK(func_name,wdir,varargin)
 				switch pn
 				case 'ref_concavity'
 					opt_args{evens(ii)}=str2num(pv);
+				case 'max_threshold'
+					opt_args{evens(ii)}=str2num(pv);
+				case 'remake_network'
+					if strcmpi(pv,'false')
+						opt_args{evens(ii)}=false;
+					elseif strcmpi(pv,'true')
+						opt_args{evens(ii)}=true;
+					else
+						opt_args{evens(ii)}=logical(str2num(pv));
+					end
 				end
 			end
 
 			if strcmp(req_args{2},'all')
+				cmpFindThreshold(wdir,req_args{1},req_args{2},opt_args);
+			elseif strcmp(req_args{2},'auto')
 				cmpFindThreshold(wdir,req_args{1},req_args{2},opt_args);
 			else
 				cmpFindThreshold(wdir,req_args{1},str2num(req_args{2}),opt_args);

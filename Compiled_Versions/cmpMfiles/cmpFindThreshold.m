@@ -7,22 +7,43 @@ function cmpFindThreshold(wdir,MatFile,num_streams,varargin)
 	%	If 'num_streams' is numeric, then the function will use the average of the user selected 
 	%	minimum threshold areas to define a new stream network. If 'num_streams' is set to 'all', the
 	%	function will use the user selected minimum threshold areas to define a new stream network for
-	%	each individual stream (i.e. the minimum threshold area will be different for each stream base
-	%	on your selections).  You can use either chi-elevation or slope-area plots (the default), both plots
-	%	will be displayed regardless of choice, to visually select where channels begin.  Function
-	%	also outputs the lists of selected threshold areas and distance from channel head to divide.
+	%	each individual stream, i.e. the minimum threshold area will be different for each stream base
+	%	on your selections (though you can force a similar average threshold behavior with the 
+	%	'remake_network' parameter).  You can use either chi-elevation or slope-area plots (the default),
+	%	both plots will be displayed regardless of choice, to visually select where channels begin.  Function
+	%	also outputs the lists of selected threshold areas and distance from channel head to divide. There is
+	%	now also an 'auto' option which will attempt to find the colluvial-fluvial transition using the
+	%	ischange function on a normalized chi-elevation plot. The auto function may be over shoot the 
+	%	threshold area, especially in areas where there is a noticeable lower relief portion of a stream, 
+	%	e.g. a stream draining the edge of a plateau, one that has recently captured drainage area, etc. 
+	%	You can try to control for this by setting the optional 'max_threshold' parameter, which will serve
+	% 	as a ceiling on the auto detected threshold.
 	%
 	% Required Inputs:
 	%	MatFile - Name of matfile output from either 'cmpMakeStreams' or the name of a single basin mat file from 
 	%		'cmpProcessRiverBasins'
-	%	num_streams - Number of stream profiles to view and select threshold areas, if you wish to manually 
-	%		select threshold areas for all streams in the provided network, provide 'all' instead of a number
+	%	num_streams - Number of stream profiles to view and select threshold areas. If you wish to manually 
+	%		select threshold areas for all streams in the provided network, provide 'all' instead of a number.
+	%		If you want to instead try an auto detection method for the colluvial to fluvial transtion, provide
+	%		'auto'.
 	%
 	% Optional Inputs;
-	%	ref_concavity [0.50] - refrence concavity used to generate the chi-elevation plot
+	%	ref_concavity [0.50] - refrence concavity used to generate the chi-elevation plot. Also used if 
+	%		'num_streams' is set to 'auto' as the threshold area is determined based on changes in chi-elevation
+	%		relationships
 	%	pick_method ['slope_area']- Type of plot you wish to choose the threshold area on, valid options are:
 	%		'chi' - Choose threshold areas on a chi elevation plot
 	%		'slope_area' - Choose threshold areas on slope-area plot
+	%	remake_network [false] - logical flag used if 'num_streams' is 'auto' or 'all'. If remake_network is false 
+	%		(the default), then each channel head will have a threshold area based on the user selection or the 
+	%		auto detection. If remake_network is true, then the behavior will be similar to if a numeric value is
+	%		provided to 'num_streams', where the mean threshold area of all streams will be used to regenerate the
+	%		network. If remake_network is false, this means the total number of channel heads of the output 'Sn' 
+	%		STREAMobj will equal that of the input 'S' and thus the drainage density will basically remain unchanged.
+	%		If remake_network is true then there will likely be different numbers of channel heads between Sn and S 
+	%		(unless the average threshold area happens to equals the minimum threshold area used to generate S).
+	%	max_threshold [] - a maximum threshold area (in squared map units) to not be exceeded by any stream when the
+	%		'num_streams' is set to 'auto'.
 	%
 	% Outputs:
 	%	thresh_table.txt - text file containing a list of the threshold areas and xds for each stream 
@@ -35,7 +56,7 @@ function cmpFindThreshold(wdir,MatFile,num_streams,varargin)
     %   FindThreshold /path/to/wdir Topo.mat 25 pick_method chi
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Updated : 07/02/18 %
+	% Function Written by Adam M. Forte - Updated : 02/09/19 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	if isdeployed
 		if ~isempty(varargin)
@@ -48,10 +69,12 @@ function cmpFindThreshold(wdir,MatFile,num_streams,varargin)
 	p.FunctionName = 'cmpFitThreshold';
 	addRequired(p,'wdir',@(x) ischar(x));
 	addRequired(p,'MatFile',@(x) ~isempty(regexp(x,regexptranslate('wildcard','*.mat'))));
-	addRequired(p,'num_streams',@(x) isnumeric(x) & isscalar(x) || ischar(validatestring(x,{'all'})));
+	addRequired(p,'num_streams',@(x) isnumeric(x) & isscalar(x) || ischar(validatestring(x,{'all','auto'})));
 
 	addParameter(p,'pick_method','slope_area',@(x) ischar(validatestring(x,{'chi','slope_area'})));
 	addParameter(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'remake_network',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'max_threshold',[],@(x) isscalar(x) && isnumeric(x));
 
 	parse(p,wdir,MatFile,num_streams,varargin{:});
 	wdir=p.Results.wdir;
@@ -60,6 +83,8 @@ function cmpFindThreshold(wdir,MatFile,num_streams,varargin)
 
 	pick_method=p.Results.pick_method;
 	ref_theta=p.Results.ref_concavity;
+	remake_network=p.Results.remake_network;
+	mt=p.Results.max_threshold;
 
 	% Determine the type of input
 	MatFile=fullfile(wdir,MatFile);
@@ -88,8 +113,10 @@ function cmpFindThreshold(wdir,MatFile,num_streams,varargin)
 	% Parse type of operation
 	if isnumeric(num_streams)
 		op=1;
-	else
+	elseif strcmp(num_streams,'all')
 		op=2;
+	elseif strcmp(num_streams,'auto')
+		op=3;
 	end
 
 	switch op
@@ -369,13 +396,109 @@ function cmpFindThreshold(wdir,MatFile,num_streams,varargin)
 		xlabel('Mean distance from channel head to divide (m)');
 		hold off
 
-		% Collapse ix list and create logical raster
-		ix_list=vertcat(ix_list{:});
-		ix_list=unique(ix_list);
-		W=GRIDobj(DEM,'logical');
-		W.Z(ix_list)=true;
+		if remake_network
+			mean_thresh=mean(thresh_list);
+			Sn=STREAMobj(FD,'minarea',mean_thresh,'unit','mapunits');
+		else
+			% Collapse ix list and create logical raster
+			ix_list=vertcat(ix_list{:});
+			ix_list=unique(ix_list);
+			W=GRIDobj(DEM,'logical');
+			W.Z(ix_list)=true;
 
-		Sn=STREAMobj(FD,W);
+			Sn=STREAMobj(FD,W);
+		end
+	case 3
+		% Generate empty outputs
+		xd_list=zeros(numel(chix),1);
+		thresh_list=zeros(numel(chix),1);
+		ix_list=cell(numel(chix),1);
+
+		w1=waitbar(0,'Finding stream thresholds based on chi-elevation inflection...');
+		for ii=1:numel(chix)
+			chOI=chix(ii);
+
+			UP=dependencemap(FD,chOI);
+			FLDSt=FLUS.*UP;
+
+			[~,ix]=max(FLDSt);
+
+			IX=influencemap(FD,ix);
+
+			St=STREAMobj(FD,IX);
+			z=mincosthydrocon(St,DEM,'interp',0.1);
+			c=chitransform(St,A,'mn',ref_theta,'a0',1);
+			da=getnal(St,DA);
+
+			% ischange expects an ascending ordered list
+			[cs,six]=sort(c);
+			zs=z(six);
+			das=da(six);
+			
+			% Normalize chi and elevation so consistent threshold can be used
+			zn=zs-min(zs);
+			zn=zn./max(zn);
+			cn=cs./max(cs);
+
+			TF=ischange(zn,'linear','SamplePoints',cn,'Threshold',0.05);
+			chi_ix=find(TF,1,'last');
+
+			if isempty(chi_ix)
+				% Catch for if no change point is detected
+				ta=DA.Z(chOI);
+			else 
+				ta=das(chi_ix);
+				if ~isempty(mt) && ta>mt
+					ta=mt;
+				end
+			end
+
+			thresh_list(ii,1)=ta;
+			[~,loc_ix]=min(abs(da-ta));
+
+			% Find xd
+			cx=St.x(loc_ix);
+			cy=St.y(loc_ix);
+			ccix=coord2ind(DEM,cx,cy);
+			xd_list(ii,1)=FLDS.Z(ccix);
+
+			% Find ix for all streams segments
+			ix_list{ii,1}=St.IXgrid(da>=ta);			
+			waitbar(ii/numel(chix));
+		end
+		close(w1);
+
+		f1=figure(1);
+		clf
+		set(f1,'Units','normalized','Position',[0.5 0.1 0.4 0.8],'renderer','painters');
+		subplot(2,1,1)
+		hold on
+		edges=logspace(log10(min(thresh_list)),log10(max(thresh_list)),10);
+		[N,e]=histcounts(thresh_list,edges);
+		histogram(thresh_list,edges);
+		set(gca,'XScale','log');
+		xlabel('Picked Threshold Areas (m^{2})');
+		hold off
+
+		subplot(2,1,2)
+		hold on
+		[N,~]=histcounts(xd_list,50);
+		histogram(xd_list,50);
+		xlabel('Mean distance from channel head to divide (m)');
+		hold off
+
+		if remake_network
+			mean_thresh=mean(thresh_list);
+			Sn=STREAMobj(FD,'minarea',mean_thresh,'unit','mapunits');
+		else
+			% Collapse ix list and create logical raster
+			ix_list=vertcat(ix_list{:});
+			ix_list=unique(ix_list);
+			W=GRIDobj(DEM,'logical');
+			W.Z(ix_list)=true;
+
+			Sn=STREAMobj(FD,W);
+		end
 	end
 
 	% Generate outputs
