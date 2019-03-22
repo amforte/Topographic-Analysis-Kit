@@ -191,10 +191,7 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	end
 
 	disp('Extracting total stream network')
-	DEM_res=DEM.cellsize;
-	min_area=floor(threshold_area/(DEM_res*DEM_res));
-	isstream=A>min_area;
-	S=STREAMobj(FD,isstream);
+	S=STREAMobj(FD,'unit','mapunits','minarea',min_area);
 
 	if save_output
 		disp('Saving outputs')
