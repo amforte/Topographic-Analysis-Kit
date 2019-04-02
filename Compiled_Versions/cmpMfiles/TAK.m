@@ -338,7 +338,11 @@ function TAK(func_name,wdir,varargin)
 				switch pn
 				case 'segment_length'
 					opt_args{evens(ii)}=str2num(pv);
+				case 'smooth_distance'
+					opt_args{evens(ii)}=str2num(pv);
 				case 'ref_concavity'
+					opt_args{evens(ii)}=str2num(pv);
+				case 'min_order'
 					opt_args{evens(ii)}=str2num(pv);
 				case 'min_elevation'
 					opt_args{evens(ii)}=str2num(pv);
