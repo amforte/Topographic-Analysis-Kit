@@ -214,8 +214,8 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 			eintu=ci(2,2);
 
 			pred_el=(rc.*ksn)+eint;
-			pred_el_u=(rc.*ksnu)+eintu;
-			pred_el_l=(rc.*ksnl)+eintl;
+			pred_el_u=(rc.*ksnl)+eintu;
+			pred_el_l=(rc.*ksnu)+eintl;
 
 			subplot(3,1,1)
 			hold on
@@ -371,8 +371,8 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 				eintu=ci(2,2);
 
 				pred_el=(rc.*ksn)+eint;
-				pred_el_u=(rc.*ksnu)+eintu;
-				pred_el_l=(rc.*ksnl)+eintl;
+				pred_el_u=(rc.*ksnl)+eintu;
+				pred_el_l=(rc.*ksnu)+eintl;
 
 				subplot(3,1,1)
 				hold on
@@ -506,8 +506,8 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 				eintu=ci(2,2);
 
 				pred_el=(rc.*ksn)+eint;
-				pred_el_u=(rc.*ksnu)+eintu;
-				pred_el_l=(rc.*ksnl)+eintl;
+				pred_el_u=(rc.*ksnl)+eintu;
+				pred_el_l=(rc.*ksnu)+eintl;
 
 				f1=figure(1);
 				clf; cla;
@@ -692,8 +692,8 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 			eintu=ci(2,2);
 
 			pred_el=(rc.*ksn)+eint;
-			pred_el_u=(rc.*ksnu)+eintu;
-			pred_el_l=(rc.*ksnl)+eintl;
+			pred_el_u=(rc.*ksnl)+eintu;
+			pred_el_l=(rc.*ksnu)+eintl;
 
 			subplot(3,1,1)
 			hold on
@@ -852,8 +852,8 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 				eintu=ci(2,2);
 
 				pred_el=(rc.*ksn)+eint;
-				pred_el_u=(rc.*ksnu)+eintu;
-				pred_el_l=(rc.*ksnl)+eintl;
+				pred_el_u=(rc.*ksnl)+eintu;
+				pred_el_l=(rc.*ksnu)+eintl;
 
 				subplot(3,1,1)
 				hold on
@@ -984,8 +984,8 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 				eintu=ci(2,2);
 
 				pred_el=(rc.*ksn)+eint;
-				pred_el_u=(rc.*ksnu)+eintu;
-				pred_el_l=(rc.*ksnl)+eintl;
+				pred_el_u=(rc.*ksnl)+eintu;
+				pred_el_l=(rc.*ksnu)+eintl;
 
 				f1=figure(1);
 				clf; cla;
