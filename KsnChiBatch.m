@@ -649,9 +649,18 @@ function [ksn_ms]=KSN_Quick(DEM,DEMc,A,S,theta_ref,segment_length)
 	Z_RES=DEMc-DEM;
 
 	ksn=G./(A.*(A.cellsize^2)).^(-theta_ref);
+
+	SD=GRIDobj(DEM);
+	SD.Z(S.IXgrid)=S.distance;
 	
 	ksn_ms=STREAMobj2mapstruct(S,'seglength',segment_length,'attributes',...
-		{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'cut_fill' Z_RES @mean});
+		{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'cut_fill' Z_RES @mean...
+		'min_dist' SD @min 'max_dist' SD @max});
+
+	seg_dist=[ksn_ms.max_dist]-[ksn_ms.min_dist];
+	distcell=num2cell(seg_dist');
+	[ksn_ms(1:end).seg_dist]=distcell{:};
+	ksn_ms=rmfield(ksn_ms,{'min_dist','max_dist'});
 end
 
 function [ksn_ms]=KSN_Trunk(DEM,DEMc,A,S,theta_ref,segment_length,min_order)
@@ -669,13 +678,24 @@ function [ksn_ms]=KSN_Trunk(DEM,DEMc,A,S,theta_ref,segment_length,min_order)
 
 	ksn=G./(A.*(A.cellsize^2)).^(-theta_ref);
 
+	SDmax=GRIDobj(DEM);
+	SDmin=GRIDobj(DEM);
+	SDmax.Z(Smax.IXgrid)=Smax.distance;
+	SDmin.Z(Smin.IXgrid)=Smin.distance;
+
 	ksn_ms_min=STREAMobj2mapstruct(Smin,'seglength',segment_length,'attributes',...
-		{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'cut_fill' Z_RES @mean});
+		{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'cut_fill' Z_RES @mean...
+		'min_dist' SDmin @min 'max_dist' SDmin @max});
 
 	ksn_ms_max=STREAMobj2mapstruct(Smax,'seglength',segment_length,'attributes',...
-		{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'cut_fill' Z_RES @mean});
+		{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'cut_fill' Z_RES @mean...
+		'min_dist' SDmax @min 'max_dist' SDmax @max});
 
 	ksn_ms=vertcat(ksn_ms_min,ksn_ms_max);
+	seg_dist=[ksn_ms.max_dist]-[ksn_ms.min_dist];
+	distcell=num2cell(seg_dist');
+	[ksn_ms(1:end).seg_dist]=distcell{:};
+	ksn_ms=rmfield(ksn_ms,{'min_dist','max_dist'});
 end
 
 function [ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length)
@@ -753,6 +773,7 @@ function [ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length)
 						ksn_ms(seg_count).uparea=mean(da(bin_ix));
 						ksn_ms(seg_count).gradient=mean(g(bin_ix));
 						ksn_ms(seg_count).cut_fill=mean(z_res(bin_ix));
+						ksn_ms(seg_count).seg_dist=max(S.distance(bin_ix))-min(S.distance(bin_ix));
 						ksn_ms(seg_count).chi_r2=r2;
 						
 						seg_count=seg_count+1;
