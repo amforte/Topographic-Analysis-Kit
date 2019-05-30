@@ -172,7 +172,7 @@ function cmpMakeStreams(wdir,dem,threshold_area,file_name,varargin)
 	end
 
 	disp('Extracting total stream network')
-	S=STREAMobj(FD,'unit','mapunits','minarea',min_area);
+	S=STREAMobj(FD,'unit','mapunits','minarea',threshold_area);
 
 	save(MatFileName,'A','S','-append','-v7.3');
 	MS=STREAMobj2mapstruct(S);

@@ -191,7 +191,7 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	end
 
 	disp('Extracting total stream network')
-	S=STREAMobj(FD,'unit','mapunits','minarea',min_area);
+	S=STREAMobj(FD,'unit','mapunits','minarea',threshold_area);
 
 	if save_output
 		disp('Saving outputs')
