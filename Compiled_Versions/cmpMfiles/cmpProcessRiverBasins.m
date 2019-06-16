@@ -46,18 +46,19 @@ function cmpProcessRiverBasins(wdir,MakeStreamsMat,river_mouths,basin_dir,vararg
 	% 		relief_radii [2500] - a 1d vector (column or row) of radii to use for calculating local relief, values must be in map units. If more than one value is provided
 	% 			the function assumes you wish to calculate relief at all of these radii. Note, the local relief function is slow so providing multiple radii will
 	% 			slow code performance. Saved outputs will be in a m x 2 cell array, with the columns of the cell array corresponding to the GRIDobj and the input radii.
-	
+	%		ksn_radius [5000] - radius of circular, moving area over which to average ksn values for making an interpolated ksn grid
+	%
 	% Notes:
 	% 		-The code will perform a check of the river_mouths input to confirm that 1) there are no duplicate ID numbers (it will dump your ID numbers and create new
 	% 			ID numbers if this is the case and output a text file contatining the river mouth locations with their new ID nubmers) and 2) that no provided river mouths 
 	% 			are outside the boundaries of the DEM (it will remove these IDs if this the case).
-	
- %   	Examples if running for the command line, minus OS specific way of calling main TAK function:
- %      ProcessRiverBasins /path/to/wdir Topo.mat river_mouths.txt Basins
- %      ProcessRiverBasins /path/to/wdir Topo.mat river_mouths.shp Basins
+	%
+ 	%  	Examples if running for the command line, minus OS specific way of calling main TAK function:
+ 	%   ProcessRiverBasins /path/to/wdir Topo.mat river_mouths.txt Basins
+ 	%   ProcessRiverBasins /path/to/wdir Topo.mat river_mouths.shp Basins
 	%   ProcessRiverBasins /path/to/wdir Topo.mat 500 Basins
- %      ProcessRiverBasins /path/to/wdir Topo.mat river_mouths.txt Basins add_cat_grids AddCatGrids.mat add_grids AddGrids.mat
- %      ProcessRiverBasins /path/to/wdir Topo.mat river_mouths.shp Basins calc_relief true relief_radii [1000 2500 5000]
+ 	%   ProcessRiverBasins /path/to/wdir Topo.mat river_mouths.txt Basins add_cat_grids AddCatGrids.mat add_grids AddGrids.mat
+ 	%   ProcessRiverBasins /path/to/wdir Topo.mat river_mouths.shp Basins calc_relief true relief_radii [1000 2500 5000]
 	%			
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 07/02/18 %
@@ -90,6 +91,7 @@ function cmpProcessRiverBasins(wdir,MakeStreamsMat,river_mouths,basin_dir,vararg
 	addParamValue(p,'relief_radii',[2500],@(x) isnumeric(x) && size(x,2)==1 || size(x,1)==1);
 	addParamValue(p,'conditioned_DEM',[],@(x) ~isempty(regexp(x,regexptranslate('wildcard','*.mat'))));
 	addParamValue(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
+	addParamValue(p,'ksn_radius',5000,@(x) isnumeric(x) && isscalar(x));
 
 	parse(p,wdir,MakeStreamsMat,river_mouths,basin_dir,varargin{:});
 	wdir=p.Results.wdir;
@@ -111,6 +113,8 @@ function cmpProcessRiverBasins(wdir,MakeStreamsMat,river_mouths,basin_dir,vararg
 	relief_radii=p.Results.relief_radii;
 	iv=p.Results.interp_value;
 	DEMhc=p.Results.conditioned_DEM;
+	radius=p.Results.ksn_radius;
+
 
 
 	% Set redo_flag
@@ -390,10 +394,11 @@ function cmpProcessRiverBasins(wdir,MakeStreamsMat,river_mouths,basin_dir,vararg
 		
 		% Make interpolated ksn grid
 		try 
-			[KsnOBJc] = KsnInt(DEMoc,MSNc);
-			save(FileName,'KsnOBJc','-append');
+			[KsnOBJc] = KsnAvg(DEMoc,MSNc,radius);
+			save(FileName,'KsnOBJc','radius','-append');
 		catch
 			warning(['Interpolation of KSN grid failed for basin ' num2str(RiverMouth(:,3))]);
+			save(FileName,'radius','-append');
 		end
 
 		% If additional grids are present, append them to the mat file
@@ -694,25 +699,32 @@ function [KSN,R2] = Chi_Z_Spline(c,z)
 
 end
 
-function [KSNGrid] = KsnInt(DEM,ksn_ms)
-    [xx,yy]=getcoordinates(DEM);
-    [X,Y]=meshgrid(xx,yy);
+function [KSNGrid] = KsnAvg(DEM,ksn_ms,radius)
 
-    ksn_cell=cell(numel(ksn_ms),1);
-    for ii=1:numel(ksn_ms)
-        ksn_cell{ii}=ones(numel(ksn_ms(ii).X),1)*ksn_ms(ii).ksn;
-    end
-    ksn_x=vertcat(ksn_ms.X); ksn_y=vertcat(ksn_ms.Y); ksn_ksn=vertcat(ksn_cell{:});
-    idx=isnan(ksn_ksn);
-    ksn_x(idx)=[];
-    ksn_y(idx)=[];
-    ksn_ksn(idx)=[];
-    
-    warning off
-    Fk=scatteredInterpolant(ksn_x,ksn_y,ksn_ksn,'natural');
-    warning on
-    ksn_int=Fk(X,Y);
-    KSNGrid=GRIDobj(xx,yy,ksn_int);
-    IDX=isnan(DEM);
-    KSNGrid.Z(IDX.Z)=NaN;
+	% Calculate radius
+	radiuspx = ceil(radius/DEM.cellsize);
+
+	% Record mask of current NaNs
+	MASK=isnan(DEM.Z);
+
+	% Make grid with values along channels
+	KSNGrid=GRIDobj(DEM);
+	KSNGrid.Z(:,:)=NaN;
+	for ii=1:numel(ksn_ms)
+		ix=coord2ind(DEM,ksn_ms(ii).X,ksn_ms(ii).Y);
+		KSNGrid.Z(ix)=ksn_ms(ii).ksn;
+	end
+
+	% Local mean based on radius
+	ISNAN=isnan(KSNGrid.Z);
+    [~,L] = bwdist(~ISNAN,'e');
+    ksng = KSNGrid.Z(L);           
+    FLT   = fspecial('disk',radiuspx);
+    ksng   = imfilter(ksng,FLT,'symmetric','same','conv');
+
+    % Set original NaN cells back to NaN
+    ksng(MASK)=NaN;
+
+    % Output
+    KSNGrid.Z=ksng;
 end

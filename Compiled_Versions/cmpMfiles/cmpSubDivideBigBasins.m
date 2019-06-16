@@ -124,7 +124,7 @@ function cmpSubDivideBigBasins(wdir,basin_dir,max_basin_size,divide_method,varar
 		if DA>=max_basin_size
 			
 			% Load in required basin files and rename
-			load(FileName,'RiverMouth','DEMoc','DEMcc','FDc','Ac','Sc','ksn_method','gradient_method');
+			load(FileName,'RiverMouth','DEMoc','DEMcc','FDc','Ac','Sc','ksn_method','gradient_method','radius');
 			DEM=DEMoc;
 			DEMhc=DEMcc;
 			S=Sc;
@@ -562,10 +562,11 @@ function cmpSubDivideBigBasins(wdir,basin_dir,max_basin_size,divide_method,varar
 				
 				% Make interpolated ksn grid
 				try 
-					[KsnOBJc] = KsnInt(DEMoc,MSNc);
-					save(FileName,'KsnOBJc','-append');
+					[KsnOBJc] = KsnAvg(DEMoc,MSNc,radius);
+					save(SubFileName,'KsnOBJc','radius','-append');
 				catch
 					warning(['Interpolation of KSN grid failed for basin ' num2str(RiverMouth(:,3))]);
+					save(SubFilename,'radius','-append');
 				end
 
 				VarList=whos('-file',FileName);
@@ -874,27 +875,34 @@ function [KSN,R2] = Chi_Z_Spline(c,z)
 
 end
 
-function [KSNGrid] = KsnInt(DEM,ksn_ms)
-    [xx,yy]=getcoordinates(DEM);
-    [X,Y]=meshgrid(xx,yy);
+function [KSNGrid] = KsnAvg(DEM,ksn_ms,radius)
 
-    ksn_cell=cell(numel(ksn_ms),1);
-    for ii=1:numel(ksn_ms)
-        ksn_cell{ii}=ones(numel(ksn_ms(ii).X),1)*ksn_ms(ii).ksn;
-    end
-    ksn_x=vertcat(ksn_ms.X); ksn_y=vertcat(ksn_ms.Y); ksn_ksn=vertcat(ksn_cell{:});
-    idx=isnan(ksn_ksn);
-    ksn_x(idx)=[];
-    ksn_y(idx)=[];
-    ksn_ksn(idx)=[];
-    
-    warning off
-    Fk=scatteredInterpolant(ksn_x,ksn_y,ksn_ksn,'natural');
-    ksn_int=Fk(X,Y);
-    KSNGrid=GRIDobj(xx,yy,ksn_int);
-    IDX=isnan(DEM);
-    KSNGrid.Z(IDX.Z)=NaN;
-    warning on
+	% Calculate radius
+	radiuspx = ceil(radius/DEM.cellsize);
+
+	% Record mask of current NaNs
+	MASK=isnan(DEM.Z);
+
+	% Make grid with values along channels
+	KSNGrid=GRIDobj(DEM);
+	KSNGrid.Z(:,:)=NaN;
+	for ii=1:numel(ksn_ms)
+		ix=coord2ind(DEM,ksn_ms(ii).X,ksn_ms(ii).Y);
+		KSNGrid.Z(ix)=ksn_ms(ii).ksn;
+	end
+
+	% Local mean based on radius
+	ISNAN=isnan(KSNGrid.Z);
+    [~,L] = bwdist(~ISNAN,'e');
+    ksng = KSNGrid.Z(L);           
+    FLT   = fspecial('disk',radiuspx);
+    ksng   = imfilter(ksng,FLT,'symmetric','same','conv');
+
+    % Set original NaN cells back to NaN
+    ksng(MASK)=NaN;
+
+    % Output
+    KSNGrid.Z=ksng;
 end
 
 function [x,y] = CheckUpstream(DEM,FD,ix)

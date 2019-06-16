@@ -40,6 +40,7 @@ function cmpKsnChiBatch(wdir,MatFile,product,varargin)
 	%			option should probably be left as true (i.e. chi will not be accurate if drainage area is not accurate), but this can be overly agressive
 	%			on certain DEMs and when used in tandem with 'min_elevation', it can be slow to calculate as it requires recalculation of the FLOWobj.
 	%	interp_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a conditioned DEM)
+	%	radius [5000] - radius of circular, moving area over which to average ksn values to produced an interpolated ksn grid if product is set to 'ksngrid' or 'all'
 	%
 	% Notes:
 	%	Please be aware that the production of the chigrid can be time consuming, so be patient...
@@ -75,6 +76,7 @@ function cmpKsnChiBatch(wdir,MatFile,product,varargin)
 	addParameter(p,'new_stream_net',[],@(x) ~isempty(regexp(x,regexptranslate('wildcard','*.mat'))));
 	addParameter(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
 	addParameter(p,'complete_networks_only',true,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'radius',5000,@(x) isscalar(x) && isnumeric(x));
 
 	parse(p,wdir,MatFile,product,varargin{:});
 	wdir=p.Results.wdir;
@@ -92,6 +94,7 @@ function cmpKsnChiBatch(wdir,MatFile,product,varargin)
 	DEMc=p.Results.conditioned_DEM;
 	cno=p.Results.complete_networks_only;
 	nsn=p.Results.new_stream_net;
+	radius=p.Results.radius;
 
 	% Determine the type of input
 	MatFile=fullfile(wdir,MatFile);
@@ -211,23 +214,7 @@ function cmpKsnChiBatch(wdir,MatFile,product,varargin)
 			[ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length);
 		end
 
-		[xx,yy]=getcoordinates(DEM);
-		[X,Y]=meshgrid(xx,yy);
-
-		ksn_cell=cell(numel(ksn_ms),1);
-		for ii=1:numel(ksn_ms)
-			ksn_cell{ii}=ones(numel(ksn_ms(ii).X),1)*ksn_ms(ii).ksn;
-		end
-		ksn_x=vertcat(ksn_ms.X); ksn_y=vertcat(ksn_ms.Y); ksn_ksn=vertcat(ksn_cell{:});
-
-		Fk=scatteredInterpolant(ksn_x,ksn_y,ksn_ksn);
-		ksn_int=Fk(X,Y);
-		KSNGrid=GRIDobj(xx,yy,ksn_int);
-		KSNGrid.Z(IDX.Z)=NaN;
-
-		M=GRIDobj(DEM,'logical');
-		M.Z(~isnan(DEM.Z))=true;
-		KSNGrid=crop(KSNGrid,M,NaN);
+		[KSNGrid]=KsnAvg(DEM,ksn_ms,radius);
 
 		disp('Writing ARC files')
 		out_file_ksng=[file_name_prefix '_ksngrid.txt'];
@@ -311,23 +298,7 @@ function cmpKsnChiBatch(wdir,MatFile,product,varargin)
 		end
 
 		disp('Calculating interpolated ksn grid')
-		[xx,yy]=getcoordinates(DEM);
-		[X,Y]=meshgrid(xx,yy);
-
-		ksn_cell=cell(numel(ksn_ms),1);
-		for ii=1:numel(ksn_ms)
-			ksn_cell{ii}=ones(numel(ksn_ms(ii).X),1)*ksn_ms(ii).ksn;
-		end
-		ksn_x=vertcat(ksn_ms.X); ksn_y=vertcat(ksn_ms.Y); ksn_ksn=vertcat(ksn_cell{:});
-
-		Fk=scatteredInterpolant(ksn_x,ksn_y,ksn_ksn);
-		ksn_int=Fk(X,Y);
-		KSNGrid=GRIDobj(xx,yy,ksn_int);
-		KSNGrid.Z(IDX.Z)=NaN;
-
-		M=GRIDobj(DEM,'logical');
-		M.Z(~isnan(DEM.Z))=true;
-		KSNGrid=crop(KSNGrid,M,NaN);
+		[KSNGrid]=KsnAvg(DEM,ksn_ms,radius);
 
 	    disp('Calculating chi map');
 		[ChiMap]=MakeChiMap(DEM,FD,A,S,theta_ref);
@@ -822,4 +793,34 @@ function [KSN,R2] = Chi_Z_Spline(c,z)
 	ssres=sum((zabsF-z_pred).^2);
 	R2=1-(ssres/sstot);
 
+end
+
+function [KSNGrid] = KsnAvg(DEM,ksn_ms,radius)
+
+	% Calculate radius
+	radiuspx = ceil(radius/DEM.cellsize);
+
+	% Record mask of current NaNs
+	MASK=isnan(DEM.Z);
+
+	% Make grid with values along channels
+	KSNGrid=GRIDobj(DEM);
+	KSNGrid.Z(:,:)=NaN;
+	for ii=1:numel(ksn_ms)
+		ix=coord2ind(DEM,ksn_ms(ii).X,ksn_ms(ii).Y);
+		KSNGrid.Z(ix)=ksn_ms(ii).ksn;
+	end
+
+	% Local mean based on radius
+	ISNAN=isnan(KSNGrid.Z);
+    [~,L] = bwdist(~ISNAN,'e');
+    ksng = KSNGrid.Z(L);           
+    FLT   = fspecial('disk',radiuspx);
+    ksng   = imfilter(ksng,FLT,'symmetric','same','conv');
+
+    % Set original NaN cells back to NaN
+    ksng(MASK)=NaN;
+
+    % Output
+    KSNGrid.Z=ksng;
 end

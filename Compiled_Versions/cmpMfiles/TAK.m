@@ -348,6 +348,8 @@ function TAK(func_name,wdir,varargin)
 					opt_args{evens(ii)}=str2num(pv);
 				case 'interp_value'
 					opt_args{evens(ii)}=str2num(pv);
+				case 'radius'
+					opt_args{evens(ii)}=str2num(pv);
 				case 'complete_networks_only'
 					if strcmpi(pv,'false')
 						opt_args{evens(ii)}=false;
@@ -472,6 +474,8 @@ function TAK(func_name,wdir,varargin)
 				case 'threshold_area'
 					opt_args{evens(ii)}=str2num(pv);
 				case 'min_order'
+					opt_args{evens(ii)}=str2num(pv);
+				case 'ksn_radius'
 					opt_args{evens(ii)}=str2num(pv);
 				case 'write_arc_files'
 					if strcmpi(pv,'false')
