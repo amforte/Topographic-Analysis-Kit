@@ -6,11 +6,12 @@ function cmpKsnChiBatch(wdir,MatFile,product,varargin)
 	%	MatFile - Full path of matfile output from either 'cmpMakeStreams' or the name of a single basin mat file from 'cmpProcessRiverBasins'
 	% 	product - switch to determine which products to produce
 	%		'ksn' - ksn map as a shapefile
-	%		'ksngrid' - ascii file with ksn interpolated at all points in a grid
+	%		'ksngrid' - ascii file with ksn interpolated at all points in a grid, also produces 'ksnstdgrid', which is the standard deviation
+	%			of ksn in the specified radius
 	%		'chimap' - ascii file with chi calculated in channel networks
 	%		'chigrid' - ascii file with chi calculate at all points in a grid
 	%		'chi' - results for both chimap and chigrid
-	%		'all' - ksn, ksngrid, chimap, and chigrids
+	%		'all' - ksn, ksngrid, ksnstdgrid, chimap, and chigrids
 	%
 	% Optional Inputs:
 	%	conditioned_DEM [] - option to provide a hydrologically conditioned DEM for use in this function, expects the mat file as saved by 'cmpConditionDEM'
@@ -214,11 +215,13 @@ function cmpKsnChiBatch(wdir,MatFile,product,varargin)
 			[ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length);
 		end
 
-		[KSNGrid]=KsnAvg(DEM,ksn_ms,radius);
+		[KSNGrid,KSNstdGrid]=KsnAvg(DEM,ksn_ms,radius);
 
 		disp('Writing ARC files')
 		out_file_ksng=[file_name_prefix '_ksngrid.txt'];
+		out_file_ksnstd=[file_name_prefix '_ksnstdgrid.txt'];
 		GRIDobj2ascii(KSNGrid,out_file_ksng);
+		GRIDobj2ascii(KSNstdGrid,out_file_ksnstd);
 
 	case 'chimap'
 
@@ -298,7 +301,7 @@ function cmpKsnChiBatch(wdir,MatFile,product,varargin)
 		end
 
 		disp('Calculating interpolated ksn grid')
-		[KSNGrid]=KsnAvg(DEM,ksn_ms,radius);
+		[KSNGrid,KSNstdGrid]=KsnAvg(DEM,ksn_ms,radius);
 
 	    disp('Calculating chi map');
 		[ChiMap]=MakeChiMap(DEM,FD,A,S,theta_ref);
@@ -310,7 +313,9 @@ function cmpKsnChiBatch(wdir,MatFile,product,varargin)
 		out_file_ksn=[file_name_prefix '_ksn.shp'];
 		shapewrite(ksn_ms,out_file_ksn);
 		out_file_ksng=[file_name_prefix '_ksngrid.txt'];
+		out_file_ksnstd=[file_name_prefix '_ksnstdgrid.txt'];
 		GRIDobj2ascii(KSNGrid,out_file_ksng);
+		GRIDobj2ascii(KSNstdGrid,out_file_ksnstd);
 		out_file_cg=[file_name_prefix '_chigrid.txt'];
 		GRIDobj2ascii(ChiGrid,out_file_cg);
 		out_file_cm=[file_name_prefix '_chimap.txt'];
@@ -795,10 +800,11 @@ function [KSN,R2] = Chi_Z_Spline(c,z)
 
 end
 
-function [KSNGrid] = KsnAvg(DEM,ksn_ms,radius)
+function [KSNGrid,KSNstdGrid] = KsnAvg(DEM,ksn_ms,radius)
 
 	% Calculate radius
 	radiuspx = ceil(radius/DEM.cellsize);
+	SE = strel('disk',radiuspx,0);
 
 	% Record mask of current NaNs
 	MASK=isnan(DEM.Z);
@@ -818,9 +824,16 @@ function [KSNGrid] = KsnAvg(DEM,ksn_ms,radius)
     FLT   = fspecial('disk',radiuspx);
     ksng   = imfilter(ksng,FLT,'symmetric','same','conv');
 
+    nhood   = getnhood(SE);
+    ksnstd   = stdfilt(ksng,nhood); 
+
     % Set original NaN cells back to NaN
     ksng(MASK)=NaN;
+    ksnstd(MASK)=NaN;
 
     % Output
     KSNGrid.Z=ksng;
+
+    KSNstdGrid=GRIDobj(DEM);
+    KSNstdGrid.Z=ksnstd;
 end

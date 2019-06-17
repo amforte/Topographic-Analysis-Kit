@@ -15,7 +15,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	%	S - STREAM object
 	% 	product - switch to determine which products to produce
 	%		'ksn' - ksn map as a shapefile
-	%		'ksngrid' - ascii file with ksn interpolated at all points in a grid
+	%		'ksngrid' - ascii file with ksn interpolated via averaging in a moving circular window at all points in a grid
 	%		'chimap' - ascii file with chi calculated in channel networks
 	%		'chigrid' - ascii file with chi calculate at all points in a grid
 	%		'chi' - results for both chimap and chigrid
@@ -32,11 +32,12 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	%		without any workspace output (false). The number of outputs will depend on the 'product' input.
 	%			'ksn' - [KSNG,ksn_ms] where KSNG is a GRIDobj with ksn values along the stream network and ksn_ms is the mapstructure suitable for creating 
 	%					a shapefile
-	%			'ksngrid' - [KSNgrid] where KSNgrid is a GRIDobj of interpolated ksn values
+	%			'ksngrid' - [KSNgrid,KSNstdGrid] where KSNgrid is a GRIDobj of interpolated ksn values and KSNstdGrid is a GRIDobj of the standard deviation
+	%					of ksn within the specified radius
 	%			'chimap' - [ChiMap] where ChiMap is a GRIDobj with chi values along the stream network
 	%			'chigrid' - [ChiGrid] where ChiGrid is a GRIDobj with chi values across the entire grid
 	%			'chi' - [ChiMap,ChiGrid]
-	%			'all' - [KSNG,ksn_ms,KSNGrid,ChiMap,ChiGrid]
+	%			'all' - [KSNG,ksn_ms,KSNGrid,KSNstdGrid,ChiMap,ChiGrid]
 	%	ksn_method [quick] - switch between method to calculate ksn values, options are 'quick', 'trunk', or 'trib', the 'trib' method takes 3-4 times longer 
 	%		than the 'quick' method. In most cases, the 'quick' method works well, but if values near tributary junctions are important, then 'trib'
 	%		may be better as this calculates ksn values for individual channel segments individually. The 'trunk' option calculates steepness values
@@ -65,7 +66,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	%	[KSN,ChiMap,ChiGrid]=KsnChiBatch(DEM,FD,A,S,'output',true,'theta_ref',0.55);
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	% Function Written by Adam M. Forte - Updated : 06/16/19 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Parse Inputs
@@ -198,15 +199,18 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 			[ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length);
 		end
 
-		[KSNGrid]=KsnAvg(DEM,ksn_ms,radius);
+		[KSNGrid,KSNstdGrid]=KsnAvg(DEM,ksn_ms,radius);
 
 		disp('Writing ARC files')
 		out_file_ksng=[file_name_prefix '_ksngrid.txt'];
+		out_file_ksnstd=[file_name_prefix '_ksnstdgrid.txt'];
 		GRIDobj2ascii(KSNGrid,out_file_ksng);
+		GRIDobj2ascii(KSNstdGrid,out_file_ksnstd);
 
 		switch output
 		case true
 			varargout{1}=KSNGrid;
+			varargout{2}=KSNstdGrid;
 		end
 
 	case 'chimap'
@@ -310,7 +314,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 		end
 
 		disp('Calculating interpolated ksn grid')
-		[KSNGrid]=KsnAvg(DEM,ksn_ms,radius);
+		[KSNGrid,KSNstdGrid]=KsnAvg(DEM,ksn_ms,radius);
 
 	    disp('Calculating chi map');
 		[ChiMap]=MakeChiMap(DEM,FD,A,S,theta_ref);
@@ -322,7 +326,9 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 		out_file_ksn=[file_name_prefix '_ksn.shp'];
 		shapewrite(ksn_ms,out_file_ksn);
 		out_file_ksng=[file_name_prefix '_ksngrid.txt'];
+		out_file_ksnstd=[file_name_prefix '_ksnstdgrid.txt'];
 		GRIDobj2ascii(KSNGrid,out_file_ksng);
+		GRIDobj2ascii(KSNstdGrid,out_file_ksnstd);
 		out_file_cg=[file_name_prefix '_chigrid.txt'];
 		GRIDobj2ascii(ChiGrid,out_file_cg);
 		out_file_cm=[file_name_prefix '_chimap.txt'];
@@ -339,8 +345,9 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 			varargout{1}=KSNG;
 			varargout{2}=ksn_ms;
 			varargout{3}=KSNGrid;
-			varargout{4}=ChiMap;
-			varargout{5}=ChiGrid;
+			varargout{4}=KSNstdGrid;
+			varargout{5}=ChiMap;
+			varargout{6}=ChiGrid;
 		end
 	end
 
@@ -822,10 +829,11 @@ function [KSN,R2] = Chi_Z_Spline(c,z)
 
 end
 
-function [KSNGrid] = KsnAvg(DEM,ksn_ms,radius)
+function [KSNGrid,KSNstdGrid] = KsnAvg(DEM,ksn_ms,radius)
 
 	% Calculate radius
 	radiuspx = ceil(radius/DEM.cellsize);
+	SE = strel('disk',radiuspx,0);
 
 	% Record mask of current NaNs
 	MASK=isnan(DEM.Z);
@@ -845,9 +853,16 @@ function [KSNGrid] = KsnAvg(DEM,ksn_ms,radius)
     FLT   = fspecial('disk',radiuspx);
     ksng   = imfilter(ksng,FLT,'symmetric','same','conv');
 
+    nhood   = getnhood(SE);
+    ksnstd   = stdfilt(ksng,nhood); 
+
     % Set original NaN cells back to NaN
     ksng(MASK)=NaN;
+    ksnstd(MASK)=NaN;
 
     % Output
     KSNGrid.Z=ksng;
+
+    KSNstdGrid=GRIDobj(DEM);
+    KSNstdGrid.Z=ksnstd;
 end
