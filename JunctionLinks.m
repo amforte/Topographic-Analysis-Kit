@@ -1,4 +1,4 @@
-function [links]=JunctionLinks(FD,S,IX,J)
+function [links]=JunctionLinks(FD,S,IX,junctions,varargin)
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%%% THIS FUNCTION IS UNDER ACTIVE DEVELOPMENT %%%
@@ -7,7 +7,8 @@ function [links]=JunctionLinks(FD,S,IX,J)
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%	
 	%
 	% Usage:
-	%	[links]=JunctionLinks(FD,S,IX,J);
+	%	[links]=JunctionLinks(FD,S,IX,junctions);
+	%	[links]=JunctionLinks(FD,S,IX,junctions,'name',value);
 	%
 	% Description:
 	%	Function for identifying the links within a stream network. Results will
@@ -26,9 +27,16 @@ function [links]=JunctionLinks(FD,S,IX,J)
 	%	FD - FLOWobj 
 	%	S - STREAMobj 
 	%	IX - IX output from JunctionAngle
-	%	J - junctions table output from JunctionAngle, if you provided multiple
+	%	junctions - junctions table output from JunctionAngle, if you provided multiple
 	%		fit_distances to JunctionAngle, the output 'links' will be a cell
-	%		array of similar dimensions as the input J.
+	%		array of similar dimensions as the input 'junctions'.
+	%
+	% Optional Inputs:
+	%	make_shape [false] - logical flag to generate a shapefile containing the stream network broken
+	%		into segments defined by junctions and categorized in terms of link_type and link_side
+	%		(see outputs). Production of the mapstructure used to create shapefile can be time consuming
+	%	verbose [false] - logical flag to report progress through production of shapefile. This flag
+	%		will only produce a result if 'make_shape' is set to true.
 	%
 	% Outputs:
 	%	links - table containing the information for all the stream links:
@@ -53,14 +61,15 @@ function [links]=JunctionLinks(FD,S,IX,J)
 	%			classification
 	%
 	% Examples:
-	%	[links]=JunctionLinks(FD,S,IX,J);
+	%	[links]=JunctionLinks(FD,S,IX,junctions);
+	%	[links]=JunctionLinks(FD,S,IX,junctions,'make_shape',true);
 	%
 	%
 	% Related Functions:
 	%	JunctionAngle InspectJunction networksegment
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Updated : 06/26/19 %
+	% Function Written by Adam M. Forte - Updated : 06/27/19 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Parse Inputs
@@ -69,13 +78,19 @@ function [links]=JunctionLinks(FD,S,IX,J)
 	addRequired(p,'FD',@(x) isa(x,'FLOWobj'));
 	addRequired(p,'S',@(x) isa(x,'STREAMobj'));
 	addRequired(p,'IX',@(x) iscell(x));
-	addRequired(p,'J',@(x) istable(x) | iscell(x));
+	addRequired(p,'junctions',@(x) istable(x) | iscell(x));
 
-	parse(p,FD,S,IX,J);
+	addParameter(p,'make_shape',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'verbose',false,@(x) isscalar(x) && islogical(x));
+
+	parse(p,FD,S,IX,junctions,varargin{:});
 	FD=p.Results.FD;
 	S=p.Results.S;
 	IX=p.Results.IX;
-	JIN=p.Results.J;
+	JIN=p.Results.junctions;
+
+	make_shape=p.Results.make_shape;
+	verbose=p.Results.verbose;
 
 	% Determine type of J input
 	if istable(JIN)
@@ -252,6 +267,12 @@ function [links]=JunctionLinks(FD,S,IX,J)
 		links=table(link_number,downstream_x,downstream_y,downstream_IX,...
 			upstream_x,upstream_y,upstream_IX,...
 			link_type,downstream_junc_num,upstream_junc_num,link_side);
+
+		if make_shape
+			ms=makelinkshape(S,links,verbose);
+			shapewrite(ms,'junction_links.shp');
+		end
+
 	else
 		
 		% Create links output cell
@@ -438,7 +459,53 @@ function [links]=JunctionLinks(FD,S,IX,J)
 				upstream_x,upstream_y,upstream_IX,...
 				link_type,downstream_junc_num,upstream_junc_num,link_side);
 			links{2,jj}=l;
+
+			if make_shape
+				ms=makelinkshape(S,l,verbose);
+				shp_name=['junction_links_' num2str(jj) '.shp'];
+				shapewrite(ms,shp_name);
+			end
 		end
 	end
 % Function End	
+end
+
+function [ms]=makelinkshape(S,links,verbose)
+	
+	% Find positions of link endpoints in nal
+	startix=find(ismember(S.IXgrid,links.upstream_IX));
+	stopix=find(ismember(S.IXgrid,links.downstream_IX));
+
+	% Build empty mapstructure
+	ms=struct('Geometry',{},'X',{},'Y',{},'link_type',{},'link_side',{});
+
+	if verbose
+		w1=waitbar(0,'Building link map structure');
+	end
+
+	for ii=1:numel(startix)
+
+		% Build list of indices between start and stop
+		ix=find(S.ix==startix(ii));
+		ixl=ix;
+		while ix~=stopix(ii)
+			ixl(end+1)=S.ixc(ix);
+			ix=find(S.ix==ixl(end));
+		end
+
+		% Populate mapstructure
+		ms(ii,1).Geometry='Line';
+		ms(ii,1).X=S.x(ixl);
+		ms(ii,1).Y=S.y(ixl);
+		ms(ii,1).link_type=char(links.link_type(ii));
+		ms(ii,1).link_side=char(links.link_side(ii));
+
+		if verbose
+			waitbar(ii/numel(startix));
+		end
+	end
+
+	if verbose
+		close(w1);
+	end
 end
