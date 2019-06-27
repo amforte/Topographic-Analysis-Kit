@@ -757,7 +757,7 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 					sd(ii,:)=[card1 card2 card3];
 					fs(ii,:)=[e1_dst numel(xu1) r21 e2_dst numel(xu2) r22 ds_dst numel(xd) r23];
 				else
-					la(ii,:)=[S.x(conix) S.y(conix) NaN NaN NaN NaN NaN NaN NaN NaN NaN];
+					la(ii,:)=[S.x(con{ii}) S.y(con{ii}) NaN NaN NaN NaN NaN NaN NaN NaN NaN];
 					sd(ii,:)=[NaN NaN NaN];
 					fs(ii,:)=[NaN NaN NaN NaN NaN NaN NaN NaN NaN];
 
