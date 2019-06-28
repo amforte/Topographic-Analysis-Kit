@@ -471,48 +471,22 @@ function [links]=JunctionLinks(FD,S,IX,junctions,varargin)
 end
 
 function [ms]=makelinkshape(S,links,par)
-
 	
 	% Find positions of link endpoints in nal
 	startix=find(ismember(S.IXgrid,links.upstream_IX));
 	stopix=find(ismember(S.IXgrid,links.downstream_IX));
 
-	% Check for parallel computing toolbox
-	if par & ~license('test','distrib_computing_toolbox')
-		par=false;
-	end
+	if par & license('test','distrib_computing_toolbox')
 
-	if par
-
-		% Build empty mapstructure
-		ms=struct('Geometry',{},'X',{},'Y',{},'link_type',{},'link_side',{});
-
-		parfor ii=1:numel(startix)
-
-			% Build list of indices between start and stop
-			ix=find(S.ix==startix(ii));
-			ixl=ix;
-			while ix~=stopix(ii)
-				ixl(end+1)=S.ixc(ix);
-				ix=find(S.ix==ixl(end));
-			end
-
-			% Populate mapstructure
-			ms(ii,1).Geometry='Line';
-			ms(ii,1).X=S.x(ixl);
-			ms(ii,1).Y=S.y(ixl);
-			ms(ii,1).link_type=char(links.link_type(ii));
-			ms(ii,1).link_side=char(links.link_side(ii));
-		end
+		[ms,w1]=par_loop_proc(S,links,startix,stopix);
+		close(w1);
 
 	else
 		
 		% Build empty mapstructure
 		ms=struct('Geometry',{},'X',{},'Y',{},'link_type',{},'link_side',{});
 
-		% if verbose
-		% 	w1=waitbar(0,'Building link map structure');
-		% end
+		w1=waitbar(0,'Building link map structure');
 
 		for ii=1:numel(startix)
 
@@ -531,13 +505,46 @@ function [ms]=makelinkshape(S,links,par)
 			ms(ii,1).link_type=char(links.link_type(ii));
 			ms(ii,1).link_side=char(links.link_side(ii));
 
-			% if verbose
-			% 	waitbar(ii/numel(startix));
-			% end
-		end
+			waitbar(ii/numel(startix));
 
-		% if verbose
-		% 	close(w1);
-		% end
+		end
+		close(w1);
 	end
 end
+
+function [ms,w1]=par_loop_proc(S,links,startix,stopix)
+
+	DQ=parallel.pool.DataQueue;
+	w1=waitbar(0,'Building link map structure');
+	afterEach(DQ,@updateBar);
+	cnt=1;
+	num_loop=numel(startix);
+
+	% Build empty mapstructure
+	ms=struct('Geometry',{},'X',{},'Y',{},'link_type',{},'link_side',{});
+
+	parfor ii=1:num_loop
+
+		% Build list of indices between start and stop
+		ix=find(S.ix==startix(ii));
+		ixl=ix;
+		while ix~=stopix(ii)
+			ixl(end+1)=S.ixc(ix);
+			ix=find(S.ix==ixl(end));
+		end
+
+		% Populate mapstructure
+		ms(ii,1).Geometry='Line';
+		ms(ii,1).X=S.x(ixl);
+		ms(ii,1).Y=S.y(ixl);
+		ms(ii,1).link_type=char(links.link_type(ii));
+		ms(ii,1).link_side=char(links.link_side(ii));
+
+		send(DQ,ii);
+	end
+
+		function updateBar(~)
+			waitbar(cnt/num_loop,w1);
+			cnt=cnt+1;
+		end
+	end
