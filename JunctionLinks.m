@@ -81,7 +81,7 @@ function [links]=JunctionLinks(FD,S,IX,junctions,varargin)
 	addRequired(p,'junctions',@(x) istable(x) | iscell(x));
 
 	addParameter(p,'make_shape',false,@(x) isscalar(x) && islogical(x));
-	addParameter(p,'verbose',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'par',false,@(x) isscalar(x) && islogical(x));
 
 	parse(p,FD,S,IX,junctions,varargin{:});
 	FD=p.Results.FD;
@@ -90,7 +90,7 @@ function [links]=JunctionLinks(FD,S,IX,junctions,varargin)
 	JIN=p.Results.junctions;
 
 	make_shape=p.Results.make_shape;
-	verbose=p.Results.verbose;
+	par=p.Results.par;
 
 	% Determine type of J input
 	if istable(JIN)
@@ -269,7 +269,7 @@ function [links]=JunctionLinks(FD,S,IX,junctions,varargin)
 			link_type,downstream_junc_num,upstream_junc_num,link_side);
 
 		if make_shape
-			ms=makelinkshape(S,links,verbose);
+			ms=makelinkshape(S,links,par);
 			shapewrite(ms,'junction_links.shp');
 		end
 
@@ -461,7 +461,7 @@ function [links]=JunctionLinks(FD,S,IX,junctions,varargin)
 			links{2,jj}=l;
 
 			if make_shape
-				ms=makelinkshape(S,l,verbose);
+				ms=makelinkshape(S,l,par);
 				shp_name=['junction_links_' num2str(jj) '.shp'];
 				shapewrite(ms,shp_name);
 			end
@@ -470,42 +470,74 @@ function [links]=JunctionLinks(FD,S,IX,junctions,varargin)
 % Function End	
 end
 
-function [ms]=makelinkshape(S,links,verbose)
+function [ms]=makelinkshape(S,links,par)
+
 	
 	% Find positions of link endpoints in nal
 	startix=find(ismember(S.IXgrid,links.upstream_IX));
 	stopix=find(ismember(S.IXgrid,links.downstream_IX));
 
-	% Build empty mapstructure
-	ms=struct('Geometry',{},'X',{},'Y',{},'link_type',{},'link_side',{});
-
-	if verbose
-		w1=waitbar(0,'Building link map structure');
+	% Check for parallel computing toolbox
+	if par & ~license('test','distrib_computing_toolbox')
+		par=false;
 	end
 
-	for ii=1:numel(startix)
+	if par
 
-		% Build list of indices between start and stop
-		ix=find(S.ix==startix(ii));
-		ixl=ix;
-		while ix~=stopix(ii)
-			ixl(end+1)=S.ixc(ix);
-			ix=find(S.ix==ixl(end));
+		% Build empty mapstructure
+		ms=struct('Geometry',{},'X',{},'Y',{},'link_type',{},'link_side',{});
+
+		parfor ii=1:numel(startix)
+
+			% Build list of indices between start and stop
+			ix=find(S.ix==startix(ii));
+			ixl=ix;
+			while ix~=stopix(ii)
+				ixl(end+1)=S.ixc(ix);
+				ix=find(S.ix==ixl(end));
+			end
+
+			% Populate mapstructure
+			ms(ii,1).Geometry='Line';
+			ms(ii,1).X=S.x(ixl);
+			ms(ii,1).Y=S.y(ixl);
+			ms(ii,1).link_type=char(links.link_type(ii));
+			ms(ii,1).link_side=char(links.link_side(ii));
 		end
 
-		% Populate mapstructure
-		ms(ii,1).Geometry='Line';
-		ms(ii,1).X=S.x(ixl);
-		ms(ii,1).Y=S.y(ixl);
-		ms(ii,1).link_type=char(links.link_type(ii));
-		ms(ii,1).link_side=char(links.link_side(ii));
+	else
+		
+		% Build empty mapstructure
+		ms=struct('Geometry',{},'X',{},'Y',{},'link_type',{},'link_side',{});
 
-		if verbose
-			waitbar(ii/numel(startix));
+		% if verbose
+		% 	w1=waitbar(0,'Building link map structure');
+		% end
+
+		for ii=1:numel(startix)
+
+			% Build list of indices between start and stop
+			ix=find(S.ix==startix(ii));
+			ixl=ix;
+			while ix~=stopix(ii)
+				ixl(end+1)=S.ixc(ix);
+				ix=find(S.ix==ixl(end));
+			end
+
+			% Populate mapstructure
+			ms(ii,1).Geometry='Line';
+			ms(ii,1).X=S.x(ixl);
+			ms(ii,1).Y=S.y(ixl);
+			ms(ii,1).link_type=char(links.link_type(ii));
+			ms(ii,1).link_side=char(links.link_side(ii));
+
+			% if verbose
+			% 	waitbar(ii/numel(startix));
+			% end
 		end
-	end
 
-	if verbose
-		close(w1);
+		% if verbose
+		% 	close(w1);
+		% end
 	end
 end
