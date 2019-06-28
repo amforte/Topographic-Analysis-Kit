@@ -35,8 +35,10 @@ function [links]=JunctionLinks(FD,S,IX,junctions,varargin)
 	%	make_shape [false] - logical flag to generate a shapefile containing the stream network broken
 	%		into segments defined by junctions and categorized in terms of link_type and link_side
 	%		(see outputs). Production of the mapstructure used to create shapefile can be time consuming
-	%	verbose [false] - logical flag to report progress through production of shapefile. This flag
-	%		will only produce a result if 'make_shape' is set to true.
+	%	par [true] - logical flag to use parallel processing for making the mapstructure as this is a
+	%		time consuming process. This flag only is only meaningful if 'make_shape' is set to true. 
+	%		The function will check to see if you have a license for the parallel computing toolbox and
+	%		will set this to false if you do not.
 	%
 	% Outputs:
 	%	links - table containing the information for all the stream links:
@@ -81,7 +83,7 @@ function [links]=JunctionLinks(FD,S,IX,junctions,varargin)
 	addRequired(p,'junctions',@(x) istable(x) | iscell(x));
 
 	addParameter(p,'make_shape',false,@(x) isscalar(x) && islogical(x));
-	addParameter(p,'par',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'par',true,@(x) isscalar(x) && islogical(x));
 
 	parse(p,FD,S,IX,junctions,varargin{:});
 	FD=p.Results.FD;
@@ -270,6 +272,7 @@ function [links]=JunctionLinks(FD,S,IX,junctions,varargin)
 
 		if make_shape
 			ms=makelinkshape(S,links,par);
+			disp('Writing shapefile');
 			shapewrite(ms,'junction_links.shp');
 		end
 
@@ -463,6 +466,7 @@ function [links]=JunctionLinks(FD,S,IX,junctions,varargin)
 			if make_shape
 				ms=makelinkshape(S,l,par);
 				shp_name=['junction_links_' num2str(jj) '.shp'];
+				disp('Writing shapefile');
 				shapewrite(ms,shp_name);
 			end
 		end
@@ -470,75 +474,79 @@ function [links]=JunctionLinks(FD,S,IX,junctions,varargin)
 % Function End	
 end
 
-function [ms]=makelinkshape(S,links,par)
-	
-	% Find positions of link endpoints in nal
-	startix=find(ismember(S.IXgrid,links.upstream_IX));
-	stopix=find(ismember(S.IXgrid,links.downstream_IX));
+function [ms]=makelinkshape(S,L,par)
+	disp('Starting shapefile construction')
+	% Split stream network
+	SS=split(S);
+
+	% Make mapstructure based on split & modify
+	disp('Building original mapstructure')
+	ms=STREAMobj2mapstruct(SS);
+	ms=rmfield(ms,{'streamorder','IX','tribtoIX'});
+	ms(1,1).link_type=[]; ms(1,1).link_side=[]; ms(1,1).link_num=[];
+
+	%Grab out data of interest from link table
+	dx=L.downstream_x; dy=L.downstream_y; ux=L.upstream_x; uy=L.upstream_y;
+	lty=L.link_type; lsd=L.link_side; ln=L.link_number;
 
 	if par & license('test','distrib_computing_toolbox')
 
-		[ms,w1]=par_loop_proc(S,links,startix,stopix);
+		[ms,w1]=par_loop_proc(ms,dx,dy,ux,uy,lty,lsd,ln);
 		close(w1);
-
 	else
-		
-		% Build empty mapstructure
-		ms=struct('Geometry',{},'X',{},'Y',{},'link_type',{},'link_side',{});
 
-		w1=waitbar(0,'Building link map structure');
+		w1=waitbar(0,'Populating link information into mapstructure');
+		for ii=1:numel(ms)
+			xl=ms(1,ii).X;
+			yl=ms(1,ii).Y;
 
-		for ii=1:numel(startix)
+			fun=@(DXL,UXL,DYL,UYL) any(ismember(DXL,xl)) & any(ismember(UXL,xl)) & any(ismember(DYL,yl)) & any(ismember(UYL,yl)); 
+			idx=arrayfun(fun,dx,ux,dy,uy);
+			ix=find(idx);
 
-			% Build list of indices between start and stop
-			ix=find(S.ix==startix(ii));
-			ixl=ix;
-			while ix~=stopix(ii)
-				ixl(end+1)=S.ixc(ix);
-				ix=find(S.ix==ixl(end));
+			if numel(ix)==1
+				ms(1,ii).link_type=char(lty(ix));
+				ms(1,ii).link_side=char(lsd(ix));
+				ms(1,ii).link_num=ln(ix);
+			elseif numel(ix>1)
+				ms(1,ii).link_type=char(lty(ix(1)));
+				ms(1,ii).link_side=char(lsd(ix(1)));
+				ms(1,ii).link_num=ln(ix(1));
 			end
 
-			% Populate mapstructure
-			ms(ii,1).Geometry='Line';
-			ms(ii,1).X=S.x(ixl);
-			ms(ii,1).Y=S.y(ixl);
-			ms(ii,1).link_type=char(links.link_type(ii));
-			ms(ii,1).link_side=char(links.link_side(ii));
-
-			waitbar(ii/numel(startix));
-
+			waitbar(ii/numel(ms));
 		end
 		close(w1);
+
 	end
+
 end
 
-function [ms,w1]=par_loop_proc(S,links,startix,stopix)
+function [ms,w1]=par_loop_proc(ms,dx,dy,ux,uy,lty,lsd,ln)
 
 	DQ=parallel.pool.DataQueue;
-	w1=waitbar(0,'Building link map structure');
+	w1=waitbar(0,'Populating link information into mapstructure');
 	afterEach(DQ,@updateBar);
+	num_loop=numel(ms);
 	cnt=1;
-	num_loop=numel(startix);
-
-	% Build empty mapstructure
-	ms=struct('Geometry',{},'X',{},'Y',{},'link_type',{},'link_side',{});
 
 	parfor ii=1:num_loop
+		xl=ms(1,ii).X;
+		yl=ms(1,ii).Y;
 
-		% Build list of indices between start and stop
-		ix=find(S.ix==startix(ii));
-		ixl=ix;
-		while ix~=stopix(ii)
-			ixl(end+1)=S.ixc(ix);
-			ix=find(S.ix==ixl(end));
+		fun=@(DXL,UXL,DYL,UYL) any(ismember(DXL,xl)) & any(ismember(UXL,xl)) & any(ismember(DYL,yl)) & any(ismember(UYL,yl)); 
+		idx=arrayfun(fun,dx,ux,dy,uy);
+		ix=find(idx);
+
+		if numel(ix)==1
+			ms(1,ii).link_type=char(lty(ix));
+			ms(1,ii).link_side=char(lsd(ix));
+			ms(1,ii).link_num=ln(ix);
+		elseif numel(ix>1)
+			ms(1,ii).link_type=char(lty(ix(1)));
+			ms(1,ii).link_side=char(lsd(ix(1)));
+			ms(1,ii).link_num=ln(ix(1));
 		end
-
-		% Populate mapstructure
-		ms(ii,1).Geometry='Line';
-		ms(ii,1).X=S.x(ixl);
-		ms(ii,1).Y=S.y(ixl);
-		ms(ii,1).link_type=char(links.link_type(ii));
-		ms(ii,1).link_side=char(links.link_side(ii));
 
 		send(DQ,ii);
 	end
@@ -547,4 +555,4 @@ function [ms,w1]=par_loop_proc(S,links,startix,stopix)
 			waitbar(cnt/num_loop,w1);
 			cnt=cnt+1;
 		end
-	end
+end
