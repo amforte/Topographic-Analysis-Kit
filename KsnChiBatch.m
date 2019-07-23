@@ -90,6 +90,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	addParameter(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
 	addParameter(p,'complete_networks_only',true,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'radius',5000,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'error_type','std',@(x) ischar(validatestring(x,{'std','std_error'})));
 
 	parse(p,DEM,FD,A,S,product,varargin{:});
 	DEM=p.Results.DEM;
@@ -110,6 +111,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	DEMc=p.Results.conditioned_DEM;
 	cno=p.Results.complete_networks_only;
 	radius=p.Results.radius;
+	error_type=p.Results.error_type;
 
 	% Check that cut off values have been provided if base level
 	if strcmp(blm,'max_out_elevation') & (strcmp(product,'chigrid') | strcmp(product,'ksngrid') | strcmp(product,'all'))
@@ -199,7 +201,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 			[ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length);
 		end
 
-		[KSNGrid,KSNstdGrid]=KsnAvg(DEM,ksn_ms,radius);
+		[KSNGrid,KSNstdGrid]=KsnAvg(DEM,ksn_ms,radius,error_type);
 
 		disp('Writing ARC files')
 		out_file_ksng=[file_name_prefix '_ksngrid.txt'];
@@ -314,7 +316,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 		end
 
 		disp('Calculating interpolated ksn grid')
-		[KSNGrid,KSNstdGrid]=KsnAvg(DEM,ksn_ms,radius);
+		[KSNGrid,KSNstdGrid]=KsnAvg(DEM,ksn_ms,radius,error_type);
 
 	    disp('Calculating chi map');
 		[ChiMap]=MakeChiMap(DEM,FD,A,S,theta_ref);
@@ -829,7 +831,7 @@ function [KSN,R2] = Chi_Z_Spline(c,z)
 
 end
 
-function [KSNGrid,KSNstdGrid] = KsnAvg(DEM,ksn_ms,radius)
+function [KSNGrid,KSNstdGrid] = KsnAvg(DEM,ksn_ms,radius,er_type)
 
 	% Calculate radius
 	radiuspx = ceil(radius/DEM.cellsize);
@@ -838,6 +840,7 @@ function [KSNGrid,KSNstdGrid] = KsnAvg(DEM,ksn_ms,radius)
 	% Record mask of current NaNs
 	MASK=isnan(DEM.Z);
 
+	disp('Populating channels'); ts=tic;
 	% Make grid with values along channels
 	KSNGrid=GRIDobj(DEM);
 	KSNGrid.Z(:,:)=NaN;
@@ -845,16 +848,37 @@ function [KSNGrid,KSNstdGrid] = KsnAvg(DEM,ksn_ms,radius)
 		ix=coord2ind(DEM,ksn_ms(ii).X,ksn_ms(ii).Y);
 		KSNGrid.Z(ix)=ksn_ms(ii).ksn;
 	end
+	tfi=toc(ts); disp(['Completed in ' num2str(tfi) ' secs'])
 
+	disp('Finding average within radius'); ts=tic;
 	% Local mean based on radius
 	ISNAN=isnan(KSNGrid.Z);
     [~,L] = bwdist(~ISNAN,'e');
     ksng = KSNGrid.Z(L);           
     FLT   = fspecial('disk',radiuspx);
     ksng   = imfilter(ksng,FLT,'symmetric','same','conv');
+	tfi=toc(ts); disp(['Completed in ' num2str(tfi) ' secs'])
 
+    disp('Finding standard deviation within radius'); ts=tic;
     nhood   = getnhood(SE);
     ksnstd   = stdfilt(ksng,nhood); 
+	tfi=toc(ts); disp(['Completed in ' num2str(tfi) ' secs'])
+
+    switch er_type
+    case 'std_error'
+    	disp('Finding number of pixels within radius'); ts=tic;
+    	II=~MASK; II=single(II);
+    	avg_num=imfilter(II,FLT,'symmetric','same','conv');
+    	num_nhood_pix=sum(SE.Neighborhood(:));
+    	num_pix=avg_num.*num_nhood_pix;
+    	num_pix(num_pix==0)=NaN;
+		tfi=toc(ts); disp(['Completed in ' num2str(tfi) ' secs'])
+
+		disp('Converting standard deviation to standard error'); ts=tic;
+    	ksnstder=ksnstd./sqrt(num_pix);
+    	ksnstder(MASK)=NaN;
+		tfi=toc(ts); disp(['Completed in ' num2str(tfi) ' secs'])
+    end
 
     % Set original NaN cells back to NaN
     ksng(MASK)=NaN;
@@ -863,6 +887,12 @@ function [KSNGrid,KSNstdGrid] = KsnAvg(DEM,ksn_ms,radius)
     % Output
     KSNGrid.Z=ksng;
 
-    KSNstdGrid=GRIDobj(DEM);
-    KSNstdGrid.Z=ksnstd;
+    switch er_type
+    case 'std'
+	    KSNstdGrid=GRIDobj(DEM);
+	    KSNstdGrid.Z=ksnstd;
+	case 'std_error'
+	    KSNstdGrid=GRIDobj(DEM);
+	    KSNstdGrid.Z=ksnstder;	
+    end	
 end
