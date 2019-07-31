@@ -171,14 +171,14 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 		else
 			xx=vertcat(swdist,flipud(swdist));
 			yy=horzcat(min_elevs,fliplr(max_elevs));
-			patch(xx,yy,[0.8 0.8 0.8]);
+ 			patch(xx,yy,[0.8 0.8 0.8]);
 
 			plot(swdist,min_elevs,'-k');
 			plot(swdist,max_elevs,'-k');
 			plot(swdist,mean_elevs,'-k','LineWidth',2);
 		end
 
-		daspect([vex 1 1])
+ 		daspect([vex 1 1])
 
 		yl=ylim;
 		for jj=1:numel(bends)
