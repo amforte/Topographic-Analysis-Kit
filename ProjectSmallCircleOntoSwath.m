@@ -1,4 +1,4 @@
-function [ds,db,dab]=ProjectSmallCircleOntoSwath(SW,x,y,cx,cy,proj)
+function [ds,db,dab]=ProjectSmallCircleOntoSwath(SW,x,y,cx,cy)
 	% 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%%% THIS FUNCTION IS UNDER ACTIVE DEVELOPMENT %%%
@@ -19,7 +19,6 @@ function [ds,db,dab]=ProjectSmallCircleOntoSwath(SW,x,y,cx,cy,proj)
 	%	y - nx1 array of y data to project
 	%	cx - x coordinate of center of small circles
 	%	cy - y coordinate of center of small circles
-	%	proj - projection (e.g. data stored in DEM.georef.mstruct)
 	%	
 	% Outputs:
 	%	ds - nx1 array of distances along provided swath of projected data. Points with
@@ -40,6 +39,7 @@ function [ds,db,dab]=ProjectSmallCircleOntoSwath(SW,x,y,cx,cy,proj)
 	% Extract parameters from SWATHobj
 	xypoints=SW.xy;
 	swdist=SW.distx;
+	proj=SW.georef.mstruct;
 
 	% Calculate small circles in projected coordinates
 	[dlat,dlon]=projinv(proj,x,y);
