@@ -852,6 +852,8 @@ function TAK(func_name,wdir,varargin)
 				pn=opt_args{odds(ii)};
 				pv=opt_args{evens(ii)};
 				switch pn
+				case 'small_circ_center'
+					opt_args{evens(ii)}=str2num(pv);
 				case 'sample'
 					opt_args{evens(ii)}=str2num(pv);
 				case 'smooth'

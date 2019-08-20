@@ -44,6 +44,11 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	%					of the toposwath will not be plotted
 	%
 	% Optional Inputs:
+	%	small_circ_center [] - option to provide a 1 x 2 array that contains the x and y coordinate of a small circle center to use
+	%				to project data onto the swath, using the function 'ProjectSmallCircleOntoSwath'.
+	%	dist_type ['mapunits'] - option to control how the 'data_width' is interepreted. Options are 'mapunits' or 'angle' with the
+	%				default being 'mapunits'. The 'angle' option is only valid if an entry is provided to 'small_circ_center' to initiate
+	%				projection along small circles. 
 	% 	sample [] - resampling distance along topographic swath in map units, if no input is provided, code will use the cellsize 
 	%				of the DEM which results in no resampling.
 	% 	smooth [0] - smoothing distance, width of filter in map units over which to smooth values, default (0) results in no smoothing
@@ -90,6 +95,8 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	addRequired(p,'data');
 	addRequired(p,'data_width',@(x) isnumeric(x) && isscalar(x));
 
+	addParameter(p,'small_circ_center',[],@(x) isnumeric(x) && numel(x)==2);
+	addParameter(p,'dist_type','mapdist',@(x) ischar(validatestring(x,{'mapdist','angle'})));	
 	addParameter(p,'sample',[],@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'smooth',0,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'vex',10,@(x) isscalar(x) && isnumeric(x));
@@ -108,6 +115,8 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	data=p.Results.data;
 	data_width=p.Results.data_width;
 
+	small_circ_center=p.Results.small_circ_center;
+	dist_type=p.Results.dist_type;
 	sample=p.Results.sample;
 	smth=p.Results.smooth;
 	vex=p.Results.vex;
@@ -119,6 +128,14 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 
 	if isempty(sample)
 		sample=DEM.cellsize;
+	end
+
+	if isempty(small_circ_center)
+		proj_flag=1;
+	else
+		proj_flag=2;
+		cx=small_circ_center(1);
+		cy=small_circ_center(2);
 	end
 
 	% Produce topo swath and associated datasets
@@ -153,9 +170,22 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			[demix]=inpolygon(x_coord,y_coord,demx,demy);	
 			x_coord=x_coord(demix); y_coord=y_coord(demix); z=z(demix);
 
-			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
-			outData=[ds z db x_coord y_coord];
-			idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
+			switch proj_flag
+			case 1
+				[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
+				outData=[ds z db x_coord y_coord];
+				idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
+			case 2
+				[ds,db,dab]=ProjectSmallCircleOntoSwath(SW,x_coord,y_coord,cx,cy);
+				switch dist_type
+				case 'mapdist'
+					outData=[ds z db x_coord y_coord];
+					idx=abs(outData(:,3))<=(data_width/2) & ~isnan(ds);
+				case 'angle'
+					outData=[ds z dab x_coord y_coord];
+					idx=abs(outData(:,3))<=(data_width/2) & ~isnan(ds);
+				end
+			end
 
 			% Plot Swath
 			f1=figure(1);
@@ -191,9 +221,22 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			[demix]=inpolygon(x_coord,y_coord,demx,demy);	
 			x_coord=x_coord(demix); y_coord=y_coord(demix); z=z(demix); col=col(demix);
 
-			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
-			outData=[ds z col db x_coord y_coord];
-			idx=outData(:,4)<=(data_width/2) & ~isnan(ds);
+			switch proj_flag
+			case 1
+				[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
+				outData=[ds z col db x_coord y_coord];
+				idx=outData(:,4)<=(data_width/2) & ~isnan(ds);
+			case 2
+				[ds,db,dab]=ProjectSmallCircleOntoSwath(SW,x_coord,y_coord,cx,cy);
+				switch dist_type
+				case 'mapdist'
+					outData=[ds z col db x_coord y_coord];
+					idx=abs(outData(:,4))<=(data_width/2) & ~isnan(ds);
+				case 'angle'
+					outData=[ds z col dab x_coord y_coord];
+					idx=abs(outData(:,4))<=(data_width/2) & ~isnan(ds);
+				end
+			end			
 
 			% Plot Swath
 			f1=figure(1);
@@ -233,9 +276,22 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			[demix]=inpolygon(x_coord,y_coord,demx,demy);	
 			x_coord=x_coord(demix); y_coord=y_coord(demix); z=z(demix); col=col(demix); scle=scle(demix);
 
-			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
-			outData=[ds z col scle db x_coord y_coord];
-			idx=outData(:,5)<=(data_width/2) & ~isnan(ds);
+			switch proj_flag
+			case 1
+				[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
+				outData=[ds z col scle db x_coord y_coord];
+				idx=outData(:,5)<=(data_width/2) & ~isnan(ds);
+			case 2
+				[ds,db,dab]=ProjectSmallCircleOntoSwath(SW,x_coord,y_coord,cx,cy);
+				switch dist_type
+				case 'mapdist'
+					outData=[ds z col scle db x_coord y_coord];
+					idx=abs(outData(:,5))<=(data_width/2) & ~isnan(ds);
+				case 'angle'
+					outData=[ds z col scle dab x_coord y_coord];
+					idx=abs(outData(:,5))<=(data_width/2) & ~isnan(ds);
+				end
+			end
 
 			% Plot Swath
 			f1=figure(1);
@@ -286,9 +342,22 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			[demix]=inpolygon(x_coord,y_coord,demx,demy);	
 			x_coord=x_coord(demix); y_coord=y_coord(demix); depth=depth(demix); magnitude=magnitude(demix);
 
-			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
-			outData=[ds depth magnitude db x_coord y_coord];
-			idx=outData(:,4)<=(data_width/2) & ~isnan(ds);
+			switch proj_flag
+			case 1
+				[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
+				outData=[ds depth magnitude db x_coord y_coord];
+				idx=outData(:,4)<=(data_width/2) & ~isnan(ds);
+			case 2
+				[ds,db,dab]=ProjectSmallCircleOntoSwath(SW,x_coord,y_coord,cx,cy);
+				switch dist_type
+				case 'mapdist'
+					outData=[ds depth magnitude db x_coord y_coord];
+					idx=abs(outData(:,4))<=(data_width/2) & ~isnan(ds);
+				case 'angle'
+					outData=[ds depth magnitude dab x_coord y_coord];
+					idx=abs(outData(:,4))<=(data_width/2) & ~isnan(ds);
+				end
+			end				
 
 			% Plot Swath
 			f1=figure(1);
@@ -344,9 +413,22 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			[demix]=inpolygon(x_coord,y_coord,demx,demy);	
 			x_coord=x_coord(demix); y_coord=y_coord(demix); z=z(demix);
 
-			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
-			outData=[ds z db x_coord y_coord];
-			idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
+			switch proj_flag
+			case 1
+				[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
+				outData=[ds z db x_coord y_coord];
+				idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
+			case 2
+				[ds,db,dab]=ProjectSmallCircleOntoSwath(SW,x_coord,y_coord,cx,cy);
+				switch dist_type
+				case 'mapdist'
+					outData=[ds z db x_coord y_coord];
+					idx=abs(outData(:,3))<=(data_width/2) & ~isnan(ds);
+				case 'angle'
+					outData=[ds z dab x_coord y_coord];
+					idx=abs(outData(:,3))<=(data_width/2) & ~isnan(ds);
+				end
+			end
 
 			% Plot Swath
 			f1=figure(1);
@@ -382,9 +464,22 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			[demix]=inpolygon(x_coord,y_coord,demx,demy);	
 			x_coord=x_coord(demix); y_coord=y_coord(demix); ksn=ksn(demix); elev=elev(demix);
 
-			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
-			outData=[ds elev ksn db x_coord y_coord];
-			idx=outData(:,4)<=(data_width/2) & ~isnan(ds);
+			switch proj_flag
+			case 1
+				[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
+				outData=[ds elev ksn db x_coord y_coord];
+				idx=outData(:,4)<=(data_width/2) & ~isnan(ds);
+			case 2
+				[ds,db,dab]=ProjectSmallCircleOntoSwath(SW,x_coord,y_coord,cx,cy);
+				switch dist_type
+				case 'mapdist'
+					outData=[ds elev ksn db x_coord y_coord];
+					idx=abs(outData(:,4))<=(data_width/2) & ~isnan(ds);
+				case 'angle'
+					outData=[ds elev ksn dab x_coord y_coord];
+					idx=abs(outData(:,4))<=(data_width/2) & ~isnan(ds);
+				end
+			end			
 
 			% Plot Swath
 			f1=figure(1);
@@ -439,23 +534,59 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 				scl=scl(demix);
 			end
 
-			% Transform Data
-			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
-			outData=[ds z db x_coord y_coord];
+			switch proj_flag
+			case 1
+				% Transform Data
+				[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
 
-			% Assemble outData
-			if isempty(bs)
-				outData=[ds z col db x_coord y_coord];
-			else 
-				outData=[ds z col scl db x_coord y_coord];	
+				% Assemble outData
+				if isempty(bs)
+					outData=[ds z col db x_coord y_coord];
+				else 
+					outData=[ds z col scl db x_coord y_coord];	
+				end			
+
+				% Filter based on provided data width
+				if isempty(bs)
+					idx=outData(:,4)<=(data_width/2) & ~isnan(ds);
+				else
+					idx=outData(:,5)<=(data_width/2) & ~isnan(ds);
+				end
+			case 2
+				[ds,db,dab]=ProjectSmallCircleOntoSwath(SW,x_coord,y_coord,cx,cy);
+
+				switch dist_type
+				case 'mapdist'
+					% Assemble outData
+					if isempty(bs)
+						outData=[ds z col db x_coord y_coord];
+					else 
+						outData=[ds z col scl db x_coord y_coord];	
+					end			
+
+					% Filter based on provided data width
+					if isempty(bs)
+						idx=abs(outData(:,4))<=(data_width/2) & ~isnan(ds);
+					else
+						idx=abs(outData(:,5))<=(data_width/2) & ~isnan(ds);
+					end
+				case 'angle'
+					% Assemble outData
+					if isempty(bs)
+						outData=[ds z col dab x_coord y_coord];
+					else 
+						outData=[ds z col scl dab x_coord y_coord];	
+					end			
+
+					% Filter based on provided data width
+					if isempty(bs)
+						idx=abs(outData(:,4))<=(data_width/2) & ~isnan(ds);
+					else
+						idx=abs(outData(:,5))<=(data_width/2) & ~isnan(ds);
+					end
+				end
 			end			
 
-			% Filter based on provided data width
-			if isempty(bs)
-				idx=outData(:,4)<=(data_width/2) & ~isnan(ds);
-			else
-				idx=outData(:,5)<=(data_width/2) & ~isnan(ds);
-			end
 
 			% Plot Swath
 			f1=figure(1);
@@ -523,9 +654,22 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			[demix]=inpolygon(x_coord,y_coord,demx,demy);	
 			x_coord=x_coord(demix); y_coord=y_coord(demix); ksn=ksn(demix);
 
-			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
-			outData=[ds ksn db x_coord y_coord];
-			idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
+			switch proj_flag
+			case 1
+				[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
+				outData=[ds ksn db x_coord y_coord];
+				idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
+			case 2
+				[ds,db,dab]=ProjectSmallCircleOntoSwath(SW,x_coord,y_coord,cx,cy);
+				switch dist_type
+				case 'mapdist'
+					outData=[ds ksn db x_coord y_coord];
+					idx=abs(outData(:,3))<=(data_width/2) & ~isnan(ds);
+				case 'angle'
+					outData=[ds ksn dab x_coord y_coord];
+					idx=abs(outData(:,3))<=(data_width/2) & ~isnan(ds);
+				end
+			end			
 
 			% Plot Swath
 			f1=figure(1);
@@ -566,9 +710,22 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			[demix]=inpolygon(x_coord,y_coord,demx,demy);	
 			x_coord=x_coord(demix); y_coord=y_coord(demix); ksn=ksn(demix);			
 
-			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
-			outData=[ds ksn db x_coord y_coord];
-			idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
+			switch proj_flag
+			case 1
+				[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
+				outData=[ds ksn db x_coord y_coord];
+				idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
+			case 2
+				[ds,db,dab]=ProjectSmallCircleOntoSwath(SW,x_coord,y_coord,cx,cy);
+				switch dist_type
+				case 'mapdist'
+					outData=[ds ksn db x_coord y_coord];
+					idx=abs(outData(:,3))<=(data_width/2) & ~isnan(ds);
+				case 'angle'
+					outData=[ds ksn dab x_coord y_coord];
+					idx=abs(outData(:,3))<=(data_width/2) & ~isnan(ds);
+				end
+			end				
 
 			% Plot Swath
 			f1=figure(1);
@@ -629,9 +786,22 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			[demix]=inpolygon(x_coord,y_coord,demx,demy);	
 			x_coord=x_coord(demix); y_coord=y_coord(demix); z=z(demix);
 
-			[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
-			outData=[ds z db x_coord y_coord];
-			idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
+			switch proj_flag
+			case 1
+				[ds,db]=ProjectOntoSwath(SW,x_coord,y_coord,data_width);
+				outData=[ds z db x_coord y_coord];
+				idx=outData(:,3)<=(data_width/2) & ~isnan(ds);
+			case 2
+				[ds,db,dab]=ProjectSmallCircleOntoSwath(SW,x_coord,y_coord,cx,cy);
+				switch dist_type
+				case 'mapdist'
+					outData=[ds z db x_coord y_coord];
+					idx=abs(outData(:,3))<=(data_width/2) & ~isnan(ds);
+				case 'angle'
+					outData=[ds z dab x_coord y_coord];
+					idx=abs(outData(:,3))<=(data_width/2) & ~isnan(ds);
+				end
+			end				
 
 			% Plot Swath
 			f1=figure(1);
