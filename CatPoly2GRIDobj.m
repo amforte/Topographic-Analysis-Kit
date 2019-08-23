@@ -91,8 +91,12 @@ function [OUT,look_table]=CatPoly2GRIDobj(DEM,poly_shape,field,varargin)
 		PS(ii,1).replace_number=Numbers(ix);
 	end
 
-	% Run polygon2GRIDobj
-	[OUT]=polygon2GRIDobj(DEM,PS,'replace_number');
+	% Run polygon2GRIDobj with pad to avoid ring of 0s bug
+	DEMp=GRIDobj(DEM,'logical');
+	DEMp.Z(:,:)=true;
+	DEMp=pad(DEMp,1,false);
+	[OUT]=polygon2GRIDobj(DEMp,PS,'replace_number');
+	OUT=crop(OUT,DEMp);
 
 	% Remove nonexistent category-number pairs from look_table
 	pres=unique(OUT.Z(:));
