@@ -703,6 +703,9 @@ PRECIP=GRIDobj('/Users/aforte/GISdata/prism_precip.tif');
 
 \paragraph{}\textit{SegmentProjector} will iterate through all channel heads within a provided stream network, so it is suggested that you use \nameref{sec:SegPick} or some other means of selecting streams of interest before running \textit{SegmentProjector}. Note that if you are using the output of \textit{SegmentPicker}, you will need to load the \textit{PickedSegments\_*.mat} file and provide the \textit{STREAMobj} \textit{Sc} stored within this file as the required \textit{STREAMobj} input to \textit{SegmentProjector}. \textit{SegmentProjector} is similar to the TopoToolbox \textit{streamproj} function.
 
+\subsection{\textit{ProjectedIncision}}
+\paragraph{}Temporary
+
 %%%%%%%%
 \section{Channel Steepness and $\chi$ Maps}
 
@@ -749,6 +752,8 @@ PRECIP=GRIDobj('/Users/aforte/GISdata/prism_precip.tif');
 \paragraph{}While we have not conducted a full study of the differences of the basic \textit{'quick'} vs \textit{'trib'} methods, the southern California example suggests that generally the regular \textit{'quick'} method of \textit{k\textsubscript{sn}} calculation may be slightly biased towards higher \textit{k\textsubscript{sn}} values, though 90\% of \textit{k\textsubscript{sn}} values of the two methods are within $\pm$50 of each other (this is with a reference concavity of 0.50, so absolute magnitudes of \textit{k\textsubscript{sn}} and thus magnitudes of deviations between these two methods will scale with choice of reference concavity). The \textit{k\textsubscript{sn}} values from the regular method are generally systematically larger than the tributary method values in low relief areas, where as generally \textit{k\textsubscript{sn}} values from the tributary method tend to be higher than regular values in higher relief portions of the landscape (Figure \ref{fig:BatchComp}). 
 
 \paragraph{}The geographic information structure (and shapefile) produced from both methods for each segment (controlled by the \textit{'smooth\_distance'}) will have fields containing values for \textit{k\textsubscript{sn}} (\textit{'ksn'}), mean drainage area (\textit{'uparea'}), mean gradient (\textit{'gradient'}), and the difference between the conditioned stream elevation and non-conditioned stream elevation (\textit{'cut\_fill'}) to inform the user whether an anomalous \textit{k\textsubscript{sn}} value may because of an overly aggressive conditioning scheme. If the \textit{'trib'} method is used, the geographic information structure and shapefile will include an extra field, \textit{'chi\_r2'}, which is the R\textsuperscript{2} value on the $\chi$-elevation fit and can be interpreted as a measure of the linearity of each sub-segment. 
+
+\paragraph{}If the \textit{'product'} is set to to \textit{'ksngrid'}, the continuous map of k\textsubscript{sn} is made via spatial averaging within a moving circular window of the individual k\textsubscript{sn} values along streams. The radius of this window by default is set to 5000 meters, but can be controlled via the \textit{'radius'} function. Note that the production of this continuous map of k\textsubscript{sn} can be time consuming. This output is suitable for use with the \nameref{sec:EroGrid} function.
 
 \subsection{\textit{KsnProfiler}} \label{sec:KsnProfiler}
 
@@ -885,6 +890,32 @@ In this mode, the first time a particular stream segment within a given connecte
 
 \subsection{\textit{ClassifyKnicks}}
 The \textit{ClassifyKnicks} is a companion function to \nameref{sec:KsnProfiler} that allows you to iterate through all segment boundaries selected during a \textit{KsnProfiler} run and provide a classification. This classification can either be numeric (e.g. 1, 2, 3, etc) or a character string (e.g., 'bound', 'slopebreak', 'knick', etc). If using character strings, these should be short (the shapefile format restricts entries in fields to 254 characters). The function will generate a new version of the knickpoint shapefile with this classification appended.
+
+\subsection{\textit{AutoKsnProfiler}}
+\paragraph{}Temporary
+
+\subsection{\textit{EroGrid}} \label{sec:EroGrid}
+\paragraph{}Temporary
+
+%%%%%%%%
+\section{Stream Junctions}
+\subsection{\textit{JunctionAngle}} \label{sec:JAngle}
+\paragraph{}Temporary
+
+\subsection{\textit{InspectJunction}}
+\paragraph{}The \textit{InspectJunction} function is provided mainly as a way of evaluating outputs of \nameref{sec:JAngle}. \textit{InspectJunction} expects the \textit{STREAMobj} used in the original call to \nameref{sec:JAngle} along with the \textit{'IX'} output from \nameref{sec:JAngle} and the number (i.e. the index of a particular junction as it appears in the output junction table) of a particular junction in question. Alternatively, you can provide an empty array to this number and manually select a junction to inspect on a map display of the stream network. 
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=16.5cm]{PNGs/InspectJunct.png}
+	\caption{Details on the fit of a selected junction. Left plot is the selected portions of the stream showing the true stream path, as points, and the best fit lines used to calculate the junction angles, displayed in polar coordinates. The dashed line is the upstream projection of the downstream link, which is used to measure the pairs of junction angles reported in the junction table. Right plot is the map showing the location of the selected junction and the sections of streams in context.} 
+	\label{fig:InspectJunc}
+\end{figure}
+
+\paragraph{}With the optional inputs to \textit{InspectJunction}, you can also manually change the length (either as stream length or number of nodes) over which the junction angels are fit to test the sensitivity of the junction angle to the fit distance. If no entries are provided to the optional \textit{'fit\_distance'} or \textit{'num\_nodes'}, the function will use the stream length selected during the original call to \nameref{sec:JAngle}, which will either be the single value supplied or the maximum value supplied if multiple fit distances were specified.
+
+\subsection{\textit{JunctionLinks}}
+\paragraph{}Temporary
 
 %%%%%%%%
 \section{Basin Selection}
@@ -1416,11 +1447,46 @@ S_{avg}=\frac{z(0)-z(L_{H})}{L_{H}}
 
 \paragraph{}Importantly, the \textit{MakeCombinedSwath} function is setup so that the width to sample the topography to produce the topographic swath is decoupled from the width from which to sample the provided data (you can of course make these equal if you want). By default the function will also plot a map displaying which data points are included in the projected data on the swath figure, you can suppress the drawing of this map with the optional \textit{'plot\_map'} parameter.
 
-\subsection{\textit{ProjectOntoSwath}}
+\subsection{\textit{MakeSerialSwath}} \label{sec:SerSwath}
+\paragraph{}In some cases, it is useful to produce a series of swath profiles that are semi-parallel to each other or follow a particular path. The \textit{MakeSerialSwath} function is designed to make producing such a product simpler. As with \nameref{sec:Swath}, you must provide a base \textit{GRIDobj} from which to produce the swaths and a series of x-y points that will define the serial swaths, but in this case the swaths will be oriented perpendicular to the provided line. You can alternatively provide an empty array to this \textit{'points'} input to initiate a graphical choice within Matlab to create the base line. Through required and optional inputs you can control the length of individual swaths, the width of the swaths either by directly specifying the width in map units or by specifying the number of equal width swaths to create along the base line, and the orientation of the swaths with respect to the baseline (i.e should the swaths be centered along the baseline as in \nameref{fig:SerSwath} or aligned along the 'top' or 'bottom' of the baseline). 
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=14cm]{PNGs/SerialSwath.png}
+	\caption{Standard graphic output from \nameref{sec:SerSwath} with a series of 50 equal width, 20 km long swaths, centered along the provided line (dark black line in the upper panel). The middle panel shows the minimum, mean, and maximum swath values for each swath (keyed by their color) and the bottom panel shows the average of all the swaths.}
+	\label{fig:SerSwath}
+\end{figure}
+
+\paragraph{}The primary output of the \textit{MakeSerialSwath} function is a cell array containing individual \textit{SWATHobjs} created along the baseline. These individual \textit{SWATHobjs} are suitable for use in other functions, e.g. \nameref{sec:CombSwath} or plotting with built in \textit{TopoToolbox} function like \textit{plotdz}.
+
+\subsection{\textit{ProjectOntoSwath}} \label{sec:ProjSwath}
 \paragraph{}The \textit{ProjectOntoSwath} function is used in \nameref{sec:CombSwath} to do the data projection, but we include it as a separate function as it may be useful for users. \textit{ProjectOntoSwath} finds the distance of a list of x and y points along and from the centerline of a provided \textit{SWATHobj} based on a user defined width within which to sample the data. Distances of points that lie beyond the extent of the swath or lie outside of the data sampling width will be set to NaN. The function projects data onto each swath segment (i.e. if the swath line is bent) and finds the swath segment that data are closest to in tangential distance to avoid duplication of points. Note that there is no compiled version of \textit{ProjectOntoSwath}.
+
+\subsection{\textit{ProjectSmallCircleOntoSwath}}
+\paragraph{}This function is similar to \nameref{sec:ProjSwath}, but instead of projecting points along paths perpendicular to the swath, this function takes an input coordinate (in projected coordinates) to use as the center of a family of small circles along which to project the provided x-y points. This function can be used in combination with \nameref{sec:SmallCirc} if you need to first determine a small circle center that would be appropriate. As with \nameref{sec:ProjSwath}, the function outputs the location of points along the swath based on their projected positions. The function also calculates the distance from the point along the swath both in map units as measured along the small circle arc between the point and the swath center line and in degrees.
+
+\subsection{\textit{ProjectGPSOntoSwath}}
+\paragraph{}The \textit{ProjectGPSOntoSwath} behaves identically to \nameref{sec:ProjSwath} in terms of the projection of the provided x-y location onto the swath and similarly provides distance along and from the swath of those points, but it also takes velocity and associated uncertainties (assumed to be in the standard north and east components) and projects those onto the swath. The output of the function gives the magnitude of the projected GPS vector, i.e. the magnitude of the velocity if resolved onto a plane parallel to the \textit{SWATHobj} and the associated uncertainty, i.e. the radius of a slice through the error ellipse at the orientation of the \textit{SWATHobj}. The function also provides north and east components for this projected vector which would be suitable inputs to the \textit{quiver} function for plotting.
+
+\subsection{\textit{CrossSwath}}
+\paragraph{}Often, it is useful to precisely determine where a particular linear feature crosses a \textit{SWATHobj} for plotting purposes. This function takes a \textit{SWATHobj} and a line (defined by a series of x-y points at the vertices of the line in question) and calculates the positions along a swath where the line crosses the bounds of the swath (in both x-y coordinates and distance along the swath) and the mean crossing location of the line. 
 
 %%%%%%%%
 \section{Miscellaneous}
+
+\subsection{\textit{BestFitSmallCircle}} \label{sec:SmallCirc}
+\paragraph{}Function to find the best fit small circle for a set of provided x-y points. In addition to the x and y coordinates, you are expected to provided the projection information for the x and y coordinates as a structure. Assuming you have a \textit{GRIDobj} with which these x-y points are associated, the necessary projection information (i.e. the input for the \textit{'proj'} argument) is stored in the \textit{DEM.georef.mstruct} or alternatively, if you are using an older version of TopoToolbox, \textit{DEM.georef}. This information can also be directly extracted from a GeoTIFF with the \textit{geotiffinfo} function. If you provide an empty array to the textit{'proj'} argument, the function assumes that the provided x-y points are already geographic coordinates. The function will output the center of the best fit small circle (in geographic coordinates), the radius of the small circle (in degrees), and a series of points along the perimeter of the small circle (in projected coordinates unless the original points are provided as geographic)
+
+\begin{lstlisting}[language=Matlab]
+% Produce a best fit small circle from a series of x and y coordinates extracted from a particular DEM
+[clat,clon,crad,cpx,cpy]=BestFitSmallCircle(x,y,DEM.georef.mstruct);
+% Alternatively, grab the projection info directly from a geotiff
+proj=geotiffinfo('srtm_bigtujunga30m_utm11.tif');
+[clat,clon,crad,cpx,cpy]=BestFitSmallCircle(x,y,proj);
+% You can use the built in projinv and projfwd functions to convert the clat and clon or cpx and cpy outputs
+[center_x,center_y]=projfwd(proj,clat,clon); % Convert center to projected
+[cp_lat,cp_lon]=projinv(proj,cpx,cpy); % Convert perimeter to geographic
+\end{lstlisting}
 
 \subsection{\textit{ksncolor}} \label{sec:ksncolor}
 \paragraph{}Function to generate a colormap that roughly approximates the stereotypical green-yellow-red color progression commonly used for \textit{k\textsubscript{sn}} data in publications, see Figure \ref{fig:KsnSwath} for an example of the color map. Note that there is no compiled version of \textit{ksncolor}.
@@ -1450,6 +1516,9 @@ S_{avg}=\frac{z(0)-z(L_{H})}{L_{H}}
 \end{figure}
 
 \paragraph{}You can provide an empty array for the location of observation to choose a point on the provided DEM to use as the location. The location of the observation is marked on the figure with a white dot.
+
+\subsection{\textit{HackRelationship}}
+\paragraph{}Temporary
 
 \subsection{\textit{Mat2Arc}} \label{sec:Mat2Arc}
 \paragraph{}\textit{Mat2Arc} is a helper function that takes any matfile as an input and will search its contents and produce either ESRI ascii grids or geotiffs and shapefiles from any valid datasets. Specifically, will make ascii grids or geotiffs of any \textit{GRIDobj}, will convert any \textit{FLOWobj} to an Arc style flow raster an export as an ascii grid or geotiff, and output any \textit{STREAMobj} or recognizable geographic data structure as a shapefile. Whether rasters are saved as ESRI ascii grids or geotiffs is controlled with the optional \textit{'raster\_type'} parameter.
