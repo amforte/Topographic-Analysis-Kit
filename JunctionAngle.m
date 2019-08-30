@@ -106,6 +106,7 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 	%		e2_num - number of upstream nodes used to fit tributary 2
 	%		e2_R2 - R2 value on linear fit of tributary 2
 	%		eS_direction - flow azimuth of downstream link
+	%		eS_distance - stream distance used to fit downstream link
 	%		eS_num - number of downstream nodes used to fit downstream link
 	%		eS_R2 - R2 value of linear fit of downstream link
 	% 	IX - nx4 cell array with columns containing indices for selected positions 
