@@ -109,6 +109,27 @@
 	volume = {5},
 	year = {2017}
 }
+@article{Howard1971,
+	author = {Howard, Alan D},
+	file = {:Users/amforte/Documents/PaperLibrary/Mendeley/Howard/Water Resources Research/Howard-1971-Water{\_}Resources{\_}Research.pdf:pdf},
+	journal = {Water Resources Research},
+	number = {4},
+	pages = {863--873},
+	title = {{Optimal angles of stream junction: Geometric, stability to capture, and minimum power criteria}},
+	volume = {7},
+	year = {1971}
+}
+@article{James1969,
+	author = {James, W.R. and Krumbein, W.C.},
+	file = {:Users/amforte/Documents/PaperLibrary/Mendeley/James, Krumbein/The Journal of Geology/30062251.pdf:pdf},
+	journal = {The Journal of Geology},
+	number = {5},
+	pages = {544--565},
+	title = {{Frequency Distributions of Stream Link Lengths}},
+	volume = {77},
+	year = {1969}
+}
+
 
 \end{filecontents}
 
@@ -127,6 +148,7 @@
 \usepackage[left=2.5cm, right=2.5cm, top=4cm, bottom=4cm]{geometry} %Set Margins 
 \usepackage{textcomp} % Package for some symbology
 \usepackage{subcaption} % Package for side by side subfigures
+\usepackage{amsmath} % Package for conditional equations
 \definecolor{mygreen}{RGB}{28,172,0} % color values Red, Green, Blue
 \definecolor{mylilas}{RGB}{170,55,241}
 \renewcommand{\rmdefault}{ptm} % Change font to Times
@@ -900,9 +922,85 @@ The \textit{ClassifyKnicks} is a companion function to \nameref{sec:KsnProfiler}
 %%%%%%%%
 \section{Stream Junctions}
 \subsection{\textit{JunctionAngle}} \label{sec:JAngle}
-\paragraph{}Temporary
+\subsubsection{Basic Functioning}
+\paragraph{}The \textit{JunctionAngle} function is designed to both measure the angle between streams at tributary junctions and provide simple predictions of what these junction angles should be under very simple assumptions of an idealized channel network. The function largely adopts nomenclatures and methods from \cite{Howard1971}. Specifically, the function considers a stream junction to consist of two upstream links, referred to as 'tributary 1' and 'tributary 2', and a single downstream link. Tributary 1 is defined to be the larger of the two incoming links, with the determination of size based on the Shreve number of the two streams. In cases where the Shreve number of the two upstream links are the same, the determination of stream size is based on the drainage areas of the two upstream links. We adopt the approach in \cite{Howard1971} and consider the junction angle between the two upstream links, generally, as the product of two angles between each link and the upstream projection of the downstream link FIG. These two angles, E1 and E2 referring to the angles between tributaries 1 and 2, respectively, and the upstream projection of the downstream link, are summed to find the junction angle (JA), such that:
 
-\subsection{\textit{InspectJunction}}
+\begin{equation}
+JA = E1 + E2
+\end{equation}
+
+\noindent Not all junctions satisfy the assumption that both upstream links are bisected by the upstream projection of the downstream link, i.e. both tributary 1 and tributary 2 lie on the same side of the upstream projection of the downstream link FIG. In these cases, the junction angle is instead determined by:
+
+\begin{equation}
+JA =
+\begin{cases}
+E1 - E2,& \text{if } E1\geq E2\\
+E2 - E1,& \text{if } E2> E1
+\end{cases}
+\end{equation}
+
+\noindent In these cases, the values reported for E1 and E2, i.e. the entries for \textit{'e1\_obs\_angle'} and \textit{'e2\_obs\_angle'} in the output table, will still be with reference to the upstream projection of the downstream link. For a particular junction, the value of \textit{'split'} in the output table indicates whether the upstream projection of the downstream link bisects the tributaries (true) or does not (false). By definition, junction angles are undefined in cases where more than two upstream links meet at a single node within a \textit{STREAMobj}.   
+
+\paragraph{}To ensure that the angular relations between elements of the stream network are accurately represented and measured, the nodes of the provided \textit{STREAMobj} are converted to geographic coordinates before any calculations are preformed. To calculate junction angles, the mean orientation of each link is determined by a linear fit. The orientation of this mean line will be in part sensitive to the distance over which the fit is determined. This distance can be controlled by the user with the \textit{'fit\_distance'} parameter. This distance can be specified in map units and will be measured along the stream or specifically with the number of nodes along the stream you would like to use. Multiple values can be provided to \textit{'fit\_distance'} to calculate the junction angles considering more than one distance. Depending on the details of the stream network and the value provided to \textit{'fit\_distance'}, not all links may be fit over the full distance, because the algorithm will only fit streams over portions of links that do not encounter another junction. For example, if a value of 1000 meters was provided to \textit{'fit\_distance'}, but for one of the links another tributary junction occurred 500 meters from the junction in question, then that particular link would only be fit over 500 meters. The extent to which the linear fit of the link is a good approximation of the true path of the link can be assessed with the R\textsuperscript{2} value for the link in question, i.e. the \textit{'e1\_R2'}, \textit{'e2\_R2'}, or \textit{'eS\_R2'} values in the output table, or visually for individual junctions of interest with the \nameref{sec:InJunc} function.
+
+\subsubsection{Junction Angle Prediction}
+\paragraph{}Along with measuring the junction angle, the \textit{'JunctionAngle'} function will predict what the junction angle of a given junction should be based on the geometric expectations laid out in \cite{Howard1971}. This predicted junction angle can be calculated considering the drainage areas of the two upstream links with the equations:
+
+\begin{equation}
+e1_{predicted}=cos^{-1} \left( \left( \frac{A1+A2}{A1} \right) ^{\theta_{ref}} \right)
+\end{equation}
+
+\begin{equation}
+e2_{predicted}=cos^{-1} \left( \left( \frac{A1+A2}{A2} \right) ^{\theta_{ref}} \right)
+\end{equation}
+
+\noindent Where \textit{A1} and \textit{A2} are the drainage areas directly upstream of the junction for tributaries 1 and 2 respectively and $\theta_{ref}$ is the reference concavity. Alternatively, the predicted junction angles can be calculated using the average channel slope where:
+
+\begin{equation}
+e1_{predicted}=cos^{-1} \left( \frac{S3}{S1} \right)
+\end{equation}
+
+\begin{equation}
+e2_{predicted}=cos^{-1} \left( \frac{S3}{S2} \right)
+\end{equation}
+
+\noindent Where \textit{S1}, \textit{S2}, and \textit{S3} are the mean slopes of tributaries 1 and 2 and the downstream link, respectively. In the slope based method, the predicted junction angles will be sensitive to the \textit{'fit\_distance'} as the mean slope of the links may vary depending on the portions of the stream considered. This is not the case for the drainage area method as this will not vary as a function of the fit distance, but it is instead sensitive to the choice of reference concavity. You can choose to calculate the predicted angles with the slope, area, or both methods depending on the input to the optional \textit{'predict\_angle\_method'} argument.
+
+\subsubsection{Output Table}
+\paragraph{}One of the primary outputs of the \textit{JunctionAngle} function is a table with a variety of information for all junctions within the provided stream network. For any junction where there are more than two upstream tributaries meeting, all values except the junction number and x-y coordinates will be set to NaN as junction angles (and derivative values) are undefined in this case. The entries in the output table are as follows:
+
+\begin{itemize}
+	\item \textit{'junction\_number'} - A unique ID number for the junction
+	\item \textit{'junction\_x'} - the x coordinate of the junction
+	\item \textit{'junction\_y'} - the y coordinate of the junction
+	\item \textit{'junction\_angle'} - the angle (in degrees) between tributary 1 and tributary 2
+	\item \textit{'handedness'} - the handedness of the junction as defined by \cite{James1969}, which can be either 'Right', 'Left', or 'Undefined'
+	\item \textit{'split'} - logical indicating whether the upstream tributaries are bisected by the upstream projection of the downstream link (true) or not (false)
+	\item \textit{'e1\_obs\_angle'} - the measured angle between tributary 1 and the upstream projection of the downstream link
+	\item \textit{'e1\_Apred\_angle'} - the predicted angle between tributary 1 and the upstream projection of the downstream link if the \textit{'predict\_angle\_method'} is set to \textit{'area'} or \textit{'both'}.
+	\item \textit{'e1\_Spred\_angle'} - the predicted angle between tributary 1 and the upstream projection of the downstream link if the \textit{'predict\_angle\_method'} is set to \textit{'slope'} or \textit{'both'}.
+	\item \textit{'e1\_rotation'} - orientation of tributary 1 with respect to the upstream projection of the downstream link, either counter-clockwise (CCW), clockwise (CW), or undefined
+	\item \textit{'e1\_shreve'} - shreve order of tributary 1
+	\item \textit{'e1\_direction'} - flow azimuth of selected portion of tributary 1
+	\item \textit{'e1\_distance'} - stream distance used to fit selected portion of tributary 1
+	\item \textit{'e1\_num'} - number of nodes used to fit selected portion of tributary 1
+	\item \textit{'e1\_R2'} - R\textsuperscript{2} value on linear fit of selected portion of tributary 1
+	\item \textit{'e2\_obs\_angle'} - the measured angle between tributary 2 and the upstream projection of the downstream link
+	\item \textit{'e2\_Apred\_angle'} - the predicted angle between tributary 2 and the upstream projection of the downstream link if the \textit{'predict\_angle\_method'} is set to \textit{'area'} or \textit{'both'}.
+	\item \textit{'e2\_Spred\_angle'} - the predicted angle between tributary 21 and the upstream projection of the downstream link if the \textit{'predict\_angle\_method'} is set to \textit{'slope'} or \textit{'both'}.
+	\item \textit{'e2\_rotation'} - orientation of tributary 2 with respect to the upstream projection of the downstream link, either counter-clockwise (CCW), clockwise (CW), or undefined
+	\item \textit{'e2\_shreve'} - shreve order of tributary 2
+	\item \textit{'e2\_direction'} - flow azimuth of selected portion of tributary 2
+	\item \textit{'e2\_distance'} - stream distance used to fit selected portion of tributary 2
+	\item \textit{'e2\_num'} - number of nodes used to fit selected portion of tributary 2
+	\item \textit{'e2\_R2'} - R\textsuperscript{2} value on linear fit of selected portion of tributary 2
+	\item \textit{'eS\_direction'} - flow azimuth of selected portion of downstream link
+	\item \textit{'eS\_distance'} - stream distance used to fit selected portion of downstream link
+	\item \textit{'eS\_num'} - number of nodes used to fit selected portion of downstream link
+	\item \textit{'eS\_R2'} - R\textsuperscript{2} value on linear fit of selected portion of downstream link
+\end{itemize}
+
+\subsection{\textit{InspectJunction}} \label{sec:InJunc}
 \paragraph{}The \textit{InspectJunction} function is provided mainly as a way of evaluating outputs of \nameref{sec:JAngle}. \textit{InspectJunction} expects the \textit{STREAMobj} used in the original call to \nameref{sec:JAngle} along with the \textit{'IX'} output from \nameref{sec:JAngle} and the number (i.e. the index of a particular junction as it appears in the output junction table) of a particular junction in question. Alternatively, you can provide an empty array to this number and manually select a junction to inspect on a map display of the stream network. 
 
 \begin{figure}[H]
