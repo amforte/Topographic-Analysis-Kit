@@ -19,9 +19,10 @@ function [links]=JunctionLinks(FD,S,IX,junctions,varargin)
 	%	cis or trans (cis links have the same handedness on both ends of the
 	%	link, trans links have the oppostite handedness on the upstream and
 	%	downstream links). Exterior links, interior links that connect to an
-	%	outlet, and links for which one or more of the junctions at the end
-	%	have more than two upstream links will be undefined in terms of 
-	%	a cis or trans classification.
+	%	outlet, links for which one or more of the junctions at the end
+	%	have more than two upstream links, and interior links for which there is not
+	% 	clear handedness (i.e. the incoming streams have the same Shreve order)
+	%	will be undefined in terms of a cis or trans classification.
 	%
 	% Required Inputs:
 	%	FD - FLOWobj 
