@@ -129,6 +129,22 @@
 	volume = {77},
 	year = {1969}
 }
+@techreport{Hack1957,
+	author = {Hack, J T},
+	booktitle = {U.S. Geological Survey Professional Paper},
+	pages = {97},
+	title = {{Studies of longitudinal stream profiles in Virignia and Maryland}},
+	year = {1957}
+}
+@article{Whipple1999a,
+	author = {Whipple, Kelin X and Tucker, Gregory E},
+	journal = {Journal of Geophysical Research},
+	number = {B8},
+	pages = {17661--17674},
+	title = {{Dynamics of the stream-power river incision model: Implications for height limits of mountain ranges, landscape response timescales, and research needs}},
+	volume = {104},
+	year = {1999}
+}
 
 
 \end{filecontents}
@@ -683,7 +699,7 @@ PRECIP=GRIDobj('/Users/aforte/GISdata/prism_precip.tif');
 \subsection{\textit{SegmentPlotter}}
 \paragraph{}\textit{SegmentPlotter} takes the output of \nameref{sec:SegPick} and plots each selected stream individually. The stream network is plotted as $\chi$-elevation, longitudinal profile, and slope-area plots. With the logical \textit{'separate'} flag, you can produce individual figures for each segment. Alternatively, you can provide a list of identifying numbers (i.e. the ID number in the third column of the \nameref{sec:SegPick} output) to the \textit{'subset'} parameter to only plot specific segments. You can also initiate and control labeling of stream segments with the \textit{'label'} and \textit{'names'} parameters.
 
-\subsection{\textit{SegmentProjector}}
+\subsection{\textit{SegmentProjector}} \label{sec:SegProj}
 
 \paragraph{}\textit{SegmentProjector} allows you to interactively select a portion of a stream to project along the length of the entire stream (i.e. from the mouth to the channel head of the provided stream). This can be useful for a variety of questions, e.g. estimating the amount of uplift of a low relief portion of a landscape (Figure \ref{fig:proj1}) or identifying portions of a stream profile that may be tectonically deformed or otherwise disturbed (Figure \ref{fig:proj2}). In detail, the function clips out the portion of the stream you select and performs a least squares linear fit on the $\chi$-elevation relationship along with a 95\% confidence interval on this fit. 
 
@@ -726,7 +742,13 @@ PRECIP=GRIDobj('/Users/aforte/GISdata/prism_precip.tif');
 \paragraph{}\textit{SegmentProjector} will iterate through all channel heads within a provided stream network, so it is suggested that you use \nameref{sec:SegPick} or some other means of selecting streams of interest before running \textit{SegmentProjector}. Note that if you are using the output of \textit{SegmentPicker}, you will need to load the \textit{PickedSegments\_*.mat} file and provide the \textit{STREAMobj} \textit{Sc} stored within this file as the required \textit{STREAMobj} input to \textit{SegmentProjector}. \textit{SegmentProjector} is similar to the TopoToolbox \textit{streamproj} function.
 
 \subsection{\textit{ProjectedIncision}}
-\paragraph{}Temporary
+\paragraph{}The \textit{ProjectedIncision} function uses the output of \nameref{sec:SegProj} to estimate incision across an entire network. To do this, the function must assume that the topology of the drainage network in question has not changed over the time period of interest. The \textit{ProjectedIncision} function takes the series of projected profiles that are calculated in \nameref{sec:SegProj} and assumes that the projected portions of the network represent relict patches of equilibrium river profiles, i.e. it assumes that at some point in the past, the entire landscape had the same k\textsubscript{sn} as the given relict patch and uses the $\chi$ values of the modern drainage to estimate what the elevation of all portions of that relict stream network would be and uses the difference between those elevations and the modern elevations (across the entire provided network) to calculate incision. If more than one section of stream was projected when using \nameref{sec:SegProj}, then the \textit{ProjectedIncision} function will calculate projected elevations and implied incision amounts for each individual projected segment and then report the mean, minimum, maximum, and standard deviations of the projected elevations and incision. The function will also optionally display this estimated incision in a figure (e.g. Figure \ref{fig:ProjInc}). Positive incision amounts indicate the projected elevations of the profile lie above the modern stream elevations whereas negative incision amounts indicate that the projected elevations of the profile lies below the modern stream elevations.
+
+\begin{figure}[H]
+	\includegraphics[width=16.5cm]{PNGs/ProjectedIncision.png}
+	\caption{Example of projected incision amounts for Basin 402 (northeastern San Jacinto Mountains) using data from 5 projected streams.}
+	\label{fig:ProjInc}
+\end{figure}
 
 %%%%%%%%
 \section{Channel Steepness and $\chi$ Maps}
@@ -782,7 +804,7 @@ PRECIP=GRIDobj('/Users/aforte/GISdata/prism_precip.tif');
 
 \paragraph{}In detail, \textit{AutoKsnProfiler} calculates k\textsubscript{sn} along the stream network as in \nameref{sec:KsnBatch} and then calculates averaged k\textsubscript{sn} over a user specified length scale, controllable with the \textit{'segment\_length'} parameter. The function then looks for changes along individual stream profiles in these binned k\textsubscript{sn} values. If it identifies a significant change in these binned values, it identifies this as a break point and will then find the average k\textsubscript{sn} for the segments of the stream between individual breakpoints. This is equivalent to what a user does manually using \nameref{sec:KsnProfiler} (e.g. Figure \ref{fig:SegSelect}). 
 
-\paragraph{}The sensitivity of the function to detecting changes is primarily controlled by the \textit{'thresh\_ratio'} parameter which is a value between 0 and 1, where lower values imply that the threshold for detecting a change is lower (i.e. there will be more breakpoints). In detail, the sensitivity of the function is also influenced by the segment length and the reference concavity. To aid users in choosing values of these three parameters that are the most appropriate to their data and their desired outcomes, the \textit{AutoKsnProfiler} function has an optional mode where you can visualize the outcomes for a single stream and iteratively change values for the threshold ratio, the segment length, or the reference concavity. 
+\paragraph{}The sensitivity of the function to detecting changes is primarily controlled by the \textit{'thresh\_ratio'} parameter which is a value between 0 and 1, where lower values imply that the threshold for detecting a change is lower (i.e. there will be more breakpoints). In detail, the sensitivity of the function is also influenced by the segment length and the reference concavity. To aid users in choosing values for these three parameters that are the most appropriate to their data and their desired outcomes, the \textit{AutoKsnProfiler} function has an optional mode where you can visualize the outcomes for a single stream and iteratively change values for the threshold ratio, the segment length, or the reference concavity (e.g. Figure \ref{fig:AutoThreshSelect}). 
 
 \begin{figure}[H]
 	\centering
@@ -1730,7 +1752,19 @@ proj=geotiffinfo('srtm_bigtujunga30m_utm11.tif');
 \paragraph{}You can provide an empty array for the location of observation to choose a point on the provided DEM to use as the location. The location of the observation is marked on the figure with a white dot.
 
 \subsection{\textit{HackRelationship}}
-\paragraph{}Temporary
+\paragraph{}The \textit{HackRelationship} function can be used to estimate the so-called Hack coefficient and exponent for a portion of a landscape. This refers to 'Hack's Law', originally described by \cite{Hack1957} which related the change in drainage area along a stream to distance along the stream such that:
+
+\begin{equation} \label{eq:HackOrig}
+x=C*da^h
+\end{equation}
+
+\noindent where \textit{x} is distance measured in the downstream direction in map units, \textit{da} is drainage area in map units squared, \textit{C} is the Hack coefficient, and \textit{h} is the Hack exponent. This same relationship has been presented in an alternative form by \cite{Whipple1999a}:
+
+\begin{equation} \label{eq:HackNew}
+da=C*x^h
+\end{equation}
+
+\noindent where the values are the same, but obviously the values of \textit{C} and \textit{h} are interpreted differently. This function allows you to fit the relationship with either form using the optional \textit{'relation'} parameter, with the \textit{'original'} (Equation \ref{eq:HackOrig})  or \textit{'inverse'} (Equation \ref{eq:HackNew}) form. To compute the relationship, the function will calculate a value of \textit{C} and \textit{h} for each drainage basin, defined by the number and location of outlets in the provided \textit{STREAMobj} and also calculates a 'global' value of \textit{C} and \textit{h} from all relevant points in the landscape. The function has a variety of options to control what data is used to fit. For example, for a given watershed, the function can measure distances from the channel heads to the outlets or from the divides to the outlets. The function can also do the fit using only data along the trunk stream in a watershed, along all streams in a watershed, or using all contributing pixels in a watershed.
 
 \subsection{\textit{Mat2Arc}} \label{sec:Mat2Arc}
 \paragraph{}\textit{Mat2Arc} is a helper function that takes any matfile as an input and will search its contents and produce either ESRI ascii grids or geotiffs and shapefiles from any valid datasets. Specifically, will make ascii grids or geotiffs of any \textit{GRIDobj}, will convert any \textit{FLOWobj} to an Arc style flow raster an export as an ascii grid or geotiff, and output any \textit{STREAMobj} or recognizable geographic data structure as a shapefile. Whether rasters are saved as ESRI ascii grids or geotiffs is controlled with the optional \textit{'raster\_type'} parameter.
