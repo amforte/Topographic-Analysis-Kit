@@ -200,9 +200,14 @@ function [S,zpOUT,inOUT]=ProjectedIncision(DEM,A,S,Sc,OUT,varargin)
 
 	if display_figure
 		f1=figure(1);
+		set(f1,'unit','normalized','position',[0.1 0.1 0.8 0.8]);
 
 		subplot(2,2,1);
 		hold on
+		[RGB]=imageschs(DEM,DEM,'colormap','gray');
+		[~,R]=GRIDobj2im(DEM);
+		imshow(flipud(RGB),R);
+		axis xy
 		plotc(S,mean_in);
 		colorbar;
 		title('Mean Incision');
@@ -210,6 +215,8 @@ function [S,zpOUT,inOUT]=ProjectedIncision(DEM,A,S,Sc,OUT,varargin)
 
 		subplot(2,2,2);
 		hold on
+		imshow(flipud(RGB),R);
+		axis xy
 		plotc(S,std_in);
 		colorbar;
 		title('StDev Incision');
@@ -217,6 +224,8 @@ function [S,zpOUT,inOUT]=ProjectedIncision(DEM,A,S,Sc,OUT,varargin)
 
 		subplot(2,2,3);
 		hold on 
+		imshow(flipud(RGB),R);
+		axis xy
 		plotc(S,min_in);
 		colorbar;
 		title('Min Incision');
@@ -224,6 +233,8 @@ function [S,zpOUT,inOUT]=ProjectedIncision(DEM,A,S,Sc,OUT,varargin)
 
 		subplot(2,2,4);
 		hold on 
+		imshow(flipud(RGB),R);
+		axis xy
 		plotc(S,max_in);
 		colorbar;
 		title('Max Incision');
