@@ -130,7 +130,7 @@ function cmpMakeStreams(wdir,dem,threshold_area,file_name,varargin)
 	disp('Calculating Flow Direction')
 	FD=FLOWobj(DEM,'preprocess','carve','verbose',true);
 
-	save(MatFileName,'FD','-append','-v7.3');
+	save(MatFileName,'FD','-append');
 
 	disp('Calculating Flow Accumulation')
 	if isempty(precip_grid)
@@ -174,7 +174,7 @@ function cmpMakeStreams(wdir,dem,threshold_area,file_name,varargin)
 	disp('Extracting total stream network')
 	S=STREAMobj(FD,'unit','mapunits','minarea',threshold_area);
 
-	save(MatFileName,'A','S','-append','-v7.3');
+	save(MatFileName,'A','S','-append');
 	MS=STREAMobj2mapstruct(S);
 	shapewrite(MS,ShpFileName);
 
