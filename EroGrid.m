@@ -278,6 +278,7 @@ function [KSNGrid,KSNstdGrid] = KsnAvg(DEM,ksn_ms,radius,er_type)
 	KSNGrid.Z(:,:)=NaN;
 	for ii=1:numel(ksn_ms)
 		ix=coord2ind(DEM,ksn_ms(ii).X,ksn_ms(ii).Y);
+		ix(isnan(ix))=[];
 		KSNGrid.Z(ix)=ksn_ms(ii).ksn;
 	end
 
