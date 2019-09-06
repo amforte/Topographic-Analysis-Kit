@@ -10,10 +10,11 @@ function cmpSegmentProjector(wdir,MatFile,varargin);
 	%	MatFile - Name of matfile output from either 'cmpMakeStreams' or the name of a single basin mat file from 'cmpProcessRiverBasins'
 	%
 	% Optional Inputs:
+	%	file_name_prefix ['sel'] - prefix for outputs	
 	%	conditioned_DEM [] - option to provide name of a hydrologically conditioned DEM for use in this function, expects the mat file as saved by 
 	%		'cmpConditionDEM'. See 'cmpConditionDEM' function for options for making a hydrological conditioned DEM. If no input is provided the code defaults 
 	%		to using the mincosthydrocon function.
-	%	new_stream_net [] - option to provide name of a matfile containing a new stream network as as output from another function (e.g. cmpFindThreshold) to use
+	%	new_stream_net [] - option to provide name of a matfile containing a new stream network as as output from another function (e.g. SegmentPicker) to use
 	%		instead of the stream network saved in the MatFile provided to the function. This new stream network must have been generated from the
 	%		DEM stored in the provided MatFile
 	%	concavity_method ['ref']- options for concavity
@@ -52,6 +53,7 @@ function cmpSegmentProjector(wdir,MatFile,varargin);
 	addRequired(p,'wdir',@(x) ischar(x));
 	addRequired(p,'MatFile',@(x) regexp(x,regexptranslate('wildcard','*.mat')));
 
+	addParameter(p,'file_name_prefix','sel',@(x) ischar(x));
 	addParameter(p,'concavity_method','ref',@(x) ischar(validatestring(x,{'ref','auto'})));
 	addParameter(p,'pick_method','chi',@(x) ischar(validatestring(x,{'chi','stream'})));
 	addParameter(p,'smooth_distance',1000,@(x) isscalar(x) && isnumeric(x));
@@ -66,6 +68,7 @@ function cmpSegmentProjector(wdir,MatFile,varargin);
 	wdir=p.Results.wdir;
 	MatFile=p.Results.MatFile;
 
+	file_name_prefix=p.Results.file_name_prefix;
 	smooth_distance=p.Results.smooth_distance;
 	theta_method=p.Results.concavity_method;
 	ref_theta=p.Results.ref_concavity;
@@ -298,8 +301,8 @@ function cmpSegmentProjector(wdir,MatFile,varargin);
 			OUT{2,ii}=[C.x C.y C.distance C.area C.chi ones(size(C.chi)).*C.mn C.elev pred_el pred_el_u pred_el_l];
 
 			if save_figures
-				print(f1,'-dpdf',fullfile(wdir,['ProjectedProfile_' num2str(ii) '.pdf']),'-bestfit');
-				print(f2,'-dpdf',fullfile(wdir,['Residual_' num2str(ii) '.pdf']),'-bestfit');
+				print(f1,'-dpdf',fullfile(wdir,[file_name_prefix '_ProjectedProfile_' num2str(ii) '.pdf']),'-bestfit');
+				print(f2,'-dpdf',fullfile(wdir,[file_name_prefix '_Residual_' num2str(ii) '.pdf']),'-bestfit');
 			else
 				if ii<num_ch
 					uiwait(msgbox('Click OK when ready to continue'))
@@ -617,8 +620,8 @@ function cmpSegmentProjector(wdir,MatFile,varargin);
 
 
 			if save_figures
-				print(f1,'-dpdf',fullfile(wdir,['ProjectedProfile_' num2str(ii) '.pdf']),'-bestfit');
-				print(f2,'-dpdf',fullfile(wdir,['Residual_' num2str(ii) '.pdf']),'-bestfit');
+				print(f1,'-dpdf',fullfile(wdir,[file_name_prefix '_ProjectedProfile_' num2str(ii) '.pdf']),'-bestfit');
+				print(f2,'-dpdf',fullfile(wdir,[file_name_prefix '_Residual_' num2str(ii) '.pdf']),'-bestfit');
 			else
 				if ii<num_ch
 					uiwait(msgbox('Click OK when ready to continue'))
@@ -776,8 +779,8 @@ function cmpSegmentProjector(wdir,MatFile,varargin);
 			OUT{2,ii}=[C.x C.y C.distance C.area C.chi ones(size(C.chi)).*C.mn C.elev pred_el pred_el_u pred_el_l];
 
 			if save_figures
-				print(f1,'-dpdf',fullfile(wdir,['ProjectedProfile_' num2str(ii) '.pdf']),'-bestfit');
-				print(f2,'-dpdf',fullfile(wdir,['Residual_' num2str(ii) '.pdf']),'-bestfit');
+				print(f1,'-dpdf',fullfile(wdir,[file_name_prefix '_ProjectedProfile_' num2str(ii) '.pdf']),'-bestfit');
+				print(f2,'-dpdf',fullfile(wdir,[file_name_prefix '_Residual_' num2str(ii) '.pdf']),'-bestfit');
 			else
 				if ii<num_ch
 					uiwait(msgbox('Click OK when ready to continue'))
@@ -1093,8 +1096,8 @@ function cmpSegmentProjector(wdir,MatFile,varargin);
 			end
 
 			if save_figures
-				print(f1,'-dpdf',fullfile(wdir,['ProjectedProfile_' num2str(ii) '.pdf']),'-bestfit');
-				print(f2,'-dpdf',fullfile(wdir,['Residual_' num2str(ii) '.pdf']),'-bestfit');
+				print(f1,'-dpdf',fullfile(wdir,[file_name_prefix '_ProjectedProfile_' num2str(ii) '.pdf']),'-bestfit');
+				print(f2,'-dpdf',fullfile(wdir,[file_name_prefix '_Residual_' num2str(ii) '.pdf']),'-bestfit');
 			else
 				if ii<num_ch
 					uiwait(msgbox('Click OK when ready to continue'))
@@ -1116,11 +1119,11 @@ function cmpSegmentProjector(wdir,MatFile,varargin);
 	chT=table;
 	chT.channel_heads_x=ch_list(:,1);
 	chT.channel_heads_y=ch_list(:,2);
-	writetable(chT,fullfile(wdir,'Projected_Channel_Heads.txt'));
+	writetable(chT,fullfile(wdir,[file_name_prefix '_Projected_Channel_Heads.txt']));
 
 	proj_ch=OUT(2,:);
 	for ii=1:numel(proj_ch)
-		fout_name=fullfile(wdir,['Projected_Channel_' num2str(ii) '.txt']);
+		fout_name=fullfile(wdir,[file_name_prefix '_Projected_Channel_' num2str(ii) '.txt']);
 		projD=proj_ch{ii};
 		projT=table;
 		projT.x_coord=projD(:,1);
@@ -1136,6 +1139,8 @@ function cmpSegmentProjector(wdir,MatFile,varargin);
 		writetable(projT,fout_name);
 		clear projT;
 	end
+
+	save(fullfile(wdir,[file_name_prefix '_Projected_Channels.mat']),'OUT');
 
 	close(f1);
 	close(f2);
