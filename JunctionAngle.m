@@ -1040,15 +1040,15 @@ function [T]=makejunctiontable(la,pa,cr,fs,method)
 
 	e1_direction=cr(:,1);
 	e2_direction=cr(:,2);
-	eS_direction=cr(:,3);
+	e3_direction=cr(:,3);
 
 	e1_distance=fs(:,1);
 	e2_distance=fs(:,4);
-	eS_distance=fs(:,7);
+	e3_distance=fs(:,7);
 
 	e1_num=fs(:,2);
 	e2_num=fs(:,5);
-	eS_num=fs(:,8);
+	e3_num=fs(:,8);
 
 	split=logical(zeros(num_juncs,1));
 	e1_rotation=categorical(zeros(num_juncs,1));
@@ -1056,7 +1056,7 @@ function [T]=makejunctiontable(la,pa,cr,fs,method)
 	handedness=categorical(zeros(num_juncs,1));
 	e1_R2=zeros(num_juncs,1);
 	e2_R2=zeros(num_juncs,1);
-	eS_R2=zeros(num_juncs,1);
+	e3_R2=zeros(num_juncs,1);
 	for ii=1:num_juncs
 
 		if la(ii,6)==1
@@ -1106,9 +1106,9 @@ function [T]=makejunctiontable(la,pa,cr,fs,method)
 		end
 
 		if ~isnan(E3_r2) & ~isinf(E3_r2)
-			eS_R2(ii,1)=E3_r2;
+			e3_R2(ii,1)=E3_r2;
 		else
-			eS_R2(ii,1)=0;
+			e3_R2(ii,1)=0;
 		end
 	end
 
@@ -1120,7 +1120,7 @@ function [T]=makejunctiontable(la,pa,cr,fs,method)
 		T=table(junction_number,junction_x,junction_y,junction_angle,handedness,split,...
 			e1_obs_angle,e1_Apred_angle,e1_rotation,e1_shreve,e1_direction,e1_distance,e1_num,e1_R2,...
 			e2_obs_angle,e2_Apred_angle,e2_rotation,e2_shreve,e2_direction,e2_distance,e2_num,e2_R2,...
-			eS_direction,eS_distance,eS_num,eS_R2);
+			e3_direction,e3_distance,e3_num,e3_R2);
 
 	case 'slope'
 		e1_Spred_angle=pa(:,1);	
@@ -1129,7 +1129,7 @@ function [T]=makejunctiontable(la,pa,cr,fs,method)
 		T=table(junction_number,junction_x,junction_y,junction_angle,handedness,split,...
 			e1_obs_angle,e1_Spred_angle,e1_rotation,e1_shreve,e1_direction,e1_distance,e1_num,e1_R2,...
 			e2_obs_angle,e2_Spred_angle,e2_rotation,e2_shreve,e2_direction,e2_distance,e2_num,e2_R2,...
-			eS_direction,eS_distance,eS_num,eS_R2);		
+			e3_direction,e3_distance,e3_num,e3_R2);		
 
 	case 'both'
 		e1_Apred_angle=pa(:,1);	
@@ -1140,7 +1140,7 @@ function [T]=makejunctiontable(la,pa,cr,fs,method)
 		T=table(junction_number,junction_x,junction_y,junction_angle,handedness,split,...
 			e1_obs_angle,e1_Apred_angle,e1_Spred_angle,e1_rotation,e1_shreve,e1_direction,e1_distance,e1_num,e1_R2,...
 			e2_obs_angle,e2_Apred_angle,e2_Spred_angle,e2_rotation,e2_shreve,e2_direction,e2_distance,e2_num,e2_R2,...
-			eS_direction,eS_distance,eS_num,eS_R2);	
+			e3_direction,e3_distance,e3_num,e3_R2);	
 	end
 
 end
