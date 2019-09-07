@@ -1,6 +1,4 @@
 function cmpJunctionAngle(wdir,MatFile,fit_distance,varargin);
-	%
-	%
 	% Description: 
 	%	Function calculates the angle of stream junctions. The basic strategy and nomenclature
 	%	used in this function is adapted from Howard, 1971, 'Optimal angles of stream junction:
