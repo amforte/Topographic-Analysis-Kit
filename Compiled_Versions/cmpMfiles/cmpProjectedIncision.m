@@ -1,5 +1,4 @@
 function cmpProjectedIncision(wdir,MatFile,NewStreamMat,ProjSegMat,varargin)
-	%
 	% Description:
 	% 	Function for generating maps of projected incision throughout a network based on results of stream
 	%	projections from SegmentProjector. Code uses the steepness of the fit portion of the stream network
@@ -55,8 +54,6 @@ function cmpProjectedIncision(wdir,MatFile,NewStreamMat,ProjSegMat,varargin)
 	%
 	% Examples:
 	%	ProjectedIncision /path/to/wdir Topo.mat PickedSegments_5.mat Topo_Projected_Channels.mat
-	%	[S,zpOUT,inOUT]=ProjectedIncision(DEM,A,S,Sc,OUT);
-	%	[S,zpOUT,inOUT]=ProjectedIncision(DEM,A,S,Sc,OUT,'exclude_streams',[2 15 40]);
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 04/02/19 %
