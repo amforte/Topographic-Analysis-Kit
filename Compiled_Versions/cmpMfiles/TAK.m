@@ -1177,12 +1177,55 @@ function TAK(func_name,wdir,varargin)
 			cmpPlotKsn(wdir,req_args{1},req_args{2},opt_args);
 		end
 		disp('Function Successfully Completed')
+	case 'HackRelationship'
+		num_req=1;
+		req_args=varargin(1:num_req);
+		if nf_args==num_req
+			cmpHackRelationship(wdir,req_args{1});
+		else
+			opt_args=varargin(num_req+1:end);
+			num_var=numel(opt_args);
+			odds=1:2:num_var;
+			evens=2:2:num_var;
+			for ii=1:num_var/2
+				pn=opt_args{odds(ii)};
+				pv=opt_args{evens(ii)};
+				switch pn
+				case 'include_hillslope'
+					if strcmpi(pv,'false')
+						opt_args{evens(ii)}=false;
+					elseif strcmpi(pv,'true')
+						opt_args{evens(ii)}=true;
+					else
+						opt_args{evens(ii)}=logical(str2num(pv));
+					end
+				case 'draw_fig'
+					if strcmpi(pv,'false')
+						opt_args{evens(ii)}=false;
+					elseif strcmpi(pv,'true')
+						opt_args{evens(ii)}=true;
+					else
+						opt_args{evens(ii)}=logical(str2num(pv));
+					end
+				case 'save_fig'
+					if strcmpi(pv,'false')
+						opt_args{evens(ii)}=false;
+					elseif strcmpi(pv,'true')
+						opt_args{evens(ii)}=true;
+					else
+						opt_args{evens(ii)}=logical(str2num(pv));
+					end
+				end
+			end
+			cmpHackRelationship(wdir,req_args{1},opt_args);
 	case 'CatPoly2GRIDobj'
 		disp('There is no compiled version of the CatPoly2GRIDobj function, use the compiled PrepareAddCatGrids function')
 	case 'ksncolor'
 		disp('There is no compiled version of the ksncolor function')
 	case 'ProjectOntoSwath'
 		disp('There is no compiled version of the ProjectOntoSwath function, use the compiled MakeCombinedSwath function')
+	case 'ProjectGPSOntoSwath'
+		disp('There is no compiled version of the ProjectGPSOntoSwath function, use the compiled MakeCombinedSwath function')		
 	otherwise
 		disp([func_name ' is not a recognized function name within TAK'])
 	%Main switch end	
