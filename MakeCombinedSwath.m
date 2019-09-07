@@ -23,6 +23,8 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	%					colored by the first extra value (column 4) and scaled by the second extra value (column 5).
 	%		'eqs' - earthquakes, expects a n x 4 matrix with x, y, depth, and magnitude. Points will be scaled by magnitude 
 	%					and colored by distance from swath line. Expects depth to be positive.
+	%		'gps' - gps velocity vectors, expects a n x 6 matrix, with x, y, north component, east component, north uncertainty,
+	%					and east uncertainty. See 'ProjectGPSOntoSwath' for additional details
 	%		'STREAMobj' - will project portions of selected stream profiles (as points) onto a swath. Expects a STREAMobj 
 	%					that was generated from the provided DEM.
 	%		'ksn_chandata' - will plot swath through ksn values, expects a chandata file as output from old Profiler51 code 
@@ -91,7 +93,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
 	addRequired(p,'points',@(x) isempty(x) || isnumeric(x) & size(x,1)>=2 && size(x,2)==2);
 	addRequired(p,'width',@(x) isscalar(x) && isnumeric(x));
-	addRequired(p,'data_type',@(x) ischar(validatestring(x,{'points3','points4','points5','eqs','STREAMobj','ksn_chandata','ksn_batch','ksn_profiler','basin_stats','basin_knicks'})));
+	addRequired(p,'data_type',@(x) ischar(validatestring(x,{'points3','points4','points5','eqs','gps','STREAMobj','ksn_chandata','ksn_batch','ksn_profiler','basin_stats','basin_knicks'})));
 	addRequired(p,'data');
 	addRequired(p,'data_width',@(x) isnumeric(x) && isscalar(x));
 
@@ -330,7 +332,6 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			ylabel('Elevation (m)');
 			xlim([0 max(swdist)]);
 			hold off
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%		
 		case 'eqs'
 			x_coord=data(:,1);
@@ -402,6 +403,70 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			hold off
 
 			set(ax2,'YDir','reverse');
+			linkaxes([ax1,ax2],'x')
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%		
+		case 'gps'
+			x_coord=data(:,1);
+			y_coord=data(:,2);
+			nc=data(:,3);
+			ec=data(:,4);
+			nu=data(:,5);
+			eu=data(:,6);
+
+			% Remove any points beyond the extent of the provided DEM
+			[demix]=inpolygon(x_coord,y_coord,demx,demy);	
+			x_coord=x_coord(demix); y_coord=y_coord(demix); nc=nc(demix); ec=ec(demix); nu=nu(demix); eu=eu(demix);
+
+			switch proj_flag
+			case 1
+				[ds,db,mag,unc,nc0,ec0]=ProjectGPSOntoSwath(SW,x_coord,y_coord,data_width,nc,ec,nu,eu);
+				outData=[ds mag unc nc0 ec0 db x_coord y_coord];
+				idx=outData(:,6)<=(data_width/2) & ~isnan(ds);
+			case 2
+				[~,~,mag,unc,nc0,ec0]=ProjectGPSOntoSwath(SW,x_coord,y_coord,data_width,nc,ec,nu,eu);
+				[ds,db,dab]=ProjectSmallCircleOntoSwath(SW,x_coord,y_coord,cx,cy);
+				switch dist_type
+				case 'mapdist'
+					outData=[ds mag unc nc0 ec0 db x_coord y_coord];
+					idx=abs(outData(:,6))<=(data_width/2) & ~isnan(ds);
+				case 'angle'
+					outData=[ds mag unc nc0 ec0 dab x_coord y_coord];
+					idx=abs(outData(:,6))<=(data_width/2) & ~isnan(ds);
+				end
+			end
+
+			% Plot Swath
+			f1=figure(1);
+			clf 
+			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
+
+			ax1=subplot(2,1,1);
+			hold on
+			plot(swdist,min_elevs,'-k');
+			plot(swdist,max_elevs,'-k');
+			plot(swdist,mean_elevs,'-k','LineWidth',2);
+
+			yl=ylim;
+			for jj=1:numel(bends)
+				plot([bends(jj),bends(jj)],yl,'-k');
+			end
+			ylabel('Elevation (m)');
+			xlim([0 max(swdist)]);
+			hold off
+
+			ax2=subplot(2,1,2);
+			hold on	
+			e1=errorbar(outData(idx,1),outData(idx,2),outData(idx,3),'.');
+			e1.CapSize=0;
+			e1.Color='k';
+			scatter(outData(idx,1),outData(idx,2),30,outData(idx,6),'filled');
+			xlabel('Distance along swath (m)');
+			ylabel('Velocity in Swath Line (mm/yr)');
+			xlim([0 max(swdist)]);
+			c1=colorbar(ax2,'southoutside');
+			xlabel(c1,'Distance from Swath Line')
+			hold off
+
 			linkaxes([ax1,ax2],'x')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		case 'STREAMobj'
