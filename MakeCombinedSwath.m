@@ -97,6 +97,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	addRequired(p,'data');
 	addRequired(p,'data_width',@(x) isnumeric(x) && isscalar(x));
 
+	addParameter(p,'file_name_prefix','Combined',@(x) ischar(x));
 	addParameter(p,'small_circ_center',[],@(x) isnumeric(x) && numel(x)==2);
 	addParameter(p,'dist_type','mapdist',@(x) ischar(validatestring(x,{'mapdist','angle'})));	
 	addParameter(p,'sample',[],@(x) isscalar(x) && isnumeric(x));
@@ -117,6 +118,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	data=p.Results.data;
 	data_width=p.Results.data_width;
 
+	fnp=p.Results.file_name_prefix;
 	small_circ_center=p.Results.small_circ_center;
 	dist_type=p.Results.dist_type;
 	sample=p.Results.sample;
@@ -936,7 +938,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 
 	if save_figure
 		orient(f1,'Landscape')
-		print(f1,'-dpdf','-bestfit','Swath.pdf');
+		print(f1,'-dpdf','-bestfit',[fnp '_Swath.pdf']);
 	end
 
 end
