@@ -1,11 +1,4 @@
 function [clat,clon,crad,cpx,cpy]=BestFitSmallCircle(x,y,proj)
-	% 
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%%% THIS FUNCTION IS UNDER ACTIVE DEVELOPMENT %%%
-	%% FUNCTION IS NOT FULLY DOCUMENTED IN MANUAL %%%
-	%%%%%% CHANGES AND MALFUNCTIONS ARE LIKELY %%%%%%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%	
 	% Usage:
 	%	[clat,clon,crad,cpx,cpy]=BestFitSmallCircle(x,y,proj)
 	%

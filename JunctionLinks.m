@@ -1,11 +1,4 @@
 function [links]=JunctionLinks(FD,S,IX,junctions,varargin)
-	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%%% THIS FUNCTION IS UNDER ACTIVE DEVELOPMENT %%%
-	%% FUNCTION IS NOT FULLY DOCUMENTED IN MANUAL %%%
-	%%%%%% CHANGES AND MALFUNCTIONS ARE LIKELY %%%%%%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%	
-	%
 	% Usage:
 	%	[links]=JunctionLinks(FD,S,IX,junctions);
 	%	[links]=JunctionLinks(FD,S,IX,junctions,'name',value);

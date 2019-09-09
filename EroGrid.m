@@ -1,5 +1,4 @@
 function [ERO,varargout]=EroGrid(DEM,KSN,C,phi,varargin)
-	%
 	% Usage:
 	%	[ERO]=EroGrid(DEM,KSN,C,phi);
 	%	[ERO]=EroGrid(DEM,KSN,C,phi,'name',value,...);

@@ -1,11 +1,4 @@
 function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
-	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%%% THIS FUNCTION IS UNDER ACTIVE DEVELOPMENT %%%
-	%% FUNCTION IS NOT FULLY DOCUMENTED IN MANUAL %%%
-	%%%%%% CHANGES AND MALFUNCTIONS ARE LIKELY %%%%%%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%
 	% Usage:
 	%	[junctions,IX]=JunctionAngle(S,A,DEM,fit_distance);
 	%	[junctions,IX]=JunctionAngle(S,A,DEM,fit_distance,'name',value);

@@ -1,11 +1,4 @@
 function [ds,db,dab]=ProjectSmallCircleOntoSwath(SW,x,y,cx,cy)
-	% 
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%%% THIS FUNCTION IS UNDER ACTIVE DEVELOPMENT %%%
-	%% FUNCTION IS NOT FULLY DOCUMENTED IN MANUAL %%%
-	%%%%%% CHANGES AND MALFUNCTIONS ARE LIKELY %%%%%%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%	
 	% Usage:
 	%	[ds,db,dab]=ProjectSmallCircleOntoSwath(SW,x,y,cx,cy,proj);
 	%

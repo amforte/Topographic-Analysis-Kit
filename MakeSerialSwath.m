@@ -1,11 +1,4 @@
 function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin)
-	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%%% THIS FUNCTION IS UNDER ACTIVE DEVELOPMENT %%%
-	%% FUNCTION IS NOT FULLY DOCUMENTED IN MANUAL %%%
-	%%%%%% CHANGES AND MALFUNCTIONS ARE LIKELY %%%%%%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%	
 	% Usage:
 	% [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length);
 	% [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,'name',value);

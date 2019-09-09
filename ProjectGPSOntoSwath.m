@@ -1,11 +1,4 @@
 function [ds,db,mag,unc,nc0,ec0]=ProjectGPSOntoSwath(SW,x,y,data_width,nc,ec,nu,eu)
-	% 
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%%% THIS FUNCTION IS UNDER ACTIVE DEVELOPMENT %%%
-	%% FUNCTION IS NOT FULLY DOCUMENTED IN MANUAL %%%
-	%%%%%% CHANGES AND MALFUNCTIONS ARE LIKELY %%%%%%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%	
 	% Usage:
 	%	[ds,db,mag,unc,nc0,ec0]=ProjectGPSOntoSwath(SW,x,y,data_width,nc,ec,nu,eu);
 	%

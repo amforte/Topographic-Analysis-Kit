@@ -1,11 +1,4 @@
 function [nal,res,ms,brkPnts,param]=AutoKsnProfiler(DEM,FD,A,S,thresh_ratio,varargin)
-	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%%% THIS FUNCTION IS UNDER ACTIVE DEVELOPMENT %%%
-	%% FUNCTION IS NOT FULLY DOCUMENTED IN MANUAL %%%
-	%%%%%% CHANGES AND MALFUNCTIONS ARE LIKELY %%%%%%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%
 	% Usage:
 	%	[nal,res,ms,brkPnts,param]=AutoKsnProfiler(DEM,FD,A,S,thresh_ratio);
 	%	[nal,res,ms,brkPnts,param]=AutoKsnProfiler(DEM,FD,A,S,thresh_ratio,'name',value);

@@ -1,11 +1,4 @@
 function [S,zpOUT,inOUT]=ProjectedIncision(DEM,A,S,Sc,OUT,varargin)
-	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%%% THIS FUNCTION IS UNDER ACTIVE DEVELOPMENT %%%
-	%% FUNCTION IS NOT FULLY DOCUMENTED IN MANUAL %%%
-	%%%%%% CHANGES AND MALFUNCTIONS ARE LIKELY %%%%%%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%
 	% Usage:
 	%	[S,zpOUT,inOUT]=ProjectionIncision(DEM,A,S,Sc,OUT);
 	%	[S,zpOUT,inOUT]=ProjectionIncision(DEM,A,S,Sc,OUT,'name',value);
