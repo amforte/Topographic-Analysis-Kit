@@ -180,7 +180,7 @@
 \nobibliography{TAKmanualREF.bib}
 
 %opening
-\title{Topographic Analysis Kit (TAK) Manual v1.0}
+\title{Topographic Analysis Kit (TAK) Manual}
 
 \author[1]{Adam M. Forte}
 \author[2]{Kelin X. Whipple}
@@ -188,7 +188,7 @@
 \affil[1]{Department of Geology and Geophysics, Louisiana State University, Baton Rouge, LA}
 \affil[2]{School of Earth and Space Exploration, Arizona State University, Tempe, AZ}
 
-\date{TAK Release Version 1.0.2}
+\date{TAK Release Version 1.1.0}
 
 \titlepic{\includegraphics[width=12cm]{PNGs/TAKlogo.png}}
 
@@ -285,6 +285,12 @@ where 'MakeStreams' is the name of the function you want to use, '/location/of/w
 
 \paragraph{}It's important to note that projected data (e.g. geotiffs, ascii grids, shapefiles, etc) exported from Matlab will not include georeferencing information. The data is still projected (in the same projection as the original input data), but you will need to define the projection in the GIS program you are using.
 
+\begin{figure}[H]
+	\includegraphics[width=16.5cm]{PNGs/Topo.png}
+	\caption{Example dataset area used in this manual.}
+	\label{fig:Topo}
+\end{figure}
+
 \paragraph{}In this this manual, we use an example dataset from Southern California to demonstrate outputs of some of the functions included as part of TAK (Figure \ref{fig:Topo}). The example data is available within the released version of the TAK code on GitHub and is contained within a tarball called \textit{'ExampleData.tar.gz'}. Within this tarball, you'll find:
 
 \begin{itemize}
@@ -294,11 +300,7 @@ where 'MakeStreams' is the name of the function you want to use, '/location/of/w
 	\item \textit{river\_mouths.txt} - text file containing the river mouths used to generate basins in the example using \nameref{sec:PrcRvBsn}
 \end{itemize} 
 
-\begin{figure}[H]
-	\includegraphics[width=16.5cm]{PNGs/Topo.png}
-	\caption{Example dataset area used in this manual.}
-	\label{fig:Topo}
-\end{figure}
+
 
 \paragraph{}Matlab, and thus TopoToolbox and TAK, generally require that an entire dataset be loaded into active memory before it can be used. This means that the size of DEM you can successfully process and use in TAK will be dependent on the available memory (i.e. RAM) of the computer on which you're running TAK along with the operating system (Mac OS X, Windows, and Linux versions of Matlab deal with memory in slightly different ways). It's also not as straightforward as looking at the size of the input DEM as you need to account for all the datasets that need to be in active memory for many TAK functions, e.g. a GRIDobj, a FLOWobj, and a STREAMobj. If you are encountering memory issues, there aren't too many simple solutions, but the best bets are to either spit your data into smaller segments (though you must be careful to not introduce errors by truncating portions of drainage basins of interest) or use a dataset with a larger cellsize. 
 
@@ -308,7 +310,8 @@ where 'MakeStreams' is the name of the function you want to use, '/location/of/w
 \paragraph{}Possible workflows through the functions provided as a part of TAK are outlined in Figure \ref{fig:Workflow}. In the sections that follow, descriptions of each function are provided and in some cases, possible outputs are included as figures using the example dataset. In later sections we assume that you have a basic familiarity with Matlab data types (e.g. arrays, cell arrays, structures, tables, etc) and the four main TopoToolbox classes (i.e. \textit{GRIDobj}, \textit{FLOWobj}, \textit{STREAMobj}, and \textit{SWATHobj}), but we provide a brief primer in Section \ref{sec:primer}. This manual does not include all options for all functions; we refer users to the headers of each relevant function for a complete list of required and optional parameters. Instead, this manual is designed to highlight the basic utility of the functions along with some underlying rationale / methodology employed within some of the functions and to provide examples of some recommended use cases.
 
 \begin{figure}[H]
-	\includegraphics[width=16.5cm]{PNGs/FlowChart.png}
+	\centering
+	\includegraphics[width=10cm]{PNGs/FlowChart.png}
 	\caption{Suggested workflows through TAK functions depending on desired outcome and purpose of analysis. Also highlighted are the nature of the outputs produced by different functions. Definitions of inputs and outputs: shp - a shapefile containing vector data, the geometry of which, e.g. points, lines, polygons, depends on the tool in question; array - a Matlab array, i.e. a matrix of numbers; ascii grid - an ESRI Ascii text file that is interpretable as gridded raster data with projection information by many GIS programs; pdf - a figure output as a PDF.}
 	\label{fig:Workflow}
 \end{figure}
@@ -1693,7 +1696,22 @@ S_{avg}=\frac{z(0)-z(L_{H})}{L_{H}}
 	\label{fig:SerSwath}
 \end{figure}
 
-\paragraph{}The primary output of the \textit{MakeSerialSwath} function is a cell array containing individual \textit{SWATHobjs} created along the baseline. These individual \textit{SWATHobjs} are suitable for use in other functions, e.g. \nameref{sec:CombSwath} or plotting with built in \textit{TopoToolbox} function like \textit{plotdz}.
+\paragraph{}The primary output of the \textit{MakeSerialSwath} function is a cell array containing individual \textit{SWATHobjs} created along the baseline. These individual \textit{SWATHobjs} are suitable for use in other functions, e.g. \nameref{sec:CombSwath} or plotting with built in \textit{TopoToolbox} function like \textit{plotdz}. Specifically, if you wanted to use the output of \textit{MakeSerialSwath} to make a series of combined swaths with \nameref{sec:CombSwath}, this can be easily accomplished with a simple loop:
+
+\begin{lstlisting}[language=Matlab]
+% Generate serial swaths based on provided point array
+[SWcell,~]=MakeSerialSwath(DEM,points,100,5000);
+% Generate a combined swath for each serial swath a generic nx3 point dataset (points3) and save out figures for each with a unique name and save the projected data into another cell array
+% Preallocate the output array
+outData=cell(numel(SWcell),1);
+for ii=1:numel(SWcell)
+	% It is necessary to extract the points and width from each serial swath
+	
+	[~,~,~,outData{ii}]=MakeCombinedSwath(DEM,SWcell{ii}.xy0,SWcell{ii}.width,'points3',points3,SWcell{ii}.width*5,'save_figure',true,'file_name_prefix',['Comb_' num2str(ii)]);
+end
+\end{lstlisting}
+
+
 
 \subsection{\textit{ProjectOntoSwath}} \label{sec:ProjSwath}
 \paragraph{}The \textit{ProjectOntoSwath} function is used in \nameref{sec:CombSwath} to do the data projection, but we include it as a separate function as it may be useful for users. \textit{ProjectOntoSwath} finds the distance of a list of x and y points along and from the centerline of a provided \textit{SWATHobj} based on a user defined width within which to sample the data. Distances of points that lie beyond the extent of the swath or lie outside of the data sampling width will be set to NaN. The function projects data onto each swath segment (i.e. if the swath line is bent) and finds the swath segment that data are closest to in tangential distance to avoid duplication of points. Note that there is no compiled version of \textit{ProjectOntoSwath}.
