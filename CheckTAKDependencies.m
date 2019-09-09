@@ -35,6 +35,11 @@ function CheckTAKDependencies()
 		warn_flag=true;
 	end
 
+	ix=find(strcmp(cellstr(char(p.Name)),'Curve Fitting Toolbox'));
+	if isempty(ix)
+		warning('You do not have a license for the Curve Fitting Toolbox, some functions will not work properly')
+		warn_flag=true;
+	end	
 
 	ix=find(strcmp(cellstr(char(p.Name)),'Optimization Toolbox'));
 	if isempty(ix)
@@ -48,6 +53,11 @@ function CheckTAKDependencies()
 		warn_flag=true;
 	end	
 
+	ix=find(strcmp(cellstr(char(p.Name)),'Parallel Computing Toolbox'));
+	if isempty(ix)
+		warning('You do not have a license for the Parallel Computing Toolbox, some functions will not work properly')
+		warn_flag=true;
+	end
 
 	ix=find(strcmp(cellstr(char(p.Name)),'MATLAB'));
 	if str2num(p(ix).Version)<9.4

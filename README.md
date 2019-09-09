@@ -2,7 +2,7 @@
 These are a series of MATLAB functions written by Adam M. Forte [aforte8 'at' lsu.edu] that build upon the functionality of TopoToolbox [https://github.com/wschwanghart/topotoolbox]. Each function contains a header with basic functionality info along with expected inputs and possible outputs. There is now a detailed user guide included in the repository as both a PDF ('TAKmanual_reduce.pdf') and a LaTeX file (folder 'TAKmanual_texFiles' which inludes the tex file and associated images).
 
 # Release
-v.1.0.2 has been released! The release includes all files in the 'master' repository along with a tarball bundling the example data sets referenced in the manual. New releases are created periodically when major changes in the codes occur.
+v.1.1.0 has been released! The release includes all files in the 'master' repository along with a tarball bundling the example data sets referenced in the manual. New releases are created periodically when major changes in the codes occur.
 
 # Compiled Versions
 Functions within the 'master' branch and releases have corresponding 'compiled' versions of functions that can be run using the free MATLAB Runtime Environment for users who do not have access to MATLAB or all the required toolboxes. The '.m' files used to compile along with the binaries for Mac and Windows are found in the 'Compiled_Versions' folder. See manual for more details on the use of the compiled versions and important differences in inputs and outputs. It is NOT recommended that you use the '.m' files in the 'Compiled_Versions' folder in MATLAB as these have been modified from the original functions to make them function properly when compiled, they are included for reference and in case someone else wanted to recompile the functions.

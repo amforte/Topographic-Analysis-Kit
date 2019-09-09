@@ -1,4 +1,4 @@
-function [OUT,look_table]=CatPoly2GRIDobj(DEM,poly_shape,field)
+function [OUT,look_table]=CatPoly2GRIDobj(DEM,poly_shape,field,varargin)
 	%
 	% Usage:
 	%	[GRIDobj,look_up_table]=CatPoly2GRIDobj(DEM,poly_shape,field);
@@ -12,6 +12,13 @@ function [OUT,look_table]=CatPoly2GRIDobj(DEM,poly_shape,field)
 	%	poly_shape - name or path to shapefile containing the categorical data
 	%	field - field name of categorical data within the shapefile 
 	%
+	% Optional Input:
+	%	table_in - Optional input to manually provide a table to use as the look_table. This table must contain
+	%		two columns where the first column is n x 1 array of scalar integers and the second column is a n x 1
+	%		cell array containing the category names. These categories must match entries in the 'field' of the
+	%		provided 'poly_shape' or all of the values in the 'OUT' will be 0.
+	%		 
+	%
 	% Outputs:
 	%	OUT - GRIDobj of the same size as DEM where values correspond to categorical data
 	%		as defined in the look_table
@@ -22,8 +29,38 @@ function [OUT,look_table]=CatPoly2GRIDobj(DEM,poly_shape,field)
 	%	[GEO,geo_table]=CatPoly2GRIDobj(DEM,'geologic_map.shp','rtype');
 	% 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	% Function Written by Adam M. Forte - Updated : 07/05/19 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+	% Parse Inputs
+	p = inputParser;
+	p.FunctionName = 'CatPoly2GRIDobj';
+	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
+	addRequired(p,'poly_shape',@(x) ischar(x));
+	addRequired(p,'field',@(x) ischar(x));
+
+	addParameter(p,'table_in',[],@(x) istable(x));
+
+	parse(p,DEM,poly_shape,field,varargin{:});
+	DEM=p.Results.DEM;
+	poly_shape=p.Results.poly_shape;
+	field=p.Results.field;
+
+	table_in=p.Results.table_in;
+
+	% Validate table if provided
+	if ~isempty(table_in)
+		if size(table_in,2)~=2
+			error('Provided "table_in" must have two columns');
+		elseif table_in.(1)(1)~=0
+			error('First entry of first column of "table_in" must equal 0');
+		elseif ~iscell(table_in.(2))
+			error('Second column of "table_in" must be a cell array');
+		elseif ~ischar(table_in.(2){1})
+			error('Entries in second column of "table_in" must be characters');
+		end
+	end
+			
 
 	% Read in shape and covert to a table
 	PS=shaperead(poly_shape);
@@ -32,13 +69,20 @@ function [OUT,look_table]=CatPoly2GRIDobj(DEM,poly_shape,field)
 	% Separate out the field of interest
 	Foi=TS.(field);
 
-	% Generate unique liss and the output lookup table
-	Categories=unique(Foi);
-	Numbers=[1:numel(Categories)]; Numbers=Numbers';
-	% Add an 'undef' category to deal with zeros that appear because of read errors
-	Numbers=vertcat(0,Numbers);
-	Categories=vertcat('undef',Categories);
-	look_table=table(Numbers,Categories);
+	if isempty(table_in)
+		% Generate unique list and the output lookup table
+		Categories=unique(Foi);
+		Numbers=[1:numel(Categories)]; Numbers=Numbers';
+		% Add an 'undef' category to deal with zeros that appear because of read errors
+		Numbers=vertcat(0,Numbers);
+		Categories=vertcat('undef',Categories);
+		look_table=table(Numbers,Categories);
+	else 
+		% Load provided table into specific table format
+		Categories=table_in.(2);
+		Numbers=table_in.(1);
+		look_table=table(Numbers,Categories);
+	end
 
 	% Replace categorical with number
 	for ii=1:numel(PS)
@@ -47,8 +91,12 @@ function [OUT,look_table]=CatPoly2GRIDobj(DEM,poly_shape,field)
 		PS(ii,1).replace_number=Numbers(ix);
 	end
 
-	% Run polygon2GRIDobj
-	[OUT]=polygon2GRIDobj(DEM,PS,'replace_number');
+	% Run polygon2GRIDobj with pad to avoid ring of 0s bug
+	DEMp=GRIDobj(DEM,'logical');
+	DEMp.Z(:,:)=true;
+	DEMp=pad(DEMp,1,false);
+	[OUT]=polygon2GRIDobj(DEMp,PS,'replace_number');
+	OUT=crop(OUT,DEMp);
 
 	% Remove nonexistent category-number pairs from look_table
 	pres=unique(OUT.Z(:));

@@ -25,8 +25,10 @@
 	@article{Forte2019,
 		author = {Forte, Adam M. and Whipple, Kelin X.},
 		journal = {Earth Surface Dynamics},
-		doi = {10.5194/esurf-2018-57},
+		pages = {87--95},
+		doi = {10.5194/esurf-7-87-2019},
 		title = {{Short Communication: The Topographic Analysis Kit (TAK) for TopoToolbox}},
+		volume = {7},
 		year = {2019}
 	}
 @incollection{Wobus2006,
@@ -109,6 +111,43 @@
 	volume = {5},
 	year = {2017}
 }
+@article{Howard1971,
+	author = {Howard, Alan D},
+	file = {:Users/amforte/Documents/PaperLibrary/Mendeley/Howard/Water Resources Research/Howard-1971-Water{\_}Resources{\_}Research.pdf:pdf},
+	journal = {Water Resources Research},
+	number = {4},
+	pages = {863--873},
+	title = {{Optimal angles of stream junction: Geometric, stability to capture, and minimum power criteria}},
+	volume = {7},
+	year = {1971}
+}
+@article{James1969,
+	author = {James, W.R. and Krumbein, W.C.},
+	file = {:Users/amforte/Documents/PaperLibrary/Mendeley/James, Krumbein/The Journal of Geology/30062251.pdf:pdf},
+	journal = {The Journal of Geology},
+	number = {5},
+	pages = {544--565},
+	title = {{Frequency Distributions of Stream Link Lengths}},
+	volume = {77},
+	year = {1969}
+}
+@techreport{Hack1957,
+	author = {Hack, J T},
+	booktitle = {U.S. Geological Survey Professional Paper},
+	pages = {97},
+	title = {{Studies of longitudinal stream profiles in Virignia and Maryland}},
+	year = {1957}
+}
+@article{Whipple1999a,
+	author = {Whipple, Kelin X and Tucker, Gregory E},
+	journal = {Journal of Geophysical Research},
+	number = {B8},
+	pages = {17661--17674},
+	title = {{Dynamics of the stream-power river incision model: Implications for height limits of mountain ranges, landscape response timescales, and research needs}},
+	volume = {104},
+	year = {1999}
+}
+
 
 \end{filecontents}
 
@@ -127,6 +166,7 @@
 \usepackage[left=2.5cm, right=2.5cm, top=4cm, bottom=4cm]{geometry} %Set Margins 
 \usepackage{textcomp} % Package for some symbology
 \usepackage{subcaption} % Package for side by side subfigures
+\usepackage{amsmath} % Package for conditional equations
 \definecolor{mygreen}{RGB}{28,172,0} % color values Red, Green, Blue
 \definecolor{mylilas}{RGB}{170,55,241}
 \renewcommand{\rmdefault}{ptm} % Change font to Times
@@ -140,7 +180,7 @@
 \nobibliography{TAKmanualREF.bib}
 
 %opening
-\title{Topographic Analysis Kit (TAK) Manual v1.0}
+\title{Topographic Analysis Kit (TAK) Manual}
 
 \author[1]{Adam M. Forte}
 \author[2]{Kelin X. Whipple}
@@ -148,7 +188,7 @@
 \affil[1]{Department of Geology and Geophysics, Louisiana State University, Baton Rouge, LA}
 \affil[2]{School of Earth and Space Exploration, Arizona State University, Tempe, AZ}
 
-\date{TAK Release Version 1.0.2}
+\date{TAK Release Version 1.1.0}
 
 \titlepic{\includegraphics[width=12cm]{PNGs/TAKlogo.png}}
 
@@ -245,6 +285,12 @@ where 'MakeStreams' is the name of the function you want to use, '/location/of/w
 
 \paragraph{}It's important to note that projected data (e.g. geotiffs, ascii grids, shapefiles, etc) exported from Matlab will not include georeferencing information. The data is still projected (in the same projection as the original input data), but you will need to define the projection in the GIS program you are using.
 
+\begin{figure}[H]
+	\includegraphics[width=16.5cm]{PNGs/Topo.png}
+	\caption{Example dataset area used in this manual.}
+	\label{fig:Topo}
+\end{figure}
+
 \paragraph{}In this this manual, we use an example dataset from Southern California to demonstrate outputs of some of the functions included as part of TAK (Figure \ref{fig:Topo}). The example data is available within the released version of the TAK code on GitHub and is contained within a tarball called \textit{'ExampleData.tar.gz'}. Within this tarball, you'll find:
 
 \begin{itemize}
@@ -254,11 +300,7 @@ where 'MakeStreams' is the name of the function you want to use, '/location/of/w
 	\item \textit{river\_mouths.txt} - text file containing the river mouths used to generate basins in the example using \nameref{sec:PrcRvBsn}
 \end{itemize} 
 
-\begin{figure}[H]
-	\includegraphics[width=16.5cm]{PNGs/Topo.png}
-	\caption{Example dataset area used in this manual.}
-	\label{fig:Topo}
-\end{figure}
+
 
 \paragraph{}Matlab, and thus TopoToolbox and TAK, generally require that an entire dataset be loaded into active memory before it can be used. This means that the size of DEM you can successfully process and use in TAK will be dependent on the available memory (i.e. RAM) of the computer on which you're running TAK along with the operating system (Mac OS X, Windows, and Linux versions of Matlab deal with memory in slightly different ways). It's also not as straightforward as looking at the size of the input DEM as you need to account for all the datasets that need to be in active memory for many TAK functions, e.g. a GRIDobj, a FLOWobj, and a STREAMobj. If you are encountering memory issues, there aren't too many simple solutions, but the best bets are to either spit your data into smaller segments (though you must be careful to not introduce errors by truncating portions of drainage basins of interest) or use a dataset with a larger cellsize. 
 
@@ -268,7 +310,8 @@ where 'MakeStreams' is the name of the function you want to use, '/location/of/w
 \paragraph{}Possible workflows through the functions provided as a part of TAK are outlined in Figure \ref{fig:Workflow}. In the sections that follow, descriptions of each function are provided and in some cases, possible outputs are included as figures using the example dataset. In later sections we assume that you have a basic familiarity with Matlab data types (e.g. arrays, cell arrays, structures, tables, etc) and the four main TopoToolbox classes (i.e. \textit{GRIDobj}, \textit{FLOWobj}, \textit{STREAMobj}, and \textit{SWATHobj}), but we provide a brief primer in Section \ref{sec:primer}. This manual does not include all options for all functions; we refer users to the headers of each relevant function for a complete list of required and optional parameters. Instead, this manual is designed to highlight the basic utility of the functions along with some underlying rationale / methodology employed within some of the functions and to provide examples of some recommended use cases.
 
 \begin{figure}[H]
-	\includegraphics[width=16.5cm]{PNGs/FlowChart.png}
+	\centering
+	\includegraphics[width=10cm]{PNGs/FlowChart.png}
 	\caption{Suggested workflows through TAK functions depending on desired outcome and purpose of analysis. Also highlighted are the nature of the outputs produced by different functions. Definitions of inputs and outputs: shp - a shapefile containing vector data, the geometry of which, e.g. points, lines, polygons, depends on the tool in question; array - a Matlab array, i.e. a matrix of numbers; ascii grid - an ESRI Ascii text file that is interpretable as gridded raster data with projection information by many GIS programs; pdf - a figure output as a PDF.}
 	\label{fig:Workflow}
 \end{figure}
@@ -661,7 +704,7 @@ PRECIP=GRIDobj('/Users/aforte/GISdata/prism_precip.tif');
 \subsection{\textit{SegmentPlotter}}
 \paragraph{}\textit{SegmentPlotter} takes the output of \nameref{sec:SegPick} and plots each selected stream individually. The stream network is plotted as $\chi$-elevation, longitudinal profile, and slope-area plots. With the logical \textit{'separate'} flag, you can produce individual figures for each segment. Alternatively, you can provide a list of identifying numbers (i.e. the ID number in the third column of the \nameref{sec:SegPick} output) to the \textit{'subset'} parameter to only plot specific segments. You can also initiate and control labeling of stream segments with the \textit{'label'} and \textit{'names'} parameters.
 
-\subsection{\textit{SegmentProjector}}
+\subsection{\textit{SegmentProjector}} \label{sec:SegProj}
 
 \paragraph{}\textit{SegmentProjector} allows you to interactively select a portion of a stream to project along the length of the entire stream (i.e. from the mouth to the channel head of the provided stream). This can be useful for a variety of questions, e.g. estimating the amount of uplift of a low relief portion of a landscape (Figure \ref{fig:proj1}) or identifying portions of a stream profile that may be tectonically deformed or otherwise disturbed (Figure \ref{fig:proj2}). In detail, the function clips out the portion of the stream you select and performs a least squares linear fit on the $\chi$-elevation relationship along with a 95\% confidence interval on this fit. 
 
@@ -702,6 +745,15 @@ PRECIP=GRIDobj('/Users/aforte/GISdata/prism_precip.tif');
 \end{figure}
 
 \paragraph{}\textit{SegmentProjector} will iterate through all channel heads within a provided stream network, so it is suggested that you use \nameref{sec:SegPick} or some other means of selecting streams of interest before running \textit{SegmentProjector}. Note that if you are using the output of \textit{SegmentPicker}, you will need to load the \textit{PickedSegments\_*.mat} file and provide the \textit{STREAMobj} \textit{Sc} stored within this file as the required \textit{STREAMobj} input to \textit{SegmentProjector}. \textit{SegmentProjector} is similar to the TopoToolbox \textit{streamproj} function.
+
+\subsection{\textit{ProjectedIncision}}
+\paragraph{}The \textit{ProjectedIncision} function uses the output of \nameref{sec:SegProj} to estimate incision across an entire network. To do this, the function must assume that the topology of the drainage network in question has not changed over the time period of interest. The \textit{ProjectedIncision} function takes the series of projected profiles that are calculated in \nameref{sec:SegProj} and assumes that the projected portions of the network represent relict patches of equilibrium river profiles, i.e. it assumes that at some point in the past, the entire landscape had the same k\textsubscript{sn} as the given relict patch and uses the $\chi$ values of the modern drainage to estimate what the elevation of all portions of that relict stream network would be and uses the difference between those elevations and the modern elevations (across the entire provided network) to calculate incision. If more than one section of stream was projected when using \nameref{sec:SegProj}, then the \textit{ProjectedIncision} function will calculate projected elevations and implied incision amounts for each individual projected segment and then report the mean, minimum, maximum, and standard deviations of the projected elevations and incision. The function will also optionally display this estimated incision in a figure (e.g. Figure \ref{fig:ProjInc}). Positive incision amounts indicate the projected elevations of the profile lie above the modern stream elevations whereas negative incision amounts indicate that the projected elevations of the profile lies below the modern stream elevations.
+
+\begin{figure}[H]
+	\includegraphics[width=16.5cm]{PNGs/ProjectedIncision.png}
+	\caption{Example of projected incision amounts for Basin 402 (northeastern San Jacinto Mountains) using data from 5 projected streams.}
+	\label{fig:ProjInc}
+\end{figure}
 
 %%%%%%%%
 \section{Channel Steepness and $\chi$ Maps}
@@ -749,6 +801,33 @@ PRECIP=GRIDobj('/Users/aforte/GISdata/prism_precip.tif');
 \paragraph{}While we have not conducted a full study of the differences of the basic \textit{'quick'} vs \textit{'trib'} methods, the southern California example suggests that generally the regular \textit{'quick'} method of \textit{k\textsubscript{sn}} calculation may be slightly biased towards higher \textit{k\textsubscript{sn}} values, though 90\% of \textit{k\textsubscript{sn}} values of the two methods are within $\pm$50 of each other (this is with a reference concavity of 0.50, so absolute magnitudes of \textit{k\textsubscript{sn}} and thus magnitudes of deviations between these two methods will scale with choice of reference concavity). The \textit{k\textsubscript{sn}} values from the regular method are generally systematically larger than the tributary method values in low relief areas, where as generally \textit{k\textsubscript{sn}} values from the tributary method tend to be higher than regular values in higher relief portions of the landscape (Figure \ref{fig:BatchComp}). 
 
 \paragraph{}The geographic information structure (and shapefile) produced from both methods for each segment (controlled by the \textit{'smooth\_distance'}) will have fields containing values for \textit{k\textsubscript{sn}} (\textit{'ksn'}), mean drainage area (\textit{'uparea'}), mean gradient (\textit{'gradient'}), and the difference between the conditioned stream elevation and non-conditioned stream elevation (\textit{'cut\_fill'}) to inform the user whether an anomalous \textit{k\textsubscript{sn}} value may because of an overly aggressive conditioning scheme. If the \textit{'trib'} method is used, the geographic information structure and shapefile will include an extra field, \textit{'chi\_r2'}, which is the R\textsuperscript{2} value on the $\chi$-elevation fit and can be interpreted as a measure of the linearity of each sub-segment. 
+
+\paragraph{}If the \textit{'product'} is set to to \textit{'ksngrid'}, the continuous map of k\textsubscript{sn} is made via spatial averaging within a moving circular window of the individual k\textsubscript{sn} values along streams. The radius of this window by default is set to 5000 meters, but can be controlled via the \textit{'radius'} function. Note that the production of this continuous map of k\textsubscript{sn} can be time consuming. This output is suitable for use with the \nameref{sec:EroGrid} function.
+
+\subsection{\textit{AutoKsnProfiler}} \label{sec:KsnAuto}
+\paragraph{}The \textit{AutoKsnProfiler} function can be viewed as a compromise between the \nameref{sec:KsnBatch} and \nameref{sec:KsnProfiler} functions in terms of automation and the degree of lumping segments of streams into similar steepness domains. In essence, what \textit{AutoKsnProfiler} attempts to do is identify breakpoints in individual stream profiles and then fit a single k\textsubscript{sn} value to segments between these breakpoints. This is identical to what \nameref{sec:KsnProfiler} does, the difference being that with \nameref{sec:KsnProfiler} you manually identify these breakpoints on individual stream portions. For detailed stream analysis where the individual steepness domains are important, it is still recommended that you use \nameref{sec:KsnProfiler}, but \textit{AutoKsnProfiler} can sometimes produces smoother (i.e. less noisy) and more realistic maps of k\textsubscript{sn} when compared to \nameref{sec:KsnBatch}.
+
+\paragraph{}In detail, \textit{AutoKsnProfiler} calculates k\textsubscript{sn} along the stream network as in \nameref{sec:KsnBatch} and then calculates averaged k\textsubscript{sn} over a user specified length scale, controllable with the \textit{'segment\_length'} parameter. The function then looks for changes along individual stream profiles in these binned k\textsubscript{sn} values. If it identifies a significant change in these binned values, it identifies this as a break point and will then find the average k\textsubscript{sn} for the segments of the stream between individual breakpoints. This is equivalent to what a user does manually using \nameref{sec:KsnProfiler} (e.g. Figure \ref{fig:SegSelect}). 
+
+\paragraph{}The sensitivity of the function to detecting changes is primarily controlled by the \textit{'thresh\_ratio'} parameter which is a value between 0 and 1, where lower values imply that the threshold for detecting a change is lower (i.e. there will be more breakpoints). In detail, the sensitivity of the function is also influenced by the segment length and the reference concavity. To aid users in choosing values for these three parameters that are the most appropriate to their data and their desired outcomes, the \textit{AutoKsnProfiler} function has an optional mode where you can visualize the outcomes for a single stream and iteratively change values for the threshold ratio, the segment length, or the reference concavity (e.g. Figure \ref{fig:AutoThreshSelect}). 
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{PNGs/AutoKsn_05thresh.png}
+		\label{fig:ATSsub1}
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{PNGs/AutoKsn_01thresh.png}
+		\label{fig:ATSsub2}
+	\end{subfigure}
+	\caption{Example of exploring influences of parameter choices on the behavior of \textit{AutoKsnProfiler} for a trial stream. Left panel shows results using the default settings and a threshold ratio of 0.5. Right panel shows results after decreasing threshold ratio to 0.1 and segment length to 250 meters.}
+	\label{fig:AutoThreshSelect}
+\end{figure}
+
+By default, the selected stream will be the longest trunk stream in the provided network, but you can override this choice by providing the x-y coordinates of a particular channel head to the optional \textit{'channeloi'} parameter. The function outputs node attributed lists containing the estimated k\textsubscript{sn} and the residuals between the projected elevations and the true elevations. It also outputs the location of the breakpoints used (which could be interpreted as knick points) a mapstructure (suitable for use with the \textit{shapewrite} function) and a structure containing the parameters used, which can be used in conjunction with the optional \textit{'prev\_param'} option to force a run of the \textit{AutoKsnProfiler} to use the same parameters as a previous run.
 
 \subsection{\textit{KsnProfiler}} \label{sec:KsnProfiler}
 
@@ -885,6 +964,197 @@ In this mode, the first time a particular stream segment within a given connecte
 
 \subsection{\textit{ClassifyKnicks}}
 The \textit{ClassifyKnicks} is a companion function to \nameref{sec:KsnProfiler} that allows you to iterate through all segment boundaries selected during a \textit{KsnProfiler} run and provide a classification. This classification can either be numeric (e.g. 1, 2, 3, etc) or a character string (e.g., 'bound', 'slopebreak', 'knick', etc). If using character strings, these should be short (the shapefile format restricts entries in fields to 254 characters). The function will generate a new version of the knickpoint shapefile with this classification appended.
+
+\subsection{\textit{EroGrid}} \label{sec:EroGrid}
+\paragraph{}The \textit{EroGrid} function will generate a \textit{GRIDobj} of interpolated erosion rates based on an empirical relationship between erosion rate (e.g. as measured from catchment averaged \textsuperscript{10}Be inventories) and k\textsubscript{sn}. The \textit{EroGrid} function assumes that you have estimated this relationship with a power law of the form:
+
+\begin{equation} \label{eq:EroC}
+\bar{k_{sn}}=C*\bar{E}^{\phi}
+\end{equation}
+
+\noindent where $\bar{k_{sn}}$ is a basin averaged value of k\textsubscript{sn}, $\bar{E}$ is basin averaged erosion rate, and \textit{C} and $\phi$ are constants derived from fitting. It should be noted that later in this document we present this same relationship in a different form in Equation (\ref{eq:EroK}). The form in Equation (\ref{eq:EroC}) does not assume any particular erosion law, where as the form in Equation (\ref{eq:EroK}) is couched in terms of the well known 'stream power equation':
+	
+\begin{equation} \label{eq:StrmPow}
+E=K*A^{m}*S^{n}
+\end{equation}
+
+\noindent where \textit{E} is incision rate, \textit{K} is an erosional efficiency parameter, \textit{A} is drainage area as a proxy for discharge, \textit{S} is channel slope, and \textit{m} and \textit{n} are empirical constants often referred to as the 'area exponent' and 'slope exponent', respectively. The form of the relationship between k\textsubscript{sn} and erosion rate presented in Equation (\ref{eq:EroC}) and the associated parameters can be recast in terms of the stream power equation and the parameters used in Equation (\ref{eq:EroK}) with:
+
+\begin{equation}
+C=K^{\frac{-1}{n}}
+\end{equation}
+
+\begin{equation}
+\phi=\frac{1}{n}
+\end{equation}
+
+\noindent The function is agnostic with respect to the units of $\bar{E}$, e.g. this could be provided m/Myr or mm/yr, but it is assumed that the values for \textit{C} and $\phi$ were determined with the empirical erosion rates ($\bar{E}$) in those units and the output \textit{GRIDobj} will be in those same units. 
+
+\paragraph{}The function expects one of the inputs to be a \textit{GRIDobj} containing continuous values of k\textsubscript{sn}, e.g. as output from \nameref{sec:KsnBatch} when the \textit{'method'} is set to \textit{'ksn\_grid'}. Alternatively, you can provide a mapstructure containing k\textsubscript{sn} values, e.g. as output from \nameref{sec:KsnBatch} when the \textit{'method'} is set to \textit{'ksn'}, and the \textit{EroGrid} function will produce a continuous map of k\textsubscript{sn} for use in the function. 
+
+\paragraph{}Optionally, you can provide a standard deviation on the values of \textit{C} and/or $\phi$, which will be used to calculate uncertainty on the interpolated erosion rate:
+
+\begin{lstlisting}[language=Matlab]
+% Producing a single erosion rate GRIDobj
+[ERO]=EroGrid(DEM,KSN,100,0.5);
+% Producing an erosion rate GRIDobj along with maximum and minimum erosion rate grids based on uncertainty in the C and phi values
+[ERO,ERO_MAX,ERO_MIN]=EroGrid(DEM,KSN,100,0.5,'C_std',5,'phi_std',0.05);
+\end{lstlisting}
+
+\noindent Similarly, you can use incorporate uncertainty in the interpolated map of k\textsubscript{sn} with the optional \textit{'KSNstd'} input. 
+
+\paragraph{}Finally, in some cases, the data may suggest that there are different relationships between erosion rate and k\textsubscript{sn} based on the value of another grid. For example, if you had evidence that there were two different relationships between erosion rate and k\textsubscript{sn} depending on the mean annual precipitation, you could provide a \textit{GRIDobj} of mean annual precipitation and the 'bins' you wish to use to calculate erosion rates differently:
+
+\begin{lstlisting}[language=Matlab]
+% Establish edges for bins you wish to apply to the GRIDobj of interest, in this case a grid of precipitation called PRECIP
+% This example assumes that you believe there to be different relationship between erosion rate and ksn for areas that recieve 0-1 m/year, 1-3 m/yr, and 3-5 m/yr of precipitation per year
+edges=[0 1 3 5];
+% You must provide values for both C and phi for each bin, i.e. your entries for C and phi should have one fewer values than your entries to 'edges'
+C=[100 150 200];
+phi=[0.5 0.4 0.5];
+% It is assumed that the entries to 'C' and 'phi' are in the same order as your bin edges, e.g. for any pixel with a precipitation value between 0 and 1 m/yr, a C of 100 and phi of 0.5 will be used to determine the erosion rate based on the ksn value at that pixel
+[ERO]=EroGrid(DEM,KSN,C,phi,'edges',edges,'VAL',PRECIP);
+\end{lstlisting}
+
+\noindent You can use this option to calculate erosion rates differently depending on the spatial variation in another grid along with uncertainties on k\textsubscript{sn}, C, or $\phi$, the only requirement is that there are the same number of entries to \textit{'C\_std'} and \textit{'phi\_std'} as there are to \textit{'C'} and \textit{'phi'}, respectively.
+
+%%%%%%%%
+\section{Stream Junctions}
+\subsection{\textit{JunctionAngle}} \label{sec:JAngle}
+\subsubsection{Measuring Junction Angles}
+\paragraph{}The \textit{JunctionAngle} function is designed to both measure the angle between streams at tributary junctions and provide simple predictions of what these junction angles should be under very simple assumptions of an idealized channel network. The function largely adopts nomenclatures and methods from \cite{Howard1971}. Specifically, the function considers a stream junction to consist of two upstream links, referred to as 'tributary 1' and 'tributary 2', and a single downstream link. Tributary 1 is defined to be the larger of the two incoming links, with the determination of size based on the Shreve stream order of the two streams. In cases where the Shreve order of the two upstream links are the same, the determination of stream size is based on the drainage areas of the two upstream links. We adopt the approach in \cite{Howard1971} and consider the junction angle between the two upstream links, generally, as the product of two angles between each link and the upstream projection of the downstream link (Figure \ref{fig:JuncAngleCart}a).
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=16.5cm]{PNGs/JA_Cartoon.png}
+	\caption{ a) Diagram of angles measured by the \nameref{sec:JAngle} function and how these relate to the particular tributaries. b) Example of when the upstream projection of the downstream link does not bisect the two incoming links. If this were a real junction, the \textit{'rotation'} for both tributaries would be clockwise (CW).  c) Handedness as defined by \cite{James1969}. Note that handedness for a junction is undefined if the Shreve order for the two tributaries are identical} 
+	\label{fig:JuncAngleCart}
+\end{figure}
+
+ These two angles, e\textsubscript{1} and e\textsubscript{2} referring to the angles between tributaries 1 and 2 and the upstream projection of the downstream link, respectively, are summed to find the junction angle (JA), such that:
+
+\begin{equation}
+JA = e_{1} + e_{2}
+\end{equation}
+
+\noindent Not all junctions satisfy the assumption that both upstream links are bisected by the upstream projection of the downstream link, e.g. if both tributary 1 and tributary 2 lie on the same side of the upstream projection of the downstream link  (Figure \ref{fig:JuncAngleCart}b). In these cases, the junction angle is instead determined by:
+
+\begin{equation}
+JA =
+\begin{cases}
+e_{1} - e_{2},& \text{if } e_{1}\geq e_{2}\\
+e_{2} - e_{1},& \text{if } e_{2}> e_{1}
+\end{cases}
+\end{equation}
+
+\noindent In these cases, the values reported for e\textsubscript{1} and e\textsubscript{2}, i.e. the entries for \textit{'e1\_obs\_angle'} and \textit{'e2\_obs\_angle'} in the output table, will still be with reference to the upstream projection of the downstream link. For a particular junction, the value of \textit{'split'} in the output table indicates whether the upstream projection of the downstream link bisects the tributaries (true) or does not (false). By definition, junction angles are undefined in cases where more than two upstream links meet at a single node within a \textit{STREAMobj}.   
+
+\paragraph{}To ensure that the angular relations between elements of the stream network are accurately represented and measured, the nodes of the provided \textit{STREAMobj} are converted to geographic coordinates before any calculations are preformed. To calculate junction angles, the mean orientation of each link is determined by a linear fit (see Figure \ref{fig:InspectJunc} for an example). The orientation of this mean line is sensitive to the distance over which the fit is determined. This distance can be controlled by the user with the \textit{'fit\_distance'} parameter and can be specified in map units as measured along the stream or by directly specifying the number of nodes along the stream you would like to use. Multiple values can be provided to \textit{'fit\_distance'} to calculate junction angles considering more than one distance: 
+
+\begin{lstlisting}[language=Matlab]
+% Finding junction angles with a single fit distance of 1000 meters
+[junctions,IX]=JunctionAngle(S,A,DEM,1000); 
+% 'junctions' output in this case will be a table
+% Finding junction angles considering multiple fit distances
+[junctions,IX,mean_junctions]=JunctionAngle(S,A,DEM,[500 1000 2000 5000]);
+% 'junctions' output in this case will be a cell array with 4 columns and containing tables for each different fit distance
+% 'mean_junctions' output is an array that summarizes the variability in junction angles across the different fit distances provided
+\end{lstlisting}
+
+\noindent
+Depending on the details of the stream network and the value provided to \textit{'fit\_distance'}, not all links may be fit over the full distance, because the algorithm will only fit streams over portions of links that do not encounter another junction. For example, if a value of 1000 meters was provided to \textit{'fit\_distance'}, but for one of the links another tributary junction occurred 500 meters from the junction in question, then that particular link would only be fit over 500 meters. The extent to which the linear fit of the link is a good approximation of the true path of the link can be assessed with the R\textsuperscript{2} value for the link in question, i.e. the \textit{'e1\_R2'}, \textit{'e2\_R2'}, or \textit{'e3\_R2'} values in the output table, or visually for individual junctions of interest with the \nameref{sec:InJunc} function.
+
+\paragraph{}The \textit{'IX'} output is a cell array containing the indices into the node attributed list for the provided \textit{STREAMobj} for all junctions. Calculating this output is the most time consuming portion of the function, so there is an optional input to provide a previously calculated \textit{'IX'} output when running \textit{'JunctionAngle'}.
+
+\subsubsection{Junction Angle Prediction}
+\paragraph{}Along with measuring the junction angles, the \textit{'JunctionAngle'} function will predict what the junction angles of a given junction should be based on the geometric expectations laid out in \cite{Howard1971}. This predicted junction angle can be calculated considering the drainage areas of the two upstream links with the equations:
+
+\begin{equation}
+e_{1predicted}=cos^{-1} \left( \left( \frac{A_{1}+A_{2}}{A_{1}} \right) ^{\theta_{ref}} \right)
+\end{equation}
+
+\begin{equation}
+e_{2predicted}=cos^{-1} \left( \left( \frac{A_{1}+A_{2}}{A_{2}} \right) ^{\theta_{ref}} \right)
+\end{equation}
+
+\noindent Where \textit{A\textsubscript{1}} and \textit{A\textsubscript{2}} are the drainage areas directly upstream of the junction for tributaries 1 and 2 respectively and $\theta_{ref}$ is the reference concavity. Alternatively, the predicted junction angles can be calculated using the average channel slope where:
+
+\begin{equation}
+e_{1predicted}=cos^{-1} \left( \frac{S_{3}}{S_{1}} \right)
+\end{equation}
+
+\begin{equation}
+e_{2predicted}=cos^{-1} \left( \frac{S_{3}}{S_{2}} \right)
+\end{equation}
+
+\noindent Where \textit{S\textsubscript{1}}, \textit{S\textsubscript{2}}, and \textit{S\textsubscript{3}} are the mean slopes of tributaries 1 and 2 and the downstream link, respectively. In the slope based method, the predicted junction angles will be sensitive to the \textit{'fit\_distance'} as the mean slope of the links may vary depending on the portions of the stream considered. This is not the case for the drainage area method as this will not vary as a function of the fit distance, but it is instead sensitive to the choice of reference concavity. You can choose to calculate the predicted angles with the slope, area, or both methods depending on the input to the optional \textit{'predict\_angle\_method'} argument.
+
+\subsubsection{Output Table}
+\paragraph{}One of the primary outputs of the \textit{JunctionAngle} function is a table with a variety of information for all junctions within the provided stream network. For any junction where there are more than two upstream tributaries meeting, all values except the junction number and x-y coordinates will be set to NaN as junction angles (and derivative values) are undefined in this case. The entries in the output table are as follows:
+
+\begin{itemize}
+	\item \textit{'junction\_number'} - A unique ID number for the junction
+	\item \textit{'junction\_x'} - the x coordinate of the junction
+	\item \textit{'junction\_y'} - the y coordinate of the junction
+	\item \textit{'junction\_angle'} - the angle (in degrees) between tributary 1 and tributary 2
+	\item \textit{'handedness'} - the handedness of the junction as defined by \cite{James1969}, which can be either 'Right', 'Left', or 'Undefined'
+	\item \textit{'split'} - logical indicating whether the upstream tributaries are bisected by the upstream projection of the downstream link (true) or not (false)
+	\item \textit{'e1\_obs\_angle'} - the measured angle between tributary 1 and the upstream projection of the downstream link
+	\item \textit{'e1\_Apred\_angle'} - the predicted angle between tributary 1 and the upstream projection of the downstream link if the \textit{'predict\_angle\_method'} is set to \textit{'area'} or \textit{'both'}.
+	\item \textit{'e1\_Spred\_angle'} - the predicted angle between tributary 1 and the upstream projection of the downstream link if the \textit{'predict\_angle\_method'} is set to \textit{'slope'} or \textit{'both'}.
+	\item \textit{'e1\_rotation'} - orientation of tributary 1 with respect to the upstream projection of the downstream link, either counter-clockwise (CCW), clockwise (CW), or undefined
+	\item \textit{'e1\_shreve'} - Shreve order of tributary 1
+	\item \textit{'e1\_direction'} - flow azimuth of selected portion of tributary 1
+	\item \textit{'e1\_distance'} - stream distance used to fit selected portion of tributary 1
+	\item \textit{'e1\_num'} - number of nodes used to fit selected portion of tributary 1
+	\item \textit{'e1\_R2'} - R\textsuperscript{2} value on linear fit of selected portion of tributary 1
+	\item \textit{'e2\_obs\_angle'} - the measured angle between tributary 2 and the upstream projection of the downstream link
+	\item \textit{'e2\_Apred\_angle'} - the predicted angle between tributary 2 and the upstream projection of the downstream link if the \textit{'predict\_angle\_method'} is set to \textit{'area'} or \textit{'both'}.
+	\item \textit{'e2\_Spred\_angle'} - the predicted angle between tributary 21 and the upstream projection of the downstream link if the \textit{'predict\_angle\_method'} is set to \textit{'slope'} or \textit{'both'}.
+	\item \textit{'e2\_rotation'} - orientation of tributary 2 with respect to the upstream projection of the downstream link, either counter-clockwise (CCW), clockwise (CW), or undefined
+	\item \textit{'e2\_shreve'} - Shreve order of tributary 2
+	\item \textit{'e2\_direction'} - flow azimuth of selected portion of tributary 2
+	\item \textit{'e2\_distance'} - stream distance used to fit selected portion of tributary 2
+	\item \textit{'e2\_num'} - number of nodes used to fit selected portion of tributary 2
+	\item \textit{'e2\_R2'} - R\textsuperscript{2} value on linear fit of selected portion of tributary 2
+	\item \textit{'e3\_direction'} - flow azimuth of selected portion of downstream link
+	\item \textit{'e3\_distance'} - stream distance used to fit selected portion of downstream link
+	\item \textit{'e3\_num'} - number of nodes used to fit selected portion of downstream link
+	\item \textit{'e3\_R2'} - R\textsuperscript{2} value on linear fit of selected portion of downstream link
+\end{itemize}
+
+\subsection{\textit{InspectJunction}} \label{sec:InJunc}
+\paragraph{}The \textit{InspectJunction} function is provided mainly as a way of evaluating outputs of \nameref{sec:JAngle}. \textit{InspectJunction} expects the \textit{STREAMobj} used in the original call to \nameref{sec:JAngle} along with the \textit{'IX'} output from \nameref{sec:JAngle} and the number (i.e. the index of a particular junction as it appears in the output junction table) of a particular junction in question. Alternatively, you can provide an empty array to this number and manually select a junction to inspect on a map display of the stream network. 
+
+\begin{lstlisting}[language=Matlab]
+% To visually inspect the 50th junction in the output junction table
+InspectJunction(S,IX,50);
+% To manually select a juction to inspect
+InspectJunction(S,IX,[]);
+\end{lstlisting}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=16.5cm]{PNGs/InspectJunct.png}
+	\caption{Details on the fit of a selected junction. Left plot is the selected portions of the stream showing the true stream path, as points, and the best fit lines used to calculate the junction angles, displayed in polar coordinates. The dashed line is the upstream projection of the downstream link, which is used to measure the pairs of junction angles reported in the junction table. Right plot is the map showing the location of the selected junction and the sections of streams in context.} 
+	\label{fig:InspectJunc}
+\end{figure}
+
+\paragraph{}With the optional inputs to \textit{InspectJunction}, you can also manually change the length (either as stream length or number of nodes) over which the junction angels are fit to test the sensitivity of the junction angle to the fit distance. If no entries are provided to the optional \textit{'fit\_distance'} or \textit{'num\_nodes'}, the function will use the stream length selected during the original call to \nameref{sec:JAngle}, which will either be the single value supplied or the maximum value supplied if multiple fit distances were specified.
+
+\subsection{\textit{JunctionLinks}} \label{sec:JLinks}
+\paragraph{}The \textit{JunctionLinks} function uses the output of \nameref{sec:JAngle} and the classification of 'handedness' for individual junctions to classify individual links within the provided \textit{STREAMobj} (see Figure \ref{fig:JuncAngleCart} for a definition of handedness). The classification scheme is based on \cite{James1969} and follows the basic rules depicted in Figure \ref{fig:JuncLinkCart}.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=14cm]{PNGs/JL_Cartoon.png}
+	\caption{ Distinction between exterior, interior - Cis, interior - Trans, and interior - Undefined links as laid out by \cite{James1969} and implemented in the \nameref{sec:JLinks} function.} 
+	\label{fig:JuncLinkCart}
+\end{figure}
+
+\paragraph{}Specifically, the function will classify links as either 'Interior' or 'Exterior', with the distinction being whether a link is defined between two junctions (or an outlet) for the former or is defined by a channel head at its upstream end for the latter. The function also classifies links as either 'Cis', 'Trans', or 'Undefined'. Cis links have the same handedess for the junctions that defined either end and Trans links have different handedness at each end. A link will be Undefined if it is an exterior link or an interior link for which both junctions that define it do not have clear handedness. This may result if one of the ends of the link is an outlet, if one of the junctions has more than two streams meeting, or if the incoming streams at one of the junctions have the same Shreve stream order.
+
+\paragraph{}The \textit{JunctionLinks} function outputs a table with information for each link (including which junctions as output in the junction table from \nameref{sec:JAngle} define the link). Optionally, the function can be used to produce a shapefile that contains this information for each link, but it should be noted that the production of this shapefile can be EXTREMELY time consuming. It is strongly recommended that if you have access to the Parallel Computing Toolbox for MATLAB that you leave the optional \textit{'par'} parameter set to \textit{true}. If you do not have access to this toolbox, the function will automatically detect this, so it is not necessary to set \textit{'par'} to \textit{false}.
 
 %%%%%%%%
 \section{Basin Selection}
@@ -1250,7 +1520,7 @@ The \textit{'color\_by'} parameter is a valid input for \nameref{sec:grdksn}, \n
 
 \paragraph{}Via the optional \textit{'fit\_grd\_ksn'} parameter, you can also use the relationship between mean hillslope gradient and mean \textit{k\textsubscript{sn}} to estimate some morphometric parameters for the populations of basins, specifically the erosional efficiency, hillslope diffusivity, and limiting gradient. In detail, the analysis relies on the idea that the morphology of both the hillslope and fluvial portions of a landscape vary as a function of erosion rate. We can use these relationships with erosion rates, even if the erosion rates are unknown, to estimate these parameters. For the fluvial portion of the landscape, we use:
 
-\begin{equation}
+\begin{equation} \label{eq:EroK}
 E=K(k_{sn})^{n}
 \end{equation}
 
@@ -1416,11 +1686,61 @@ S_{avg}=\frac{z(0)-z(L_{H})}{L_{H}}
 
 \paragraph{}Importantly, the \textit{MakeCombinedSwath} function is setup so that the width to sample the topography to produce the topographic swath is decoupled from the width from which to sample the provided data (you can of course make these equal if you want). By default the function will also plot a map displaying which data points are included in the projected data on the swath figure, you can suppress the drawing of this map with the optional \textit{'plot\_map'} parameter.
 
-\subsection{\textit{ProjectOntoSwath}}
+\subsection{\textit{MakeSerialSwath}} \label{sec:SerSwath}
+\paragraph{}In some cases, it is useful to produce a series of swath profiles that are semi-parallel to each other or follow a particular path. The \textit{MakeSerialSwath} function is designed to make producing such a product simpler. As with \nameref{sec:Swath}, you must provide a base \textit{GRIDobj} from which to produce the swaths and a series of x-y points that will define the serial swaths, but in this case the swaths will be oriented perpendicular to the provided line. You can alternatively provide an empty array to this \textit{'points'} input to initiate a graphical choice within Matlab to create the base line. Through required and optional inputs you can control the length of individual swaths, the width of the swaths either by directly specifying the width in map units or by specifying the number of equal width swaths to create along the base line, and the orientation of the swaths with respect to the baseline (i.e should the swaths be centered along the baseline as in \nameref{fig:SerSwath} or aligned along the 'top' or 'bottom' of the baseline). 
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=14cm]{PNGs/SerialSwath.png}
+	\caption{Standard graphic output from \nameref{sec:SerSwath} with a series of 50 equal width, 20 km long swaths, centered along the provided line (dark black line in the upper panel). The middle panel shows the minimum, mean, and maximum swath values for each swath (keyed by their color) and the bottom panel shows the average of all the swaths.}
+	\label{fig:SerSwath}
+\end{figure}
+
+\paragraph{}The primary output of the \textit{MakeSerialSwath} function is a cell array containing individual \textit{SWATHobjs} created along the baseline. These individual \textit{SWATHobjs} are suitable for use in other functions, e.g. \nameref{sec:CombSwath} or plotting with built in \textit{TopoToolbox} function like \textit{plotdz}. Specifically, if you wanted to use the output of \textit{MakeSerialSwath} to make a series of combined swaths with \nameref{sec:CombSwath}, this can be easily accomplished with a simple loop:
+
+\begin{lstlisting}[language=Matlab]
+% Generate serial swaths based on provided point array
+[SWcell,~]=MakeSerialSwath(DEM,points,100,5000);
+% Generate a combined swath for each serial swath a generic nx3 point dataset (points3) and save out figures for each with a unique name and save the projected data into another cell array
+% Preallocate the output array
+outData=cell(numel(SWcell),1);
+for ii=1:numel(SWcell)
+	% It is necessary to extract the points and width from each serial swath
+	
+	[~,~,~,outData{ii}]=MakeCombinedSwath(DEM,SWcell{ii}.xy0,SWcell{ii}.width,'points3',points3,SWcell{ii}.width*5,'save_figure',true,'file_name_prefix',['Comb_' num2str(ii)]);
+end
+\end{lstlisting}
+
+
+
+\subsection{\textit{ProjectOntoSwath}} \label{sec:ProjSwath}
 \paragraph{}The \textit{ProjectOntoSwath} function is used in \nameref{sec:CombSwath} to do the data projection, but we include it as a separate function as it may be useful for users. \textit{ProjectOntoSwath} finds the distance of a list of x and y points along and from the centerline of a provided \textit{SWATHobj} based on a user defined width within which to sample the data. Distances of points that lie beyond the extent of the swath or lie outside of the data sampling width will be set to NaN. The function projects data onto each swath segment (i.e. if the swath line is bent) and finds the swath segment that data are closest to in tangential distance to avoid duplication of points. Note that there is no compiled version of \textit{ProjectOntoSwath}.
+
+\subsection{\textit{ProjectSmallCircleOntoSwath}}
+\paragraph{}This function is similar to \nameref{sec:ProjSwath}, but instead of projecting points along paths perpendicular to the swath, this function takes an input coordinate (in projected coordinates) to use as the center of a family of small circles along which to project the provided x-y points. This function can be used in combination with \nameref{sec:SmallCirc} if you need to first determine a small circle center that would be appropriate. As with \nameref{sec:ProjSwath}, the function outputs the location of points along the swath based on their projected positions. The function also calculates the distance from the point along the swath both in map units as measured along the small circle arc between the point and the swath center line and in degrees.
+
+\subsection{\textit{ProjectGPSOntoSwath}}
+\paragraph{}The \textit{ProjectGPSOntoSwath} behaves identically to \nameref{sec:ProjSwath} in terms of the projection of the provided x-y location onto the swath and similarly provides distance along and from the swath of those points, but it also takes velocity and associated uncertainties (assumed to be in the standard north and east components) and projects those onto the swath. The output of the function gives the magnitude of the projected GPS vector, i.e. the magnitude of the velocity if resolved onto a plane parallel to the \textit{SWATHobj} and the associated uncertainty, i.e. the radius of a slice through the error ellipse at the orientation of the \textit{SWATHobj}. The function also provides north and east components for this projected vector which would be suitable inputs to the \textit{quiver} function for plotting.
+
+\subsection{\textit{CrossSwath}}
+\paragraph{}Often, it is useful to precisely determine where a particular linear feature crosses a \textit{SWATHobj} for plotting purposes. This function takes a \textit{SWATHobj} and a line (defined by a series of x-y points at the vertices of the line in question) and calculates the positions along a swath where the line crosses the bounds of the swath (in both x-y coordinates and distance along the swath) and the mean crossing location of the line. 
 
 %%%%%%%%
 \section{Miscellaneous}
+
+\subsection{\textit{BestFitSmallCircle}} \label{sec:SmallCirc}
+\paragraph{}Function to find the best fit small circle for a set of provided x-y points. In addition to the x and y coordinates, you are expected to provided the projection information for the x and y coordinates as a structure. Assuming you have a \textit{GRIDobj} with which these x-y points are associated, the necessary projection information (i.e. the input for the \textit{'proj'} argument) is stored in the \textit{DEM.georef.mstruct} or alternatively, if you are using an older version of TopoToolbox, \textit{DEM.georef}. This information can also be directly extracted from a GeoTIFF with the \textit{geotiffinfo} function. If you provide an empty array to the textit{'proj'} argument, the function assumes that the provided x-y points are already geographic coordinates. The function will output the center of the best fit small circle (in geographic coordinates), the radius of the small circle (in degrees), and a series of points along the perimeter of the small circle (in projected coordinates unless the original points are provided as geographic)
+
+\begin{lstlisting}[language=Matlab]
+% Produce a best fit small circle from a series of x and y coordinates extracted from a particular DEM
+[clat,clon,crad,cpx,cpy]=BestFitSmallCircle(x,y,DEM.georef.mstruct);
+% Alternatively, grab the projection info directly from a geotiff
+proj=geotiffinfo('srtm_bigtujunga30m_utm11.tif');
+[clat,clon,crad,cpx,cpy]=BestFitSmallCircle(x,y,proj);
+% You can use the built in projinv and projfwd functions to convert the clat and clon or cpx and cpy outputs
+[center_x,center_y]=projfwd(proj,clat,clon); % Convert center to projected
+[cp_lat,cp_lon]=projinv(proj,cpx,cpy); % Convert perimeter to geographic
+\end{lstlisting}
 
 \subsection{\textit{ksncolor}} \label{sec:ksncolor}
 \paragraph{}Function to generate a colormap that roughly approximates the stereotypical green-yellow-red color progression commonly used for \textit{k\textsubscript{sn}} data in publications, see Figure \ref{fig:KsnSwath} for an example of the color map. Note that there is no compiled version of \textit{ksncolor}.
@@ -1451,6 +1771,21 @@ S_{avg}=\frac{z(0)-z(L_{H})}{L_{H}}
 
 \paragraph{}You can provide an empty array for the location of observation to choose a point on the provided DEM to use as the location. The location of the observation is marked on the figure with a white dot.
 
+\subsection{\textit{HackRelationship}}
+\paragraph{}The \textit{HackRelationship} function can be used to estimate the so-called Hack coefficient and exponent for a portion of a landscape. This refers to 'Hack's Law', originally described by \cite{Hack1957} which related the change in drainage area along a stream to distance along the stream such that:
+
+\begin{equation} \label{eq:HackOrig}
+x=C*da^h
+\end{equation}
+
+\noindent where \textit{x} is distance measured in the downstream direction in map units, \textit{da} is drainage area in map units squared, \textit{C} is the Hack coefficient, and \textit{h} is the Hack exponent. This same relationship has been presented in an alternative form by \cite{Whipple1999a}:
+
+\begin{equation} \label{eq:HackNew}
+da=C*x^h
+\end{equation}
+
+\noindent where the values are the same, but obviously the values of \textit{C} and \textit{h} are interpreted differently. This function allows you to fit the relationship with either form using the optional \textit{'relation'} parameter, with the \textit{'original'} (Equation \ref{eq:HackOrig})  or \textit{'inverse'} (Equation \ref{eq:HackNew}) form. To compute the relationship, the function will calculate a value of \textit{C} and \textit{h} for each drainage basin, defined by the number and location of outlets in the provided \textit{STREAMobj} and also calculates a 'global' value of \textit{C} and \textit{h} from all relevant points in the landscape. The function has a variety of options to control what data is used to fit. For example, for a given watershed, the function can measure distances from the channel heads to the outlets or from the divides to the outlets. The function can also do the fit using only data along the trunk stream in a watershed, along all streams in a watershed, or using all contributing pixels in a watershed.
+
 \subsection{\textit{Mat2Arc}} \label{sec:Mat2Arc}
 \paragraph{}\textit{Mat2Arc} is a helper function that takes any matfile as an input and will search its contents and produce either ESRI ascii grids or geotiffs and shapefiles from any valid datasets. Specifically, will make ascii grids or geotiffs of any \textit{GRIDobj}, will convert any \textit{FLOWobj} to an Arc style flow raster an export as an ascii grid or geotiff, and output any \textit{STREAMobj} or recognizable geographic data structure as a shapefile. Whether rasters are saved as ESRI ascii grids or geotiffs is controlled with the optional \textit{'raster\_type'} parameter.
 
@@ -1462,6 +1797,40 @@ S_{avg}=\frac{z(0)-z(L_{H})}{L_{H}}
 %%%%%%%%%%%%%%%%%%%%%
 \section{Headers for Compiled Functions}\label{sec:CmpFuncCalls}
 \paragraph{} The following section reproduces the headers of each compiled function. Please refer to the \nameref{sec:CmpFunc} section of the user manual for additional information on how to use the compiled versions of the functions.
+
+\subsection{AutoKsnProfiler}
+
+\paragraph{Description:}
+Prototype function for automated ksn fits similar to what is done with KsnProfiler. Function uses the MATLAB 'ischange' function to find breaks in binned ksn values. The sensitivity of the function, i.e. how small a change in binned ksn value is interpreted as a breakpoint, is controlled by the threshold\_ratio parameter. Users can explore the affect of different values of threshold ratio, along with reference concavity and segment length, with the optional 'explore\_param' option.
+
+\paragraph{Required Inputs:}
+\begin{itemize}
+	\item wdir - full path of working directory
+	\item MatFile - Full path of matfile output from either 'cmpMakeStreams' or the name of a single basin mat file from 'cmpProcessRiverBasins'
+	\item thresh\_ratio - value between 0 and 1 that controls how sensitive the function is to change in the running mean of binned ksn vs distance. Values close to 0 result in a lower threshold and more break points. 
+\end{itemize}
+
+\paragraph{Optional Inputs:}
+\begin{itemize}
+	\item prev\_param [] - option to use the parameters from a previous run of 'AutoKsnProfiler' stored in the output '*\_params.mat' where the prefix is controlled by the 'file\_name\_prefix' parameter. This will override any other user provided or default values for 'thresh\_ratio', 'ref\_concavity', and 'segment\_length'. You can still run 'explore\_param' to subsequently change the values stored in the input to 'prev\_param', but the idea behind this is to make it easy to run the AutoKsnProfiler on multiple datasets with the exact same options. 
+	\item ref\_concavity [0.50] - reference concavity (as a positive value) for calculating ksn
+	\item calc\_concavity [false] - logical flag to turn on calculation of a best fit concavity for each stream segment. This will slow down the function considerably so it's only recommended that you set this to true if you are explicitly interested in the concavity of individual segments.
+	\item segment\_length [1000] - length in map units over which to bin ksn and distance data over which the mean ksn values will be fit. Also used as the length scale over which to average values when producing the output map structure
+	\item plot\_example [false] - logical flag to turn on (true) a plot of results in profile view a single stream in the network. By default, the selected stream will be the longest trunk stream in the provided network. You can override by this providing a valid input to 'channeloi'. Provided as a static way to visualize effect of the choice of 'thresh\_ratio', 'ref\_concavity', and 'segment\_length' on the result. See 'explore\_param' for a more dynamic way to explore the effect of these values.
+	\item explore\_param [false] - logical flag to turn on (true) a plot of results in profile view a single stream in the network and the option to change the values for 'thresh\_ratio', 'ref\_concavity', and 'segment\_length' interactively. By default, the selected stream will be the longest trunk stream in the provided network. You can override by this providing a valid input to 'channeloi'.
+	\item channeloi [] - 1 x 2 array containing the x-y coordinates of a channel head of a stream to use as the selected stream if either 'plot\_example' or 'explore\_param' is set to true. If neither of those are true, this input has no effect on the behavior of the code.
+	\item conditioned\_DEM [] - option to provide a hydrologically conditioned DEM for use in this function, expects the mat file as saved by 'cmpConditionDEM' See 'cmpConditionDEM' function for options for making a hydrological conditioned DEM. If no input is provided the code defaults to using the mincosthydrocon function.
+	\item interp\_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a conditioned DEM) 
+	\item file\_name\_prefix ['auto'] - name prefix for the shapefiles, textfiles, and matfiles to be export, must have no spaces to be a valid name for ArcGIS and should NOT include any file extensions.
+\end{itemize}
+
+
+\paragraph{Examples} if running for the command line, minus OS specific way of calling main TAK function:
+\begin{lstlisting}[language=bash]
+AutoKsnProfiler /path/to/wdir Topo.mat 0.5
+AutoKsnProfiler /path/to/wdir Topo.mat 0.5 prev_param auto_params.mat
+AutoKsnProfiler /path/to/wdir Topo.mat 0.25 ref_concavity 0.4 explore_param true
+\end{lstlisting}
 
 \subsection{Basin2Raster}
 \paragraph{Description:}
@@ -1976,6 +2345,42 @@ DippingBedFinder /path/to/wdir Topo.mat [25600 234500] 250 500 100 10
 DippingBedFinder /path/to/wdir Topo.mat [] 250 500 100 10   
 \end{lstlisting}
 
+\subsection{EroGrid}
+\paragraph{Description:}
+Function to produce an erosion rate map based on an empirical relationship between normalized channel steepness (ksn) and erosion rate (E) defined in the form of ksn = C*E\textsuperscript{phi}. This relationship would likely come from a series of catchment averaged cosmogenic erosion rates and basin averaged normalized channel steepness. Function can produce an erosion rate map for a unique relationship between ksn and E or a series of relationships based on different regions defined in a separate grid provided as the optional 'VAL' input. Function is also able to incorporate uncertainty in the interpolated KSN map and/or uncertainty on the fit parameters (i.e. C and phi) to calculate min and max erosion rate estimates based on these uncertainties. 
+
+\paragraph{Required Inputs:}
+\begin{itemize}
+	\item wdir - full path of working directory
+	\item MatFile - Full path of matfile output from either 'cmpMakeStreams' or the name of a single basin mat file from 'cmpProcessRiverBasins'
+	\item KsnFile - ascii grid of continous ksn (e.g. as produced by KsnChiBatch with product set to 'ksngrid') or a shapefile of ksn (e.g. as produced by KsnChiBatch with product set to 'ksn'). Input to KsnFile must have either a '.txt' or '.shp' file extension
+	\item C - coefficient of power law relationship between ksn and E (ksn = C*E\textsuperscript{phi}), can be a single value or an array of values. If an array of values is provided, it is assumed that these are multiple coefficients that refer to different relationships based on spatial subsetting that will be defined with inputs to the optional 'edges' and 'VAL'  inputs
+	\item phi - exponent of power law relationship between ksn and E (ksn = C*E\textsuperscript{phi}), can be a single value or an array of values. If an array of values is provided, it is assumed that these are multiple exponents that refer to different relationships based on spatial subsetting that will be defined with inputs to the optional 'edges' and 'VAL'  inputs
+\end{itemize}
+
+\paragraph{Optional Inputs:}
+\begin{itemize}
+	\item radius [5000] - radius for creating a spatially averaged ksn grid if the entry to KSN is a mapstruct
+	\item KSNstd - ascii grid of standard deviation of continous ksn (e.g. as produced by KsnChiBatch with product set to 'ksngrid') to incoporate uncertainty in ksn smoothing into the production of erosion rate maps. If you are providing a mapstructure to the 'KSN' argument and you wish to use the KSNstd that will be calculated to consider how uncertainty in the ksn value leads to uncertainty in the erosion rate map, use the 'use\_ksnstd' logical flag
+	\item use\_ksnstd [false] - logical flag to calculate and use the standard deviation of ksn in estimating erosion rates, in the event that you are providing a shapefile of Ksn values to the 'KsnFile' input.
+	\item C\_std - standard deviation / uncertainty on coefficient of power law. If an entry is provided to C\_std (and phi\_std), then these uncertainties will be incorporated into the erosion grid outputs. There must be the same number of entires to C\_std as there is to 'C'.
+	\item ph\_std - standard deviation / uncertainty on the exponent of power law. If an entry is provided to phi\_std (and C\_std), then these uncertainties will be incorporated into the erosion grid outputs. There must be the same number of entires to phi\_std as there is to 'phi'.
+	\item VAL [] - ascii grid (.txt) defining the regions by which to index the KSN grid to establish different empirical relationships between ksn and E. For example, VAL might be a precipitation grid if you have reason to believe there are different ksn - E relationships depending on precipitation. If you provide an input to VAL, you must also provide an input to 'edges' that define the bounds on the differnet values within VAL that define the different regions, i.e. VAL and edges must be in the same units and edges must cover the full range of values within VAL
+	\item edges [] - array that define the edges to index the GRIDobj provided to VAL. There must be n+1 entries for n entries to 'C' (and 'phi'). It's also assumed that entries for 'C' and 'phi' are in the same order as the bins defined by 'edges'.
+	\item resample\_method ['nearest'] - method to resample the provided VAL GRIDobj if it is a different dimension or pixel size than the input DEM. Valid options are 'nearest', 'bilinear', and 'bicubic'. Default is 'nearest'.
+\end{itemize}
+
+\paragraph{Note:}
+The function does not explicitly depend on the 'KSN' arugment actually being KSN. E.g., if you have established a relationship between erosion rate and local relief in the form rlf = C*E\textsuperscript{phi}, then this function will work equally well.
+
+
+\paragraph{Examples} if running for the command line, minus OS specific way of calling main TAK function:
+\begin{lstlisting}[language=bash]
+EroGrid /path/to/wdir Topo.mat batch_ksngrid.txt 100 0.5
+EroGrid /path/to/wdir Topo.mat batch_ksngrid.txt 100 0.5 KSNstd batch_ksngridstd.txt
+EroGrid /path/to/wdir Topo.mat batch_ksngrid.txt [100 316 1000] [0.5 0.5 0.5] VAL precip.txt edges [0 1 2 4]
+\end{lstlisting}
+
 \subsection{FindBasinKnicks}
 \paragraph{Description:}
 Function for manually selecting knickpoints within a Basin\_Data\_File (i.e. result of ProcessRiverBasins). 
@@ -2065,6 +2470,178 @@ FindThreshold /path/to/wdir Topo.mat all
 FindThreshold /path/to/wdir Topo.mat 25 pick_method chi
 \end{lstlisting}
 
+\subsection{HackRelationship}
+\paragraph{Description:}
+Function to find the Hack relationships for all watersheds in a given landscape. Assumes
+that the provided STREAMobj terminates at the outlets of the watersheds for which you
+wish to calculate Hack coeffecients and exponents.
+
+\paragraph{Required Inputs:}
+\begin{itemize}
+	\item wdir - full path of working directory
+	\item MatFile - Full path of matfile output from either 'cmpMakeStreams' or the name of a single basin mat file from 'cmpProcessRiverBasins'
+\end{itemize}
+
+\paragraph{Optional Inputs:}
+\begin{itemize}
+	\item method ['trunks'] - optional parameter for controlling which data is used to 
+	fit the Hack relationship. Options are 'trunks' (default), 'streams', or 'grids'. If 'trunks', only values in trunk streams will be used. If 'streams' only values in stream networks (as defined by the input STREAMobj) will be used. If 'grids', all pixels in watersheds upstream of outlets of the provided STREAMobj will be used.
+	\item relation ['original'] - optional parameter to control the form of the Hack relationship. The 'original' option will fit the original relationship as presented by Hack, e.g. length = C * drainage area\textsuperscript{h}. The 'inverse' will instead fit the form used by Whipple and Tucker, 1999, drainage area = C * length\textsuperscript{h}.
+	\item include\_hillslope [false] - logical flag to either include or not include (default) the
+	portions of the channels between the channelheads in the provided STREAMobj and the 
+	drainage divide. Regardless of the value of this parameter, distances within the channel
+	will be relative to the divide unless changed with 'measure\_from' parameter, but if left false, 
+	low drainage area values physically above channelhead will not be included in fits. This parameter is ignored if 'method' is set to 'grids'.
+	\item measure\_from ['divide'] - optional parameter to control how distances ares measured, either measured from the drainage divides when set to 'divide' or from the channelheads (as defined in the provided STREAMobj) if set to 'channelheads'. If 'method' is set to 'grids', then this parameter will be set to 'divide' regardless of user input.
+	\item draw\_fig [true] - logical flag to display a plot of the coefficient (C) and exponent (h) as
+	a function of drainage area for all basins
+	\item save\_fig [false] - logical flag to save the output figure
+\end{itemize}
+
+\paragraph{Outputs:}
+\begin{itemize}
+	\item 'HackTable.mat' with columns for x coordinate and y coordinate of each basin, 
+	drainage area for each basin, and the best fit 'C' and 'h' values for each basin
+	\item 'GlobalHack.mat' with columns for the C and h values fit from all relevant points in the landscape
+\end{itemize}
+
+\subsection{InspectJunction}
+\paragraph{Description:}
+Function for visualizing the fit of up- and downstream links to evaluate the values for the junction angles. It will display both a zoomed view of the junction, displayed in polar coordinates, and the location of the junction on a map of the stream network. 
+
+\paragraph{Required Inputs:}
+\begin{itemize}
+	\item wdir - full path of working directory
+	\item MatFile - Full path of matfile output from either 'cmpMakeStreams' or the name of a single basin mat  file from 'cmpProcessRiverBasins', in this case it must be the same matfile you provided to JunctionAngle
+	\item JunctionMatFile - Full path of matfile output from JunctionAngle
+	\item num - junction number, referenced from JunctionAngle table. If an empty array is provided, you will be prompted with a map  of the stream network to select the junction of interest.
+\end{itemize}
+
+\paragraph{Optional Inputs:}
+\begin{itemize}
+	\item fit\_distance - distance in map units along stream to do fit of selected junction. Distance must be less than the maximum distance used when JunctionAngle was run. This input (and the related 'num\_nodes') is provided if you want to visually explore the sensitivity of the fit distance to junction angles
+	\item num\_nodes - number of stream nodes to do fit of selected junction. Number of nodes must be less than the number of nodes extracted when JunctionAngle was run.
+	\item save\_fig [false] - logical flag to toggle saving the figure output of this function as a PDF.
+\end{itemize}
+
+\paragraph{Note:} You cannot provide entries to both fit distance and num\_nodes
+
+\paragraph{Examples} if running for the command line, minus OS specific way of calling main TAK function:
+\begin{lstlisting}[language=bash]
+InspectJunction /path/to/wdir Topo.mat Topo_junctions.mat 50
+InspectJunction /path/to/wdir Topo.mat Topo_junctions.mat 50 fit_distance 500
+InspectJunction /path/to/wdir Topo.mat Topo_junctions.mat 50 num_nodes 10	
+\end{lstlisting}
+
+\subsection{JunctionAngle}
+\paragraph{Description: }
+Function calculates the angle of stream junctions. The basic strategy and nomenclature used in this function is adapted from Howard, 1971, 'Optimal angles of stream junction: Geometric, stability to capture, and minimum power criteria'. The code first fits the upstream and downstream links that meet at junctions with linear fits. The lengths of stream used to perform these fits is controlled with the 'fit\_distance' parameter. Junction angles are calculated as a pair of angles (e1 and e2) between each tributary (tributary 1 and tributary 2) and the upstream projection of the downstream link. The total junction angle is calculated as the angle between the two upstream links, which in well behaved junctions should be the sum of e1 and e2, but is not always the case (i.e. for some junctions both upstream links are on the same side of the upstream projection of the downstream link, in these cases the junction angle will not be the sum of the e1 and e2 angles, but instead will be the true angle between link 1 and link 2, whereas the values of e1 ane e2 will be measured from the upstream plane). 
+
+\paragraph{}The function also calculates predicted junction angles based on the simple geometric criteria described in Howard, 1971, and the handedness of junction angle as defined by James and Krumbein, 1969, 'Frequency distributions of stream link lengths'. It is important to note that angles related to junctions at which more than two upstream links meet or for which there are no downstream nodes (i.e. the junction is an outlet) are set to NaN as these are undefined in the Howard criteria.
+
+\paragraph{Required Inputs:}
+\begin{itemize}
+	\item wdir - full path of working directory
+	\item MatFile - Full path of matfile output from either 'cmpMakeStreams' or the name of a single basin mat file from 'cmpProcessRiverBasins'
+	\item fit\_distance - distance in stream distance (map units) for fitting stream links, if more than one value is provided to fit\_distance, it is assumed you want to calculate junction angles fitting stream segments with the range of distances. The provided value(s) can be interpeted as the number of stream nodes over which to fit the stream links if the optional 'use\_n\_nodes' is set to true
+\end{itemize}
+
+\paragraph{Optional Inputs:}
+\begin{itemize}
+	\item file\_name\_prefix ['topo'] - prefix for outputs shapefiles, textfiles, and mapfiles 
+	\item use\_n\_nodes [false] - logical flag to interpret the value(s) provided to fit\_distance as the number of stream nodes to extract up and downstream as opposed to streamwise distance
+	\item previous\_IX [] - Calculation of the 'IX' output is the most time consuming aspect of the calculation, so if you wish to rerun the function with different parameters (e.g. recalculating predicted angles with a different reference concavity or different method) the presupplying the IX result from a previous run can be useful. In the compiled version this accomplished by supplying the name of a matfile generated during a previous run of the compiled version of junction angle. It is important that this IX result was produced in a run using the same MatFile inputs and that the maximum value provided to fit distance does not exceed the maximum fit distance that was provided when you initially ran the function to produce the provided IX input. The code will check that the fit distances are compatible, but will not explicity check that S, A, and the DEM are the same.
+	\item predict\_angle\_method ['area'] - method to use to calculate predicted junction angles. Both methods are simple geometric predictions from Howard, 1971. Valid inputs are 'slope', 'area',  or 'both'. If pred\_angle\_method is set to 'area' (default), then you should make sure the ref\_concavity is valid for the network you are analyzing, default value is 0.5. For the 'slope' method, the slope of the two upstream and one downstream link will be the mean of the gradient of those links over the length of stream sampled (controlled by the values provided to fit\_distance). Providing 'both' will calculate both the slope and area predicted angles.
+	\item ref\_concavity - [0.5] - reference concavity for calculating predicted junction angles using Howard, 1971 area relation. If no value is provided, default value of 0.5 will be used.
+	\item verbose [false] - logical flag to report progress through function. This can be useful because certain steps of the process are very time consuming.
+\end{itemize}
+
+\paragraph{Outputs:}
+Outputs a table as a text file. If one value is provided to fit\_distance then there
+will be one table. If multiple values are provided to fit\_distance, then there will be 
+a table for each fit distance, in order of increasing distances. Columns of the table are:
+\begin{itemize}
+	\item junction\_number - ID number of junction
+	\item junction\_x - x coordinate of junction
+	\item junction\_y - y coordinate of junction
+	\item junction\_angle - angle in degrees between tributary 1 (e1) and tributary 2 (e2)
+	\item handedness - handedness of junction as defined by James and Krumbein, 1969, options are Right, Left, or Undefined, stored as a categorical
+	\item split - logical indicating whether upstream projection of downstream link lies between tributary 1 and tributary 2 (true) or does not (false)
+	\item e1\_obs\_angle - angle between tributary 1 and upstream projection of downstream link
+	\item e1\_Apred\_angle - predicted angle between tributary 1 and upstream projection of downstream link based on Howard 1971 area relations (will appear if 'predict\_angle\_method' is 'area' or 'both')
+	\item e1\_Spred\_angle - predicted angle between tributary 1 and upstream projection of downstream link based on Howard 1971 slope relations (will appear if 'predict\_angle\_method' is 'slope' or 'both')	
+	\item e1\_rotation - orientation of tributary 1 with respect to the upstream projection of the downstream link, options are CCW (counter-clockwise), CW (clockwise), or Undefined (more than two tributaries meet at junction). If split is true, one of the upstream links will be CW and one will be CCW.
+	\item e1\_shreve - shreve order of tributary 1
+	\item e1\_direction - flow azimuth of tributary 1
+	\item e1\_distance - stream distance used to fit tributary 1
+	\item e1\_num - number of upstream nodes used to fit tributary 1
+	\item e1\_R2 - R2 value on linear fit of tributary 1
+	\item e2\_obs\_angle - angle between tributary 2 and upstream projection of downstream link
+	\item e2\_Apred\_angle - predicted angle between tributary 2 and upstream projection of downstream link based on Howard 1971 area relations (will appear if 'predict\_angle\_method' is 'area' or 'both')
+	\item e2\_Spred\_angle - predicted angle between tributary 2 and upstream projection of downstream link based on Howard 1971 slope relations (will appear if 'predict\_angle\_method' is 'slope' or 'both')	
+	\item e2\_rotation - orientation of tributary 2 with respect to the upstream projection of the downstream link, options are CCW (counter-clockwise), CW (clockwise), or Undefined (more than two tributaries meet at junction)
+	\item e2\_shreve - shreve order of tributary 2
+	\item e2\_direction - flow azimuth of tributary 2
+	\item e2\_distance - stream distance used to fit tributary 2
+	\item e2\_num - number of upstream nodes used to fit tributary 2
+	\item e2\_R2 - R2 value on linear fit of tributary 2
+	\item e3\_direction - flow azimuth of downstream link
+	\item e3\_distance - stream distance used to fit downstream link
+	\item e3\_num - number of downstream nodes used to fit downstream link
+	\item e3\_R2 - R2 value of linear fit of downstream link
+\end{itemize}
+
+If multiple fit\_distances are provided a separate 	'*\_mean\_junctions.txt' file will be saved, which will be a table containing mean and standard deviations across the angles calculated using the different fit distances, including the mean total junction angle, standard deviation of the total junction angle, mean angle between tributary 1 and the upstream projection of the downstream link (e1), standard deviation of e1, mean angle between tributary 2 and the upstream projection of the downstream link (e2), standard deviation of e2. If the predict\_angle\_method is set to either 'slope' or 'both', this will also include the mean and standard deviations of the predicted e1 and e2 angles based on the slope method. Means and standard deviations are not calculated for the area method because these will not vary as a function of fit distance.
+
+\paragraph{Note:}
+For all outputs, the tributaries are sorted so that tributary 1 is always the 'larger' of the  two tributaries. The size of the tributaries are based on the shreve order of the two tributaries. In the event that the two tributaries have the same shreve order then the drainage area is used to determine respective size.
+
+\paragraph{Examples} if running for the command line, minus OS specific way of calling main TAK function:
+\begin{lstlisting}[language=bash]
+JunctionAngle /path/to/wdir Topo.mat 1000
+JunctionAngle /path/to/wdir Topo.mat [1000 2000 5000]
+JunctionAngle /path/to/wdir Topo.mat 10 use_n_nodes true
+\end{lstlisting}
+
+\subsection{JunctionLinks}
+\paragraph{Description:}
+Function for identifying the links within a stream network. Results will be similar (but not identical) to networksegments function. Classifies links according to James and Krumbein, 1969, 'Frequency distributions of stream link lengths', classifying links as either interior or exterior (exterior links have channel heads as their upstream ends) and either cis or trans (cis links have the same handedness on both ends of the link, trans links have the oppostite handedness on the upstream and downstream links). Exterior links, interior links that connect to an outlet, links for which one or more of the junctions at the end have more than two upstream links, and interior links for which there is not clear handedness (i.e. the incoming streams have the same Shreve order) will be undefined in terms of a cis or trans classification.
+
+\paragraph{Required Inputs:}
+\begin{itemize}
+	\item wdir - full path of working directory
+	\item MatFile - Full path of matfile output from either 'cmpMakeStreams' or the name of a single basin mat file from 'cmpProcessRiverBasins', in this case it must be the same matfile you provided to JunctionAngle
+	\item JunctionMatFile - Full path of matfile output from JunctionAngle
+\end{itemize}
+
+\paragraph{Optional Inputs:}
+\begin{itemize}
+	\item file\_name\_prefix ['topo'] - prefix for outputs shapefiles, textfiles, and mapfiles		
+	\item make\_shape [false] - logical flag to generate a shapefile containing the stream network broken into segments defined by junctions and categorized in terms of link\_type and link\_side (see outputs). Production of the mapstructure used to create shapefile can be time consuming
+\end{itemize}
+
+\paragraph{Outputs:}
+ '*\_junction\_links.txt' - table containing the information for all the stream links:
+\begin{itemize}
+	\item link\_number - ID number of link
+	\item downstream\_x - x coordinate of downstream end of link
+	\item downstream\_y - y coordinate of downstream end of link
+	\item downstream\_IX - index into GRIDobj of downstream end of link
+	\item upstream\_x - x coordinate of upstream end of link
+	\item upstream\_y - y coordinate of upstream end of link
+	\item upstream\_IX - index into GRIDobj of upstream end of link
+	\item link\_type - classification of link is either Exterior (upstream end of link is channelhead) or Interior
+	\item downstream\_junc\_num - junction number of downstream end of link referencing the junction table provided to J, a NaN indicates that the downstream end of the link is not a junction
+	\item upstream\_junc\_num - junction number of upstream end of link referencing	the junction table provided to J, a NaN indicates that the upstream	end of the link is not a junction
+	\item link\_side - classifcation of link as either Cis (both ends of link are same handedness), Trans (ends of link are opposite handedness), or Undefined if one or both of the ends of the link do not have a handedness classification
+\end{itemize}
+	
+\paragraph{Examples} if running for the command line, minus OS specific way of calling main TAK function:
+\begin{lstlisting}[language=bash]
+JunctionLinks /path/to/wdir Topo.mat Topo_junctions.mat
+JunctionLinks /path/to/wdir Topo.mat Topo_junctions.mat make_shape true	
+\end{lstlisting}
+
 \subsection{KsnChiBatch}
 \paragraph{Description:}
 Function to produce channel steepness, chi maps or chi grids for all channels within a DEM
@@ -2125,6 +2702,8 @@ Please be aware that the production of the chigrid can be time consuming, so be 
 KsnChiBatch /path/to/wdir Topo.mat ksn
 KsnChiBatch /path/to/wdir Topo.mat ksn conditioned_DEM DEMcond.mat smooth_distance 500
 \end{lstlisting}
+
+
 
 \subsection{KsnProfiler}
 \paragraph{Description:}
@@ -2339,6 +2918,7 @@ a text file. Dots will colored by the first extra value (column 4) and scaled by
 (column 5).
 \item 'eqs' - earthquakes, expects a n x 4 matrix with x, y, depth, and magnitude stored in a text file. Points will be 
 scaled by magnitude and colored by distance from swath line. Expects depth to be positive.
+\item	'gps' - gps velocity vectors, expects a n x 6 matrix, with x, y, north component, east component, north uncertainty, and east uncertainty. See 'ProjectGPSOntoSwath' for additional details	
 \item 'STREAMobj' - will project portions of selected stream profiles (as points) onto a swath. Expects a matfile containing 
 a STREAMobj that was generated from the provided DEM (can be the same input as MatFile, but you must provide
 it again)
@@ -2401,6 +2981,50 @@ MakeCombinedSwath /path/to/wdir Topo.mat points.txt 10000 points3 data_points.tx
 MakeCombinedSwath /path/to/wdir Topo.mat points.txt 10000 basin_stats BasinTable.mat 20000 basin_value mean_ksn
 \end{lstlisting}
 
+\subsection{MakeSerialSwath}
+\paragraph{Description:}
+Function to create a series of swath profiles perpendicular to a provided line
+
+\paragraph{Required Inputs:}
+\begin{itemize}
+	\item wdir - full path of working directory
+	\item MatFile - Full path of matfile output from either 'cmpMakeStreams' or the name of a single basin mat file from 'cmpProcessRiverBasins', alternatively, if you wish to generate a swath through an aribtrary raster, you can provide the name of an ascii grid (.txt) to use
+	\item points - name of text file containing n x 2 matrix of x,y points for the line along which series of perpendicular swaths will be generated, minimum are two points (start and end points). First row contains starting point and proceeds down rows, additional  points besides a start and end are treated as bends in the line. Coordinates for points must be in the same coordinate system as DEM and must lie within the DEM (cannot be coordinates on the very edge of the DEM). If you provide an empty array this will invoke a display of the DEM that you can use to manually define the line.
+	\item divisions - scalar that controls the number of swaths that will be generated. How this parameter is interpreted depends on value of the optional 'div\_type' parameter. If 'div\_type' is 'number' then the value provided to 'divisions' will be the total number of swaths created and the width of these swaths will equal the length of the line (defined by 'points') divided by the number of swaths. If 'div\_type' is 'width' then the value provided to 'divisions' will be the width of each swath in map units. The code will start producing swaths from the beginning of the line defined by points and will proceed until it can not produce a swath that is 'width' wide (e.g. if the total length of the line defined by points is 11000 meters and 2000 is provided to 'divisions' with 'div\_type' set to 'width' then the result will be 5, 2000 meter wide swaths and the last 1000 meter length of the line defined by 'points' will be ignored).
+	\item sw\_length - length of individual swaths (perpendicular to the line defined by 'points')
+\end{itemize}
+
+\paragraph{Optional Inputs:}
+\begin{itemize}
+	\item div\_type ['number'] - controls how the 'divisions' parameter is interpreted. Viable entries are 'number' or 'width', see above the 'division' parameter for more info.
+	\item alignment ['center'] - controls how the serial swaths are drawn relative to the line defined by 'points'. Vialble entries are: 'center', 'left', 'right', and 'between'. Behavior is as follows:
+	\begin{itemize}
+		\item 'center' - Swaths will be drawn so that their centers intersect the line defined by 'points'. 
+		\item 'right' - Swaths will be drawn to the righthand side of the line. This is based on the order in which points are defined, e.g. if the xy coordinates provided to 'points' define an east-west oriented line and the order of the points go from west to east then a 'right' alignment will draw swaths south of the line.
+		\item 'left' - Swaths will be drawn to the lefthand side of the line. This is based on the order in which points are defined, e.g. if the xy coordinates provided to 'points' define an east-west oriented line and the order of the points go from west to east then a 'left' alignment will draw swaths north of the line.
+		\item 'between' - Swaths will be drawn between two lines, one provided to the required 'points' input and one provided to the optional 'points2' input. If 'alignment' is set to 'between' and you provide an input to 'points' but none to 'points2', this will generate an error. If 'alignment' is set to 'between' and you leave 'points' empty, then you can graphically select both lines between which the serial swaths will be drawn. The code uses the shorter of the two provided lines to determine the number of swaths (and the widths of those swaths if 'div\_type' is set to 'width'). Note that setting 'alignment' to 'between' means the input to the provided 'sw\_length' parameter will be ignored.
+	\end{itemize} 
+	\item 'points2' [] - option to provide name of text file containing n x 2 matrix of x,y points for defining the other half of the area within which to draw swaths if 'alignment' is set to 'between'.
+	\item sample [cellsize of DEM] - resampling distance along swath in map units, if no input is provided, code will use the cellsize of the DEM which results in no resampling. 
+	\item smooth [0] - smoothing distance, width of filter in map units over which to smooth values, default (0) results in no smoothing
+	\item plot\_map [true] - logical to turn on plotting of map showing location of all swaths
+	\item plot\_individual [false] - logical to turn on plotting of individual maps and swaths (i.e. there will be one figure per swath)
+	\item save\_figures [false] -logical to turn on the saving of generated figures as PDFs
+\end{itemize}
+
+\paragraph{Outputs:}
+\begin{itemize}
+	\item SerialSwath\_*.txt - n x 6 array containing x coordinate, y coordinates, distance along the swath, min elevation, mean elevation, max elevation for each serial swath
+	\item SerialSwathBounds.shp - polyline shapefile showing outline of all swaths and the centerline
+\end{itemize}
+
+\paragraph{Examples} if running for the command line, minus OS specific way of calling main TAK function:
+\begin{lstlisting}[language=bash]
+MakeSerialSwath /path/to/wdir topo.mat points.txt 10 5000
+MakeSerialSwath /path/to/wdir precip.txt points.txt 10 5000	
+MakeSerialSwath /path/to/wdir topo.mat [] 10 5000	
+\end{lstlisting}
+
 \subsection{MakeStreams}
 \paragraph{Description:}
 Function takes a dem and outputs the necessary base datasets for use in other TopoToolbox functions.
@@ -2458,6 +3082,9 @@ MakeStreams /path/to/wdir dem.txt 1e6 Topo
 MakeStreams /path/to/wdir dem.txt 1e6 Topo no_data_exp auto min_flat_area 1e6
 MakeStreams /path/to/wdir dem.txt 1e6 Topo no_data_exp DEM<=0
 \end{lstlisting}
+
+
+
 
 \subsection{MakeTopoSwath}
 \paragraph{Description:}
@@ -2685,6 +3312,44 @@ ProcessRiverBasins /path/to/wdir Topo.mat river_mouths.txt Basins add_cat_grids 
 ProcessRiverBasins /path/to/wdir Topo.mat river_mouths.shp Basins calc_relief true relief_radii [1000 2500 5000]
 \end{lstlisting}
 
+\subsection{ProjectedIncision}
+\paragraph{Description:}
+Function for generating maps of projected incision throughout a network based on results of stream projections from SegmentProjector. Code uses the steepness of the fit portion of the stream network and the chi values of the entire network to find the projected elevations of the original stream network and amounts of incision implied by this, i.e. if you fit portions of streams in SegmentProjector that you interpret as recording a former low relief landscape now uplifted and incised, this code first calculates what the stream elevations would be if no incision (but surface uplift) had occurred. The code then subtracts this
+projected elevation from the current elevation of the network to estimate the amount of incision this would imply. If you projected multiple streams in SegmentProjector (that are stored in the OUT cell array) then the code will calculate projected elevations and implied incision for each projected stream separately and then find the mean, standard deviation, minimum, and maximum values of the projected elevations and incision for the network in question.
+Additionally, if the Sc input has multiple outlets, the projected elevation and incision values
+will only be calculated for portions of the stream network S that are 1) upstream of the outlets in Sc and 2) connected to channels used to project. E.g. if Sc has two outlets, defining two connected stream networks we'll call network A and B, and you projected two streams in network A and three streams in network B, then the portions of the resulting zpOUT and inOUT values that correspond to nodes in network A will only be calculated using the projections from the two streams in network A. This is done in case there is spatial variability in the amount of incision.
+\paragraph{}
+Note that negative incision values indicate that the elevations of these portions of the modern stream network are above the projected elevations. It is also important to note that this function explicitly assumes that no change in drainage area / network topology has occurred during surface uplift.
+
+\paragraph{Required Inputs:}
+
+\begin{itemize}
+	\item wdir - full path of working directory
+	\item MatFile - Name of matfile output from either 'cmpMakeStreams' or the name of a single basin mat file from 'cmpProcessRiverBasins'
+	\item NewStreamMat - Name of matfile containing the subset of streams used to project segments when running SegmentProjector
+	\item ProjSegmMat - Name of matfile output from SegmentProjector
+\end{itemize}
+
+\paragraph{Optional Inputs:}
+\begin{itemize}
+	\item shape\_name ['bsn'] - prefix on the output shapefiles names
+	\item display\_figure [true] - logical flag to display a figure showing the values of mean, max, min, and standard deviation of calculated incision
+	\item save\_figure [false] - logical flag to save the displayed figure as a pdf (setting this to true) will force 'display\_figure' to be true
+	\item exclude\_streams [] - optional input if you wish to exclude any of the projected streams in the OUT cell array from the calculation. Provide a list of stream numbers (e.g. if you wish to exclude the 2nd and 15th stream that you projected, you would give [2 15] as the input to this parameter)
+	\item conditioned\_DEM [] - option to provide name of a hydrologically conditioned DEM for use in this function, expects the mat file as saved by 'cmpConditionDEM'. See 'cmpConditionDEM' function for options for making a hydrological conditioned DEM. If no input is provided the code defaults to using the mincosthydrocon function.
+	\item interp\_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a conditioned DEM)
+\end{itemize}
+
+\paragraph{Outputs:}
+Code saves two shapefiles, '*\_Pnts\_Used.shp' and '*\_Proj\_Incision.shp'. '*\_Pnts\_Used.shp' is
+a point shapefile that records the channel heads of the projected stream used to calculate the 
+incision amounts. '*\_Proj\_Incision.shp' is stream shapefile containing the mean, standard deviation, minimum, and maximum of the projected elevations AND  the mean, standard deviation, minimum, and maximum of the incision values throughout the stream network
+
+\paragraph{Examples} if running for the command line, minus OS specific way of calling main TAK function:
+\begin{lstlisting}[language=bash]
+ProjectedIncision /path/to/wdir Topo.mat PickedSegments_5.mat Topo_Projected_Channels.mat
+\end{lstlisting}
+
 \subsection{RemoveFlats}
 \paragraph{Description:}		
 Function takes DEM and attempts a semi-automated routine to remove flat areas with some input from 
@@ -2875,6 +3540,8 @@ SegmentProjector /path/to/wdir Topo.mat
 SegmentProjector /path/to/wdir Topo.mat new_stream_net ThresholdStreams.mat pick_method stream
 \end{lstlisting}
 
+
+
 \subsection{SubDivideBigBasins}
 \paragraph{Description:}
 Function takes outputs from 'ProcessRiverBasins' function and subdvides any basin with a drainage area above a specified size and
@@ -2938,6 +3605,7 @@ filtered versions
 SubDivideBigBasins /path/to/wdir Basins 100 trunk 
 SubDivideBigBasins /path/to/wdir Basins 100 order SBFiles_Dir MySubBasins order 4
 \end{lstlisting}
+
 
 
 \end{document}

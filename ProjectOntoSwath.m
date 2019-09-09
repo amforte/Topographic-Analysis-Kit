@@ -28,8 +28,19 @@ function [ds,db]=ProjectOntoSwath(SW,x,y,data_width)
 	swdist=SW.distx;
 	xy0=SW.xy0;
 
-	for kk=1:numel(SW.xy0(:,1))
-		[~,bend_ix(kk,1)]=min(pdist2(SW.xy,SW.xy0(kk,:)));
+	try
+		for kk=1:numel(SW.xy0(:,1))
+			[~,bend_ix(kk,1)]=min(pdist2(SW.xy,SW.xy0(kk,:)));
+		end
+	catch 
+		% Less efficient method that doesn't require Statistics & Machine Learning Toolbox
+		for kk=1:numel(SW.xy0(:,1))
+			d=zeros(numel(SW.xy(:,1)),1);
+			for ll=1:numel(SW.xy(:,1))
+				d(ll)=hypot(SW.xy(ll,1)-SW.xy0(kk,1),SW.xy(ll,2)-SW.xy0(kk,2));
+			end
+			[~,bend_ix(kk,1)]=min(d);
+		end
 	end
 
 	% Extract bend points, find number of segments, and find bend distances

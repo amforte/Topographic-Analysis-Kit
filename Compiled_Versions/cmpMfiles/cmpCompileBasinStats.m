@@ -104,7 +104,7 @@ function cmpCompileBasinStats(wdir,location_of_data_files,varargin)
 	addParameter(p,'new_concavity',[],@(x) isnumeric(x));
 	addParameter(p,'dist_along_azimuth',[],@(x) isnumeric(x) && isscalar(x) && x>=0 && x<=360);
 	addParameter(p,'uncertainty','se',@(x) ischar(validatestring(x,{'se','std','both'})));
-	addParameter(p,'populate_categories',false,@(x) isscalar(x) && islogical(x))
+	addParameter(p,'populate_categories',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'means_by_category',[],@(x) ischar(x));
 	addParameter(p,'filter_by_category',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'filter_type','exclude',@(x) ischar(validatestring(x,{'exclude','include','mode'})));

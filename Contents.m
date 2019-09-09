@@ -1,5 +1,5 @@
 % Topographic-Analysis-Kit (TAK)
-% Version 1.0.2  9-Jan-2019
+% Version 1.1.0  9-Sep-2019
 %
 % These are a series of MATLAB functions that build upon the functionality 
 % of TopoToolbox [https://github.com/wschwanghart/topotoolbox]. Each function
@@ -30,42 +30,53 @@
 % Statistics and Machine Learning Toolbox
 % Curve Fitting Toolbox
 % Optimization Toolbox
+% Parallel Computing Toolbox
 %
 % If you do not have all the required toolboxes (can check with 
 % CheckTAKDependencies), consider using the compiled versions.
 %
 % To fully utilize all of TAK, it is recommended that you have
-% at least MATLAB 2017b installed.
-%
+% at least MATLAB 2018a installed.
 %
 % Function List: 
 %
+% AutoKsnProfiler
 % Basin2Raster
 % Basin2Shape
 % BasinPicker
 % BasinStatsPlots
+% BestFitSmallCircle
 % CatPoly2GRIDobj
 % CheckTAKDepedencies
 % ClassifyKnicks
 % CompileBasinStats
 % ConditionDEM
+% CrossSwath
 % DippingBedFinder
+% EroGrid
 % FindBasinKnicks
 % FindCentroid
 % FindThreshold
+% HackRelationship
+% InspectJunction
+% JunctionAngle
+% JunctionLinks
 % KsnChiBatch
 % ksncolor
 % KsnProfiler
 % MakeCombinedSwath
+% MakeSerialSwath
 % MakeStreams
 % MakeTopoSwath
 % Mat2Arc
 % PlotIndividualBasins
 % ProcessRiverBasins
+% ProjectedIncision
+% ProjectGPSOntoSwath
 % ProjectOntoSwath
+% ProjectSmallCircleOntoSwath
 % RemoveFlats
 % SegmentPicker
 % SegmentPlotter
 % SegmentProjector
 % SubDivideBigBasins
-%
