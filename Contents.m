@@ -1,5 +1,5 @@
 % Topographic-Analysis-Kit (TAK)
-% Version 1.0.2  9-Jan-2019
+% Version 1.1.0  9-Sep-2019
 %
 % These are a series of MATLAB functions that build upon the functionality 
 % of TopoToolbox [https://github.com/wschwanghart/topotoolbox]. Each function
