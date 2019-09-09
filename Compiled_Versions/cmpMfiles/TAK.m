@@ -405,7 +405,7 @@ function TAK(func_name,wdir,varargin)
 	case 'AutoKsnProfiler'
 		num_req=2;
 		req_args=varargin(1:num_req);
-		if nf_args=num_req
+		if nf_args==num_req
 			cmpAutoKsnProfiler(wdir,req_args{1},str2num(req_args{2}));
 		else
 			opt_args=varargin(num_req+1:end);
@@ -537,7 +537,7 @@ function TAK(func_name,wdir,varargin)
 		num_req=4;
 		req_args=varargin(1:num_req);
 		if nf_args==num_req
-			cmpEroGrid(wdir,req_args{1},req_args{2},str2num(req_args{3}),str2num(req_args{4});
+			cmpEroGrid(wdir,req_args{1},req_args{2},str2num(req_args{3}),str2num(req_args{4}));
 		else
 			opt_args=varargin(num_req+1:end);
 			num_var=numel(opt_args);
@@ -640,7 +640,7 @@ function TAK(func_name,wdir,varargin)
 		num_req=2;
 		req_args=varargin(1:num_req);
 		if nf_args==num_req
-			cmpJunctionLinks(wdir,req_args{1},req_args{2}));
+			cmpJunctionLinks(wdir,req_args{1},req_args{2});
 		else		
 			opt_args=varargin(num_req+1:end);
 			num_var=numel(opt_args);
@@ -1218,6 +1218,8 @@ function TAK(func_name,wdir,varargin)
 				end
 			end
 			cmpHackRelationship(wdir,req_args{1},opt_args);
+        end
+        disp('Function Successfully Completed')
 	case 'CatPoly2GRIDobj'
 		disp('There is no compiled version of the CatPoly2GRIDobj function, use the compiled PrepareAddCatGrids function')
 	case 'ksncolor'
