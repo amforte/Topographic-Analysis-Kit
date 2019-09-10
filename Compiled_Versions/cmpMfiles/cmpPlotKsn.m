@@ -10,16 +10,41 @@ function cmpPlotKsn(wdir,MatFile,ksn,varargin)
 	%		KsnChiBatch)
 	% 
 	% Optional Inputs:
-	% 	Can provide name of shapefile (as output by FindBasinKnicks or KsnProfiler) containing knickpoint locations 
+	%	knicks [] - location of knickpoints as shapefile (as output by FindBasinKnicks or KsnProfiler)
+	%	ksn_lim [] - 1 x n vector setting the min and max for the color scaling for ksn. If left blank
+	%		will default to 0 and the maximum in the dataset
 	%
    	% Examples if running for the command line, minus OS specific way of calling main TAK function:
     %   PlotKsn /path/to/wdir Topo.mat ksn.shp
-    %   PlotKsn /path/to/wdir Topo.mat ksn.shp knicks.shp
+    %   PlotKsn /path/to/wdir Topo.mat ksn.shp knicks knicks.shp
+   	%   PlotKsn /path/to/wdir Topo.mat ksn.shp knicks knicks.shp ksn_lim [100 200]
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 06/18/18 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	if isdeployed
+		if ~isempty(varargin)
+			varargin=varargin{1};
+		end
+	end
 
+    % Parse Inputs
+    p = inputParser;
+    p.FunctionName = 'cmpPlotKsn';
+	addRequired(p,'wdir',@(x) ischar(x));
+	addRequired(p,'MatFile',@(x) ~isempty(regexp(x,regexptranslate('wildcard','*.mat'))));
+    addRequired(p,'ksn',@(x) regexp(x,regexptranslate('wildcard','*.shp')));
+
+    addParameter(p,'knicks',[],@(x) regexp(x,regexptranslate('wildcard','*.shp')));
+    addParameter(p,'ksn_lim',[],@(x) isnumeric(x) && numel(x)==2);
+
+    parse(p,wdir,MatFile,ksn,varargin{:});
+    wdir=p.Results.wdir;
+    MatFile=p.Results.MatFile;
+    ksn=p.Results.ksn;
+
+    knks=p.Results.knicks;
+    ksn_lim=p.Results.ksn_lim;	
 
     % Determine the type of input
     MatFile=fullfile(wdir,MatFile);
@@ -51,7 +76,13 @@ function cmpPlotKsn(wdir,MatFile,ksn,varargin)
 	for ii=1:num_seg
 		sx{ii,1}=ksn(ii,1).X(:);
 		sy{ii,1}=ksn(ii,1).Y(:);
-		sk{ii,1}=ones(numel(sx{ii,1}),1)*ksn(ii,1).ksn;
+		if isfield(ksn,'ksn')
+			sk{ii,1}=ones(numel(sx{ii,1}),1)*ksn(ii,1).ksn;
+		elseif isfield(ksn,'fit_ksn')
+			sk{ii,1}=ones(numel(sx{ii,1}),1)*ksn(ii,1).fit_ksn;
+		else
+			error('There is no valid field in the provided shapefile named "ksn"')
+		end
 	end
 
 	sx=vertcat(sx{:});
@@ -82,12 +113,15 @@ function cmpPlotKsn(wdir,MatFile,ksn,varargin)
 	hold on
 	colormap(ksncolor(20));
 	plotc(S,sk);
-	caxis([0 max(sk)]);
+	if isempty(ksn_lim)
+		caxis([0 max(sk)]);
+	else
+		caxis([min(ksn_lim) max(ksn_lim)])
+	end
 	c1=colorbar;
 	ylabel(c1,'Normalized Channel Steepness')
-	if numel(varargin)==1
-		knks=varargin{1};
-		if ischar(knks) & ~isempty(regexp(knks,regexptranslate('wildcard','*.shp')))
+	if ~isempty(knks)
+		if ischar(knks) & logical(regexp(knks,regexptranslate('wildcard','*.shp')))
 			knk=shaperead(fullfile(wdir,knks));
 			knkx=[knk.X];
 			knky=[knk.Y];

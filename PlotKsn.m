@@ -16,18 +16,38 @@ function PlotKsn(DEM,FD,ksn,varargin)
 	%		KsnChiBatch) or a mapstructure (as output from ProcessRiverBasins or KsnChiBatch)
 	% 
 	% Optional Inputs:
-	% 	Can provide knickpoint locations as either an array (as output from FindBasinKnicks
+	%	knicks [] - location of knickpoints as an array (as output from FindBasinKnicks
 	%		or KsnProfiler 'bnd_list') or shapefile (as output by FindBasinKnicks or KsnProfiler)
+	%	ksn_lim [] - 1 x n vector setting the min and max for the color scaling for ksn. If left blank
+	%		will default to 0 and the maximum in the dataset
 	%
 	% Examples:
 	%	PlotKsn(DEMoc,FDc,MSNc); % Plot ksn map of a basin from ProcessRiverBasins
 	%	PlotKsn(DEM,FD,'ksn.shp'); % Plot ksn map from a shapefile
-	%	PlotKsn(DEM,FD,'ksn.shp','ksn_knicks.shp'); % Include knickpoint locations from KsnProfiler
-	%	PlotKsn(DEMoc,FDc,MSNc,KnickPoints); %Include knickpoints output from FindBasinKnicks
+	%	PlotKsn(DEM,FD,'ksn.shp','knicks','ksn_knicks.shp'); % Include knickpoint locations from KsnProfiler
+	%	PlotKsn(DEMoc,FDc,MSNc,,'knicks',KnickPoints); %Include knickpoints output from FindBasinKnicks
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 06/18/18 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    % Parse Inputs
+    p = inputParser;
+    p.FunctionName = 'PlotKsn';
+    addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
+    addRequired(p,'FD',@(x) isa(x,'FLOWobj'));
+    addRequired(p,'ksn',@(x) isstruct(x) || regexp(x,regexptranslate('wildcard','*.shp')));
+
+    addParameter(p,'knicks',[],@(x) isnumeric(x) || regexp(x,regexptranslate('wildcard','*.shp')) || istable(x));
+    addParameter(p,'ksn_lim',[],@(x) isnumeric(x) && numel(x)==2);
+
+    parse(p,DEM,FD,ksn,varargin{:});
+    DEM=p.Results.DEM;
+    FD=p.Results.FD;
+    ksn=p.Results.ksn;
+
+    knks=p.Results.knicks;
+    ksn_lim=p.Results.ksn_lim;
 
 
 	if ischar(ksn) & logical(regexp(ksn,regexptranslate('wildcard','*.shp')))
@@ -46,7 +66,13 @@ function PlotKsn(DEM,FD,ksn,varargin)
 	for ii=1:num_seg
 		sx{ii,1}=ksn(ii,1).X(:);
 		sy{ii,1}=ksn(ii,1).Y(:);
-		sk{ii,1}=ones(numel(sx{ii,1}),1)*ksn(ii,1).ksn;
+		if isfield(ksn,'ksn')
+			sk{ii,1}=ones(numel(sx{ii,1}),1)*ksn(ii,1).ksn;
+		elseif isfield(ksn,'fit_ksn')
+			sk{ii,1}=ones(numel(sx{ii,1}),1)*ksn(ii,1).fit_ksn;
+		else
+			error('There is no valid field in the provided shapefile or mapstructure named "ksn"')
+		end
 	end
 
 	sx=vertcat(sx{:});
@@ -77,11 +103,14 @@ function PlotKsn(DEM,FD,ksn,varargin)
 	hold on
 	colormap(ksncolor(20));
 	plotc(S,sk);
-	caxis([0 max(sk)]);
+	if isempty(ksn_lim)
+		caxis([0 max(sk)]);
+	else
+		caxis([min(ksn_lim) max(ksn_lim)])
+	end
 	c1=colorbar;
 	ylabel(c1,'Normalized Channel Steepness')
-	if numel(varargin)==1
-		knks=varargin{1};
+	if ~isempty(knks)
 		if ischar(knks) & logical(regexp(knks,regexptranslate('wildcard','*.shp')))
 			knk=shaperead(knks);
 			knkx=[knk.X];

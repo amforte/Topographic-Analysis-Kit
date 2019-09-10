@@ -1173,7 +1173,14 @@ function TAK(func_name,wdir,varargin)
 		if nf_args==num_req
 			cmpPlotKsn(wdir,req_args{1},req_args{2});
 		else
-			opt_args=varargin(num_req+1:end);
+			for ii=1:num_var/2
+				pn=opt_args{odds(ii)};
+				pv=opt_args{evens(ii)};
+				switch pn
+				case 'ksn_lim'
+					opt_args{evens(ii)}=str2num(pv);
+				end
+			end
 			cmpPlotKsn(wdir,req_args{1},req_args{2},opt_args);
 		end
 		disp('Function Successfully Completed')
