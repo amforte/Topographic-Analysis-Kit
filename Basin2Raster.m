@@ -104,29 +104,29 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 			FileName=[FileList(ii,1).folder filesep FileList(ii,1).name];
 			switch valueOI
 			case 'ksn'
-				load(FileName,'DEMcc','KSNc_stats');
+				load(FileName,'DEMoc','KSNc_stats');
 				val=KSNc_stats(:,1);
 			case 'gradient'
-				load(FileName,'DEMcc','Gc_stats');
+				load(FileName,'DEMoc','Gc_stats');
 				val=Gc_stats(:,1);
 			case 'elevation'
-				load(FileName,'DEMcc','Zc_stats');
+				load(FileName,'DEMoc','Zc_stats');
 				val=Zc_stats(:,1);
 			case 'chir2'
-				load(FileName,'DEMcc','Sc','Ac','theta_ref');
+				load(FileName,'DEMoc','Sc','Ac','theta_ref');
 				c=chiplot(Sc,DEMcc,Ac,'a0',1,'mn',theta_ref,'plot',false);
 				val=c.R2;
 			case 'drainage_area'
-				load(FileName,'DEMcc','drainage_area');
+				load(FileName,'DEMoc','drainage_area');
 				val=drainage_area;
 			case 'hypsometric_integral'
-				load(FileName,'DEMcc','hyps');
+				load(FileName,'DEMoc','hyps');
 				val=abs(trapz((hyps(:,2)-min(hyps(:,2)))/(max(hyps(:,2))-min(hyps(:,2))),hyps(:,1)/100));
 			case 'id'
-				load(FileName,'DEMcc','RiverMouth');
+				load(FileName,'DEMoc','RiverMouth');
 				val=RiverMouth(:,3);
 			case 'theta'
-				load(FileName,'DEMcc','Chic');
+				load(FileName,'DEMoc','Chic');
 				val=Chic.mn;
 			case 'relief'
 				VarList=whos('-file',FileName);
@@ -134,7 +134,7 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 				if isempty(RLFInd)
 					error('Relief does appear to have been calculated for these basins')
 				end
-				load(FileName,'DEMcc','rlf','rlf_stats');
+				load(FileName,'DEMoc','rlf','rlf_stats');
 				ix=find(rlf(:,2)==rr);
 				if isempty(ix)
 					error('Input relief radius was not found in relief outputs, please check to make sure relief radius is correct')
@@ -145,12 +145,12 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 				AGInd=find(strcmp(cellstr(char(VarList.name)),'AGc'));
 				ACGInd=find(strcmp(cellstr(char(VarList.name)),'ACGc'));
 				if ~isempty(AGInd)
-					load(FileName,'DEMcc','AGc');
+					load(FileName,'DEMoc','AGc');
 					AGInd=true;
 				end
 
 				if ~isempty(ACGInd)
-					load(FileName,'DEMcc','ACGc');
+					load(FileName,'DEMoc','ACGc');
 					ACGInd=true;
 				end
 
@@ -167,8 +167,8 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 				end
 			end
 
-			I=~isnan(DEMcc.Z);
-			[X,Y]=getcoordinates(DEMcc);
+			I=~isnan(DEMoc.Z);
+			[X,Y]=getcoordinates(DEMoc);
 			xmat=repmat(X,numel(Y),1);
 			ymat=repmat(Y,1,numel(X));
 
@@ -217,28 +217,28 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 
 			switch valueOI
 			case 'ksn'
-				load(FileName,'DEMcc','KSNc_stats');
+				load(FileName,'DEMoc','KSNc_stats');
 				val=KSNc_stats(:,1);
 			case 'gradient'
-				load(FileName,'DEMcc','Gc_stats');
+				load(FileName,'DEMoc','Gc_stats');
 				val=Gc_stats(:,1);
 			case 'elevation'
-				load(FileName,'DEMcc','Zc_stats');
+				load(FileName,'DEMoc','Zc_stats');
 				val=Zc_stats(:,1);
 			case 'chir2'
-				load(FileName,'DEMcc','Chic');
+				load(FileName,'DEMoc','Chic');
 				val=Chic.R2;
 			case 'drainage_area'
-				load(FileName,'DEMcc','drainage_area');
+				load(FileName,'DEMoc','drainage_area');
 				val=drainage_area;
 			case 'hypsometric_integral'
-				load(FileName,'DEMcc','hyps');
+				load(FileName,'DEMoc','hyps');
 				val=abs(trapz((hyps(:,2)-min(hyps(:,2)))/(max(hyps(:,2))-min(hyps(:,2))),hyps(:,1)/100));
 			case 'id'
 				load(FileName,'DEMcc','RiverMouth');
 				val=RiverMouth(:,3);
 			case 'theta'
-				load(FileName,'DEMcc','Chic');
+				load(FileName,'DEMoc','Chic');
 				val=Chic.mn;
 			case 'relief'
 				VarList=whos('-file',FileName);
@@ -246,7 +246,7 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 				if isempty(RLFInd)
 					error('Relief does appear to have been calculated for these basins')
 				end
-				load(FileName,'DEMcc','rlf','rlf_stats');
+				load(FileName,'DEMoc','rlf','rlf_stats');
 				ix=find(rlf(:,2)==rr);
 				if isempty(ix)
 					error('Input relief radius was not found in relief outputs, please check to make sure relief radius is correct')
@@ -257,12 +257,12 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 				AGInd=find(strcmp(cellstr(char(VarList.name)),'AGc'));
 				ACGInd=find(strcmp(cellstr(char(VarList.name)),'ACGc'));
 				if ~isempty(AGInd)
-					load(FileName,'DEMcc','AGc');
+					load(FileName,'DEMoc','AGc');
 					AGInd=true;
 				end
 
 				if ~isempty(ACGInd)
-					load(FileName,'DEMcc','ACGc');
+					load(FileName,'DEMoc','ACGc');
 					ACGInd=true;
 				end
 
@@ -279,7 +279,7 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 				end
 			end
 
-			I=~isnan(DEMcc.Z);
+			I=~isnan(DEMoc.Z);
 			[X,Y]=getcoordinates(DEMcc);
 			xmat=repmat(X,numel(Y),1);
 			ymat=repmat(Y,1,numel(X));
