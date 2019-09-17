@@ -558,12 +558,16 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 				end
 				
 				% Make interpolated ksn grid
-				try 
-					[KsnOBJc] = KsnAvg(DEMoc,MSNc,radius);
-					save(SubFileName,'KsnOBJc','radius','-append');
-				catch
-					warning(['Interpolation of KSN grid failed for basin ' num2str(RiverMouth(:,3))]);
-					save(SubFilename,'radius','-append');
+				if ~isempty(radius)
+					try 
+						[KsnOBJc] = KsnAvg(DEMoc,MSNc,radius);
+						save(SubFileName,'KsnOBJc','radius','-append');
+					catch
+						warning(['Interpolation of KSN grid failed for basin ' num2str(RiverMouth(:,3))]);
+						save(SubFilename,'radius','-append');
+					end
+				else
+					save(SubFileName,'radius','-append');
 				end
 
 				VarList=whos('-file',FileName);

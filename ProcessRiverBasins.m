@@ -60,7 +60,8 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 	%		relief_radii [2500] - a 1d vector (column or row) of radii to use for calculating local relief, values must be in map units. If more than one value is provided
 	%			the function assumes you wish to calculate relief at all of these radii. Note, the local relief function is slow so providing multiple radii will
 	%			slow code performance. Saved outputs will be in a m x 2 cell array, with the columns of the cell array corresponding to the GRIDobj and the input radii.
-	%		ksn_radius [5000] - radius of circular, moving area over which to average ksn values for making an interpolated ksn grid
+	%		ksn_radius [5000] - radius of circular, moving area over which to average ksn values for making an interpolated ksn grid. If you provide an empty array, 
+	%			i.e. [], to this argument this will suppress the calculation (and saving of this output)
 	%
 	% Notes:
 	%		-The code will perform a check of the river_mouths input to confirm that 1) there are no duplicate ID numbers (it will dump your ID numbers and create new
@@ -100,7 +101,7 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 	addParameter(p,'relief_radii',[2500],@(x) isnumeric(x) && size(x,2)==1 || size(x,1)==1);
 	addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
 	addParameter(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
-	addParameter(p,'ksn_radius',5000,@(x) isnumeric(x) && isscalar(x));
+	addParameter(p,'ksn_radius',5000,@(x) isnumeric(x) && isscalar(x) || isempty(x));
 
 	parse(p,DEM,FD,A,S,river_mouths,basin_dir,varargin{:});
 	DEM=p.Results.DEM;
@@ -370,18 +371,22 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 		% Save base file
 		FileName=['Basin_' num2str(basin_num) '_Data.mat'];
 		save(FileName,'RiverMouth','DEMcc','DEMoc','out_el','drainage_area','hyps','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method','gradient_method','theta_ref','-v7.3');
-		
+	
 		if strcmp(ksn_method,'trunk')
 			save(FileName,'min_order','-append');
 		end
 
-		% Make interpolated ksn grid
-		try 
-			[KsnOBJc] = KsnAvg(DEMoc,MSNc,radius);
-			save(FileName,'KsnOBJc','radius','-append');
-		catch
-			warning(['Interpolation of KSN grid failed for basin ' num2str(RiverMouth(:,3))]);
-			save(FileName,'radius','-append');
+		%Make interpolated ksn grid
+		if ~isempty(radius)
+			try 
+				[KsnOBJc] = KsnAvg(DEMoc,MSNc,radius);
+				save(FileName,'KsnOBJc','radius','-append');
+			catch
+				warning(['Interpolation of KSN grid failed for basin ' num2str(RiverMouth(:,3))]);
+				save(FileName,'radius','-append');
+			end
+		else 
+			save(FileName,'radius','-append')
 		end
 
 		% If additional grids are present, append them to the mat file
