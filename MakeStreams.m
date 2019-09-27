@@ -66,12 +66,12 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	addRequired(p,'threshold_area', @(x) isscalar(x));
 
 	addParameter(p,'file_name',[],@(x) ischar(x));
-	addParameter(p,'no_data_exp',[],@(x) ischar(x));
+	addParameter(p,'no_data_exp',[],@(x) ischar(x) || isempty(x));
 	addParameter(p,'min_flat_area',1e8,@(x) isnumeric(x) && isscalar(x));
 	addParameter(p,'resample_grid',false,@(x) isscalar(x) && islogical(x));
-	addParameter(p,'new_cellsize',[],@(x) isscalar(x) && isnumeric(x));
-	addParameter(p,'precip_grid',[],@(x) isa(x,'GRIDobj'));
-	addParameter(p,'rr_grid',[],@(x) isa(x,'GRIDobj'));
+	addParameter(p,'new_cellsize',[],@(x) isscalar(x) && isnumeric(x) || isempty(x));
+	addParameter(p,'precip_grid',[],@(x) isa(x,'GRIDobj') || isempty(x));
+	addParameter(p,'rr_grid',[],@(x) isa(x,'GRIDobj') || isempty(x));
 	addParameter(p,'mex',false,@(x) isscalar(x) && islogical(x));
 
 	parse(p,dem,threshold_area,varargin{:});
