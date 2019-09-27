@@ -76,7 +76,7 @@ function [Sn,thresh_list,xd_list]=FindThreshold(DEM,FD,A,S,num_streams,varargin)
 	addParameter(p,'pick_method','slope_area',@(x) ischar(validatestring(x,{'chi','slope_area'})));
 	addParameter(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'remake_network',false,@(x) isscalar(x) && islogical(x));
-	addParameter(p,'max_threshold',[],@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'max_threshold',[],@(x) isscalar(x) && isnumeric(x) || isempty(x));
 
 	parse(p,DEM,FD,A,S,num_streams,varargin{:});
 	DEM=p.Results.DEM;
