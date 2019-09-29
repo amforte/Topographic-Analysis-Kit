@@ -77,12 +77,13 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
     addParameter(p,'plot_type','vector',@(x) ischar(validatestring(x,{'vector','grid'})));
     addParameter(p,'cmap','landcolor',@(x) ischar(x) || isnumeric(x) & size(x,2)==3);
     addParameter(p,'threshold_area',1e6,@(x) isnumeric(x));   
-    addParameter(p,'rlf_grid',[],@(x) isa(x,'GRIDobj'));
-    addParameter(p,'extra_grid',[],@(x) isa(x,'GRIDobj'));
-    addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
+    addParameter(p,'rlf_grid',[],@(x) isa(x,'GRIDobj') || isempty(x));
+    addParameter(p,'extra_grid',[],@(x) isa(x,'GRIDobj') || isempty(x));
+    addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj') || isempty(x));
     addParameter(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
-    addParameter(p,'refine_positions',[],@(x) isnumeric(x) && size(x,2)==2);
+    addParameter(p,'refine_positions',[],@(x) isnumeric(x) && size(x,2)==2 || isempty(x));
     addParameter(p,'window_size',1,@(x) isnumeric(x) && isscalar(x));
+    addParameter(p,'out_dir',[],@(x) ischar(x)); % Hidden option for GUI versions
 
     parse(p,DEM,FD,A,S,varargin{:});
     DEM=p.Results.DEM;
@@ -101,11 +102,19 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
     iv=p.Results.interp_value;
     rp=p.Results.refine_positions;
     ws=p.Results.window_size;
+    out_dir=p.Results.out_dir;
 
     % Check for outlets file from previous run in current directory
-    current=pwd;
-    if exist([current filesep 'Outlets.mat'],'file')==2;
-        load('Outlets.mat','Outlets');
+    if isempty(out_dir)
+        current=pwd;
+    else
+        current=out_dir;
+    end
+
+    out_file=fullfile(current,'Outlets.mat');
+
+    if exist(out_file,'file')==2;
+        load(out_file,'Outlets');
         ii=max(Outlets(:,3))+1;
     else 
        ii=1; 
@@ -480,7 +489,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
                     hold off
                 end
                 
-                save('Outlets.mat','Outlets','-v7.3');
+                save(out_file,'Outlets','-v7.3');
             end
             
             qa3=questdlg('Keep choosing basins?','Basin Selection','No','Yes','Yes'); 
@@ -724,7 +733,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
                         hold off
                     end
                     
-                    save('Outlets.mat','Outlets','-v7.3');
+                    save(out_file,'Outlets','-v7.3');
                 end
                 
                 % Break while loop to continue for loop

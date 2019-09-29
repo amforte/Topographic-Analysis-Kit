@@ -80,11 +80,10 @@ function [DEMn,MASK]=RemoveFlats(dem,strength)
 	% Generate gradient for visualizing
 	G=gradient8(DEM);
 
-	disp('Select areas that you consider sinks and then press enter')
 	% Prompt user to choose sinks
 	f1=figure(1);
 	hold on 
-	title('Gradient of DEM')
+	title('Gradient of DEM: Select areas that you consider sinks and then press enter')
 	imageschs(DEM,G,'colormap','jet','caxis',[0 1]);
 	hold off
 	[x,y]=ginput;

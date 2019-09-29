@@ -176,19 +176,20 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	addParameter(p,'rd_pick_method','slope_area',@(x) ischar(validatestring(x,{'chi','slope_area'})));
 	addParameter(p,'display_slope_area',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'max_ksn',250,@(x) isscalar(x) && isnumeric(x));
-	addParameter(p,'min_elev',[],@(x) isscalar(x) && isnumeric(x));
-	addParameter(p,'max_area',[],@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'min_elev',[],@(x) isscalar(x) && isnumeric(x) || isempty(x));
+	addParameter(p,'max_area',[],@(x) isscalar(x) && isnumeric(x) || isempty(x));
 	addParameter(p,'plot_type','vector',@(x) ischar(validatestring(x,{'vector','grid'})));
 	addParameter(p,'threshold_area',1e6,@(x) isnumeric(x));
 	addParameter(p,'input_method','interactive',@(x) ischar(validatestring(x,{'interactive','channel_heads','all_streams','stream_length'})));
-	addParameter(p,'channel_head_list',[],@(x) isnumeric(x) && size(x,2)==2 || regexp(x,regexptranslate('wildcard','*.shp')));
-	addParameter(p,'min_length_to_extract',[],@(x) isnumeric(x) && isscalar(x));
-	addParameter(p,'min_channel_length',[],@(x) isnumeric(x) && isscalar(x));
-	addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
+	addParameter(p,'channel_head_list',[],@(x) isnumeric(x) && size(x,2)==2 || regexp(x,regexptranslate('wildcard','*.shp')) || isempty(x));
+	addParameter(p,'min_length_to_extract',[],@(x) isnumeric(x) && isscalar(x) || isempty(x));
+	addParameter(p,'min_channel_length',[],@(x) isnumeric(x) && isscalar(x) || isempty(x));
+	addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj') || isempty(x));
 	addParameter(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
 	addParameter(p,'save_figures',false,@(x) isscalar(x) && islogical(x));
-	addParameter(p,'restart',[],@(x) ischar(validatestring(x,{'continue','skip'})));
+	addParameter(p,'restart',[],@(x) ischar(validatestring(x,{'continue','skip'})) || isempty(x));
 	addParameter(p,'stack_method','stack',@(x) ischar(validatestring(x,{'average','stack'})));
+	addParameter(p,'restart_loc',[],@(x) ischar(x) || isempty(x));
 
 	parse(p,DEM,FD,A,S,varargin{:});
 	DEM=p.Results.DEM;
@@ -220,6 +221,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	mksn=p.Results.max_ksn;
 	restart=p.Results.restart;
 	stack_method=p.Results.stack_method;
+	restart_loc=p.Results.restart_loc; % Hidden parameter for GUI deployed versions
 
 	wtb=waitbar(0,'Preparing inputs...');
 
@@ -232,8 +234,14 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 	% Check to see if restart if invoked and replace parameters if necessary
 	if rf
-		restart_file=dir('*_restart.mat');
-		out_file=dir('*_profiler.mat');
+		if ~isempty(restart_loc)
+			restart_file=dir('*_restart.mat');
+			out_file=dir('*_profiler.mat');
+		else
+			restart_file=dir(fullfile(restart_loc,'*_restart.mat'));
+			out_file=dir(fullfile(restart_loc,'*_profiler.mat'));			
+		end
+
 		if numel(restart_file)>1
 			error('Multiple restart files were found, please remove non-target restart files from active directory or search path');
 		elseif isempty(restart_file) & ~isempty(out_file)		
@@ -441,7 +449,6 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		SG=STREAMobj2GRIDobj(Sr);
 
 		% Initiate Map Figure
-		close all
 
 		f1=figure(1);
 		set(f1,'Visible','off');
@@ -459,8 +466,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 	case 'vector'
 
-		% Initiate Map Figure
-		close all
+		% Initiate Map Figure;
 
 		f1=figure(1);
 		set(f1,'Visible','off');

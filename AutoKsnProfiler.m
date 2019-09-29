@@ -83,7 +83,7 @@ function [nal,res,ms,brkPnts,param]=AutoKsnProfiler(DEM,FD,A,S,thresh_ratio,vara
 	addParameter(p,'calc_concavity',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'plot_example',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
-	addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
+	addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj') || isempty(x));
 	addParameter(p,'explore_param',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'channeloi',[],@(x) isnumeric(x) && size(x,1)==1 && size(x,2)==2);
 	addParameter(p,'shape_name','auto',@(x) ischar(x));

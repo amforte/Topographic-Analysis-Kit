@@ -36,7 +36,7 @@ function [DEMc]=ConditionDEM(DEM,FD,S,method,varargin)
 	%		'crs' - uses the 'crs' function, valid optional inputs are 'stiffness', 'tau', 'ming', 'stiff_tribs', 'knicks', and 'split'. Requires
 	%			Optimization Toolbox.
 	%		'crslin' - uses the 'crslin' function, valid optional inputs are 'stiffness', 'stiff_tribs', 'ming', 'imposemin', 'attachtomin', 
-	%			'attachheads', 'discardflats','precisecoords'
+	%			'attachheads', 'discardflats','precisecoords', 'maxcurvature'
 	%			
 	% Optional Inputs:
 	%	mc_method [interp] - method for 'mincost', valid inputs are 'minmax' or 'interp'
@@ -86,7 +86,7 @@ function [DEMc]=ConditionDEM(DEM,FD,S,method,varargin)
 	addParameter(p,'attachtomin',false,@(x) islogical(x));
 	addParameter(p,'attachheads',false,@(x) islogical(x));
 	addParameter(p,'discardflats',false,@(x) islogical(x));
-	addParameter(p,'maxcurvature',[],@(x) isnumeric(x) && isscalar(x));
+	addParameter(p,'maxcurvature',[],@(x) isnumeric(x) && isscalar(x) || isempty(x));
 	addParameter(p,'precisecoords',[],@(x) isnumeric(x) && size(x,2)==3);
 
 	parse(p,DEM,FD,S,method,varargin{:});

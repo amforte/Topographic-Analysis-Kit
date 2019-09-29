@@ -84,9 +84,9 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	addParameter(p,'output',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'ksn_method','quick',@(x) ischar(validatestring(x,{'quick','trunk','trib'})));
 	addParameter(p,'min_order',4,@(x) isscalar(x) && isnumeric(x));
-	addParameter(p,'outlet_level_method',[],@(x) ischar(validatestring(x,{'elevation','max_out_elevation'})));
-	addParameter(p,'min_elevation',[],@(x) isnumeric(x));
-	addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
+	addParameter(p,'outlet_level_method',[],@(x) ischar(validatestring(x,{'elevation','max_out_elevation'})) || isempty(x));
+	addParameter(p,'min_elevation',[],@(x) isnumeric(x) || isempty(x));
+	addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj') || isempty(x));
 	addParameter(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
 	addParameter(p,'complete_networks_only',true,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'radius',5000,@(x) isscalar(x) && isnumeric(x));
@@ -117,7 +117,8 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	if strcmp(blm,'max_out_elevation') & (strcmp(product,'chigrid') | strcmp(product,'ksngrid') | strcmp(product,'all'))
 		warning('"max_out_elevation" is not a valid choice for a continuous gridded product, ignoring this input')
 	elseif strcmp(blm,'elevation') & isempty(me)
-		error('Selected outlet level adjust method "elevation" requires that you provide an input for parameter "min_elevation"');
+		warning('Selected outlet level adjust method "elevation" requires that you provide an input for parameter "min_elevation", running without baselevel control');
+		blm=[];
 	end
 
 	switch product
