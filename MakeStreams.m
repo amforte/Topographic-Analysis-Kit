@@ -73,6 +73,7 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	addParameter(p,'precip_grid',[],@(x) isa(x,'GRIDobj') || isempty(x));
 	addParameter(p,'rr_grid',[],@(x) isa(x,'GRIDobj') || isempty(x));
 	addParameter(p,'mex',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'silent',false,@(x) isscalar(x) && islogical(x));
 
 	parse(p,dem,threshold_area,varargin{:});
 	dem=p.Results.dem;
@@ -86,6 +87,7 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	precip_grid=p.Results.precip_grid;
 	rr_grid=p.Results.rr_grid;
 	mexP=p.Results.mex;
+	silent=p.Results.silent;
 
 	% Check for filename
 	if isempty(file_name)
@@ -98,7 +100,9 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	if isa(dem,'GRIDobj');
 		DEM=dem;
 	elseif ischar(dem);
-		disp('Loading and processing DEM')
+		if ~silent
+			disp('Loading and processing DEM')
+		end
 		DEM=GRIDobj(dem);
 	else
 		error('Input for dem not recognized as either a GRIDobj or character')
@@ -106,10 +110,14 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 
 	% Resample grid if flag is thrown
 	if resample_grid & isempty(new_cellsize)
-		disp('Resampling DEM - May take some time, please be patient')
+		if ~silent
+			disp('Resampling DEM - May take some time, please be patient')
+		end
 		DEM=resample(DEM,ceil(DEM.cellsize),'bicubic');
 	elseif resample_grid & ~isempty(new_cellsize)
-		disp('Resampling DEM - May take some time, please be patient')
+		if ~silent
+			disp('Resampling DEM - May take some time, please be patient')
+		end
 		DEM=resample(DEM,new_cellsize,'bicubic');		
 	end
 
@@ -119,7 +127,9 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 	end
 
 	% Optional cleaning step depending on user input
-	disp('Cleaning Up DEM')
+	if ~silent
+		disp('Cleaning Up DEM')
+	end
 	if ~isempty(no_data_exp) & ~strcmp(no_data_exp,'auto')
 		try 
 			IDX=eval(no_data_exp);
@@ -144,23 +154,42 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 		save(MatFileName,'DEM','-v7.3');
 	end
 
-	disp('Calculating Flow Direction')
+	if ~silent
+		disp('Calculating Flow Direction')
+	end
+
 	if mexP
 		try % control for setting to true without checking if mex is compiled
-			FD=FLOWobj(DEM,'preprocess','carve','verbose',true,'mex',true);
+			if silent
+				FD=FLOWobj(DEM,'preprocess','carve','mex',true,'verbose',false);
+			else
+				FD=FLOWobj(DEM,'preprocess','carve','verbose',true,'mex',true);
+			end
 		catch
-			FD=FLOWobj(DEM,'preprocess','carve','verbose',true);
-			disp('There was a problem using the compiled mex files associated with FLOWobj, proceeding without compiled mex files')
+			if silent
+				FD=FLOWobj(DEM,'preprocess','carve','verbose',false);
+			else
+				FD=FLOWobj(DEM,'preprocess','carve','verbose',true);
+				disp('There was a problem using the compiled mex files associated with FLOWobj, proceeding without compiled mex files')
+			end
+			
 		end
 	else
-		FD=FLOWobj(DEM,'preprocess','carve','verbose',true);
+		if silent
+			FD=FLOWobj(DEM,'preprocess','carve');
+		else
+			FD=FLOWobj(DEM,'preprocess','carve','verbose',true);
+		end
 	end
 
 	if save_output
 		save(MatFileName,'FD','-append');
 	end
 
-	disp('Calculating Flow Accumulation')
+	if ~silent
+		disp('Calculating Flow Accumulation')
+	end
+
 	if isempty(precip_grid)
 		A=flowacc(FD);
 	elseif ~isempty(precip_grid) & isempty(rr_grid)
@@ -190,11 +219,16 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 		A=flowacc(FD,precip_grid,rr_grid);
 	end
 
-	disp('Extracting total stream network')
+	if ~silent
+		disp('Extracting total stream network')
+	end
+
 	S=STREAMobj(FD,'unit','mapunits','minarea',threshold_area);
 
 	if save_output
-		disp('Saving outputs')
+		if ~silent
+			disp('Saving outputs')
+		end
 		save(MatFileName,'A','S','-append');
 		MS=STREAMobj2mapstruct(S);
 		shapewrite(MS,ShpFileName);
