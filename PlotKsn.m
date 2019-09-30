@@ -13,7 +13,9 @@ function PlotKsn(DEM,FD,ksn,varargin)
 	%	DEM -  Digital Elevation as a GRIDobj used to produce the provided ksn data
 	%	FD - Flow routing as a FLOWobj used to proudce the provided ksn data
 	%	ksn - ksn data either as a shapefile (as ouput from KsnProfiler, ProcessRiverBasins
-	%		KsnChiBatch) or a mapstructure (as output from ProcessRiverBasins or KsnChiBatch)
+	%		KsnChiBatch), an ascii file (for continuous Ksn values as output from KsnChiBatch),
+	%		a GRIDobj of continous ksn (as output from KsnChiBatch), or a mapstructure 
+	%		(as output from ProcessRiverBasins or KsnChiBatch)
 	% 
 	% Optional Inputs:
 	%	knicks [] - location of knickpoints as an array (as output from FindBasinKnicks
@@ -30,13 +32,18 @@ function PlotKsn(DEM,FD,ksn,varargin)
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 06/18/18 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	if ischar(ksn)
+		[~,~,ext]=fileparts(ksn);
+	else
+		ext=' ';
+	end
 
     % Parse Inputs
     p = inputParser;
     p.FunctionName = 'PlotKsn';
     addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
     addRequired(p,'FD',@(x) isa(x,'FLOWobj'));
-    addRequired(p,'ksn',@(x) isstruct(x) || regexp(x,regexptranslate('wildcard','*.shp')));
+    addRequired(p,'ksn',@(x) isstruct(x) || strcmpi(ext,'.shp') || strcmpi(ext,'.txt') || isa(x,'GRIDobj'));
 
     addParameter(p,'knicks',[],@(x) isnumeric(x) || regexp(x,regexptranslate('wildcard','*.shp')) || istable(x));
     addParameter(p,'ksn_lim',[],@(x) isnumeric(x) && numel(x)==2);
@@ -52,79 +59,104 @@ function PlotKsn(DEM,FD,ksn,varargin)
 
 	if ischar(ksn) & logical(regexp(ksn,regexptranslate('wildcard','*.shp')))
 		ksn=shaperead(ksn);
+		grid_flag=false;
+	elseif ischar(ksn) & logical(regexp(ksn,regexptranslate('wildcard','*.txt')))
+		ksn=GRIDobj(ksn);
+		if ~validatealignment(DEM,ksn)
+			ksn=resample(ksn,DEM);
+		end
+		grid_flag=true;
 	elseif isstruct(ksn)
-		ksn=ksn;
+		ksn=ksn
+		grid_flag=false;
+	elseif isa(ksn,'GRIDobj');
+		if ~validatealignment(DEM,ksn)
+			ksn=resample(ksn,DEM);
+		end
+		grid_flag=true;
 	else
 		error('Input to "ksn" not recognized as a shapefile or a mapstructure');
 	end
-		
-	num_seg=numel(ksn);
-
-	sx=cell(num_seg,1);
-	sy=cell(num_seg,1);
-	sk=cell(num_seg,1);
-	for ii=1:num_seg
-		sx{ii,1}=ksn(ii,1).X(:);
-		sy{ii,1}=ksn(ii,1).Y(:);
-		if isfield(ksn,'ksn')
-			sk{ii,1}=ones(numel(sx{ii,1}),1)*ksn(ii,1).ksn;
-		elseif isfield(ksn,'fit_ksn')
-			sk{ii,1}=ones(numel(sx{ii,1}),1)*ksn(ii,1).fit_ksn;
+	
+	if grid_flag
+		f1=figure(1);
+		set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.8],'renderer','painters');
+		hold on
+		if isempty(ksn_lim)
+			imageschs(DEM,ksn,'colormap','ksncolor');
 		else
-			error('There is no valid field in the provided shapefile or mapstructure named "ksn"')
+			imageschs(DEM,ksn,'colormap','ksncolor','caxis',ksn_lim);
 		end
-	end
+		hold off
+	else	
+		num_seg=numel(ksn);
 
-	sx=vertcat(sx{:});
-	sy=vertcat(sy{:});
-	sk=vertcat(sk{:});
+		sx=cell(num_seg,1);
+		sy=cell(num_seg,1);
+		sk=cell(num_seg,1);
+		for ii=1:num_seg
+			sx{ii,1}=ksn(ii,1).X(:);
+			sy{ii,1}=ksn(ii,1).Y(:);
+			if isfield(ksn,'ksn')
+				sk{ii,1}=ones(numel(sx{ii,1}),1)*ksn(ii,1).ksn;
+			elseif isfield(ksn,'fit_ksn')
+				sk{ii,1}=ones(numel(sx{ii,1}),1)*ksn(ii,1).fit_ksn;
+			else
+				error('There is no valid field in the provided shapefile or mapstructure named "ksn"')
+			end
+		end
 
-	ix=coord2ind(DEM,sx,sy);
-	idx=isnan(ix);
+		sx=vertcat(sx{:});
+		sy=vertcat(sy{:});
+		sk=vertcat(sk{:});
 
-	ix(idx)=[];
-	sk(idx)=[];
+		ix=coord2ind(DEM,sx,sy);
+		idx=isnan(ix);
 
-	W=GRIDobj(DEM,'logical');
-	W.Z(ix)=true;
-	S=STREAMobj(FD,W);
+		ix(idx)=[];
+		sk(idx)=[];
 
-	[~,loc,~]=unique(ix);
-	sk=sk(loc);
+		W=GRIDobj(DEM,'logical');
+		W.Z(ix)=true;
+		S=STREAMobj(FD,W);
 
-	f1=figure(1);
-	set(f1,'Visible','off');
+		[~,loc,~]=unique(ix);
+		sk=sk(loc);
 
-	[RGB]=imageschs(DEM,DEM,'colormap','gray');
-	[~,R]=GRIDobj2im(DEM);
+		f1=figure(1);
+		set(f1,'Visible','off');
 
-	imshow(flipud(RGB),R);
-	axis xy
-	hold on
-	colormap(ksncolor(20));
-	plotc(S,sk);
-	if isempty(ksn_lim)
-		caxis([0 max(sk)]);
-	else
-		caxis([min(ksn_lim) max(ksn_lim)])
-	end
-	c1=colorbar;
-	ylabel(c1,'Normalized Channel Steepness')
-	if ~isempty(knks)
-		if ischar(knks) & logical(regexp(knks,regexptranslate('wildcard','*.shp')))
-			knk=shaperead(knks);
-			knkx=[knk.X];
-			knky=[knk.Y];
-			scatter(knkx,knky,100,'w','p','filled','MarkerEdgeColor','k');
-		elseif istable(knks)
-			knkx=knks.x_coord;
-			knky=knks.y_coord;
-			scatter(knkx,knky,100,'w','p','filled','MarkerEdgeColor','k');
+		[RGB]=imageschs(DEM,DEM,'colormap','gray');
+		[~,R]=GRIDobj2im(DEM);
+
+		imshow(flipud(RGB),R);
+		axis xy
+		hold on
+		colormap(ksncolor(20));
+		plotc(S,sk);
+		if isempty(ksn_lim)
+			caxis([0 max(sk)]);
 		else
-			scatter(knks(:,1),knks(:,2),100,'w','p','filled','MarkerEdgeColor','k');
+			caxis([min(ksn_lim) max(ksn_lim)])
 		end
-	end
+		c1=colorbar;
+		ylabel(c1,'Normalized Channel Steepness')
+		if ~isempty(knks)
+			if ischar(knks) & logical(regexp(knks,regexptranslate('wildcard','*.shp')))
+				knk=shaperead(knks);
+				knkx=[knk.X];
+				knky=[knk.Y];
+				scatter(knkx,knky,100,'w','p','filled','MarkerEdgeColor','k');
+			elseif istable(knks)
+				knkx=knks.x_coord;
+				knky=knks.y_coord;
+				scatter(knkx,knky,100,'w','p','filled','MarkerEdgeColor','k');
+			else
+				scatter(knks(:,1),knks(:,2),100,'w','p','filled','MarkerEdgeColor','k');
+			end
+		end
 
-	hold off
-	set(f1,'Visible','on','Units','normalized','Position',[0.05 0.1 0.8 0.8],'renderer','painters');
+		hold off
+		set(f1,'Visible','on','Units','normalized','Position',[0.05 0.1 0.8 0.8],'renderer','painters');
+	end
 end
