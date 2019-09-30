@@ -84,7 +84,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	addParameter(p,'output',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'ksn_method','quick',@(x) ischar(validatestring(x,{'quick','trunk','trib'})));
 	addParameter(p,'min_order',4,@(x) isscalar(x) && isnumeric(x));
-	addParameter(p,'outlet_level_method',[],@(x) ischar(validatestring(x,{'elevation','max_out_elevation'})) || isempty(x));
+	addParameter(p,'outlet_level_method',[],@(x) isempty(x) || ischar(validatestring(x,{'elevation','max_out_elevation'})));
 	addParameter(p,'min_elevation',[],@(x) isnumeric(x) || isempty(x));
 	addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj') || isempty(x));
 	addParameter(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
