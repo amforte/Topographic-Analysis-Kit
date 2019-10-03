@@ -49,7 +49,7 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 	addRequired(p,'valueOI',@(x) ischar(x));
 	addRequired(p,'location_of_data_files',@(x) isdir(x));
 
-	addParameter(p,'location_of_subbasins','SubBasins',@(x) ischar(x));
+	addParameter(p,'location_of_subbasins','SubBasins',@(x) ischar(x) || isempty(x));
 	addParameter(p,'file_name_prefix','basins',@(x) ischar(x));
 	addParameter(p,'method','subdivided',@(x) ischar(validatestring(x,{'subdivided','nested'})));
 	addParameter(p,'relief_radius',2500,@(x) isscalar(x) && isnumeric(x));
@@ -67,14 +67,14 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 	OUT=GRIDobj(DEM);
 	OUT=OUT-32768;
 
-	current=pwd;
-	cd(location_of_data_files);
+	[head_dir,~,~]=fileparts(location_of_data_files);
+	file_name_prefix=[head_dir filesep file_name_prefix];
 
 	switch method
 	case 'subdivided'
 		%% Build File List
 		% Get Basin Numbers
-		AllFullFiles=dir('*_Data.mat');
+		AllFullFiles=dir([location_of_data_files filesep '*_Data.mat']);
 		num_basins=numel(AllFullFiles);
 		basin_nums=zeros(num_basins,1);
 		for jj=1:num_basins
@@ -85,7 +85,7 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 		FileCell=cell(num_basins,1);
 		for kk=1:num_basins
 			basin_num=basin_nums(kk);
-			SearchAllString=['*_' num2str(basin_num) '_Data.mat'];
+			SearchAllString=[location_of_data_files filesep '*_' num2str(basin_num) '_Data.mat'];
 			SearchSubString=[location_of_subbasins filesep '*_' num2str(basin_num) '_DataSubset*.mat'];
 
 			if numel(dir(SearchSubString))>0
@@ -99,8 +99,8 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 		FileList=vertcat(FileCell{:});
 		num_files=numel(FileList);
 
+		w1=waitbar(0,'Building raster...');
 		for ii=1:num_files;
-			disp(['Working on ' num2str(ii) ' of ' num2str(num_files)]);
 			FileName=[FileList(ii,1).folder filesep FileList(ii,1).name];
 			switch valueOI
 			case 'ksn'
@@ -114,7 +114,7 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 				val=Zc_stats(:,1);
 			case 'chir2'
 				load(FileName,'DEMoc','Sc','Ac','theta_ref');
-				c=chiplot(Sc,DEMcc,Ac,'a0',1,'mn',theta_ref,'plot',false);
+				c=chiplot(Sc,DEMoc,Ac,'a0',1,'mn',theta_ref,'plot',false);
 				val=c.R2;
 			case 'drainage_area'
 				load(FileName,'DEMoc','drainage_area');
@@ -178,11 +178,13 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 			ix=coord2ind(DEM,xix,yix);
 			val_list=ones(numel(ix),1).*val;
 			OUT.Z(ix)=val_list;
+			waitbar(ii/num_files);
 		end
+		close(w1);
 
 	case 'nested'
 		% Build list of indices
-		AllFiles=dir('*_Data.mat');
+		AllFiles=dir([location_of_data_files filesep '*_Data.mat']);
 		num_basins=numel(AllFiles);
 
 		ix_cell=cell(num_basins,1);
@@ -192,8 +194,8 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 			FileName=AllFiles(jj,1).name;
 			FileCell{jj}=FileName;
 
-			load(FileName,'DEMcc');
-			[x,y]=getcoordinates(DEMcc);
+			load(FileName,'DEMoc');
+			[x,y]=getcoordinates(DEMoc);
 			xg=repmat(x,numel(y),1);
 			yg=repmat(y,1,numel(x));
 			xl=xg(~isnan(DEMoc.Z));
@@ -211,9 +213,9 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 		FileCell=FileCell(six);
 		ix_cell=ix_cell(six);
 
+		w1=waitbar(0,'Building raster...');
 		for ii=1:num_basins
 			FileName=FileCell{ii};
-			disp(['Working on ' num2str(ii) ' of ' num2str(num_files)]);
 
 			switch valueOI
 			case 'ksn'
@@ -235,7 +237,7 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 				load(FileName,'DEMoc','hyps');
 				val=abs(trapz((hyps(:,2)-min(hyps(:,2)))/(max(hyps(:,2))-min(hyps(:,2))),hyps(:,1)/100));
 			case 'id'
-				load(FileName,'DEMcc','RiverMouth');
+				load(FileName,'DEMoc','RiverMouth');
 				val=RiverMouth(:,3);
 			case 'theta'
 				load(FileName,'DEMoc','Chic');
@@ -280,7 +282,7 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 			end
 
 			I=~isnan(DEMoc.Z);
-			[X,Y]=getcoordinates(DEMcc);
+			[X,Y]=getcoordinates(DEMoc);
 			xmat=repmat(X,numel(Y),1);
 			ymat=repmat(Y,1,numel(X));
 
@@ -288,7 +290,9 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 
 			val_list=ones(numel(ix),1).*val;
 			OUT.Z(ix)=val_list;
+			waitbar(ii/num_files);
 		end
+		close(w1);
 	end
 
 	switch valueOI
@@ -324,4 +328,3 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 		GRIDobj2ascii(OUT,out_file);
 	end
 
-	cd(current);
