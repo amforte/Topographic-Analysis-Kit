@@ -109,15 +109,15 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	p.FunctionName = 'CompileBasinStats';
 	addRequired(p,'location_of_data_files',@(x) isdir(x));
 
-	addParameter(p,'location_of_subbasins','SubBasins',@(x) ischar(x));
+	addParameter(p,'location_of_subbasins','SubBasins',@(x) ischar(x) || isempty(x));
 	addParameter(p,'include','all',@(x) ischar(validatestring(x,{'all','subdivided','bigonly'})));
-	addParameter(p,'extra_field_values',[],@(x) isa(x,'cell'));
-	addParameter(p,'extra_field_names',[],@(x) isa(x,'cell') && size(x,1)==1);
+	addParameter(p,'extra_field_values',[],@(x) isa(x,'cell') || isempty(x));
+	addParameter(p,'extra_field_names',[],@(x) isa(x,'cell') && size(x,1)==1 || isempty(x));
 	addParameter(p,'new_concavity',[],@(x) isnumeric(x));
-	addParameter(p,'dist_along_azimuth',[],@(x) isnumeric(x) && isscalar(x) && x>=0 && x<=360);
+	addParameter(p,'dist_along_azimuth',[],@(x) isnumeric(x) && isscalar(x) && x>=0 && x<=360 || isempty(x));
 	addParameter(p,'uncertainty','se',@(x) ischar(validatestring(x,{'se','std','both'})));
 	addParameter(p,'populate_categories',false,@(x) isscalar(x) && islogical(x))
-	addParameter(p,'means_by_category',[],@(x) isa(x,'cell') && size(x,2)>=2);
+	addParameter(p,'means_by_category',[],@(x) isa(x,'cell') && size(x,2)>=2 || isempty(x));
 	addParameter(p,'filter_by_category',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'filter_type','exclude',@(x) ischar(validatestring(x,{'exclude','include','mode'})));
 	addParameter(p,'cat_grid',[],@(x) ischar(x));
@@ -148,21 +148,19 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 		error('For "mode" filter, entry must be provided for "cat_grid"');
 	end
 
-	current=pwd;
-	cd(location_of_data_files);
 
 	% Switch for which basins to include
 	switch include
 	case 'all'
-		FileList1=dir('*_Data.mat');
-		FileList2=dir([location_of_subbasins '/*_DataSubset*.mat']);
+		FileList1=dir([location_of_data_files filesep '*_Data.mat']);
+		FileList2=dir([location_of_subbasins filesep '*_DataSubset*.mat']);
 		FileList=vertcat(FileList1,FileList2);
 		num_files=numel(FileList);
 	case 'bigonly'
-		FileList=dir('*_Data.mat');
+		FileList=dir([location_of_data_files filesep '*_Data.mat']);
 		num_files=numel(FileList);
 	case 'subdivided'
-		AllFullFiles=dir('*_Data.mat');
+		AllFullFiles=dir([location_of_data_files filesep '*_Data.mat']);
 		num_basins=numel(AllFullFiles);
 		basin_nums=zeros(num_basins,1);
 		for jj=1:num_basins
@@ -173,7 +171,7 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 		FileCell=cell(num_basins,1);
 		for kk=1:num_basins
 			basin_num=basin_nums(kk);
-			SearchAllString=['*_' num2str(basin_num) '_Data.mat'];
+			SearchAllString=[location_of_data_files filesep '*_' num2str(basin_num) '_Data.mat'];
 			SearchSubString=[location_of_subbasins filesep '*_' num2str(basin_num) '_DataSubset*.mat'];
 
 			if numel(dir(SearchSubString))>0
@@ -593,7 +591,6 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 
 	close(w1);
 
-	cd(current);
 
 end
 
