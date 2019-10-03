@@ -70,12 +70,12 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
 	addRequired(p,'location_of_data_files',@(x) isdir(x));
 
-	addParameter(p,'location_of_subbasins','SubBasins',@(x) ischar(x));
+	addParameter(p,'location_of_subbasins','SubBasins',@(x) ischar(x) || isempty(x));
 	addParameter(p,'shape_name','basins',@(x) ischar(x));
 	addParameter(p,'include','all',@(x) ischar(validatestring(x,{'all','subdivided','bigonly'})));
 	addParameter(p,'extra_field_values',[],@(x) isa(x,'cell'));
 	addParameter(p,'extra_field_names',[],@(x) isa(x,'cell') & size(x,1)==1);
-	addParameter(p,'new_concavity',[],@(x) isnumeric(x));
+	addParameter(p,'new_concavity',[],@(x) isnumeric(x) || isempty(x));
 	addParameter(p,'uncertainty','se',@(x) ischar(validatestring(x,{'se','std','both'})));
 	addParameter(p,'populate_categories',false,@(x) isscalar(x) && islogical(x))
 	addParameter(p,'suppress_shape_write',false,@(x) isscalar(x) && islogical(x))
@@ -94,21 +94,19 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	pc=p.Results.populate_categories;
 	ssw=p.Results.suppress_shape_write;
 
-	current=pwd;
-	cd(location_of_data_files);
 
 	% Switch for which basins to include
 	switch include
 	case 'all'
-		FileList1=dir('*_Data.mat');
-		FileList2=dir([location_of_subbasins '/*_DataSubset*.mat']);
+		FileList1=dir([location_of_data_files filesep '*_Data.mat']);
+		FileList2=dir([location_of_subbasins filesep '*_DataSubset*.mat']);
 		FileList=vertcat(FileList1,FileList2);
 		num_files=numel(FileList);
 	case 'bigonly'
-		FileList=dir('*_Data.mat');
+		FileList=dir([location_of_data_files filesep '*_Data.mat']);
 		num_files=numel(FileList);
 	case 'subdivided'
-		AllFullFiles=dir('*_Data.mat');
+		AllFullFiles=dir([location_of_data_files filesep '*_Data.mat']);
 		num_basins=numel(AllFullFiles);
 		basin_nums=zeros(num_basins,1);
 		for jj=1:num_basins
@@ -119,7 +117,7 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 		FileCell=cell(num_basins,1);
 		for kk=1:num_basins
 			basin_num=basin_nums(kk);
-			SearchAllString=['*_' num2str(basin_num) '_Data.mat'];
+			SearchAllString=[location_of_data_files filesep '*_' num2str(basin_num) '_Data.mat'];
 			SearchSubString=[location_of_subbasins filesep '*_' num2str(basin_num) '_DataSubset*.mat'];
 
 			if numel(dir(SearchSubString))>0
@@ -366,9 +364,8 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	end
 	close(w1);
 
-	cd(current);
-
-	out_shape_name=[shape_name '.shp'];
+	[head_dir,~,~]=fileparts(location_of_data_files);
+	out_shape_name=[head_dir filesep shape_name '.shp'];
 	shapewrite(MS,out_shape_name);
 
 end
