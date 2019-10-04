@@ -124,7 +124,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 
 	addParameter(p,'uncertainty','se',@(x) ischar(validatestring(x,{'se','std','none'})));
 	addParameter(p,'use_filtered',false,@(x) islogical(x) && isscalar(x));
-	addParameter(p,'color_by',[],@(x) ischar(x) || isnumeric(x) & size(x,2)==1);
+	addParameter(p,'color_by',[],@(x) ischar(x) || isnumeric(x) & size(x,2)==1 || isempty(x));
 	addParameter(p,'cmap',[],@(x) ischar(x) || isnumeric(x) & size(x,2)==3);
 	addParameter(p,'xval',[],@(x) ischar(x) || isnumeric(x) & size(x,2)==1);
 	addParameter(p,'yval',[],@(x) ischar(x) || isnumeric(x) & size(x,2)==1);
@@ -142,6 +142,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	addParameter(p,'fit_rlf_ksn',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'fit_filtered',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'save_figure',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'out_dir',[],@(x) isdir(x));
 
 	parse(p,basin_table,plots,varargin{:});
 	T=p.Results.basin_table;
@@ -167,10 +168,14 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	s_in=p.Results.start_threshold_gradient;
 	n_val=p.Results.n_val;
 	save_figure=p.Results.save_figure;
+	out_dir=p.Results.out_dir;
 
+	if isempty(out_dir)
+		out_dir=pwd;
+	end
  
 	if isempty(cmap);
-		cmap=jet(50);
+		cmap=parula(50);
 	end
 
 	% Deal with variable inputs
@@ -193,13 +198,13 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	end	
 
 	% Deal with region if specified
-	if ~isempty(regionOI) & ~islogical(regionOI)
+	if ~isempty(regionOI) && ~islogical(regionOI)
 		rIDX=T.center_x>=regionOI(1) & T.center_x<=regionOI(2) & T.center_y>=regionOI(3) & T.center_y<=regionOI(4);
 		T=T(rIDX,:);
 		if isempty(T)
 			error('Provided region has eliminated all entries from the table, check that the coordinates are correct');
 		end
-	elseif ~isempty(regionOI) & islogical(regionOI)
+	elseif ~isempty(regionOI) && islogical(regionOI) && regionOI
 
 		f1=figure(1);
 		clf
@@ -1284,12 +1289,12 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		if num_figs>1
 			for ii=1:num_figs
 				orient(f(ii),'landscape');
-				print(f(ii),'-dpdf','-fillpage',['Figure_' num2str(ii) '.pdf']);
+				print(f(ii),'-dpdf','-fillpage',fullfile(out_dir,['Figure_' num2str(ii) '.pdf']));
 			end
 		else % WEIRD SIMULINK ERROR FROM HELL
 			current=gcf;
 			orient 'landscape';
-			print(current,'-dpdf','-fillpage',['Figure_1.pdf']);
+			print(current,'-dpdf','-fillpage',fullfile(out_dir,['Figure_1.pdf']));
 		end
 
 	end
