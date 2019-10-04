@@ -365,7 +365,11 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	close(w1);
 
 	[head_dir,~,~]=fileparts(location_of_data_files);
-	out_shape_name=[head_dir filesep shape_name '.shp'];
+	if ~isempty(head_dir)
+		out_shape_name=[head_dir filesep shape_name '.shp'];
+	else
+		out_shape_name=[shape_name '.shp'];
+	end
 	shapewrite(MS,out_shape_name);
 
 end
