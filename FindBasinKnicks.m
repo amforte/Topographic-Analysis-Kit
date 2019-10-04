@@ -49,6 +49,7 @@ function [KnickTable]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 	addParameter(p,'ref_concavity',0.5,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'shape_name',[],@(x) ischar(x));
 	addParameter(p,'save_mat',true,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'out_dir',[],@(x) isdir(x));
 
 	parse(p,Basin_Data_File,plot_result,varargin{:});
 	Basin_Data_File=p.Results.Basin_Data_File;
@@ -58,6 +59,11 @@ function [KnickTable]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 	theta_ref=p.Results.ref_concavity;
 	shape_name=p.Results.shape_name;
 	save_mat=p.Results.save_mat;
+	out_dir=p.Results.out_dir;
+
+	if isempty(out_dir)
+		out_dir=pwd;
+	end
 
 	% Load in File Contents
 	load(Basin_Data_File);
@@ -228,7 +234,7 @@ function [KnickTable]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 	end
 
 	if save_mat
-		save(['Knicks_' num2str(RiverMouth(:,3)) '.mat'],'KnickTable','-v7.3');
+		save(fullfile(out_dir,['Knicks_' num2str(RiverMouth(:,3)) '.mat']),'KnickTable','-v7.3');
 	end
 
 	if ~isempty(shape_name)
@@ -245,7 +251,7 @@ function [KnickTable]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 				MS(ii,1).class=knpClasses{ii};
 			end
 		end
-		shp_out=[shape_name '.shp'];
+		shp_out=fullfile(out_dir,[shape_name '.shp']);
 		shapewrite(MS,shp_out);
 	end
 
