@@ -95,14 +95,15 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	addParameter(p,'calc_full_slope_area',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'complete_networks_only',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
-	addParameter(p,'min_elev',[],@(x) isscalar(x) && isnumeric(x));
-	addParameter(p,'max_area',[],@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'min_elev',[],@(x) isscalar(x) && isnumeric(x) || isempty(x));
+	addParameter(p,'max_area',[],@(x) isscalar(x) && isnumeric(x) || isempty(x));
 	addParameter(p,'recalc',false,@(x) isscalar(x));
 	addParameter(p,'picks',[],@(x) (isnumeric(x) && size(x,2)==3) | ischar(x));
 	addParameter(p,'threshold_area',1e6,@(x) isnumeric(x));
-	addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
+	addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj') || isempty(x));
 	addParameter(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
 	addParameter(p,'bin_size',500,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'out_dir',[],@(x) isdir(x));
 
 	parse(p,DEM,FD,A,S,basin_num,varargin{:});
 	DEM=p.Results.DEM;
@@ -123,6 +124,7 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	iv=p.Results.interp_value;
 	DEMc=p.Results.conditioned_DEM;
 	bin_size=p.Results.bin_size;
+	out_dir=p.Results.out_dir;
 
 
 	% Catch errors
@@ -168,6 +170,9 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
     	S=removeedgeeffects(S,FD,DEM);
     end
 
+    if isempty(out_dir)
+    	out_dir=pwd;
+    end
 
 	% Hydrologically condition dem
 	if isempty(DEMc)
@@ -1132,7 +1137,7 @@ else
 	end
 end
 
-fileOut=['PickedSegments_' num2str(basin_num) '.mat'];
+fileOut=fullfile(out_dir,['PickedSegments_' num2str(basin_num) '.mat']);
 switch direction
 case 'up'
 	save(fileOut,'StreamSgmnts','ChiSgmnts','SlpAreaSgmnts','Outlets','Sc','-v7.3');

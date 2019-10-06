@@ -36,10 +36,13 @@ function SegmentPlotter(basin_nums,varargin)
 	addRequired(p,'basin_nums',@(x) isnumeric(x));
 
 	addParameter(p,'separate',false,@(x) islogical(x));
-	addParameter(p,'subset',[],@(x) isnumeric(x));
+	addParameter(p,'subset',[],@(x) isnumeric(x) || isempty(x));
 	addParameter(p,'label',false,@(x) islogical(x));
 	addParameter(p,'trunks_only',false,@(x) islogical(x));
-	addParameter(p,'names','',@(x) ischar(x) | iscell(x));
+	addParameter(p,'names',[],@(x) ischar(x) || iscell(x) || isempty(x));
+	addParameter(p,'in_dir',[],@(x) isdir(x));
+	addParameter(p,'out_dir',[],@(x) isdir(x));
+	addParameter(p,'save_fig',false,@(x) islogical(x));
 
 	parse(p,basin_nums,varargin{:});
 	basin_nums=p.Results.basin_nums;
@@ -47,6 +50,9 @@ function SegmentPlotter(basin_nums,varargin)
 	subset=p.Results.subset;
 	lab=p.Results.label;
 	nm=p.Results.names;
+	in_dir=p.Results.in_dir;
+	out_dir=p.Results.out_dir;
+	save_fig=p.Results.save_fig;
 
 	num_basins=numel(basin_nums);
 
@@ -60,6 +66,13 @@ function SegmentPlotter(basin_nums,varargin)
 		su=0;
 	end
 
+	if isempty(in_dir)
+		in_dir=pwd;
+	end
+
+	if isempty(out_dir)
+		out_dir=pwd;
+	end
 
 	switch su
 	case 0
@@ -71,7 +84,7 @@ function SegmentPlotter(basin_nums,varargin)
 
 			for ii=1:num_basins
 				basin_num=basin_nums(ii);
-				fileName=['PickedSegments_' num2str(basin_num) '.mat'];
+				fileName=fullfile(in_dir,['PickedSegments_' num2str(basin_num) '.mat']);
 				load(fileName,'ChiSgmnts','SlpAreaSgmnts');
 
 				vInfo=who('-file',fileName);
@@ -85,7 +98,7 @@ function SegmentPlotter(basin_nums,varargin)
 
 				num_seg=numel(ChiSgmnts);
 
-				if ischar(nm)
+				if ischar(nm) || isempty(nm)
 					pre='';
 				elseif iscell(nm);
 					pre=nm{ii};
@@ -152,13 +165,18 @@ function SegmentPlotter(basin_nums,varargin)
 				title('Slope-Area');
 			hold off
 
+			if save_fig
+				figFile=fullfile(out_dir,['StreamSegments_' num2str(basin_num) '.pdf']);
+				print(f1,'-dpdf',figFile,'-fillpage');
+			end
+
 		elseif sep
 
 			fig_num=1;
 
 			for ii=1:num_basins
 				basin_num=basin_nums(ii);
-				fileName=['PickedSegments_' num2str(basin_num) '.mat'];
+				fileName=fullfile(in_dir,['PickedSegments_' num2str(basin_num) '.mat']);
 				load(fileName,'ChiSgmnts','SlpAreaSgmnts');
 				vInfo=who('-file',fileName);
 				if ismember('Heads',vInfo)
@@ -200,7 +218,12 @@ function SegmentPlotter(basin_nums,varargin)
 					set(ax3,'Xscale','log','Yscale','log','XDir','reverse');
 					xlabel('Log Drainage Area');
 					ylabel('Log Gradient');
-					hold off					
+					hold off		
+
+					if save_fig
+						figFile=fullfile(out_dir,['StreamSegments_' num2str(basin_num) '_' num2str(fig_num) '_.pdf']);
+						print(f1,'-dpdf',figFile,'-fillpage');	
+					end		
 
 					fig_num=fig_num+1;
 					drawnow
@@ -217,7 +240,7 @@ function SegmentPlotter(basin_nums,varargin)
 
 
 			basin_num=basin_nums;
-			fileName=['PickedSegments_' num2str(basin_num) '.mat'];
+			fileName=fullfile(in_dir,['PickedSegments_' num2str(basin_num) '.mat']);
 			load(fileName,'ChiSgmnts','SlpAreaSgmnts');
 
 			vInfo=who('-file',fileName);
@@ -289,7 +312,12 @@ function SegmentPlotter(basin_nums,varargin)
 				xlabel('Log Drainage Area');
 				ylabel('Log Gradient');
 				title('Slope-Area');
-			hold off			
+			hold off
+
+			if save_fig
+				figFile=fullfile(out_dir,['StreamSegments_' num2str(basin_num) '.pdf']);
+				print(f1,'-dpdf',figFile,'-fillpage');
+			end			
 
 		elseif sep
 
@@ -297,7 +325,7 @@ function SegmentPlotter(basin_nums,varargin)
 
 			for ii=1:num_basins
 				basin_num=basin_nums(ii);
-				fileName=['PickedSegments_' num2str(basin_num) '.mat'];
+				fileName=fullfile(in_dir,['PickedSegments_' num2str(basin_num) '.mat']);
 				load(fileName,'ChiSgmnts','SlpAreaSgmnts');
 				vInfo=who('-file',fileName);
 				if ismember('Heads',vInfo)
@@ -346,6 +374,10 @@ function SegmentPlotter(basin_nums,varargin)
 					ylabel('Log Gradient');
 					hold off
 
+					if save_fig
+						figFile=fullfile(out_dir,['StreamSegments_' num2str(basin_num) '_' num2str(fig_num) '_.pdf']);
+						print(f1,'-dpdf',figFile,'-fillpage');	
+					end
 
 					fig_num=fig_num+1;
 					drawnow

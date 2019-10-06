@@ -62,8 +62,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 	addParameter(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'refit_streams',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'save_figures',false,@(x) isscalar(x) && islogical(x));
-	addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
+	addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj') || isempty(x));
 	addParameter(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
+	addParameter(p,'out_dir',[],@(x) isdir(x));
 
 	parse(p,DEM,FD,A,S,varargin{:});
 	DEM=p.Results.DEM;
@@ -79,7 +80,11 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 	save_figures=p.Results.save_figures;
 	iv=p.Results.interp_value;
 	DEMc=p.Results.conditioned_DEM;
+	out_dir=p.Results.out_dir;
 
+	if isempty(out_dir)
+		out_dir=pwd;
+	end
 
 	% Find channel heads
 	ST=S;
@@ -104,8 +109,6 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 	elseif strcmp(theta_method,'auto') & strcmp(pick_method,'stream');
 		method=4;
 	end
-
-	close all
 
 	OUT=cell(2,num_ch);
 
@@ -255,8 +258,8 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 			OUT{2,ii}=[C.x C.y C.distance C.area C.chi ones(size(C.chi)).*C.mn C.elev pred_el pred_el_u pred_el_l];
 
 			if save_figures
-				print(f1,'-dpdf',['ProjectedProfile_' num2str(ii) '.pdf'],'-bestfit');
-				print(f2,'-dpdf',['Residual_' num2str(ii) '.pdf'],'-bestfit');
+				print(f1,'-dpdf',fullfile(out_dir,['ProjectedProfile_' num2str(ii) '.pdf']),'-bestfit');
+				print(f2,'-dpdf',fullfile(out_dir,['Residual_' num2str(ii) '.pdf']),'-bestfit');
 			else
 				if ii<num_ch
 					uiwait(msgbox('Click OK when ready to continue'))
@@ -574,8 +577,8 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 
 
 			if save_figures
-				print(f1,'-dpdf',['ProjectedProfile_' num2str(ii) '.pdf'],'-bestfit');
-				print(f2,'-dpdf',['Residual_' num2str(ii) '.pdf'],'-bestfit');
+				print(f1,'-dpdf',fullfile(out_dir,['ProjectedProfile_' num2str(ii) '.pdf']),'-bestfit');
+				print(f2,'-dpdf',fullfile(out_dir,['Residual_' num2str(ii) '.pdf']),'-bestfit');
 			else
 				if ii<num_ch
 					uiwait(msgbox('Click OK when ready to continue'))
@@ -733,8 +736,8 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 			OUT{2,ii}=[C.x C.y C.distance C.area C.chi ones(size(C.chi)).*C.mn C.elev pred_el pred_el_u pred_el_l];
 
 			if save_figures
-				print(f1,'-dpdf',['ProjectedProfile_' num2str(ii) '.pdf'],'-bestfit');
-				print(f2,'-dpdf',['Residual_' num2str(ii) '.pdf'],'-bestfit');
+				print(f1,'-dpdf',fullfile(out_dir,['ProjectedProfile_' num2str(ii) '.pdf']),'-bestfit');
+				print(f2,'-dpdf',fullfile(out_dir,['Residual_' num2str(ii) '.pdf']),'-bestfit');
 			else
 				if ii<num_ch
 					uiwait(msgbox('Click OK when ready to continue'))
@@ -1050,8 +1053,8 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 			end
 
 			if save_figures
-				print(f1,'-dpdf',['ProjectedProfile_' num2str(ii) '.pdf'],'-bestfit');
-				print(f2,'-dpdf',['Residual_' num2str(ii) '.pdf'],'-bestfit');
+				print(f1,'-dpdf',fullfile(out_dir,['ProjectedProfile_' num2str(ii) '.pdf']),'-bestfit');
+				print(f2,'-dpdf',fullfile(out_dir,['Residual_' num2str(ii) '.pdf']),'-bestfit');
 			else
 				if ii<num_ch
 					uiwait(msgbox('Click OK when ready to continue'))
@@ -1066,7 +1069,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 		end
 	end
 
-	save('ProjectedSegments.mat','OUT','-v7.3');
+	save(fullfile(out_dir,'ProjectedSegments.mat'),'OUT','-v7.3');
 end
 
 function [OUT]=ChiCalc(S,DEM,A,a0,varargin)
