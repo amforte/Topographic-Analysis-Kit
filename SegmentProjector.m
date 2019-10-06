@@ -1,8 +1,8 @@
-function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
+function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 	%
 	% Usage:
-	%	[OUT]=SegmentProjector(DEM,FD,A,S);
-	%	[OUT]=SegmentProjector(DEM,FD,A,S,'name',value,...);
+	%	[OUT]=SegmentProjector(DEM,FD,A,S,basin_num);
+	%	[OUT]=SegmentProjector(DEM,FD,A,S,basin_num,'name',value,...);
 	%
 	% Description:
 	% 	Function to interactively select segments of a channel profile you wish to project (e.g. projecting a portion of the profile with a different ksn).
@@ -16,6 +16,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 	%	FD - Flow direction as FLOWobj
 	%	A - Flow accumulation GRIDobj
 	%	S - Streams you wish to project saved as a STREAMobj
+	%	basin_num - basin number from process river basins for output name or other identifying number for the set of streams you will pick	
 	%
 	% Optional Inputs:
 	%	conditioned_DEM [] - option to provide a hydrologically conditioned DEM for use in this function (do not provide a conditoned DEM
@@ -55,6 +56,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 	addRequired(p,'FD',@(x) isa(x,'FLOWobj'));
 	addRequired(p,'A',@(x) isa(x,'GRIDobj'));
 	addRequired(p,'S',@(x) isa(x,'STREAMobj'));
+	addRequired(p,'basin_num',@(x) isnumeric(x));	
 
 	addParameter(p,'concavity_method','ref',@(x) ischar(validatestring(x,{'ref','auto'})));
 	addParameter(p,'pick_method','chi',@(x) ischar(validatestring(x,{'chi','stream'})));
@@ -66,11 +68,12 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 	addParameter(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
 	addParameter(p,'out_dir',[],@(x) isdir(x));
 
-	parse(p,DEM,FD,A,S,varargin{:});
+	parse(p,DEM,FD,A,S,basin_num,varargin{:});
 	DEM=p.Results.DEM;
 	FD=p.Results.FD;
 	S=p.Results.S;
 	A=p.Results.A;
+	basin_num=p.Results.basin_num;
 
 	smooth_distance=p.Results.smooth_distance;
 	theta_method=p.Results.concavity_method;
@@ -258,8 +261,8 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 			OUT{2,ii}=[C.x C.y C.distance C.area C.chi ones(size(C.chi)).*C.mn C.elev pred_el pred_el_u pred_el_l];
 
 			if save_figures
-				print(f1,'-dpdf',fullfile(out_dir,['ProjectedProfile_' num2str(ii) '.pdf']),'-bestfit');
-				print(f2,'-dpdf',fullfile(out_dir,['Residual_' num2str(ii) '.pdf']),'-bestfit');
+				print(f1,'-dpdf',fullfile(out_dir,['ProjectedProfile_' num2str(basin_num) '_' num2str(ii) '.pdf']),'-bestfit');
+				print(f2,'-dpdf',fullfile(out_dir,['Residual_' num2str(basin_num) '_' num2str(ii) '.pdf']),'-bestfit');
 			else
 				if ii<num_ch
 					uiwait(msgbox('Click OK when ready to continue'))
@@ -577,8 +580,8 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 
 
 			if save_figures
-				print(f1,'-dpdf',fullfile(out_dir,['ProjectedProfile_' num2str(ii) '.pdf']),'-bestfit');
-				print(f2,'-dpdf',fullfile(out_dir,['Residual_' num2str(ii) '.pdf']),'-bestfit');
+				print(f1,'-dpdf',fullfile(out_dir,['ProjectedProfile_' num2str(basin_num) '_' num2str(ii) '.pdf']),'-bestfit');
+				print(f2,'-dpdf',fullfile(out_dir,['Residual_' num2str(basin_num) '_' num2str(ii) '.pdf']),'-bestfit');
 			else
 				if ii<num_ch
 					uiwait(msgbox('Click OK when ready to continue'))
@@ -736,8 +739,8 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 			OUT{2,ii}=[C.x C.y C.distance C.area C.chi ones(size(C.chi)).*C.mn C.elev pred_el pred_el_u pred_el_l];
 
 			if save_figures
-				print(f1,'-dpdf',fullfile(out_dir,['ProjectedProfile_' num2str(ii) '.pdf']),'-bestfit');
-				print(f2,'-dpdf',fullfile(out_dir,['Residual_' num2str(ii) '.pdf']),'-bestfit');
+				print(f1,'-dpdf',fullfile(out_dir,['ProjectedProfile_' num2str(basin_num) '_' num2str(ii) '.pdf']),'-bestfit');
+				print(f2,'-dpdf',fullfile(out_dir,['Residual_' num2str(basin_num) '_' num2str(ii) '.pdf']),'-bestfit');
 			else
 				if ii<num_ch
 					uiwait(msgbox('Click OK when ready to continue'))
@@ -1053,8 +1056,8 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 			end
 
 			if save_figures
-				print(f1,'-dpdf',fullfile(out_dir,['ProjectedProfile_' num2str(ii) '.pdf']),'-bestfit');
-				print(f2,'-dpdf',fullfile(out_dir,['Residual_' num2str(ii) '.pdf']),'-bestfit');
+				print(f1,'-dpdf',fullfile(out_dir,['ProjectedProfile_' num2str(basin_num) '_' num2str(ii) '.pdf']),'-bestfit');
+				print(f2,'-dpdf',fullfile(out_dir,['Residual_' num2str(basin_num) '_' num2str(ii) '.pdf']),'-bestfit');
 			else
 				if ii<num_ch
 					uiwait(msgbox('Click OK when ready to continue'))
@@ -1069,7 +1072,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,varargin);
 		end
 	end
 
-	save(fullfile(out_dir,'ProjectedSegments.mat'),'OUT','-v7.3');
+	save(fullfile(out_dir,['ProjectedSegments_' num2str(basin_num) '.mat']),'OUT','-v7.3');
 end
 
 function [OUT]=ChiCalc(S,DEM,A,a0,varargin)

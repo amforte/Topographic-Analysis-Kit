@@ -1,7 +1,7 @@
-function [S,zpOUT,inOUT]=ProjectedIncision(DEM,A,S,Sc,OUT,varargin)
+function [S,zpOUT,inOUT]=ProjectedIncision(DEM,A,S,Sc,OUT,basin_num,varargin)
 	% Usage:
-	%	[S,zpOUT,inOUT]=ProjectionIncision(DEM,A,S,Sc,OUT);
-	%	[S,zpOUT,inOUT]=ProjectionIncision(DEM,A,S,Sc,OUT,'name',value);
+	%	[S,zpOUT,inOUT]=ProjectionIncision(DEM,A,S,Sc,basin_num,OUT);
+	%	[S,zpOUT,inOUT]=ProjectionIncision(DEM,A,S,Sc,OUT,basin_num,'name',value);
 	%
 	% Description:
 	% 	Function for generating maps of projected incision throughout a network based on results of stream
@@ -34,9 +34,9 @@ function [S,zpOUT,inOUT]=ProjectedIncision(DEM,A,S,Sc,OUT,varargin)
 	%	S - Full STREAMobj associated with the provided DEM and A grids
 	%	Sc - Subset STREAMobj provided to SegmentProjector
 	%	OUT - Cell array output from SegmentProjector.
+	%	basin_num - basin number from process river basins for output name or other identifying number for the set of streams you will pick		
 	%
 	% Optional Inputs:
-	%	shape_name ['bsn'] - prefix on the output shapefiles names
 	%	display_figure [true] - logical flag to display a figure showing the values of mean, max, min, and
 	%		standard deviation of calculated incision
 	%	exlcude_streams [] - optional input if you wish to exclude any of the projected streams in the OUT
@@ -76,25 +76,31 @@ function [S,zpOUT,inOUT]=ProjectedIncision(DEM,A,S,Sc,OUT,varargin)
 	addRequired(p,'S',@(x) isa(x,'STREAMobj'));
 	addRequired(p,'Sc',@(x) isa(x,'STREAMobj'));
 	addRequired(p,'OUT',@(x) iscell(x));
+	addRequired(p,'basin_num',@(x) isnumeric(x));	
 
-	addParameter(p,'shape_name','bsn',@(x) ischar(x));
 	addParameter(p,'display_figure',true,@(x) isscalar(x) && islogical(x));
-	addParameter(p,'exclude_streams',[],@(x) isnumeric(x));
-	addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj'));
+	addParameter(p,'exclude_streams',[],@(x) isnumeric(x) || isempty(x));
+	addParameter(p,'conditioned_DEM',[],@(x) isa(x,'GRIDobj') || isempty(x));
 	addParameter(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
+	addParameter(p,'out_dir',[],@(x) isdir(x));
 
-	parse(p,DEM,A,S,Sc,OUT,varargin{:});
+	parse(p,DEM,A,S,Sc,OUT,basin_num,varargin{:});
 	DEM=p.Results.DEM;
 	A=p.Results.A;
 	S=p.Results.S;
 	Sc=p.Results.Sc;
 	OUT=p.Results.OUT;
+	basin_num=p.Results.basin_num;
 
-	shape_name=p.Results.shape_name;
 	display_figure=p.Results.display_figure;
 	exclude_streams=p.Results.exclude_streams;
 	DEMc=p.Results.conditioned_DEM;
 	iv=p.Results.interp_value;
+	out_dir=p.Results.out_dir;
+
+	if isempty(out_dir)
+		out_dir=pwd;
+	end
 
 	% Condition DEM if none is provided
 	if isempty(DEMc)
@@ -238,8 +244,8 @@ function [S,zpOUT,inOUT]=ProjectedIncision(DEM,A,S,Sc,OUT,varargin)
 		'min_inc' min_in @mean 'max_inc' max_in @mean 'mean_zp' mean_zp @mean 'std_zp' std_zp @mean 'min_zp' min_zp @mean...
 		'max_zp' max_zp @mean});
 
-	pnts_name=[shape_name '_Pnts_Used.shp'];
-	strm_name=[shape_name '_Proj_Incision.shp'];
+	pnts_name=fullfile(out_dir,['ProjectedIncision_' num2str(basin_num) '_Pnts_Used.shp']);
+	strm_name=fullfile(out_dir,['ProjectedIncision_' num2str(basin_num) '_Map.shp']);
 
 	shapewrite(ch,pnts_name);
 	shapewrite(ms,strm_name);
