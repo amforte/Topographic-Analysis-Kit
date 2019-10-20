@@ -140,14 +140,20 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 	% Set redo_flag
 	redo_flag=false;
 
+	% Determine whats been given in terms of basin directory
+	[fp,~,~]=fileparts(basin_dir);
+
 	% Navigate into dir
-	if isempty(out_dir)
+	if isempty(out_dir) && isempty(fp)
 		current=pwd;
+		bsn_path=fullfile(current,basin_dir);
+	elseif isempty(out_dir) && ~isempty(fp)
+		bsn_path=basin_dir;
 	else
 		current=out_dir;
+		bsn_path=fullfile(current,basin_dir);
 	end
 
-	bsn_path=fullfile(current,basin_dir);
 	if ~isdir(bsn_path)
 		mkdir(bsn_path);
 	end
