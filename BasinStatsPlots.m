@@ -130,7 +130,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	addParameter(p,'yval',[],@(x) ischar(x) || isnumeric(x) & size(x,2)==1);
 	addParameter(p,'define_region',[],@(x) isnumeric(x) & numel(x)==4 || islogical(x));
 	addParameter(p,'statistic_of_interest','ksn',@(x) ischar(x));
-	addParameter(p,'basin_num',[],@(x) isnumeric(x) && isscalar(x));
+	addParameter(p,'basin_num',[],@(x) isnumeric(x) && isscalar(x)));
 	addParameter(p,'rlf_radius',2500,@(x) isnumeric(x) && isscalar(x));
 	addParameter(p,'cat_mean1',[],@(x) ischar(x));
 	addParameter(p,'cat_mean2',[],@(x) ischar(x));

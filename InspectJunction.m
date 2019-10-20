@@ -56,8 +56,8 @@ function InspectJunction(S,IX,num,varargin)
 	addRequired(p,'IX',@(x) iscell(x));
 	addRequired(p,'num',@(x) isnumeric(x) && isscalar(x) || isempty(x));
 
-	addParameter(p,'fit_distance',[],@(x) isscalar(x) && isnumeric(x));
-	addParameter(p,'num_nodes',[],@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'fit_distance',[],@(x) isscalar(x) && isnumeric(x) || isempty(x));
+	addParameter(p,'num_nodes',[],@(x) isscalar(x) && isnumeric(x) || isempty(x));
 
 	parse(p,S,IX,num,varargin{:});
 	S=p.Results.S;

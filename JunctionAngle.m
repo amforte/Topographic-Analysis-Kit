@@ -147,11 +147,13 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 	addRequired(p,'fit_distance',@(x) isnumeric(x));
 
 	addParameter(p,'use_n_nodes',false,@(x) isscalar(x) && islogical(x));
-	addParameter(p,'previous_IX',[],@(x) iscell(x));
+	addParameter(p,'previous_IX',[],@(x) iscell(x) || isempty(x));
 	addParameter(p,'predict_angle_method','area',@(x) ischar(validatestring(x,{'slope','area','both'})));
 	addParameter(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'make_shape',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'verbose',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'out_dir',[],@(x) isdir(x));
+	addParameter(p,'out_name',[],@(x) ischar(x));
 
 	parse(p,S,A,DEM,fit_distance,varargin{:});
 	S=p.Results.S;
@@ -165,6 +167,12 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 	ref_theta=p.Results.ref_concavity;
 	make_shape=p.Results.make_shape;
 	verbose=p.Results.verbose;
+	out_dir=p.Results.out_dir;
+	out_name=p.Results.out_name;
+
+	if isempty(out_dir)
+		out_dir=pwd;
+	end
 	 
 	if use_n_nodes
 		if numel(fit_distance)==1
@@ -503,7 +511,6 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 				fit_streams(ii,:)=[e1_dst numel(xu1) r21 e2_dst numel(xu2) r22 ds_dst numel(xd) r23];
 			else
 				link_angle(ii,:)=[S.x(con{ii}) S.y(con{ii}) NaN NaN NaN NaN NaN NaN NaN NaN NaN];
-				pred_angle(ii,:)=[NaN NaN];
 				strm_dir(ii,:)=[NaN NaN NaN];
 				fit_streams(ii,:)=[NaN NaN NaN NaN NaN NaN NaN NaN NaN];
 
@@ -517,7 +524,7 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 		end
 
 		if make_shape
-			makejunctionshape(link_angle,pred_angle,strm_dir,fit_streams,method,1);
+			makejunctionshape(link_angle,pred_angle,strm_dir,fit_streams,method,1,out_dir,out_name);
 		end
 
 		junctions=makejunctiontable(link_angle,pred_angle,strm_dir,fit_streams,method);
@@ -765,7 +772,7 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 			end
 
 			if make_shape
-				makejunctionshape(la,pa,sd,fs,method,jj);
+				makejunctionshape(la,pa,sd,fs,method,jj,out_dir,out_name);
 			end
 
 			junctions{1,jj}=fit_distance(jj);
@@ -1138,7 +1145,7 @@ function [T]=makejunctiontable(la,pa,cr,fs,method)
 
 end
 
-function makejunctionshape(la,pa,cr,fs,method,num_shp)
+function makejunctionshape(la,pa,cr,fs,method,num_shp,out_dir,out_name)
 	ms=struct;
 
 	all_nums=1:numel(pa(:,1));
@@ -1243,6 +1250,10 @@ function makejunctionshape(la,pa,cr,fs,method,num_shp)
 
 	end
 
-	shp_name=['junction_angle_' num2str(num_shp) '.shp'];
+	if isempty(out_name)
+		shp_name=fullfile(out_dir,['junction_angle_' num2str(num_shp) '.shp']);
+	else
+		shp_name=fullfile(out_dir,[out_name '_junction_angle_' num2str(num_shp) '.shp']);
+	end
 	shapewrite(ms,shp_name);
 end

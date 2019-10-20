@@ -98,13 +98,13 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	addRequired(p,'data_width',@(x) isnumeric(x) && isscalar(x));
 
 	addParameter(p,'file_name_prefix','Combined',@(x) ischar(x));
-	addParameter(p,'small_circ_center',[],@(x) isnumeric(x) && numel(x)==2);
+	addParameter(p,'small_circ_center',[],@(x) isnumeric(x) && numel(x)==2 || isempty(x));
 	addParameter(p,'dist_type','mapdist',@(x) ischar(validatestring(x,{'mapdist','angle'})));	
-	addParameter(p,'sample',[],@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'sample',[],@(x) isscalar(x) && isnumeric(x) || isempty(x));
 	addParameter(p,'smooth',0,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'vex',10,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'basin_value',[],@(x) ischar(x));
-	addParameter(p,'basin_scale',[],@(x) ischar(x));
+	addParameter(p,'basin_scale',[],@(x) ischar(x) || isempty(x));
 	addParameter(p,'plot_map',true,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'cmap','parula',@(x) ischar(x) || isnumeric(x) & size(x,2)==3);
 	addParameter(p,'save_figure',false,@(x) isscalar(x) && islogical(x));

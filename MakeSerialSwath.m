@@ -78,11 +78,11 @@ function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin
 	addRequired(p,'divisions',@(x) isscalar(x) && isnumeric(x));
 	addRequired(p,'sw_length',@(x) isscalar(x) && isnumeric(x));
 
-	addParameter(p,'points2',[],@(x) isnumeric(x) & size(x,1)>=2 && size(x,2)==2);
+	addParameter(p,'points2',[],@(x) isnumeric(x) & size(x,1)>=2 && size(x,2)==2 || isempty(x));
 	addParameter(p,'div_type','number',@(x) ischar(validatestring(x,{'number','width'})));
 	addParameter(p,'alignment','center',@(x) ischar(validatestring(x,{'center','right','left','between'})));
-	addParameter(p,'add_grids',[],@(x) isa(x,'cell') && size(x,2)==2);
-	addParameter(p,'sample',DEM.cellsize,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'add_grids',[],@(x) isa(x,'cell') && size(x,2)==2 || isempty(x));
+	addParameter(p,'sample',[]],@(x) isscalar(x) && isnumeric(x) || isempty(x));
 	addParameter(p,'smooth',0,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'plot_map',true,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'plot_individual',false,@(x) isscalar(x) && islogical(x));
@@ -103,6 +103,10 @@ function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin
 	plot_map=p.Results.plot_map;
 	plot_individual=p.Results.plot_individual;
 	make_shape=p.Results.make_shape;
+
+	if isempty(sample)
+		sample=DEM.cellsize;
+	end
 
 	if ~isempty(points) & strcmp(alignment,'between') & isempty(points2)
 		error('If "alignment" is set to "between" then an entry must be provided for "points2"')
