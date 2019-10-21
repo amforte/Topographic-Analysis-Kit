@@ -53,8 +53,11 @@ function ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,varargin)
 
 	shape_name=p.Results.shape_name;
 
-
-	FLDS=flowdistance(FD);
+	% Calculate flowdistances upstream of outlets of the streams
+	OUTIX=GRIDobj(DEM,'logical');
+	outix=streampoi(Sc,'outlets','ix');
+	OUTIX.Z(outix)=true;
+	FLDS=flowdistance(FD,OUTIX); 
 
 	% Filter out streams with out knicks
 	idx=isnan(bnd_list(:,1));
