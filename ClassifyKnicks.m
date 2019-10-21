@@ -140,16 +140,6 @@ function ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,varargin)
 				ylabel('Elevation [m]');
 				hold off
 
-
-				% prompt='Enter classification for knickpoint: ';
-				% c=input(prompt,'s');
-
-				% cn=str2num(c);
-				% if isempty(cn)
-				% 	char_flag=true;
-				% else
-				% 	char_flag=false;
-				% end
 				c=inputdlg('Enter the classification for the selected knickpoint:','Knickpoint Classification');
 
 				cn=str2num(c{1});
@@ -181,6 +171,10 @@ function ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,varargin)
 	[new_bnds,bix,~]=unique(new_bnds,'rows');
 	bnd_cats=vertcat(bnd_cats{:});
 	bnd_cats=bnd_cats(bix);
+
+	if char_flag
+		bnd_cats=vertcat(bnd_cats{:});
+	end
 
 	KNK=struct;
 	for jj=1:numel(new_bnds(:,1));
