@@ -137,7 +137,7 @@ function PlotKsn(DEM,FD,ksn,varargin)
 		if isempty(ksn_lim)
 			caxis([0 max(sk)]);
 		else
-			caxis([min(ksn_lim) max(ksn_lim)])
+			caxis([min(ksn_lim) max(ksn_lim)]);
 		end
 		c1=colorbar;
 		ylabel(c1,'Normalized Channel Steepness')
