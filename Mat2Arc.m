@@ -48,12 +48,20 @@ function Mat2Arc(mat_file,file_prefix,varargin)
 	addRequired(p,'file_prefix',@(x) ischar(x));
 
 	addParameter(p,'raster_type','ascii',@(x) ischar(validatestring(x,{'ascii','tif'})));
+	addParameter(p,'out_dir',[],@(x) isdir(x));
 
 	parse(p,mat_file,file_prefix,varargin{:});
 	mat_file=p.Results.mat_file;
 	file_prefix=p.Results.file_prefix;
 
 	raster_type=p.Results.raster_type;
+	out_dir=p.Results.out_dir;
+
+	if isempty(out_dir)
+		out_dir=pwd;
+	end
+
+	file_prefix=[out_dir filesep file_prefix];
 
 	d=whos('-file',mat_file);
 
