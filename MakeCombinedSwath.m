@@ -213,6 +213,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			xlabel('Distance along swath (m)');
 			ylabel('Elevation (m)');
 			xlim([0 max(swdist)]);
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(gca);
+		    end	
 			hold off
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%		
 		case 'points4'
@@ -267,6 +270,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			xlabel('Distance along swath (m)');
 			ylabel('Elevation (m)');
 			xlim([0 max(swdist)]);
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(gca);
+		    end				
 			hold off
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%		
 		case 'points5'
@@ -333,6 +339,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			xlabel('Distance along swath (m)');
 			ylabel('Elevation (m)');
 			xlim([0 max(swdist)]);
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(gca);
+		    end				
 			hold off
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%		
 		case 'eqs'
@@ -379,6 +388,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			end
 			ylabel('Elevation (m)');
 			xlim([0 max(swdist)]);
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax1);
+		    end				
 			hold off
 
 			ax2=subplot(2,1,2);
@@ -402,6 +414,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			xlim([0 max(swdist)]);
 			c1=colorbar(ax2,'southoutside');
 			xlabel(c1,'Distance from Swath Line')
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax2);
+		    end				
 			hold off
 
 			set(ax2,'YDir','reverse');
@@ -454,6 +469,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			end
 			ylabel('Elevation (m)');
 			xlim([0 max(swdist)]);
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax1);
+		    end				
 			hold off
 
 			ax2=subplot(2,1,2);
@@ -467,6 +485,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			xlim([0 max(swdist)]);
 			c1=colorbar(ax2,'southoutside');
 			xlabel(c1,'Distance from Swath Line')
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax2);
+		    end				
 			hold off
 
 			linkaxes([ax1,ax2],'x')
@@ -519,6 +540,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			xlabel('Distance along swath (m)');
 			ylabel('Elevation (m)');
 			xlim([0 max(swdist)]);
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(gca);
+		    end				
 			hold off
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		case 'ksn_chandata'
@@ -553,7 +577,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			clf 
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
-			subplot(2,1,1);
+			ax1=subplot(2,1,1);
 			hold on
 
 			plot(swdist,min_elevs,'-k');
@@ -568,14 +592,20 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			xlabel('Distance along swath (m)');
 			ylabel('Elevation (m)');
 			xlim([0 max(swdist)]);
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax1);
+		    end				
 			hold off
 
-			subplot(2,1,2);
+			ax2=subplot(2,1,2);
 			hold on
 			scatter(outData(idx,1),outData(idx,3),30,'k','filled');
 			xlabel('Distance along swath (m)');
 			ylabel('KSN');
 			xlim([0 max(swdist)]);
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax2);
+		    end	
 			hold off
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		case 'basin_stats'
@@ -699,6 +729,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			xlabel('Distance along swath (m)');
 			ylabel('Elevation (m)');
 			xlim([0 max(swdist)]);
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(gca);
+		    end				
 			hold off
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		case 'ksn_batch'
@@ -766,6 +799,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			xlabel('Distance along swath (m)');
 			ylabel('KSN');
 			xlim([0 max(swdist)]);
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(gca);
+		    end				
 			hold off
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%			
 		case 'ksn_profiler'
@@ -799,7 +835,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			clf 
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
-			subplot(2,1,1);
+			ax1=subplot(2,1,1);
 			hold on
 
 			plot(swdist,min_elevs,'-k');
@@ -814,14 +850,20 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			xlabel('Distance along swath (m)');
 			ylabel('Elevation (m)');
 			xlim([0 max(swdist)]);
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax1);
+		    end				
 			hold off
 
-			subplot(2,1,2);
+			ax2=subplot(2,1,2);
 			hold on
 			scatter(outData(idx,1),outData(idx,2),20,'k','filled');
 			xlabel('Distance along swath (m)');
 			ylabel('KSN');
 			xlim([0 max(swdist)]);
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax2);
+		    end				
 			hold off
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		case 'basin_knicks'
@@ -892,6 +934,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			xlabel('Distance along swath (m)');
 			ylabel('Elevation (m)');
 			xlim([0 max(swdist)]);
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(gca);
+		    end	
 			hold off
 	end
 
@@ -933,6 +978,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 		if ~any([strcmp(data_type,'STREAMobj') strcmp(data_type,'ksn_profiler') strcmp(data_type,'ksn_batch')])
 			scatter(x_coord(~idx),y_coord(~idx),20,'w','filled');
 		end
+		if ~verLessThan('matlab','9.5')
+	        disableDefaultInteractivity(gca);
+	    end	
 		hold off
 	end
 

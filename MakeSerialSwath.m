@@ -118,6 +118,9 @@ function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin
 		set(f1,'Units','normalized','Position',[0.05 0.1 0.9 0.9]);
 		clf
         imagesc(DEM)
+    	if ~verLessThan('matlab','9.5')
+        disableDefaultInteractivity(gca);
+	    end 
         title('Draw line along which to generate serial swaths (double-click to end)')
         [points] = getline;
         close(f1);
@@ -127,6 +130,9 @@ function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin
 		clf
 		hold on
         imagesc(DEM)
+		if ~verLessThan('matlab','9.5')
+	        disableDefaultInteractivity(gca);
+	    end         
         title('Draw first bounding line for serial swaths (double-click to end)')
         [points1] = getline;
         plot(points1(:,1),points1(:,2),'-r');
@@ -444,7 +450,7 @@ function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin
 		switch num_bounds
 		case 1
 
-			subplot(3,1,1)
+			sbplt1=subplot(3,1,1);
 			hold on
 			imagesc(DEM);
 			for ii=1:number
@@ -455,9 +461,12 @@ function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin
 				end
 			end
 			plot(points(:,1),points(:,2),'-k','LineWidth',2);
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(sbplt1);
+		    end 
 			hold off
 
-			subplot(3,1,2)
+			sbplt2=subplot(3,1,2);
 			hold on 
 			for ii=1:number
 				plot(PLOTcell{ii,1}(:,1),PLOTcell{ii,1}(:,3),'LineWidth',2,'Color',cmap(ii,:));
@@ -467,6 +476,9 @@ function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin
 			title('All Elevation Swaths')
 			xlabel('Distance Along Swaths (m)');
 			ylabel('Elevation Along Swaths (m)');
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(sbplt2);
+		    end 			
 			hold off
 
 			% Control for slight variability in number of points sampled along x direction
@@ -482,7 +494,7 @@ function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin
 				min_comp(:,ii)=PLOTcell{ii,1}(1:mnd,2);
 			end
 
-			subplot(3,1,3)
+			sbplt3=subplot(3,1,3);
 			hold on
 			plt(1)=plot(PLOTcell{1,1}(:,1),mean(mean_comp,2),'LineWidth',2,'Color','k');
 			plt(2)=plot(PLOTcell{1,1}(:,1),max(mean_comp,[],2),'LineWidth',0.5,'Color','k');
@@ -495,11 +507,14 @@ function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin
 			legend(plt,{'Mean of Mean','Min and Max of Mean','Std of Mean','All Extremes'},'location','best');
 			xlabel('Distance Along Swaths (m)');
 			ylabel('Elevation Along Swaths (m)');
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(sbplt3);
+		    end 			
 			hold off
 
 		case 2
 
-			subplot(2,1,1)
+			sbplt1=subplot(2,1,1);
 			hold on
 			imagesc(DEM);
 			for ii=1:number
@@ -511,9 +526,12 @@ function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin
 			end
 			plot(points1(:,1),points1(:,2),'-k','LineWidth',2);
 			plot(points2(:,1),points2(:,2),'-k','LineWidth',2);
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(sbplt1);
+		    end 			
 			hold off
 
-			subplot(2,1,2)
+			sbplt2=subplot(2,1,2);
 			hold on 
 			for ii=1:number
 				plot(PLOTcell{ii,1}(:,1),PLOTcell{ii,1}(:,3),'LineWidth',2,'Color',cmap(ii,:));
@@ -523,6 +541,9 @@ function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin
 			title('All Elevation Swaths')
 			xlabel('Distance Along Swaths (m)');
 			ylabel('Elevation Along Swaths (m)');
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(sbplt2);
+		    end 			
 			hold off
 
 		end
@@ -553,6 +574,9 @@ function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin
 				plot(points2(:,1),points2(:,2),'-k','LineWidth',2);
 			end
 			title(['Swath Number ' num2str(ii)]);
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(gca);
+		    end 			
 			hold off
 
 			subplot(2+num_grids,1,2)
@@ -562,6 +586,9 @@ function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin
 			plot(PLOTcell{ii,1}(:,1),PLOTcell{ii,1}(:,4),'LineWidth',0.5,'Color','k');
 			xlabel('Distance Along Swaths (m)');
 			ylabel('Elevation Along Swaths (m)');
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(gca);
+		    end 			
 			hold off
 
 			if ~isempty(AG)
@@ -573,6 +600,9 @@ function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin
 					plot(PLOTcell{ii,1+jj}(:,1),PLOTcell{ii,1+jj}(:,4),'LineWidth',0.5,'Color','k');
 					xlabel('Distance Along Swaths (m)');
 					ylabel(AG{jj,2});
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(gca);
+				    end 
 					hold off
 				end
 			end

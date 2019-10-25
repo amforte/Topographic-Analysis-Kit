@@ -110,7 +110,7 @@ function SegmentPlotter(basin_nums,varargin)
 					bSA=SlpAreaSgmnts{jj,1};
 					aSA=SlpAreaSgmnts{jj,2};
 
-					subplot(3,1,1);
+					sbplt1=subplot(3,1,1);
 					hold on
 					p1(ii)=plot(C.chi,C.elev,'Color',cMap(ii,:));
 					if lab
@@ -118,9 +118,12 @@ function SegmentPlotter(basin_nums,varargin)
 						me=C.elev(ix);
 						text(mc+mc*0.01,me,[pre ' ' num2str(seg_num(jj))],'Color',cMap(ii,:));
 					end
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(sbplt1);
+				    end						
 					hold off
 
-					subplot(3,1,2);
+					sbplt2=subplot(3,1,2);
 					hold on
 					p2(ii)=plot(C.distance,C.elev,'Color',cMap(ii,:));
 					if lab
@@ -128,6 +131,9 @@ function SegmentPlotter(basin_nums,varargin)
 						me=C.elev(ix);
 						text(md+md*0.01,me,[pre ' ' num2str(seg_num(jj))],'Color',cMap(ii,:));
 					end
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(sbplt1);
+				    end						
 					hold off
 
 					ax3=subplot(3,1,3);
@@ -135,6 +141,9 @@ function SegmentPlotter(basin_nums,varargin)
 					scatter(aSA(:,2),aSA(:,1),5,cMap(ii,:),'+');
 					p3(ii)=scatter(bSA(:,2),bSA(:,1),20,'MarkerFaceColor',cMap(ii,:),'MarkerEdgeColor','k');
 					set(ax3,'Xscale','log','Yscale','log','XDir','reverse');
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(ax3);
+				    end						
 					hold off
 	
 				end
@@ -196,19 +205,25 @@ function SegmentPlotter(basin_nums,varargin)
 					bSA=SlpAreaSgmnts{jj,1};
 					aSA=SlpAreaSgmnts{jj,2};
 
-					subplot(3,1,1);
+					sbplt1=subplot(3,1,1);
 					hold on
 					plot(C.chi,C.elev,'-k');
 					xlabel('Chi')
 					ylabel('Elevation (m)')
 					title(['Basin ' num2str(basin_num) '- Stream ' num2str(seg_num(jj))]);
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(sbplt1);
+				    end						
 					hold off
 
-					subplot(3,1,2);
+					sbplt2=subplot(3,1,2);
 					hold on
 					plot(C.distance,C.elev,'-k');
 					xlabel('Distance from Mouth (m)')
 					ylabel('Elevation (m)')
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(sbplt2);
+				    end						
 					hold off
 
 					ax3=subplot(3,1,3);
@@ -218,6 +233,9 @@ function SegmentPlotter(basin_nums,varargin)
 					set(ax3,'Xscale','log','Yscale','log','XDir','reverse');
 					xlabel('Log Drainage Area');
 					ylabel('Log Gradient');
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(ax3);
+				    end						
 					hold off		
 
 					if save_fig
@@ -264,7 +282,7 @@ function SegmentPlotter(basin_nums,varargin)
 				bSA=SlpAreaSgmnts{jj,1};
 				aSA=SlpAreaSgmnts{jj,2};
 
-				subplot(3,1,1);
+				sbplt1=subplot(3,1,1);
 				hold on
 				plot(C.chi,C.elev,'-k');
 				if lab
@@ -272,9 +290,12 @@ function SegmentPlotter(basin_nums,varargin)
 					me=C.elev(ix);
 					text(mc+mc*0.01,me,[nm ' ' num2str(seg_num(jj))]);
 				end
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(sbplt1);
+			    end					
 				hold off
 
-				subplot(3,1,2);
+				sbplt2=subplot(3,1,2);
 				hold on
 				plot(C.distance,C.elev,'-k');
 				if lab
@@ -282,6 +303,9 @@ function SegmentPlotter(basin_nums,varargin)
 					me=C.elev(ix);
 					text(md+md*0.01,me,[nm ' ' num2str(seg_num(jj))]);
 				end
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(sbplt1);
+			    end					
 				hold off
 
 				ax3=subplot(3,1,3);
@@ -289,6 +313,9 @@ function SegmentPlotter(basin_nums,varargin)
 				scatter(aSA(:,2),aSA(:,1),5,[0.5 0.5 0.5],'+');
 				scatter(bSA(:,2),bSA(:,1),20,'k','filled');
 				set(ax3,'Xscale','log','Yscale','log','XDir','reverse');
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(ax3);
+			    end					
 				hold off
 
 			end
@@ -350,19 +377,25 @@ function SegmentPlotter(basin_nums,varargin)
 					bSA=SlpAreaSgmnts{jj,1};
 					aSA=SlpAreaSgmnts{jj,2};
 
-					subplot(3,1,1);
+					sbplt1=subplot(3,1,1);
 					hold on
 					plot(C.chi,C.elev,'-k');
 					xlabel('Chi')
 					ylabel('Elevation (m)')
 					title(['Basin ' num2str(basin_num) '- Stream ' num2str(seg_num(jj))]);
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(sbplt1);
+				    end						
 					hold off
 
-					subplot(3,1,2);
+					sbplt2=subplot(3,1,2);
 					hold on
 					plot(C.distance,C.elev,'-k');
 					xlabel('Distance from Mouth (m)')
 					ylabel('Elevation (m)')
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(sbplt2);
+				    end						
 					hold off
 
 					ax3=subplot(3,1,3);
@@ -372,6 +405,9 @@ function SegmentPlotter(basin_nums,varargin)
 					set(ax3,'Xscale','log','Yscale','log','XDir','reverse');
 					xlabel('Log Drainage Area');
 					ylabel('Log Gradient');
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(ax3);
+				    end						
 					hold off
 
 					if save_fig

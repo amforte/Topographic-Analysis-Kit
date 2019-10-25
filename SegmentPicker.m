@@ -211,11 +211,17 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 			case 'grid'
 				hold on
 				imageschs(DEM,LA,'colormap','parula','colorbar',false);
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(gca);
+			    end 
 				hold off
 			case 'vector'
 				hold on
 				imageschs(DEM,DEM,'colormap','parula','colorbar',false);
 				plot(S,'-w');
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(gca);
+			    end				
 				hold off
 			end
 
@@ -369,15 +375,18 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				f2=figure(2);
 				set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
 
-				subplot(3,1,1);
+				sbplt1=subplot(3,1,1);
 				hold on
 				plot(C.chi,C.elev,'Color',colcol(mod(ii,20)+1,:));
 				xlabel('\chi')
 				ylabel('Elevation (m)')
 				title('\chi - Z')
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(sbplt1);
+			    end				
 				hold off
 
-				subplot(3,1,2);
+				sbplt2=subplot(3,1,2);
 				hold on
 				if isempty(p.Results.min_elev) && isempty(p.Results.max_area) 
 					plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
@@ -398,6 +407,9 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				ylabel('Elevation (m)')
 				% legend('Unconditioned DEM','Conditioned DEM','location','best');
 				title('Long Profile')
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(sbplt2);
+			    end					
 				hold off
 
 				saax=subplot(3,1,3);
@@ -433,6 +445,9 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				set(saax,'Xscale','log','Yscale','log','XDir','reverse');
 				xlabel('Log Drainage Area');
 				ylabel('Log Slope');	
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(saax);
+			    end					
 				hold off
 
 				StreamSgmnts{ii}=Sn;
@@ -470,11 +485,17 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 			case 'grid'
 				hold on
 				imageschs(DEM,LA,'colormap','parula','colorbar',false);
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(gca);
+			    end	
 				hold off
 			case 'vector'
 				hold on
 				imageschs(DEM,DEM,'colormap','parula','colorbar',false);
 				plot(S,'-w');
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(gca);
+			    end				
 				hold off
 			end
 
@@ -523,20 +544,26 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				f2=figure(2);
 				set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
 
-				subplot(3,1,1);
+				sbplt1=subplot(3,1,1);
 				hold on
 				plot(C.chi,C.elev,'Color',colcol(mod(ii,20)+1,:));
 				xlabel('\chi')
 				ylabel('Elevation (m)')
 				title('\chi - Z')
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(sbplt1);
+			    end				
 				hold off
 
-				subplot(3,1,2);
+				sbplt2=subplot(3,1,2);
 				hold on
 				plotdz(Sn,DEMc,'dunit','km','Color',colcol(mod(ii,20)+1,:));
 				xlabel('Distance from Mouth (km)')
 				ylabel('Elevation (m)')
 				title('Long Profile')
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(sbplt2);
+			    end					
 				hold off
 
 				saax=subplot(3,1,3);
@@ -551,6 +578,9 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				set(saax,'Xscale','log','Yscale','log','XDir','reverse');
 				xlabel('Log Drainage Area');
 				ylabel('Log Slope');	
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(saax);
+			    end					
 				hold off
 
 				StreamSgmnts{ii}=Sn;
@@ -588,11 +618,17 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 			case 'grid'
 				hold on
 				imageschs(DEM,LA,'colormap','parula','colorbar',false);
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(gca);
+			    end	
 				hold off
 			case 'vector'
 				hold on
 				imageschs(DEM,DEM,'colormap','parula','colorbar',false);
 				plot(S,'-w');
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(gca);
+			    end	
 				hold off
 			end
 
@@ -747,15 +783,18 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				f2=figure(2);
 				set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
 
-				subplot(3,1,1);
+				sbplt1=subplot(3,1,1);
 				hold on
 				plot(C.chi,C.elev,'-k');
 				xlabel('\chi')
 				ylabel('Elevation (m)')
 				title('\chi - Z')
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(sbplt1);
+			    end					
 				hold off
 
-				subplot(3,1,2);
+				sbplt2=subplot(3,1,2);
 				hold on
 				if isempty(p.Results.min_elev) && isempty(p.Results.max_area) 
 					plotdz(Sn,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
@@ -775,6 +814,9 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				ylabel('Elevation (m)')
 				legend('Unconditioned DEM','Conditioned DEM','location','best');
 				title('Long Profile')
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(sbplt2);
+			    end					
 				hold off
 
 
@@ -809,7 +851,10 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				scatter(ba,bs,20,'k','filled');
 				set(saax,'Xscale','log','Yscale','log','XDir','reverse');
 				xlabel('Log Drainage Area');
-				ylabel('Log Slope');	
+				ylabel('Log Slope');
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(saax);
+			    end						
 				hold off								
 
 				StreamSgmnts{ii}=Sn;
@@ -848,11 +893,17 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 			case 'grid'
 				hold on
 				imageschs(DEM,LA,'colormap','parula','colorbar',false);
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(gca);
+			    end					
 				hold off
 			case 'vector'
 				hold on
 				imageschs(DEM,DEM,'colormap','parula','colorbar',false);
 				plot(S,'-w');
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(gca);
+			    end					
 				hold off
 			end
 
@@ -899,20 +950,26 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 				f2=figure(2);
 				set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
-				subplot(3,1,1);
+				sbplt1=subplot(3,1,1);
 				hold on
 				plot(C.chi,C.elev,'-k');
 				xlabel('\chi')
 				ylabel('Elevation (m)')
 				title('\chi - Z')
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(sbplt1);
+			    end					
 				hold off
 
-				subplot(3,1,2);
+				sbplt2=subplot(3,1,2);
 				hold on
 				plotdz(Sn,DEMc,'dunit','km','Color','k');
 				xlabel('Distance from Mouth (km)')
 				ylabel('Elevation (m)')
 				title('Long Profile')
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(sbplt2);
+			    end					
 				hold off
 
 				saax=subplot(3,1,3);
@@ -926,7 +983,10 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 				scatter(ba,bs,20,'k','filled');
 				set(saax,'Xscale','log','Yscale','log','XDir','reverse');
 				xlabel('Log Drainage Area');
-				ylabel('Log Slope');	
+				ylabel('Log Slope');
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(saax);
+			    end						
 				hold off
 
 				StreamSgmnts{ii}=Sn;

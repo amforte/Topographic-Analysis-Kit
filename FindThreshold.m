@@ -161,6 +161,9 @@ function [Sn,thresh_list,xd_list]=FindThreshold(DEM,FD,A,S,num_streams,varargin)
 				ylabel('Log Gradient');
 				caxis([0 max(C.chi)]);
 				set(ax2,'YScale','log','XScale','log','XDir','reverse');
+		        if ~verLessThan('matlab','9.5')
+		            disableDefaultInteractivity(ax2);
+		        end 
 				hold off
 
 				ax1=subplot(2,1,1);
@@ -173,6 +176,9 @@ function [Sn,thresh_list,xd_list]=FindThreshold(DEM,FD,A,S,num_streams,varargin)
 				caxis([0 max(C.chi)]);
 				ax1.XColor='Red';
 				ax1.YColor='Red';
+		        if ~verLessThan('matlab','9.5')
+		            disableDefaultInteractivity(ax1);
+		        end 				
 				hold off
 
 				% Find user selected threshold area
@@ -195,6 +201,9 @@ function [Sn,thresh_list,xd_list]=FindThreshold(DEM,FD,A,S,num_streams,varargin)
 				xlabel('\chi');
 				ylabel('Elevation (m)');
 				caxis([0 max(C.chi)]);
+		        if ~verLessThan('matlab','9.5')
+		            disableDefaultInteractivity(ax2);
+		        end 
 				hold off
 
 				ax1=subplot(2,1,1);
@@ -208,6 +217,10 @@ function [Sn,thresh_list,xd_list]=FindThreshold(DEM,FD,A,S,num_streams,varargin)
 				set(ax1,'YScale','log','XScale','log','XDir','reverse');
 				ax1.XColor='Red';
 				ax1.YColor='Red';
+
+		        if ~verLessThan('matlab','9.5')
+		            disableDefaultInteractivity(ax1);
+		        end 
 				hold off
 
 				% Find user selected threshold area
@@ -231,7 +244,7 @@ function [Sn,thresh_list,xd_list]=FindThreshold(DEM,FD,A,S,num_streams,varargin)
 
 		f1=figure(1);
 		set(f1,'Units','normalized','Position',[0.5 0.1 0.4 0.8],'renderer','painters');
-		subplot(2,1,1)
+		sbplt1=subplot(2,1,1);
 		hold on
 		edges=logspace(log10(min(thresh_list)),log10(max(thresh_list)),10);
 		[N,e]=histcounts(thresh_list,edges);
@@ -240,15 +253,21 @@ function [Sn,thresh_list,xd_list]=FindThreshold(DEM,FD,A,S,num_streams,varargin)
 		xlabel('Picked Threshold Areas (m^{2})');
 		a_str=sprintf('%0.1e',mean_thresh);
 		title(['Mean threshold area = ' a_str]);
+        if ~verLessThan('matlab','9.5')
+            disableDefaultInteractivity(sbplt1);
+        end 
 		hold off
 
-		subplot(2,1,2)
+		sbplt2=subplot(2,1,2);
 		hold on
 		[N,~]=histcounts(xd_list,10);
 		histogram(xd_list,10);
 		plot([mean_xd,mean_xd],[0,max(N)],'-k','LineWidth',2);
 		xlabel('Mean distance from channel head to divide (m)');
 		title(['Mean xd = ' num2str(round(mean_xd,1))]);
+        if ~verLessThan('matlab','9.5')
+            disableDefaultInteractivity(sbplt2);
+        end 		
 		hold off
 
 		Sn=STREAMobj(FD,'minarea',mean_thresh,'unit','mapunits');
@@ -298,6 +317,9 @@ function [Sn,thresh_list,xd_list]=FindThreshold(DEM,FD,A,S,num_streams,varargin)
 				ylabel('Log Gradient');
 				caxis([0 max(C.chi)]);
 				set(ax2,'YScale','log','XScale','log','XDir','reverse');
+		        if ~verLessThan('matlab','9.5')
+		            disableDefaultInteractivity(ax2);
+		        end 
 				hold off
 
 				ax1=subplot(2,1,1);
@@ -310,6 +332,9 @@ function [Sn,thresh_list,xd_list]=FindThreshold(DEM,FD,A,S,num_streams,varargin)
 				caxis([0 max(C.chi)]);
 				ax1.XColor='Red';
 				ax1.YColor='Red';
+		        if ~verLessThan('matlab','9.5')
+		            disableDefaultInteractivity(ax1);
+		        end 				
 				hold off
 
 				% Find user selected threshold area
@@ -337,6 +362,9 @@ function [Sn,thresh_list,xd_list]=FindThreshold(DEM,FD,A,S,num_streams,varargin)
 				xlabel('\chi');
 				ylabel('Elevation (m)');
 				caxis([0 max(C.chi)]);
+		        if ~verLessThan('matlab','9.5')
+		            disableDefaultInteractivity(ax2);
+		        end 
 				hold off
 
 				ax1=subplot(2,1,1);
@@ -350,6 +378,9 @@ function [Sn,thresh_list,xd_list]=FindThreshold(DEM,FD,A,S,num_streams,varargin)
 				set(ax1,'YScale','log','XScale','log','XDir','reverse');
 				ax1.XColor='Red';
 				ax1.YColor='Red';
+		        if ~verLessThan('matlab','9.5')
+		            disableDefaultInteractivity(ax1);
+		        end 
 				hold off
 
 				% Find user selected threshold area
@@ -375,19 +406,25 @@ function [Sn,thresh_list,xd_list]=FindThreshold(DEM,FD,A,S,num_streams,varargin)
 
 		f1=figure(1);
 		set(f1,'Units','normalized','Position',[0.5 0.1 0.4 0.8],'renderer','painters');
-		subplot(2,1,1)
+		sbplt1=subplot(2,1,1);
 		hold on
 		edges=logspace(log10(min(thresh_list)),log10(max(thresh_list)),10);
 		[N,e]=histcounts(thresh_list,edges);
 		histogram(thresh_list,edges);
 		xlabel('Picked Threshold Areas (m^{2})');
+        if ~verLessThan('matlab','9.5')
+            disableDefaultInteractivity(sbplt1);
+        end 
 		hold off
 
-		subplot(2,1,2)
+		sbplt2=subplot(2,1,2);
 		hold on
 		[N,~]=histcounts(xd_list,10);
 		histogram(xd_list,10);
 		xlabel('Mean distance from channel head to divide (m)');
+        if ~verLessThan('matlab','9.5')
+            disableDefaultInteractivity(sbplt2);
+        end 
 		hold off
 
 		if remake_network
@@ -466,20 +503,26 @@ function [Sn,thresh_list,xd_list]=FindThreshold(DEM,FD,A,S,num_streams,varargin)
 		f1=figure(1);
 		clf
 		set(f1,'Units','normalized','Position',[0.5 0.1 0.4 0.8],'renderer','painters');
-		subplot(2,1,1)
+		sbplt1=subplot(2,1,1);
 		hold on
 		edges=logspace(log10(min(thresh_list)),log10(max(thresh_list)),10);
 		[N,e]=histcounts(thresh_list,edges);
 		histogram(thresh_list,edges);
-		set(gca,'XScale','log');
+		set(sbplt1,'XScale','log');
 		xlabel('Picked Threshold Areas (m^{2})');
+        if ~verLessThan('matlab','9.5')
+            disableDefaultInteractivity(sbplt1);
+        end 
 		hold off
 
-		subplot(2,1,2)
+		sbplt2=subplot(2,1,2);
 		hold on
 		[N,~]=histcounts(xd_list,50);
 		histogram(xd_list,50);
 		xlabel('Mean distance from channel head to divide (m)');
+        if ~verLessThan('matlab','9.5')
+            disableDefaultInteractivity(sbplt2);
+        end 
 		hold off
 
 		if remake_network

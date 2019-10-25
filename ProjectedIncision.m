@@ -201,7 +201,7 @@ function [S,zpOUT,inOUT]=ProjectedIncision(DEM,A,S,Sc,OUT,basin_num,varargin)
 		f1=figure(1);
 		set(f1,'unit','normalized','position',[0.1 0.1 0.8 0.8]);
 
-		subplot(2,2,1);
+		sbplt1=subplot(2,2,1);
 		hold on
 		[RGB]=imageschs(DEM,DEM,'colormap','gray');
 		[~,R]=GRIDobj2im(DEM);
@@ -210,33 +210,45 @@ function [S,zpOUT,inOUT]=ProjectedIncision(DEM,A,S,Sc,OUT,basin_num,varargin)
 		plotc(S,mean_in);
 		colorbar;
 		title('Mean Incision');
+        if ~verLessThan('matlab','9.5')
+            disableDefaultInteractivity(sbplt1);
+        end 
 		hold off
 
-		subplot(2,2,2);
+		sbplt2=subplot(2,2,2);
 		hold on
 		imshow(flipud(RGB),R);
 		axis xy
 		plotc(S,std_in);
 		colorbar;
 		title('StDev Incision');
+        if ~verLessThan('matlab','9.5')
+            disableDefaultInteractivity(sbplt2);
+        end 		
 		hold off
 
-		subplot(2,2,3);
+		sbplt3=subplot(2,2,3);
 		hold on 
 		imshow(flipud(RGB),R);
 		axis xy
 		plotc(S,min_in);
 		colorbar;
 		title('Min Incision');
+        if ~verLessThan('matlab','9.5')
+            disableDefaultInteractivity(sbplt3);
+        end 		
 		hold off
 
-		subplot(2,2,4);
+		sbplt4=subplot(2,2,4);
 		hold on 
 		imshow(flipud(RGB),R);
 		axis xy
 		plotc(S,max_in);
 		colorbar;
 		title('Max Incision');
+        if ~verLessThan('matlab','9.5')
+            disableDefaultInteractivity(sbplt4);
+        end 		
 		hold off
 	end	
 

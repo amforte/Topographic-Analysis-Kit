@@ -109,20 +109,26 @@ function ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,varargin)
 			f1=figure(1);
 			set(f1,'Units','normalized','Position',[0.5 0.1 0.5 0.5],'renderer','painters');
 			clf
-			subplot(2,1,1)
+			sbplt1=subplot(2,1,1);
 			hold on
 			plotdz(ST,DEM,'Color',[0.5 0.5 0.5]);
 			plotdz(ST,z,'Color','k');
 			scatter(FLDS.Z(bnd_ixOI),DEM.Z(bnd_ixOI),20,'k','filled');
+			if ~verLessThan('matlab','9.5')
+				disableDefaultInteractivity(sbplt1);
+			end	
 			hold off
 
-			subplot(2,1,2)
+			sbplt2=subplot(2,1,2);
 			hold on
 			cvec=getnal(ST,C);
 			[cvec,six]=sort(cvec);
 			evec=z(six);
 			plot(cvec,evec,'-k','LineWidth',2);
 			scatter(C.Z(bnd_ixOI),DEM.Z(bnd_ixOI),20,'k','filled');
+			if ~verLessThan('matlab','9.5')
+				disableDefaultInteractivity(sbplt2);
+			end				
 			hold off
 
 			hold off

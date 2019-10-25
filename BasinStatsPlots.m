@@ -211,6 +211,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		hold on
 		scatter(T.center_x,T.center_y,20,'k','filled');
 		title('Draw a rectangle around the data you would like to select');
+		if ~verLessThan('matlab','9.5')
+			disableDefaultInteractivity(gca);
+		end		
 		hold off
 
 		rgn=getrect;
@@ -314,6 +317,10 @@ function BasinStatsPlots(basin_table,plots,varargin)
 
 		xlabel('Mean Basin k_{sn}');
 		ylabel('Mean Basin Gradient');
+
+		if ~verLessThan('matlab','9.5')
+			disableDefaultInteractivity(gca);
+		end		
 		hold off
 	case 'grd_rlf'
 		% Validate Relief Entry
@@ -400,6 +407,11 @@ function BasinStatsPlots(basin_table,plots,varargin)
 
 		xlabel(['Mean Basin ' num2str(rr) ' m^2 Relief']);
 		ylabel('Mean Basin Gradient');
+
+		if ~verLessThan('matlab','9.5')
+			disableDefaultInteractivity(gca);
+		end	
+
 		hold off
 		
 	case 'rlf_ksn'
@@ -507,6 +519,11 @@ function BasinStatsPlots(basin_table,plots,varargin)
 
 		ylabel(['Mean Basin ' num2str(rr) ' m^2 Relief']);
 		xlabel('Mean Basin k_{sn}');
+
+		if ~verLessThan('matlab','9.5')
+			disableDefaultInteractivity(gca);
+		end	
+
 		hold off
 
 	case 'stacked_hypsometry'
@@ -558,6 +575,10 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			ylabel('Normalized Elevation');
 			xlim([0 1]);
 			ylim([0 1]);
+
+			if ~verLessThan('matlab','9.5')
+				disableDefaultInteractivity(gca);
+			end	
 			hold off			
 		else
 			f(1)=figure(1);
@@ -570,6 +591,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			ylabel('Normalized Elevation');
 			xlim([0 1]);
 			ylim([0 1]);
+			if ~verLessThan('matlab','9.5')
+				disableDefaultInteractivity(gca);
+			end	
 			hold off
 		end
 
@@ -596,6 +620,10 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			axis square
 			xlabel('Percentage Area');
 			ylabel('Elevation');
+
+			if ~verLessThan('matlab','9.5')
+				disableDefaultInteractivity(gca);
+			end	
 			hold off
 		else
 			f(2)=figure(2);
@@ -606,6 +634,10 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			axis square
 			xlabel('Percentage Area');
 			ylabel('Elevation');
+
+			if ~verLessThan('matlab','9.5')
+				disableDefaultInteractivity(gca);
+			end	
 			hold off
 		end
 
@@ -617,7 +649,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		clf 
 
 		for ii=1:num_bins
-			subplot(4,5,ii)
+			sbplt(ii)=subplot(4,5,ii);
 			hold on
 			idx=hix==ii;
 			perc(ii,1)=round((nnz(idx)/numel(idx))*100,1);
@@ -638,6 +670,10 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			ylabel('Normalized Elevation');
 			xlim([0 1]);
 			ylim([0 1]);
+
+			if ~verLessThan('matlab','9.5')
+				disableDefaultInteractivity(sbplt(ii));
+			end				
 			hold off
 		end				
 
@@ -654,6 +690,10 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		ylabel('Normalized Elevation');
 		xlim([0 1]);
 		ylim([0 1]);
+
+		if ~verLessThan('matlab','9.5')
+			disableDefaultInteractivity(gca);
+		end	
 		hold off
 
 		f(5)=figure(5);
@@ -681,6 +721,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		ylabel('Normalized Elevation');
 		xlim([0 1]);
 		ylim([0 1]);
+		if ~verLessThan('matlab','9.5')
+			disableDefaultInteractivity(gca);
+		end			
 		hold off
 
 	case 'scatterplot_matrix'
@@ -745,6 +788,10 @@ function BasinStatsPlots(basin_table,plots,varargin)
 
 					axis square
 				end
+
+				if ~verLessThan('matlab','9.5')
+					disableDefaultInteractivity(gca);
+				end	
 				hold off
 				pos=pos+1;
 			end
@@ -824,11 +871,12 @@ function BasinStatsPlots(basin_table,plots,varargin)
 				legend(sp,{'Filtered = Unfiltered','Filtered > Unfiltered','Filtered < Unfiltered'},'location','northwest')			
 			end
 
-
-
 			xlabel('Filtered Means');
 			ylabel('Unfiltered Means');
 			title(t);
+			if ~verLessThan('matlab','9.5')
+				disableDefaultInteractivity(gca);
+			end	
 			hold off
 		end
 
@@ -898,6 +946,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 				hold on
 				histogram(vals,edges);
 				title([Main_Title Cat_Names{ii}]);
+				if ~verLessThan('matlab','9.5')
+					disableDefaultInteractivity(gca);
+				end	
 				hold off
 			end
 		end
@@ -1029,6 +1080,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 				ylim(rng_v2);
 				xlabel([axis1 Cat_Names{ii}])
 				ylabel([axis2 Cat_Names{ii}])
+				if ~verLessThan('matlab','9.5')
+					disableDefaultInteractivity(gca);
+				end	
 				hold off
 			end
 		end
@@ -1123,7 +1177,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			idx=ismember(IX,keep_bins);
 			out_f=out(idx);
 
-			subplot(1,2,1);
+			sbplt1=subplot(1,2,1);
 			hold on 
 			[nF,edgesF]=histcounts(out_f,100);
 			[nV,~]=histcounts(val,edgesF);
@@ -1135,9 +1189,12 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			legend('All Basins','Basin Means','location','best');
 			xlabel(title_str);
 			ylabel('Normalized Counts');
+			if ~verLessThan('matlab','9.5')
+				disableDefaultInteractivity(sbplt1);
+			end	
 			hold off
 
-			subplot(1,2,2)
+			sbplt2=subplot(1,2,2);
 			hold on 
 			[n,edges]=histcounts(out,100);
 			[nV,~]=histcounts(val,edges);
@@ -1147,7 +1204,10 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			histogram('BinEdges',edges,'BinCounts',nV);
 			title('All Data')
 			legend('All Basins','Basin Means','location','best');			
-			xlabel(title_str);			
+			xlabel(title_str);	
+			if ~verLessThan('matlab','9.5')
+				disableDefaultInteractivity(sbplt2);
+			end			
 			hold off
 
 		else
@@ -1195,6 +1255,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			plot([T.(m_valN)(ii,1),T.(m_valN)(ii,1)],[0,max(N)],'-k','LineWidth',2);
 			title(title_str);
 			xlabel(['Values from Basin ' num2str(basin_num)]);
+			if ~verLessThan('matlab','9.5')
+				disableDefaultInteractivity(gca);
+			end	
 			hold off
 		end		
 
@@ -1279,6 +1342,10 @@ function BasinStatsPlots(basin_table,plots,varargin)
 
 		xlabel(['Mean ' sxN]);
 		ylabel(['Mean ' syN]);
+
+		if ~verLessThan('matlab','9.5')
+			disableDefaultInteractivity(gca);
+		end	
 		hold off
 	end
 

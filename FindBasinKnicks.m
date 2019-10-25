@@ -127,6 +127,9 @@ function [KnickTable]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 		imageschs(DEMoc,DEMoc,'colormap','gray');
 		plot(S,'-w');
 		plot(SS,'-r');
+        if ~verLessThan('matlab','9.5')
+            disableDefaultInteractivity(gca);
+        end 
 		hold off
 
 		% Chi-Z Plot
@@ -152,6 +155,9 @@ function [KnickTable]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 		xlabel('\chi');
 		ylabel('Elevation (m)');
 		title([num2str(NumHeads-ii) ' channels remaining']);
+        if ~verLessThan('matlab','9.5')
+            disableDefaultInteractivity(gca);
+        end 
 		hold off
 
 		[c,e]=ginput;
@@ -204,13 +210,14 @@ function [KnickTable]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 		end
 	end
 
-	close all
+	close(f1);
+	close(f2);
 
 	if plot_result
 		f1=figure(1);
 		set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.8],'renderer','painters');
        
-		subplot(1,2,1)
+		sbplt1=subplot(1,2,1);
 		hold on
 		[RGB]=imageschs(DEMoc,DEMoc,'colormap','gray');
 		[~,R]=GRIDobj2im(DEMoc);
@@ -220,9 +227,12 @@ function [KnickTable]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
         caxis([0 max(KnickPoints(:,3))]);
 		plot(S,'-w');
 		scatter(KnickPoints(:,1),KnickPoints(:,2),20,KnickPoints(:,3),'filled');
+        if ~verLessThan('matlab','9.5')
+            disableDefaultInteractivity(sbplt1);
+        end 
 		hold off
 
-		subplot(1,2,2)
+		sbplt2=subplot(1,2,2);
 		hold on
         plotdz(S,DEMoc,'Color',[0.5 0.5 0.5]);
 		plotdz(S,DEMcc,'color','k');
@@ -230,6 +240,9 @@ function [KnickTable]=FindBasinKnicks(Basin_Data_File,plot_result,varargin)
 		scatter(KnickPoints(:,4),KnickPoints(:,3),20,KnickPoints(:,3),'filled');
 		c1=colorbar;
 		ylabel(c1,'Knickpoint Elevation (m)');
+        if ~verLessThan('matlab','9.5')
+            disableDefaultInteractivity(sbplt2);
+        end 		
 		hold off
 	end
 

@@ -85,8 +85,11 @@ function [DEMn,MASK]=RemoveFlats(dem,strength)
 	hold on 
 	title('Gradient of DEM: Select areas that you consider sinks and then press enter')
 	imageschs(DEM,G,'colormap','jet','caxis',[0 1]);
+	if ~verLessThan('matlab','9.5')
+        disableDefaultInteractivity(gca);
+    end 	
 	hold off
-	[x,y]=ginput;
+	[x,y]=ginput;	
 	close(f1)
 
 	% Find label for flats
@@ -109,5 +112,8 @@ function [DEMn,MASK]=RemoveFlats(dem,strength)
 	f1=figure(1);
 	hold on
 	imageschs(DEMn,MASK);
+	if ~verLessThan('matlab','9.5')
+        disableDefaultInteractivity(gca);
+    end 	
 	hold off
 end

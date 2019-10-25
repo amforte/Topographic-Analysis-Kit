@@ -461,6 +461,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		caxis([0 mksn])
 		c1=colorbar;
 		ylabel(c1,'Channel Steepness')
+		if ~verLessThan('matlab','9.5')
+	        disableDefaultInteractivity(gca);
+	    end	
 		hold off
 		set(f1,'Visible','on','Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');
 
@@ -482,6 +485,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		caxis([0 mksn])
 		c1=colorbar;
 		ylabel(c1,'Channel Steepness')
+		if ~verLessThan('matlab','9.5')
+	        disableDefaultInteractivity(gca);
+	    end			
 		hold off
 		set(f1,'Visible','on','Units','normalized','Position',[0.05 0.1 0.5 0.5],'renderer','painters');	
 	end
@@ -712,6 +718,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						ylabel('Log Gradient');
 						title('Slope-Area');
 						set(ax4,'YScale','log','XScale','log','XDir','reverse');
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax4);
+					    end							
 						hold off
 
 						ax3=subplot(4,1,3);
@@ -723,6 +732,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						ylabel('Elevation (m)')
 						legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','\chi','location','best');
 						title('Long Profile')
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax3);
+					    end							
 						hold off
 
 						ax2=subplot(4,1,2);
@@ -731,6 +743,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						xlabel('\chi')
 						ylabel('Auto k_{sn}');
 						title('\chi - Auto k_{sn}');
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax2);
+					    end							
 						hold off
 
 						ax1=subplot(4,1,1);
@@ -742,6 +757,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						title(['\chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments - Press Enter When Done'],'Color','r')
 						ax1.XColor='Red';
 						ax1.YColor='Red';
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax1);
+					    end							
 						hold off
 
 						linkaxes([ax1,ax2],'x');
@@ -757,6 +775,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						ylabel('Elevation (m)')
 						legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','\chi','location','best');
 						title('Long Profile')
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax3);
+					    end							
 						hold off
 
 						ax2=subplot(3,1,2);
@@ -765,6 +786,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						xlabel('\chi')
 						ylabel('Auto k_{sn}');
 						title('\chi - Auto k_{sn}');
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax2);
+					    end							
 						hold off
 
 						ax1=subplot(3,1,1);
@@ -776,6 +800,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						title(['\chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments - Press Enter When Done'],'Color','r')
 						ax1.XColor='Red';
 						ax1.YColor='Red';
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax1);
+					    end							
 						hold off
 
 						linkaxes([ax1,ax2],'x');
@@ -1011,7 +1038,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					set(f3,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
 
 					clf
-					subplot(2,1,2)
+					sbplt2=subplot(2,1,2);
 					hold on
 					s1=scatter(CAvg,KsnAvg,20,'k','filled');
 					p1=plot(res_list(:,1),ksn_list(:,4)-ksn_list(:,5),':k');
@@ -1027,15 +1054,21 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					ylabel('k_{sn}')
 					legend([s1 p1 p2],{'Auto k_{sn}','k_{sn} uncertainty','k_{sn} of fit segments'},'location','best');
 					title('k_{sn} - \chi')
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(sbplt2);
+				    end						
 					hold off
 
-					subplot(2,1,1)
+					sbplt1=subplot(2,1,1);
 					hold on
 					plot([min(res_list(:,1)) max(res_list(:,1))],[0 0],'-k');
 					scatter(res_list(:,1),res_list(:,2),10,'k','filled');
 					xlabel('\chi')
 					ylabel('Residual (m)')
 					title('Residual on k_{sn} fit')
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(sbplt1);
+				    end						
 					hold off				
 
 
@@ -1052,6 +1085,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						ylabel('Log Gradient');
 						title('Slope-Area');
 						set(ax4,'XScale','log','YScale','log','XDir','reverse');
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax4);
+					    end							
 						hold off
 
 						ax1=subplot(4,1,1);
@@ -1061,6 +1097,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						xlabel('\chi')
 						ylabel('Elevation (m)')
 						title(['\chi - Z : \theta = ' num2str(C.mn)])
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax1);
+					    end							
 						hold off
 
 						ax2=subplot(4,1,2);
@@ -1069,6 +1108,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						xlabel('Distance (km)')
 						ylabel('Auto k_{sn}');
 						title('Distance - Auto k_{sn}');
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax2);
+					    end							
 						hold off
 
 						ax3=subplot(4,1,3);
@@ -1082,6 +1124,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						title('Long Profile : Pick Segments - Press Enter When Done','Color','r')
 						ax3.XColor='Red';
 						ax3.YColor='Red';
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax3);
+					    end							
 						hold off
 
 						linkaxes([ax2,ax3],'x');
@@ -1094,6 +1139,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						xlabel('\chi')
 						ylabel('Elevation (m)')
 						title(['\chi - Z : \theta = ' num2str(C.mn)])
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax1);
+					    end							
 						hold off
 
 						ax2=subplot(3,1,2);
@@ -1102,6 +1150,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						xlabel('Distance (km)')
 						ylabel('Auto k_{sn}');
 						title('Distance - Auto k_{sn}');
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax2);
+					    end							
 						hold off
 
 						ax3=subplot(3,1,3);
@@ -1115,6 +1166,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						title('Long Profile : Pick Segments - Press Enter When Done','Color','r')
 						ax3.XColor='Red';
 						ax3.YColor='Red';
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax3);
+					    end							
 						hold off
 
 						linkaxes([ax2,ax3],'x');
@@ -1348,7 +1402,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					set(f3,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
 
 					clf
-					subplot(2,1,2)
+					sbplt1=subplot(2,1,2);
 					hold on
 					s1=scatter(DAvg./1000,KsnAvg,20,'k','filled');
 					p1=plot(res_list(:,1)./1000,ksn_list(:,4)-ksn_list(:,5),':k');
@@ -1364,15 +1418,21 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					ylabel('k_{sn}')
 					title('k_{sn} - Distance')
 					legend([s1 p1 p2],{'Auto k_{sn}','k_{sn} uncertainty','k_{sn} of fit segments'},'location','best');
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(sbplt1);
+				    end						
 					hold off
 
-					subplot(2,1,1)
+					sbplt2=subplot(2,1,1);
 					hold on
 					plot([min(res_list(:,1)./1000) max(res_list(:,1)./1000)],[0 0],'-k');
 					scatter(res_list(:,1)./1000,res_list(:,2),10,'k','filled');
 					xlabel('Distance (km)')
 					ylabel('Residual (m)')
 					title('Residual on k_{sn} fit')
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(sbplt2);
+				    end						
 					hold off
 
 				elseif strcmp(pick_method,'slope_area')
@@ -1388,6 +1448,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					ylabel('Elevation (m)')
 					legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','Log Drainage Area','location','best');
 					title('Long Profile')
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(ax3);
+				    end						
 					hold off
 
 					ax2=subplot(4,1,2);
@@ -1397,6 +1460,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					ylabel('Auto k_{sn}');
 					title('Log Area - Auto k_{sn}');
 					set(ax2,'XScale','log','XDir','reverse');
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(ax2);
+				    end						
 					hold off
 
 					ax1=subplot(4,1,1);
@@ -1406,6 +1472,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					xlabel('\chi')
 					ylabel('Elevation (m)')
 					title('\chi - Z')
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(ax1);
+				    end						
 					hold off
 
 					ax4=subplot(4,1,4);
@@ -1418,6 +1487,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					set(ax4,'YScale','log','XScale','log','XDir','reverse');
 					ax4.XColor='Red';
 					ax4.YColor='Red';
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(ax4);
+				    end						
 					hold off
 
 					linkaxes([ax4,ax2],'x');
@@ -1642,6 +1714,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					title('k_{sn} - Log Area')
 					legend([s1 p1 p2],{'Auto k_{sn}','k_{sn} uncertainty','k_{sn} of fit segments'},'location','best');
 					set(ax31,'XScale','log','XDir','reverse');
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(ax31);
+				    end						
 					hold off
 
 					ax32=subplot(2,1,1);
@@ -1652,6 +1727,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					ylabel('Residual (m)')
 					title('Residual on k_{sn} fit')
 					set(ax32,'XScale','log','XDir','Reverse');
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(ax32);
+				    end						
 					hold off
 
 				end
@@ -1853,6 +1931,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						ylabel('Log Gradient');
 						title('Slope-Area');
 						set(ax4,'YScale','log','XScale','log','XDir','reverse');
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax4);
+					    end							
 						hold off
 
 						ax3=subplot(4,1,3);
@@ -1864,6 +1945,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						ylabel('Elevation (m)')
 						legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','\chi','location','best');
 						title('Long Profile')
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax3);
+					    end							
 						hold off
 
 						ax2=subplot(4,1,2);
@@ -1872,6 +1956,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						xlabel('\chi')
 						ylabel('Auto k_{sn}');
 						title('\chi - Auto k_{sn}');
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax2);
+					    end							
 						hold off
 
 						ax1=subplot(4,1,1);
@@ -1883,6 +1970,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						title(['\chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments - Press Enter When Done'],'Color','r')
 						ax1.XColor='Red';
 						ax1.YColor='Red';
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax1);
+					    end							
 						hold off
 
 						linkaxes([ax1,ax2],'x');
@@ -1898,6 +1988,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						ylabel('Elevation (m)')
 						legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','\chi','location','best');
 						title('Long Profile')
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax3);
+					    end							
 						hold off
 
 						ax2=subplot(3,1,2);
@@ -1906,6 +1999,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						xlabel('\chi')
 						ylabel('Auto k_{sn}');
 						title('\chi - Auto k_{sn}');
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax2);
+					    end							
 						hold off
 
 						ax1=subplot(3,1,1);
@@ -1917,6 +2013,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						title(['\chi - Z : \theta = ' num2str(C.mn) ' : Pick Segments - Press Enter When Done'],'Color','r')
 						ax1.XColor='Red';
 						ax1.YColor='Red';
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax1);
+					    end							
 						hold off
 
 						linkaxes([ax1,ax2],'x');
@@ -2122,7 +2221,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					set(f3,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
 
 					clf
-					subplot(2,1,2)
+					sbplt2=subplot(2,1,2);
 					hold on
 					s1=scatter(CAvg,KsnAvg,20,'k','filled');
 					p1=plot(res_list(:,1),ksn_list(:,4)-ksn_list(:,5),':k');
@@ -2138,15 +2237,21 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					ylabel('k_{sn}')
 					legend([s1 p1 p2],{'Auto k_{sn}','k_{sn} uncertainty','k_{sn} of fit segments'},'location','best');
 					title('k_{sn} - \chi')
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(sbplt2);
+				    end						
 					hold off
 
-					subplot(2,1,1)
+					sbplt1=subplot(2,1,1);
 					hold on
 					plot([min(res_list(:,1)) max(res_list(:,1))],[0 0],'-k');
 					scatter(res_list(:,1),res_list(:,2),10,'k','filled');
 					xlabel('\chi')
 					ylabel('Residual (m)')
 					title('Residual on k_{sn} fit')
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(sbplt1);
+				    end						
 					hold off				
 
 				elseif strcmp(pick_method,'stream')	
@@ -2162,6 +2267,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						ylabel('Log Gradient');
 						title('Slope-Area');
 						set(ax4,'XScale','log','YScale','log','XDir','reverse');
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax4);
+					    end							
 						hold off
 
 						ax1=subplot(4,1,1);
@@ -2171,6 +2279,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						xlabel('\chi')
 						ylabel('Elevation (m)')
 						title(['\chi - Z : \theta = ' num2str(C.mn)])
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax1);
+					    end							
 						hold off
 
 						ax2=subplot(4,1,2);
@@ -2179,6 +2290,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						xlabel('Distance (km)')
 						ylabel('Auto k_{sn}');
 						title('Distance - Auto k_{sn}');
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax2);
+					    end							
 						hold off
 
 						ax3=subplot(4,1,3);
@@ -2192,6 +2306,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						title('Long Profile : Pick Segments - Press Enter When Done','Color','r')
 						ax3.XColor='Red';
 						ax3.YColor='Red';
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax3);
+					    end							
 						hold off
 
 						linkaxes([ax2,ax3],'x');
@@ -2204,6 +2321,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						xlabel('\chi')
 						ylabel('Elevation (m)')
 						title(['\chi - Z : \theta = ' num2str(C.mn)])
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax1);
+					    end							
 						hold off
 
 						ax2=subplot(3,1,2);
@@ -2212,6 +2332,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						xlabel('Distance (km)')
 						ylabel('Auto k_{sn}');
 						title('Distance - Auto k_{sn}');
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax2);
+					    end							
 						hold off
 
 						ax3=subplot(3,1,3);
@@ -2225,6 +2348,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						title('Long Profile : Pick Segments - Press Enter When Done','Color','r')
 						ax3.XColor='Red';
 						ax3.YColor='Red';
+						if ~verLessThan('matlab','9.5')
+					        disableDefaultInteractivity(ax3);
+					    end							
 						hold off
 
 						linkaxes([ax2,ax3],'x');
@@ -2429,7 +2555,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					set(f3,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
 
 					clf
-					subplot(2,1,2)
+					sbplt2=subplot(2,1,2);
 					hold on
 					s1=scatter(DAvg./1000,KsnAvg,20,'k','filled');
 					p1=plot(res_list(:,1)./1000,ksn_list(:,4)-ksn_list(:,5),':k');
@@ -2445,15 +2571,21 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					ylabel('k_{sn}')
 					title('k_{sn} - Distance')
 					legend([s1 p1 p2],{'Auto k_{sn}','k_{sn} uncertainty','k_{sn} of fit segments'},'location','best');
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(sbplt2);
+				    end						
 					hold off
 
-					subplot(2,1,1)
+					sbplt1=subplot(2,1,1);
 					hold on
 					plot([min(res_list(:,1)./1000) max(res_list(:,1)./1000)],[0 0],'-k');
 					scatter(res_list(:,1)./1000,res_list(:,2),10,'k','filled');
 					xlabel('Distance (km)')
 					ylabel('Residual (m)')
 					title('Residual on k_{sn} fit')
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(sbplt1);
+				    end						
 					hold off
 
 				elseif strcmp(pick_method,'slope_area')
@@ -2469,6 +2601,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					ylabel('Elevation (m)')
 					legend([pl1 pl2 pl3],'Unconditioned DEM','Conditioned DEM','Log Drainage Area','location','best');
 					title('Long Profile')
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(ax3);
+				    end						
 					hold off
 
 					ax2=subplot(4,1,2);
@@ -2478,6 +2613,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					ylabel('Auto k_{sn}');
 					title('Log Area - Auto k_{sn}');
 					set(ax2,'XScale','log','XDir','reverse');
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(ax2);
+				    end						
 					hold off
 
 					ax1=subplot(4,1,1);
@@ -2487,6 +2625,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					xlabel('\chi')
 					ylabel('Elevation (m)')
 					title('\chi - Z')
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(ax1);
+				    end						
 					hold off
 
 					ax4=subplot(4,1,4);
@@ -2499,6 +2640,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					set(ax4,'YScale','log','XScale','log','XDir','reverse');
 					ax4.XColor='Red';
 					ax4.YColor='Red';
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(ax4);
+				    end						
 					hold off
 
 					linkaxes([ax4,ax2],'x');
@@ -2695,6 +2839,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					title('k_{sn} - Log Area')
 					legend([s1 p1 p2],{'Auto k_{sn}','k_{sn} uncertainty','k_{sn} of fit segments'},'location','best');
 					set(ax31,'XScale','log','XDir','reverse');
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(ax31);
+				    end						
 					hold off
 
 					ax32=subplot(2,1,1);
@@ -2705,6 +2852,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					ylabel('Residual (m)')
 					title('Residual on k_{sn} fit')
 					set(ax32,'XScale','log','XDir','Reverse');
+					if ~verLessThan('matlab','9.5')
+				        disableDefaultInteractivity(ax32);
+				    end						
 					hold off
 				% End pick method switch	
 				end
@@ -3327,6 +3477,9 @@ function [Sn]=RedefineThreshold(DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_size,c
 			ylabel('Log Gradient');
 			caxis([0 max(C.chi)]);
 			set(ax2,'YScale','log','XScale','log','XDir','reverse');
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax2);
+		    end	
 			hold off
 
 			ax1=subplot(2,1,1);
@@ -3339,6 +3492,9 @@ function [Sn]=RedefineThreshold(DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_size,c
 			caxis([0 max(C.chi)]);
 			ax1.XColor='Red';
 			ax1.YColor='Red';
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax1);
+		    end				
 			hold off
 
 			% Find user selected threshold area
@@ -3376,6 +3532,9 @@ function [Sn]=RedefineThreshold(DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_size,c
 			ylabel('Elevation (m)');
 			caxis([0 max(C.chi)]);
 			xlim([0 max(C.chi)+0.5]);
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax2);
+		    end				
 			hold off
 
 			ax1=subplot(2,1,1);
@@ -3389,6 +3548,9 @@ function [Sn]=RedefineThreshold(DEM,FD,A,S,FLUS,ref_theta,pick_method,bin_size,c
 			set(ax1,'YScale','log','XScale','log','XDir','reverse');
 			ax1.XColor='Red';
 			ax1.YColor='Red';
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax1);
+		    end				
 			hold off
 
 			% Find user selected threshold area

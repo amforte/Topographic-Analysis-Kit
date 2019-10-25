@@ -81,6 +81,9 @@ function InspectJunction(S,IX,num,varargin)
 		plot(S,'-k');
 		axis equal
 		title('Click near junction of interest');
+        if ~verLessThan('matlab','9.5')
+            disableDefaultInteractivity(gca);
+        end 
 		hold off
 
 		[xpick,ypick]=ginput(1);
@@ -222,9 +225,12 @@ function InspectJunction(S,IX,num,varargin)
 	ax.RTickLabel={''};
 	title(['Junction ' num2str(num)]);
 	legend('Trib 1 Projected','Trib 2 Projected','Downstream Projected','Upstream Plane','Trib 1','Trib 2','Downstream');
+    if ~verLessThan('matlab','9.5')
+        disableDefaultInteractivity(ax);
+    end 
 	hold off
 
-	subplot(1,2,2)
+	sbplt2=subplot(1,2,2);
 	hold on 
 	plot(S,'-k');
 	scatter(S.x(us1),S.y(us1),10,'r');
@@ -232,6 +238,9 @@ function InspectJunction(S,IX,num,varargin)
 	scatter(S.x(ds),S.y(ds),10,'k');
 	scatter(S.x(c),S.y(c),20,'g','filled');
 	axis equal
+    if ~verLessThan('matlab','9.5')
+        disableDefaultInteractivity(sbplt2);
+    end 
 	hold off
 
 end

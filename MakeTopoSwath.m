@@ -188,6 +188,9 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 		xlabel(['Distance along swath (m) : VEX = ' num2str(vex)]);
 		ylabel('Elevation (m)');
 		xlim([0 max(swdist)]);
+		if ~verLessThan('matlab','9.5')
+	        disableDefaultInteractivity(gca);
+	    end 		
 		hold off
 	end
 

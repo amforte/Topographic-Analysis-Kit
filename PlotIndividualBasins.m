@@ -74,19 +74,25 @@ function PlotIndividualBasins(location_of_data_files,varargin)
 		set(f1,'Units','inches','Position',[1.0 1.5 10 10],'renderer','painters','PaperSize',[10 10],'PaperPositionMode','auto');
 
 		clf
-		subplot(3,1,1);
+		sbplt1=subplot(3,1,1);
 		hold on
 		title(['Basin Number: ' num2str(RiverMouth(:,3)) ' - Drainage Area: ' num2str(drainage_area)]);
 		plotdz(Sc,DEMcc,'dunit','km','color','k');
 		xlabel('Distance (km)');
 		ylabel('Elevation (m)');
+        if ~verLessThan('matlab','9.5')
+            disableDefaultInteractivity(sbplt1);
+        end 		
 		hold off
 
-		subplot(3,1,2);
+		sbplt2=subplot(3,1,2);
 		hold on
 		plotdz(Sc,DEMcc,'distance',getnal(Sc,ChiOBJc),'color','k');
 		xlabel('Chi');
 		ylabel('Elevation (m)');
+        if ~verLessThan('matlab','9.5')
+            disableDefaultInteractivity(sbplt2);
+        end 		
 		hold off
 
 		a1=subplot(3,1,3);
@@ -96,6 +102,9 @@ function PlotIndividualBasins(location_of_data_files,varargin)
 		set(a1,'XScale','log','YScale','log','XDir','reverse');	
 		xlabel('Log Area');
 		ylabel('Log Slope');
+        if ~verLessThan('matlab','9.5')
+            disableDefaultInteractivity(a1);
+        end 
 		hold off
 
 		fileName=['BasinPlot_' num2str(RiverMouth(:,3)) '.pdf'];

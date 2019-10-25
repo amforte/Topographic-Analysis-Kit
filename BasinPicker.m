@@ -163,6 +163,10 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             plot(S,'-k','LineWidth',1.5);
             scatter(Outlets(:,1),Outlets(:,2),20,'r','filled');
             title('Local Relief')
+
+            if ~verLessThan('matlab','9.5')
+                disableDefaultInteractivity(ax(2));
+            end             
             hold off
                 
             ax(1)=subplot(2,1,1);
@@ -172,7 +176,9 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             scatter(Outlets(:,1),Outlets(:,2),20,'r','filled');
             title('Elevation')
             hold off
-            
+            if ~verLessThan('matlab','9.5')
+                disableDefaultInteractivity(ax(1));
+            end             
             linkaxes(ax,'xy');
         else
 
@@ -192,6 +198,9 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             plot(S,'-k','LineWidth',1.5);
             scatter(Outlets(:,1),Outlets(:,2),20,'r','filled');
             title('User Provided Extra Grid')
+            if ~verLessThan('matlab','9.5')
+                disableDefaultInteractivity(ax(3));
+            end 
             hold off
 
             ax(2)=subplot(3,1,2);
@@ -200,6 +209,9 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             plot(S,'-k','LineWidth',1.5);
             scatter(Outlets(:,1),Outlets(:,2),20,'r','filled');
             title('Local Relief')
+            if ~verLessThan('matlab','9.5')
+                disableDefaultInteractivity(ax(2));
+            end 
             hold off
                 
             ax(1)=subplot(3,1,1);
@@ -208,6 +220,9 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             plot(S,'-k','LineWidth',1.5);
             scatter(Outlets(:,1),Outlets(:,2),20,'r','filled');
             title('Elevation')
+            if ~verLessThan('matlab','9.5')
+                disableDefaultInteractivity(ax(1));
+            end 
             hold off
             
             linkaxes(ax,'xy');
@@ -247,6 +262,9 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             plot(Sr,'-k','LineWidth',1.5);
             scatter(Outlets(:,1),Outlets(:,2),20,'r','filled');
             title('Local Relief')
+            if ~verLessThan('matlab','9.5')
+                disableDefaultInteractivity(ax(2));
+            end 
             hold off
                 
             ax(1)=subplot(2,1,1);
@@ -255,6 +273,9 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             plot(Sr,'-k','LineWidth',1.5);
             scatter(Outlets(:,1),Outlets(:,2),20,'r','filled');
             title('Elevation')
+            if ~verLessThan('matlab','9.5')
+                disableDefaultInteractivity(ax(1));
+            end 
             hold off
             
             linkaxes(ax,'xy');
@@ -273,6 +294,9 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             plot(Sr,'-k','LineWidth',1.5);
             scatter(Outlets(:,1),Outlets(:,2),20,'r','filled');
             title('User Provided Extra Grid')
+            if ~verLessThan('matlab','9.5')
+                disableDefaultInteractivity(ax(3));
+            end 
             hold off
 
             ax(2)=subplot(3,1,2);
@@ -281,6 +305,9 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             plot(Sr,'-k','LineWidth',1.5);
             scatter(Outlets(:,1),Outlets(:,2),20,'r','filled');
             title('Local Relief')
+            if ~verLessThan('matlab','9.5')
+                disableDefaultInteractivity(ax(2));
+            end 
             hold off
                 
             ax(1)=subplot(3,1,1);
@@ -289,6 +316,9 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             plot(Sr,'-k','LineWidth',1.5);
             scatter(Outlets(:,1),Outlets(:,2),20,'r','filled');
             title('Elevation')
+            if ~verLessThan('matlab','9.5')
+                disableDefaultInteractivity(ax(1));
+            end 
             hold off
             
             linkaxes(ax,'xy');
@@ -363,6 +393,9 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
                 imagesc(DEMc)
                 plot(Sn,'-r','LineWidth',2);
                 scatter(xn,yn,20,'w','filled');
+                if ~verLessThan('matlab','9.5')
+                    disableDefaultInteractivity(gca);
+                end 
                 hold off
 
                 if isempty(EG)
@@ -428,7 +461,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             f2=figure(2);
             clf
             set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
-            subplot(2,1,1);
+            sbplt1=subplot(2,1,1);
             hold on
             plot(C.chi,C.elev);
             xlabel('\chi')
@@ -438,14 +471,22 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
             else
                 title(['\chi - Z : Mean k_{sn} = ' num2str(round(mksn)) ' : Mean Relief = ' num2str(round(mrlf)) ' : Mean Extra Grid = ' num2str(round(meg)) ' : Drainage Area = ' num2str(round(drainage_area)) 'km^2'])
             end
+
+            if ~verLessThan('matlab','9.5')
+                disableDefaultInteractivity(sbplt1);
+            end 
             hold off
 
-            subplot(2,1,2);
+            sbplt2=subplot(2,1,2);
             hold on
             plotdz(Sn,DEMf,'dunit','km','Color','k');
             xlabel('Distance from Mouth (km)')
             ylabel('Elevation (m)')
             title('Long Profile')
+
+            if ~verLessThan('matlab','9.5')
+                disableDefaultInteractivity(sbplt2);
+            end 
             hold off
 
             qa2=questdlg('Keep this basin?','Basin Selection','No','Yes','Yes');       
@@ -569,6 +610,10 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
                     scatter(pnt(1),pnt(2),20,'r','filled');
                     xlim([pnt(1)-ws/2 pnt(1)+ws/2]);
                     ylim([pnt(2)-ws/2 pnt(2)+ws/2]);
+
+                    if ~verLessThan('matlab','9.5')
+                        disableDefaultInteractivity(gca);
+                    end 
                     hold off
 
                     [x,y]=ginput(1);
@@ -606,6 +651,10 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
                     imagesc(DEMc)
                     plot(Sn,'-r','LineWidth',2);
                     scatter(xn,yn,20,'w','filled');
+
+                    if ~verLessThan('matlab','9.5')
+                        disableDefaultInteractivity(gca);
+                    end 
                     hold off
 
                     if isempty(EG)
@@ -672,7 +721,7 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
                 f2=figure(2);
                 clf
                 set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
-                subplot(2,1,1);
+                sbplt1=subplot(2,1,1);
                 hold on
                 plot(C.chi,C.elev);
                 xlabel('\chi')
@@ -682,14 +731,21 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
                 else
                     title(['\chi - Z : Mean k_{sn} = ' num2str(round(mksn)) ' : Mean Relief = ' num2str(round(mrlf)) ' : Mean Extra Grid = ' num2str(round(meg)) ' : Drainage Area = ' num2str(round(drainage_area)) 'km^2'])
                 end
+
+                if ~verLessThan('matlab','9.5')
+                    disableDefaultInteractivity(sbplt1);
+                end 
                 hold off
 
-                subplot(2,1,2);
+                sbplt2=subplot(2,1,2);
                 hold on
                 plotdz(Sn,DEMf,'dunit','km','Color','k');
                 xlabel('Distance from Mouth (km)')
                 ylabel('Elevation (m)')
                 title('Long Profile')
+                if ~verLessThan('matlab','9.5')
+                    disableDefaultInteractivity(sbplt2);
+                end 
                 hold off
 
                 qa2=questdlg('Keep this basin?','Basin Selection','No','Yes','Yes');       

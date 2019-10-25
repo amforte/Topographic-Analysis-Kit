@@ -138,7 +138,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
 
 			clf
-			subplot(3,1,3);
+			ax3=subplot(3,1,3);
 			hold on
 			pl1=plotdz(S,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
 			pl2=plotdz(S,DEMc,'dunit','km','Color','k');
@@ -146,6 +146,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 			ylabel('Elevation (m)')
 			legend([pl1 pl2],'Unconditioned DEM','Conditioned DEM','location','best');
 			title('Long Profile')
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax3);
+		    end				
 			hold off
 
 			ax2=subplot(3,1,2);
@@ -154,6 +157,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 			xlabel('Chi')
 			ylabel('Auto k_{sn}');
 			title('Chi - Auto k_{sn}');
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax2);
+		    end				
 			hold off
 
 			ax1=subplot(3,1,1);
@@ -165,6 +171,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 			title(['\chi - Z : \theta = ' num2str(C.mn) ' : Select bounds of stream segment you want to project'],'Color','r')
 			ax1.XColor='Red';
 			ax1.YColor='Red';
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax1);
+		    end				
 			hold off
 
 			linkaxes([ax1,ax2],'x');
@@ -240,20 +249,26 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 
 			f2=figure(2);
 			set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
-			subplot(2,1,1)
+			sbplt1=subplot(2,1,1);
 			hold on
 			plot([0,max(C.chi)],[0,0],'--k');
 			scatter(C.chi,pred_el-C.elev,10,'k')
 			xlabel('\chi');
 			ylabel('Difference between projection and true profile (m)')
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(sbplt1);
+		    end				
 			hold off
 
-			subplot(2,1,2)
+			sbplt2=subplot(2,1,2);
 			hold on
 			plot([0,max(C.distance)/1000],[0,0],'--k');
 			scatter(C.distance./1000,pred_el-C.elev,10,'k')
 			xlabel('Distance (km)');
 			ylabel('Difference between projection and true profile (m)')
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(sbplt2);
+		    end				
 			hold off
 
 			[chx,chy]=ind2coord(DEM,chix(ii));
@@ -295,7 +310,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
 
 			clf
-			subplot(3,1,3);
+			ax3=subplot(3,1,3);
 			hold on
 			pl1=plotdz(S,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
 			pl2=plotdz(S,DEMc,'dunit','km','Color','k');
@@ -303,6 +318,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 			ylabel('Elevation (m)')
 			legend([pl1 pl2],'Unconditioned DEM','Conditioned DEM','location','best');
 			title('Long Profile')
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax3);
+		    end				
 			hold off
 
 			ax2=subplot(3,1,2);
@@ -311,6 +329,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 			xlabel('\chi')
 			ylabel('Auto k_{sn}');
 			title('\chi - Auto k_{sn}');
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax2);
+		    end				
 			hold off
 
 			ax1=subplot(3,1,1);
@@ -320,6 +341,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 			xlabel('\chi','Color','r')
 			ylabel('Elevation (m)','Color','r')
 			title(['\chi - Z : \theta = ' num2str(C.mn) ' : Select bounds of stream segment you want to project'],'Color','r')
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax1);
+		    end				
 			hold off
 
 			linkaxes([ax1,ax2],'x');
@@ -397,20 +421,26 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 
 				f2=figure(2);
 				set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
-				subplot(2,1,1)
+				sbplt1=subplot(2,1,1);
 				hold on
 				plot([0,max(C.chi)],[0,0],'--k');
 				scatter(C.chi,pred_el-C.elev,10,'k')
 				xlabel('\chi');
 				ylabel('Difference between projection and true profile (m)')
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(sbplt1);
+			    end					
 				hold off
 
-				subplot(2,1,2)
+				sbplt2=subplot(2,1,2);
 				hold on
 				plot([0,max(C.distance)/1000],[0,0],'--k');
 				scatter(C.distance./1000,pred_el-C.elev,10,'k')
 				xlabel('Distance (km)');
 				ylabel('Difference between projection and true profile (m)')
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(sbplt2);
+			    end					
 				hold off
 
 				[chx,chy]=ind2coord(DEM,chix(ii));
@@ -529,6 +559,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 				xlabel('\chi')
 				ylabel('Elevation (m)')
 				title(['\chi - Z : \theta = ' num2str(CN.mn)],'Color','r')
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(ax1);
+			    end	
 				hold off
 
 				ax2=subplot(3,1,2);
@@ -537,9 +570,12 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 				xlabel('Chi')
 				ylabel('Auto k_{sn}');
 				title('Chi - Auto k_{sn}');
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(ax2);
+			    end					
 				hold off
 
-				subplot(3,1,3)
+				ax3=subplot(3,1,3);
 				hold on
 				pl1=plotdz(S,DEM,'dunit','km','Color',[0.5 0.5 0.5]);
 				pl2=plotdz(S,DEMc,'dunit','km','Color','k');
@@ -550,26 +586,35 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 				ylabel('Elevation (m)')
 				legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Projected Stream','Uncertainty','location','best');
 				title('Long Profile')
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(ax3);
+			    end					
 				hold off	
 
 				linkaxes([ax1,ax2],'x');
 
 				f2=figure(2);
 				set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
-				subplot(2,1,1)
+				sbplt1=subplot(2,1,1);
 				hold on
 				plot([0,max(CN.chi)],[0,0],'--k');
 				scatter(CN.chi,pred_el-CN.elev,10,'k')
 				xlabel('\chi');
 				ylabel('Difference between projection and true profile (m)')
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(sbplt1);
+			    end	
 				hold off
 
-				subplot(2,1,2)
+				sbplt2=subplot(2,1,2);
 				hold on
 				plot([0,max(CN.distance)/1000],[0,0],'--k');
 				scatter(CN.distance./1000,pred_el-CN.elev,10,'k')
 				xlabel('Distance (km)');
 				ylabel('Difference between projection and true profile (m)')
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(sbplt2);
+			    end	
 				hold off
 
 				[chx,chy]=ind2coord(DEM,chix(ii));
@@ -615,13 +660,16 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 
 			clf
 
-			subplot(3,1,1);
+			ax3=subplot(3,1,1);
 			hold on
 			plot(C.chi,C.elev,'-k');
 			scatter(C.chi,C.elev,10,'k');
 			xlabel('\chi')
 			ylabel('Elevation (m)')
 			title('\chi - Z')
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax3);
+		    end				
 			hold off
 
 			ax2=subplot(3,1,2);
@@ -630,6 +678,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 			xlabel('Distance (km)')
 			ylabel('Auto k_{sn}');
 			title('\chi - Auto k_{sn}');
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax2);
+		    end				
 			hold off
 
 			ax1=subplot(3,1,3);
@@ -642,6 +693,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 			title(['Long Profile : \theta = ' num2str(C.mn) ' : Select bounds of stream segment you want to project'],'Color','r')
 			ax1.XColor='Red';
 			ax1.YColor='Red';
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax1);
+		    end				
 			hold off
 
 			linkaxes([ax1,ax2],'x');
@@ -718,20 +772,26 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 
 			f2=figure(2);
 			set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
-			subplot(2,1,1)
+			sbplt1=subplot(2,1,1);
 			hold on
 			plot([0,max(C.chi)],[0,0],'--k');
 			scatter(C.chi,pred_el-C.elev,10,'k')
 			xlabel('\chi');
 			ylabel('Difference between projection and true profile (m)')
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(sbplt1);
+		    end				
 			hold off
 
-			subplot(2,1,2)
+			sbplt2=subplot(2,1,2);
 			hold on
 			plot([0,max(C.distance)/1000],[0,0],'--k');
 			scatter(C.distance./1000,pred_el-C.elev,10,'k')
 			xlabel('Distance (km)');
 			ylabel('Difference between projection and true profile (m)')
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(sbplt2);
+		    end				
 			hold off
 
 			[chx,chy]=ind2coord(DEM,chix(ii));
@@ -774,13 +834,16 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 
 			clf
 
-			subplot(3,1,1);
+			ax3=subplot(3,1,1);
 			hold on
 			plot(C.chi,C.elev,'-k');
 			scatter(C.chi,C.elev,10,'k');
 			xlabel('\chi')
 			ylabel('Elevation (m)')
 			title('\chi - Z')
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax3);
+		    end				
 			hold off
 
 			ax2=subplot(3,1,2);
@@ -789,6 +852,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 			xlabel('Distance (km)')
 			ylabel('Auto k_{sn}');
 			title('\chi - Auto k_{sn}');
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax2);
+		    end				
 			hold off
 
 			ax1=subplot(3,1,3);
@@ -799,6 +865,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 			ylabel('Elevation (m)','Color','r')
 			legend([pl1 pl2],'Unconditioned DEM','Conditioned DEM','location','best');
 			title(['Long Profile : \theta = ' num2str(C.mn) ' : Select bounds of stream segment you want to project'],'Color','r')
+			if ~verLessThan('matlab','9.5')
+		        disableDefaultInteractivity(ax1);
+		    end				
 			hold off
 
 			linkaxes([ax1,ax2],'x');
@@ -878,20 +947,26 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 
 				f2=figure(2);
 				set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
-				subplot(2,1,1)
+				sbplt1=subplot(2,1,1);
 				hold on
 				plot([0,max(C.chi)],[0,0],'--k');
 				scatter(C.chi,pred_el-C.elev,10,'k')
 				xlabel('\chi');
 				ylabel('Difference between projection and true profile (m)')
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(sbplt1);
+			    end					
 				hold off
 
-				subplot(2,1,2)
+				sbplt2=subplot(2,1,2);
 				hold on
 				plot([0,max(C.distance)/1000],[0,0],'--k');
 				scatter(C.distance./1000,pred_el-C.elev,10,'k')
 				xlabel('Distance (km)');
 				ylabel('Difference between projection and true profile (m)')
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(sbplt2);
+			    end					
 				hold off
 
 				[chx,chy]=ind2coord(DEM,chix(ii));
@@ -997,7 +1072,7 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 				clf; cla;
 				set(f1,'Units','normalized','Position',[0.05 0.1 0.45 0.8],'renderer','painters');
 
-				subplot(3,1,1);
+				ax3=subplot(3,1,1);
 				hold on
 				plot(CN.chi,CN.elev,'-k');
 				scatter(CN.chi,CN.elev,10,'k');
@@ -1007,6 +1082,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 				xlabel('\chi')
 				ylabel('Elevation (m)')
 				title('\chi - Z')
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(ax3);
+			    end					
 				hold off
 
 				ax2=subplot(3,1,2);
@@ -1015,6 +1093,9 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 				xlabel('Distance (km)')
 				ylabel('Auto k_{sn}');
 				title('Chi - Auto k_{sn}');
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(ax2);
+			    end					
 				hold off
 
 				ax1=subplot(3,1,3);
@@ -1028,26 +1109,35 @@ function [OUT]=SegmentProjector(DEM,FD,A,S,basin_num,varargin);
 				ylabel('Elevation (m)')
 				legend([pl1 pl2 pl3 pl4],'Unconditioned DEM','Conditioned DEM','Projected Stream','Uncertainty','location','best');
 				title(['Long Profile : \theta = ' num2str(CN.mn)],'Color','r')
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(ax1);
+			    end					
 				hold off	
 
 				linkaxes([ax1,ax2],'x');
 
 				f2=figure(2);
 				set(f2,'Units','normalized','Position',[0.5 0.1 0.45 0.8],'renderer','painters');
-				subplot(2,1,1)
+				sbplt1=subplot(2,1,1);
 				hold on
 				plot([0,max(CN.chi)],[0,0],'--k');
 				scatter(CN.chi,pred_el-CN.elev,10,'k')
 				xlabel('\chi');
 				ylabel('Difference between projection and true profile (m)')
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(sbplt1);
+			    end					
 				hold off
 
-				subplot(2,1,2)
+				sbplt2=subplot(2,1,2);
 				hold on
 				plot([0,max(CN.distance)/1000],[0,0],'--k');
 				scatter(CN.distance./1000,pred_el-CN.elev,10,'k')
 				xlabel('Distance (km)');
 				ylabel('Difference between projection and true profile (m)')
+				if ~verLessThan('matlab','9.5')
+			        disableDefaultInteractivity(sbplt2);
+			    end					
 				hold off
 
 				[chx,chy]=ind2coord(DEM,chix(ii));

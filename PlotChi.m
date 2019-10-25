@@ -75,6 +75,9 @@ function PlotChi(DEM,S,chi,chi_type,varargin)
 		else
 			imageschs(DEM,chi,'colormap','jet','caxis',chi_lim);
 		end
+        if ~verLessThan('matlab','9.5')
+            disableDefaultInteractivity(gca);
+        end 
 		hold off
 	case 'chimap'
 		nal=getnal(S,chi);
@@ -97,6 +100,10 @@ function PlotChi(DEM,S,chi,chi_type,varargin)
 		end
 		c1=colorbar;
 		ylabel(c1,'\chi');
+
+        if ~verLessThan('matlab','9.5')
+            disableDefaultInteractivity(gca);
+        end 
 		hold off
 		set(f1,'Visible','on','Units','normalized','Position',[0.05 0.1 0.8 0.8],'renderer','painters');
 	end

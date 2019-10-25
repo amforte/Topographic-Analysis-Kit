@@ -331,7 +331,7 @@ function [f]=PlotFunc(DEMc,FD,S,A,segment_length,theta,thresh_ratio)
 		clf 
 		set(f,'Units','normalized','Position',[0.5 0.1 0.5 0.8],'renderer','painters');	
 
-		subplot(3,1,1)
+		sbplt1=subplot(3,1,1);
 		hold on 
 		xlim([0 max(S.distance)]);
 		p1=scatter(davT,kavT,10,'k','filled');
@@ -347,9 +347,13 @@ function [f]=PlotFunc(DEMc,FD,S,A,segment_length,theta,thresh_ratio)
 		ylabel('Binned k_{sn}');
 		title(['Threshold Ratio = ' num2str(thresh_ratio) '; Refercence Concavity = ' num2str(theta) '; Segment Length = ' num2str(segment_length) ' m']);
 		legend([p1 p2 p3],{'Binned Values','Auto Fit','Uncertainty'},'location','best');
+
+		if ~verLessThan('matlab','9.5')
+			disableDefaultInteractivity(sbplt1);
+		end
 		hold off
 
-		subplot(3,1,2)
+		sbplt2=subplot(3,1,2);
 		hold on
 		xlim([0 max(S.distance)]);
 		p1=scatter(S.distance,zp,5,'r');
@@ -360,9 +364,12 @@ function [f]=PlotFunc(DEMc,FD,S,A,segment_length,theta,thresh_ratio)
 		xlabel('River Distance (m)');
 		ylabel('Elevation (m)');
 		legend([p1 p2],{'Predicted Elevation','Conditioned Elevation'},'location','best');
+		if ~verLessThan('matlab','9.5')
+			disableDefaultInteractivity(sbplt2);
+		end		
 		hold off
 
-		subplot(3,1,3)
+		sbplt3=subplot(3,1,3);
 		hold on
 		xlim([0 max(S.distance)]);
 		plot(S.distance,zeros(size(S.distance)),'-k');
@@ -374,6 +381,9 @@ function [f]=PlotFunc(DEMc,FD,S,A,segment_length,theta,thresh_ratio)
 		ylabel('Residual (m)');
 		title(['Mean (ABS) Residual = ' num2str(mean(abs(resT))) ' m']);
 		legend(p1,{'Predicted - Conditioned'},'location','best');
+		if ~verLessThan('matlab','9.5')
+			disableDefaultInteractivity(sbplt2);
+		end			
 		hold off
 
 		drawnow

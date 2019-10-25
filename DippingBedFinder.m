@@ -35,6 +35,9 @@ function [BED]=DippingBedFinder(DEM,xy,hght_abv_base,thickness,strike,dip);
         set(f1,'Units','normalized','Position',[0.1 0.1 0.8 0.8],'renderer','painters');
         imageschs(DEM,DEM);
         [x_coord,y_coord]=ginput(1);
+        if ~verLessThan('matlab','9.5')
+            disableDefaultInteractivity(gca);
+        end 
         close(f1)
     else
         x_coord=xy(1);
@@ -106,6 +109,9 @@ function [BED]=DippingBedFinder(DEM,xy,hght_abv_base,thickness,strike,dip);
     imageschs(DEM,BED,'colormap','parula','colorbar',false);
     scatter(x_coord,y_coord,20,'w','filled');
     title('Projected Intersection of Bed');
+    if ~verLessThan('matlab','9.5')
+        disableDefaultInteractivity(gca);
+    end     
     hold off
 
 end

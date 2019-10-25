@@ -87,6 +87,10 @@ function PlotKsn(DEM,FD,ksn,varargin)
 		else
 			imageschs(DEM,ksn,'colormap','ksncolor','caxis',ksn_lim);
 		end
+
+        if ~verLessThan('matlab','9.5')
+            disableDefaultInteractivity(gca);
+        end 
 		hold off
 	else	
 		num_seg=numel(ksn);
@@ -155,7 +159,9 @@ function PlotKsn(DEM,FD,ksn,varargin)
 				scatter(knks(:,1),knks(:,2),100,'w','p','filled','MarkerEdgeColor','k');
 			end
 		end
-
+        if ~verLessThan('matlab','9.5')
+            disableDefaultInteractivity(gca);
+        end 
 		hold off
 		set(f1,'Visible','on','Units','normalized','Position',[0.05 0.1 0.8 0.8],'renderer','painters');
 	end
