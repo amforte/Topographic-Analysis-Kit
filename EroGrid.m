@@ -108,7 +108,6 @@ function [ERO,varargout]=EroGrid(DEM,KSN,rel_type,varargin)
 	addRequired(p,'DEM',@(x) isa(x,'GRIDobj'));
 	addRequired(p,'KSN',@(x) isa(x,'GRIDobj') | isstruct(x));
 	addRequired(p,'rel_type',@(x) ischar(validatestring(x,{'power','stochastic_threshold'})));
-	
 
 	addParameter(p,'C',[],@(x) isnumeric(x));
 	addParameter(p,'phi',[],@(x) isnumeric(x));
@@ -125,10 +124,10 @@ function [ERO,varargout]=EroGrid(DEM,KSN,rel_type,varargin)
 	addParameter(p,'a',1.5,@(x) isnumeric(x) && isscalar(x));
 	addParameter(p,'radius',5000,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'KSNstd',false,@(x) isa(x,'GRIDobj') | islogical(x));
-	addParameter(p,'C_std',[],@(x) isnumeric(x));
-	addParameter(p,'phi_std',[],@(x) isnumeric(x));
-	addParameter(p,'VAL',[],@(x) isa(x,'GRIDobj'));
-	addParameter(p,'edges',[],@(x) isnumeric(x));
+	addParameter(p,'C_std',[],@(x) isnumeric(x) || isempty(x));
+	addParameter(p,'phi_std',[],@(x) isnumeric(x)|| isempty(x));
+	addParameter(p,'VAL',[],@(x) isa(x,'GRIDobj') || isempty(x));
+	addParameter(p,'edges',[],@(x) isnumeric(x) || isempty(x));
 	addParameter(p,'resample_method','nearest',@(x) ischar(validatestring(x,{'nearest','bilinear','bicubic'})));
 	addParameter(p,'error_type','std',@(x) ischar(validatestring(x,{'std','std_error'})));
 	addParameter(p,'plot_result',false,@(x) islogical(x) && isscalar(x));
