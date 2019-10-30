@@ -143,6 +143,11 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 	% Determine whats been given in terms of basin directory
 	[fp,~,~]=fileparts(basin_dir);
 
+	% Deal with input values of radius
+	if radius<=0
+		radius=[];
+	end
+
 	% Navigate into dir
 	if isempty(out_dir) && isempty(fp)
 		current=pwd;
