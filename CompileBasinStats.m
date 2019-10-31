@@ -149,7 +149,7 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 		error('For "include" or "exclude" filters, entries must be provided for both "cat_grid" and "cat_values"');
 	elseif fbc && strcmp(ft,'mode') && isempty(cgn)
 		if isdeployed
-			errordlg('For "mode" filter, entry must be provided for "cat_grid"'))
+			errordlg('For "mode" filter, entry must be provided for "cat_grid"')
 		end
 		error('For "mode" filter, entry must be provided for "cat_grid"');
 	end

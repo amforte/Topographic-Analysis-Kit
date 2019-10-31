@@ -892,7 +892,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 
 			if ~isdir(data)
 				if isdeployed
-					errordlg('For "basin_knicks" you must provide a valid directory to "data" that contains "Knicks_*.mat" files'))
+					errordlg('For "basin_knicks" you must provide a valid directory to "data" that contains "Knicks_*.mat" files')
 				end
 				error('For "basin_knicks" you must provide a valid directory to "data" that contains "Knicks_*.mat" files')
 			end
