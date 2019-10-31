@@ -44,7 +44,7 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 	addRequired(p,'points',@(x) isempty(x) || isnumeric(x) & size(x,1)>=2 && size(x,2)==2);
 	addRequired(p,'width',@(x) isscalar(x) && isnumeric(x));
 
-	addParameter(p,'sample',[],@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'sample',[],@(x) isscalar(x) && isnumeric(x) || isempty(x));
 	addParameter(p,'smooth',0,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'vex',10,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'plot_figure',false,@(x) isscalar(x) && islogical(x));
@@ -52,6 +52,7 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 	addParameter(p,'plot_as_heatmap',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'save_figure',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'make_shape',true,@(x) islogical(x)); % Hidden parameter to fix problems with generating shapefiles here for compiled version
+	addParameter(p,'out_dir',[],@(x) isdir(x));
 
 	parse(p,DEM,points,width,varargin{:});
 	DEM=p.Results.DEM;
@@ -66,9 +67,14 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 	plot_as_heatmap=p.Results.plot_as_heatmap;
 	save_figure=p.Results.save_figure;
 	make_shape=p.Results.make_shape;
+	out_dir=p.Results.out_dir;
 
 	if isempty(sample)
 		sample=DEM.cellsize;
+	end
+
+	if isempty(out_dir)
+		out_dir=pwd;
 	end
 
 	if plot_as_points & plot_as_heatmap
@@ -197,9 +203,9 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 	if save_figure
 		orient(f1,'Landscape')
 		if plot_as_points
-			print(f1,'-dtiff','Swath.tif');
+			print(f1,'-dtiff',fullfile(out_dir,'Swath.tif'));
 		else
-			print(f1,'-dpdf','-bestfit','Swath.pdf');
+			print(f1,'-dpdf','-bestfit',fullfile(out_dir,'Swath.pdf'));
 		end
 	end
 
@@ -219,7 +225,7 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 			ms(2,1).Type='TopoWdth';
 		end
 
-		shapewrite(ms,'SwathBounds.shp');
+		shapewrite(ms,fullfile(out_dir,'SwathBounds.shp'));
 	end
 
 end

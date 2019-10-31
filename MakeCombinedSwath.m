@@ -48,8 +48,8 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	% Optional Inputs:
 	%	small_circ_center [] - option to provide a 1 x 2 array that contains the x and y coordinate of a small circle center to use
 	%				to project data onto the swath, using the function 'ProjectSmallCircleOntoSwath'.
-	%	dist_type ['mapunits'] - option to control how the 'data_width' is interepreted. Options are 'mapunits' or 'angle' with the
-	%				default being 'mapunits'. The 'angle' option is only valid if an entry is provided to 'small_circ_center' to initiate
+	%	dist_type ['mapdist'] - option to control how the 'data_width' is interepreted. Options are 'mapdist' or 'angle' with the
+	%				default being 'mapdist'. The 'angle' option is only valid if an entry is provided to 'small_circ_center' to initiate
 	%				projection along small circles. 
 	% 	sample [] - resampling distance along topographic swath in map units, if no input is provided, code will use the cellsize 
 	%				of the DEM which results in no resampling.
@@ -108,6 +108,8 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	addParameter(p,'plot_map',true,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'cmap','parula',@(x) ischar(x) || isnumeric(x) & size(x,2)==3);
 	addParameter(p,'save_figure',false,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'out_dir',[],@(x) isdir(x));
+	addParameter(p,'sw_num',[],@(x) isscalar(x) && isnumeric(x)); % Control if running in a loop
 
 
 	parse(p,DEM,points,width,data_type,data,data_width,varargin{:});
@@ -129,9 +131,23 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 	plot_map=p.Results.plot_map;
 	cmap=p.Results.cmap;
 	save_figure=p.Results.save_figure;
+	out_dir=p.Results.out_dir;
+	sw_num=p.Results.sw_num;
 
 	if isempty(sample)
 		sample=DEM.cellsize;
+	end
+
+	if isempty(out_dir)
+		out_dir=pwd;
+	end
+
+	if isempty(sw_num)
+		fo=1;
+		fe=2;
+	else
+		fo=(sw_num*2)-1;
+		fe=sw_num*2;
 	end
 
 	if isempty(small_circ_center)
@@ -192,7 +208,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			end
 
 			% Plot Swath
-			f1=figure(1);
+			f1=figure(fo);
 			clf 
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
@@ -246,7 +262,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			end			
 
 			% Plot Swath
-			f1=figure(1);
+			f1=figure(fo);
 			clf 
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
@@ -304,7 +320,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			end
 
 			% Plot Swath
-			f1=figure(1);
+			f1=figure(fo);
 			clf 
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
@@ -372,7 +388,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			end				
 
 			% Plot Swath
-			f1=figure(1);
+			f1=figure(fo);
 			clf 
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
@@ -453,7 +469,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			end
 
 			% Plot Swath
-			f1=figure(1);
+			f1=figure(fo);
 			clf 
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
@@ -519,7 +535,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			end
 
 			% Plot Swath
-			f1=figure(1);
+			f1=figure(fo);
 			clf 
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
@@ -573,7 +589,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			end			
 
 			% Plot Swath
-			f1=figure(1);
+			f1=figure(fo);
 			clf 
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
@@ -686,7 +702,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 
 
 			% Plot Swath
-			f1=figure(1);
+			f1=figure(fo);
 			clf 
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
@@ -772,7 +788,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			end			
 
 			% Plot Swath
-			f1=figure(1);
+			f1=figure(fo);
 			clf 
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
@@ -831,7 +847,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			end				
 
 			% Plot Swath
-			f1=figure(1);
+			f1=figure(fo);
 			clf 
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
@@ -913,7 +929,7 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			end				
 
 			% Plot Swath
-			f1=figure(1);
+			f1=figure(fo);
 			clf 
 			set(f1,'Units','normalized','Position',[0.05 0.1 0.8 0.4],'renderer','painters');
 
@@ -961,10 +977,10 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 		ms(3,1).Type='DataWdth';
 	end
 
-	shapewrite(ms,'SwathBounds.shp');
+	shapewrite(ms,fullfile(out_dir,'SwathBounds.shp'));
 
 	if plot_map
-		f2=figure(2);
+		f2=figure(fe);
 		set(f2,'Units','normalized','Position',[0.05 0.1 0.6 0.6]);
 		hold on
 		imageschs(DEM,DEM,'colormap','gray');
@@ -984,9 +1000,12 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 		hold off
 	end
 
-	if save_figure
+	if save_figure && isempty(sw_num)
 		orient(f1,'Landscape')
-		print(f1,'-dpdf','-bestfit',[fnp '_Swath.pdf']);
+		print(f1,'-dpdf','-bestfit',fullfile(out_dir,[fnp '_Swath.pdf']));
+	elseif save_figure && ~isempty(sw_num)
+		orient(f1,'Landscape')
+		print(f1,'-dpdf','-bestfit',fullfile(out_dir,[fnp '_Swath_' num2str(sw_num) '.pdf']));
 	end
 
 end

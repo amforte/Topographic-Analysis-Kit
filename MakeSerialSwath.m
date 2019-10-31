@@ -82,11 +82,12 @@ function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin
 	addParameter(p,'div_type','number',@(x) ischar(validatestring(x,{'number','width'})));
 	addParameter(p,'alignment','center',@(x) ischar(validatestring(x,{'center','right','left','between'})));
 	addParameter(p,'add_grids',[],@(x) isa(x,'cell') && size(x,2)==2 || isempty(x));
-	addParameter(p,'sample',[]],@(x) isscalar(x) && isnumeric(x) || isempty(x));
+	addParameter(p,'sample',[],@(x) isscalar(x) && isnumeric(x) || isempty(x));
 	addParameter(p,'smooth',0,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'plot_map',true,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'plot_individual',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'make_shape',true,@(x) islogical(x)); % Hidden parameter to fix problems with generating shapefiles here for compiled version
+	addParameter(p,'out_dir',[],@(x) isdir(x));
 
 	parse(p,DEM,points,divisions,sw_length,varargin{:});
 	DEM=p.Results.DEM;
@@ -103,10 +104,15 @@ function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin
 	plot_map=p.Results.plot_map;
 	plot_individual=p.Results.plot_individual;
 	make_shape=p.Results.make_shape;
+	out_dir=p.Results.out_dir;
 
 	if isempty(sample)
 		sample=DEM.cellsize;
 	end
+
+	if isempty(out_dir)
+		out_dir=pwd;
+	end	
 
 	if ~isempty(points) & strcmp(alignment,'between') & isempty(points2)
 		error('If "alignment" is set to "between" then an entry must be provided for "points2"')
@@ -496,13 +502,13 @@ function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin
 
 			sbplt3=subplot(3,1,3);
 			hold on
-			plt(1)=plot(PLOTcell{1,1}(:,1),mean(mean_comp,2),'LineWidth',2,'Color','k');
-			plt(2)=plot(PLOTcell{1,1}(:,1),max(mean_comp,[],2),'LineWidth',0.5,'Color','k');
-			plot(PLOTcell{1,1}(:,1),min(mean_comp,[],2),'LineWidth',0.5,'Color','k');
-			plt(3)=plot(PLOTcell{1,1}(:,1),mean(mean_comp,2)+std(mean_comp,0,2),'--','LineWidth',0.5,'Color','k');
-			plot(PLOTcell{1,1}(:,1),mean(mean_comp,2)-std(mean_comp,0,2),'--','LineWidth',0.5,'Color','k');
-			plt(4)=plot(PLOTcell{1,1}(:,1),max(max_comp,[],2),':','LineWidth',0.5,'Color','k');
-			plot(PLOTcell{1,1}(:,1),min(min_comp,[],2),':','LineWidth',0.5,'Color','k');
+			plt(1)=plot(PLOTcell{1,1}(1:mnd,1),mean(mean_comp,2),'LineWidth',2,'Color','k');
+			plt(2)=plot(PLOTcell{1,1}(1:mnd,1),max(mean_comp,[],2),'LineWidth',0.5,'Color','k');
+			plot(PLOTcell{1,1}(1:mnd,1),min(mean_comp,[],2),'LineWidth',0.5,'Color','k');
+			plt(3)=plot(PLOTcell{1,1}(1:mnd,1),mean(mean_comp,2)+std(mean_comp,0,2),'--','LineWidth',0.5,'Color','k');
+			plot(PLOTcell{1,1}(1:mnd,1),mean(mean_comp,2)-std(mean_comp,0,2),'--','LineWidth',0.5,'Color','k');
+			plt(4)=plot(PLOTcell{1,1}(1:mnd,1),max(max_comp,[],2),':','LineWidth',0.5,'Color','k');
+			plot(PLOTcell{1,1}(1:mnd,1),min(min_comp,[],2),':','LineWidth',0.5,'Color','k');
 			title('Mean Topography Along Swath')
 			legend(plt,{'Mean of Mean','Min and Max of Mean','Std of Mean','All Extremes'},'location','best');
 			xlabel('Distance Along Swaths (m)');
@@ -657,7 +663,7 @@ function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin
 				end
 			end
 		end
-		shapewrite(ms,'SerialSwathBounds.shp');
+		shapewrite(ms,fullfile(out_dir,'SerialSwathBounds.shp'));
 	end
 
 end
