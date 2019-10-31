@@ -78,6 +78,7 @@ function [links]=JunctionLinks(FD,S,IX,junctions,varargin)
 
 	addParameter(p,'make_shape',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'par',true,@(x) isscalar(x) && islogical(x));
+	addParameter(p,'out_dir',[],@(x) isdir(x));
 
 	parse(p,FD,S,IX,junctions,varargin{:});
 	FD=p.Results.FD;
@@ -87,6 +88,13 @@ function [links]=JunctionLinks(FD,S,IX,junctions,varargin)
 
 	make_shape=p.Results.make_shape;
 	par=p.Results.par;
+	out_dir=p.Results.out_dir;
+
+	if make_shape
+		if isempty(out_dir)
+			out_dir=pwd;
+		end
+	end
 
 	% Determine type of J input
 	if istable(JIN)
@@ -267,7 +275,7 @@ function [links]=JunctionLinks(FD,S,IX,junctions,varargin)
 		if make_shape
 			ms=makelinkshape(S,links,par);
 			disp('Writing shapefile');
-			shapewrite(ms,'junction_links.shp');
+			shapewrite(ms,fullfile(out_dir,'junction_links.shp'));
 		end
 
 	else
@@ -459,7 +467,7 @@ function [links]=JunctionLinks(FD,S,IX,junctions,varargin)
 
 			if make_shape
 				ms=makelinkshape(S,l,par);
-				shp_name=['junction_links_' num2str(jj) '.shp'];
+				shp_name=fullfile(out_dir,['junction_links_' num2str(jj) '.shp']);
 				disp('Writing shapefile');
 				shapewrite(ms,shp_name);
 			end
