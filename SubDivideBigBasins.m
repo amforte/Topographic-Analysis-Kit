@@ -103,7 +103,8 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 	end
 
 
-	if strcmp(divide_method,'p_filtered_confluences') | strcmp(divide_method,'p_filtered_trunk') & min_basin_size>100 | min_basin_size<=0
+	if strcmp(divide_method,'p_filtered_confluences') | strcmp(divide_method,'p_filtered_trunk') && (min_basin_size>100 | min_basin_size<=0)
+		min_basin_size
 		error('For divide_method "p_filtered_confluences" the entry to "min_basin_size" must be between 0 and 100')
 	end
 

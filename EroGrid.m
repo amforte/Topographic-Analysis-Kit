@@ -362,6 +362,13 @@ function [ERO,varargout]=EroGrid(DEM,KSN,rel_type,varargin)
 					leg{ii}=['Bin ' num2str(ii)];
 				end
 				legend(plt,leg,'location','best');
+			elseif ~isempty(edges) & ~fit_unc_flag
+				for ii=1:num_bins
+					E_vec=K(ii).*ksn_vec.^n(ii);
+					plt(ii)=plot(E_vec,ksn_vec,'-','LineWidth',2);
+					leg{ii}=['Bin ' num2str(ii)];
+				end
+				legend(plt,leg,'location','best');				
 			else
 				E_vec=K.*ksn_vec.^n;
 				plot(E_vec,ksn_vec,'-k','LineWidth',2);
@@ -490,7 +497,7 @@ function [ERO,varargout]=EroGrid(DEM,KSN,rel_type,varargin)
 				max_ksn=max(KSN.Z(IDX.Z),[],'omitnan');	
 
 				% Numerically integrate across full ksn range
-				[E,Ks]=stoch_thresh(min_ksn,max_ksn,k_e,tau_crit,Rb,k,k_w,f,omega_a,omega_s,alpha_val,beta_val,a);
+				[E,Ks]=stoch_thresh(min_ksn,max_ksn,k_e(kk),tau_crit(kk),Rb(kk),k(kk),k_w,f,omega_a,omega_s,alpha_val,beta_val,a);
 
 				% Use Ks to discretize KSN grid and populate E grid
 				KSN_TEMP=KSN;
@@ -502,7 +509,12 @@ function [ERO,varargout]=EroGrid(DEM,KSN,rel_type,varargin)
 					idx=ix==ii;
 					ERO.Z(idx)=E_val;
 					waitbar(ii/(numel(Ks)-1));	
-				end							
+				end	
+
+				if plot_result
+					Eout{kk,1}=E;
+					Ksout{kk,1}=Ks;	
+				end					
 				close(w1);	
 
 				if ksn_std_flag
@@ -518,8 +530,8 @@ function [ERO,varargout]=EroGrid(DEM,KSN,rel_type,varargin)
 					ERO_M=GRIDobj(DEM);
 
 					% Numerically integrate across full ksn range
-					[EMax,KsMax]=stoch_thresh(max_ksn_min,max_ksn_max,k_e,tau_crit,Rb,k,k_w,f,omega_a,omega_s,alpha_val,beta_val,a);
-					[EMin,KsMin]=stoch_thresh(min_ksn_min,min_ksn_max,k_e,tau_crit,Rb,k,k_w,f,omega_a,omega_s,alpha_val,beta_val,a);
+					[EMax,KsMax]=stoch_thresh(max_ksn_min,max_ksn_max,k_e(kk),tau_crit(kk),Rb(kk),k(kk),k_w,f,omega_a,omega_s,alpha_val,beta_val,a);
+					[EMin,KsMin]=stoch_thresh(min_ksn_min,min_ksn_max,k_e(kk),tau_crit(kk),Rb(kk),k(kk),k_w,f,omega_a,omega_s,alpha_val,beta_val,a);
 
 					KSN_MAX.Z(~IDX.Z)=NaN;
 					KSN_MIN.Z(~IDX.Z)=NaN;
@@ -572,14 +584,27 @@ function [ERO,varargout]=EroGrid(DEM,KSN,rel_type,varargin)
 			imageschs(DEM,ERO,'colorbarlabel','Erosion Rate [m/Myr]');
 			disableDefaultInteractivity(sbplt1);
 			hold off
-
-			sbplt2=subplot(3,3,[7:9]);
-			hold on 
-			plot(E,Ks,'-k','LineWidth',2);
-			xlabel('Erosion Rate [m/Myr]');
-			ylabel('K_{sn}');
-			disableDefaultInteractivity(sbplt1);
-			hold off
+			if isempty(edges)
+				sbplt2=subplot(3,3,[7:9]);
+				hold on 
+				plot(E,Ks,'-k','LineWidth',2);
+				xlabel('Erosion Rate [m/Myr]');
+				ylabel('K_{sn}');
+				disableDefaultInteractivity(sbplt1);
+				hold off
+			else
+				sbplt2=subplot(3,3,[7:9]);
+				hold on 
+				for ii=1:num_bins
+					plot(Eout{ii},Ksout{ii},'-','LineWidth',2);
+					leg{ii}=['Bin ' num2str(ii)];
+				end
+				legend(leg,'location','best');
+				xlabel('Erosion Rate [m/Myr]');
+				ylabel('K_{sn}');
+				disableDefaultInteractivity(sbplt1);
+				hold off				
+			end
 		end
 
 

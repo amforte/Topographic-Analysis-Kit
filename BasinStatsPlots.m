@@ -130,7 +130,7 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	addParameter(p,'yval',[],@(x) ischar(x) || isnumeric(x) & size(x,2)==1);
 	addParameter(p,'define_region',[],@(x) isnumeric(x) & numel(x)==4 || islogical(x));
 	addParameter(p,'statistic_of_interest','ksn',@(x) ischar(x));
-	addParameter(p,'basin_num',[],@(x) isnumeric(x) && isscalar(x)));
+	addParameter(p,'basin_num',[],@(x) isnumeric(x) && isscalar(x));
 	addParameter(p,'rlf_radius',2500,@(x) isnumeric(x) && isscalar(x));
 	addParameter(p,'cat_mean1',[],@(x) ischar(x));
 	addParameter(p,'cat_mean2',[],@(x) ischar(x));
@@ -309,10 +309,12 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		end
 
 		if fit_grd_ksn
-			plot(mk,mg,'-r','LineWidth',2);
+			p1=plot(mk,mg,'-r','LineWidth',2);
 			disp(['Fluvial Erodibility (K) = ' num2str(pf.K)]);
 			disp(['Diffusivity (D) = ' num2str(pf.D)]);
 			disp(['Threshold Gradient (Sc) = ' num2str(pf.Sc)]);
+			leg_text=['Fluvial Erodibility (K) = ' num2str(pf.K) newline 'Diffusivity (D) = ' num2str(pf.D) newline 'Threshold Gradient (Sc) = ' num2str(pf.Sc)];
+			legend(p1,leg_text,'location','best');
 		end
 
 		xlabel('Mean Basin k_{sn}');
@@ -509,12 +511,14 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			rlf_vec=krs*ksn_vec;
 			rlf_vec_pos=(krs_unc(2))*ksn_vec;
 			rlf_vec_neg=(krs_unc(1))*ksn_vec;	
-			plot(ksn_vec,rlf_vec,'-r','LineWidth',2);
+			p1=plot(ksn_vec,rlf_vec,'-r','LineWidth',2);
 			plot(ksn_vec,rlf_vec_pos,'--r');
 			plot(ksn_vec,rlf_vec_neg,'--r');
 			disp(['Relationship slope = ' num2str(krs)]);
 			disp(['Uncertainty on slope = ' num2str(krs_unc(1)) ' : ' num2str(krs_unc(2))]);
 			disp(['r-square = ' num2str(gof.rsquare)]);
+			leg_text=['Relationship slope = ' num2str(krs) newline 'Uncertainty on slope = ' num2str(krs_unc(1)) ' : ' num2str(krs_unc(2)) newline 'r-square = ' num2str(gof.rsquare)];
+			legend(p1,leg_text,'location','best');
 		end		
 
 		ylabel(['Mean Basin ' num2str(rr) ' m^2 Relief']);
@@ -866,7 +870,8 @@ function BasinStatsPlots(basin_table,plots,varargin)
 				disp(['	Relationship slope = ' num2str(cf)]);
 				disp(['	Uncertainty on slope = ' num2str(cf_unc(1)) ' : ' num2str(cf_unc(2))]);
 				disp(['	r-square = ' num2str(gof.rsquare)]);
-				legend([sp pl],{'Filtered = Unfiltered','Filtered > Unfiltered','Filtered < Unfiltered','Best Fit'},'location','northwest')
+				leg_text={'Filtered = Unfiltered','Filtered > Unfiltered','Filtered < Unfiltered',['Best Fit:' newline '	Relationship slope = ' num2str(cf) newline '	Uncertainty on slope = ' num2str(cf_unc(1)) ' : ' num2str(cf_unc(2)) newline '	r-square = ' num2str(gof.rsquare)]};
+				legend([sp pl],leg_text,'location','northwest')
 			else
 				legend(sp,{'Filtered = Unfiltered','Filtered > Unfiltered','Filtered < Unfiltered'},'location','northwest')			
 			end
