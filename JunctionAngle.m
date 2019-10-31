@@ -206,6 +206,9 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 			multi=false;
 			n=floor(fit_distance/hypot(S.cellsize,S.cellsize));
 			if n<1
+				if isdeployed
+					warndlg('Input fit_distance is too short, will not average across more than one node, setting to minimum distance')
+				end
 				warning('Input fit_distance is too short, will not average across more than one node, setting to minimum distance');
 				n=1;
 			end
@@ -213,6 +216,9 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 			n=floor(max(fit_distance)/hypot(S.cellsize,S.cellsize));
 			multi=true;
 			if n<1
+				if isdeployed
+					warndlg('All input fit_distance are too short, will not average across more than one node, setting to single minimum distance')
+				end
 				warning('All input fit_distance are too short, will not average across more than one node, setting to single minimum distance');
 				n=1;
 				mutli=false;
@@ -220,6 +226,9 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 
 			nlist=floor(fit_distance/hypot(S.cellsize,S.cellsize));
 			if any(nlist)<1
+				if isdeployed
+					warndlg('Some input fit_distance are too short, setting these to minimum distance')
+				end
 				warning('Some input fit_distance are too short, setting these to minimum distance');
 				nlist(nlist<1)=1;
 				nlist=unique(nlist);
@@ -260,6 +269,9 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 		nn=cellfun(@numel,UPIX);
 		maxn=max(nn);
 		if maxn<n
+			if isdeployed
+				errordlg('The provided input to "previous_IX" is incompatible with the maximum value within "fit_distance"')
+			end
 			error('The provided input to "previous_IX" is incompatible with the maximum value within "fit_distance"');
 		else
 			IX=PIX;
@@ -274,6 +286,9 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 
 	if isempty(S.georef)
 		xl=S.x; yl=S.y;
+		if isdeployed
+			warndlg('No projection was found, angles will be calculated based on projected coordinates')
+		end
 		warning('No projection was found, angles will be calculated based on projected coordinates')
 		projcoord=false;
 	else
@@ -282,6 +297,9 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 			projcoord=true;
 		catch
 			xl=S.x; yl=S.y;
+			if isdeployed
+				warndlg('Projection was not recognized, angles will be calculated based on projected coordinates')
+			end
 			warning('Projection was not recognized, angles will be calculated based on projected coordinates')
 			projcoord=false;
 		end

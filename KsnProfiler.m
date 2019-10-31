@@ -243,14 +243,23 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		end
 
 		if numel(restart_file)>1
+			if isdeployed 
+				errordlg('Multiple restart files were found, please remove non-target restart files from active directory or search path')
+			end
 			error('Multiple restart files were found, please remove non-target restart files from active directory or search path');
 		elseif isempty(restart_file) & ~isempty(out_file)		
 			if numel(out_file)>1
+				if isdeployed
+					errordlg('Multiple profiler output mat files were found, please remove non-target restart files from active directory or search path')
+				end
 				error('Multiple profiler output mat files were found, please remove non-target restart files from active directory or search path');
 			end
 			load(out_file(1,1).name,'input_params');
 			r_type='c';
 		elseif isempty(restart_file) & isempty(out_file)
+			if isdeployed
+				errordlg('No previous run files were found, do not provide an entry to "restart" if this is your first time running KsnProfiler for these data')
+			end
 			error('No previous run files were found, do not provide an entry to "restart" if this is your first time running KsnProfiler for these data')
 		else
 			load(restart_file(1,1).name,'input_params');
@@ -316,6 +325,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	% Perform some checks and reassign values as needed
 	if strcmp(input_method,'channel_heads')
 		if isempty(chl)
+			if isdeployed
+				errordlg('Selection method is "channel_heads", must provide an input for the "channel_head_list" parameter')
+			end
 			error('Selection method is "channel_heads", must provide an input for the "channel_head_list" parameter');
 		end
 
@@ -325,6 +337,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 				ch_ms=shaperead(chl);
 				ch_t=struct2table(ch_ms);
 				if ~strcmp(ch_t.Geometry(1),'Point')
+					if isdeployed
+						errordlg('Shapefile provided as "channel_heads" does not appear to be a point shapefile')
+					end
 					error('Shapefile provided as "channel_heads" does not appear to be a point shapefile');
 				end
 				xi=ch_t.X;
@@ -353,6 +368,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		input_method='preselected';
 	elseif strcmp(input_method,'stream_length')
 		if isempty(mlte)
+			if isdeployed
+				errordlg('Selection method is "stream_length", must provide an input for "mean_length_to_extract" parameter')
+			end
 			error('Selection method is "stream_length", must provide an input for "mean_length_to_extract" parameter');
 		end
 
@@ -363,6 +381,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		s_ch=ch(idx,:);
 
 		if isempty(s_ch)
+			if isdeployed
+				errordlg('Input to "mean_length_to_extract" resulted in no streams being selected, reduce the length and retry')
+			end
 			error('Input to "mean_length_to_extract" resulted in no streams being selected, reduce the length and retry')
 		end
 
@@ -380,6 +401,9 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	end
 
 	if ~isempty(min_elev) && ~isempty(max_area)
+		if isdeployed
+			errordlg('Providing values to both "min_elev" and "max_area" is not permitted, please only provide values for one of these parameters')
+		end
 		error('Providing values to both "min_elev" and "max_area" is not permitted, please only provide values for one of these parameters')
 	end
 
@@ -390,9 +414,15 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		DEMc.Z(DEMc.Z==0)=NaN;
 		DEMc.Z(S.IXgrid)=zc;
 	elseif ~isempty(DEMc) & redefine_thresh
-		warning(['Supplying a Conditioned DEM and redefining the drainage area threshold may produce unexpected results as it may be necessary ' ...
-			'to recondition portions of the DEM using a different method. To avoid this, make sure that a very low threshold area was used to ' ...
-			'produce the supplied Conditioned DEM.'])
+		if isdeployed
+			warndlg(['Supplying a Conditioned DEM and redefining the drainage area threshold may produce unexpected results as it may be necessary ' ...
+				'to recondition portions of the DEM using a different method. To avoid this, make sure that a very low threshold area was used to ' ...
+				'produce the supplied Conditioned DEM.'])
+		else
+			warning(['Supplying a Conditioned DEM and redefining the drainage area threshold may produce unexpected results as it may be necessary ' ...
+				'to recondition portions of the DEM using a different method. To avoid this, make sure that a very low threshold area was used to ' ...
+				'produce the supplied Conditioned DEM.'])
+		end
 	end
 
 	% Make gradient
@@ -1808,24 +1838,36 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		if rf & strcmp(r_type,'c') & strcmp(restart,'continue')
 			load(out_mat_name,'count','ksn_master','bnd_master','res_master','Sc');
 			if count>=num_ch
+				if isdeployed
+					errordlg('Run appears to have already completed, cannot restart')
+				end
 				error('Run appears to have already completed, cannot restart');
 			end
 			rng=count+1:num_ch;
 		elseif rf & strcmp(r_type,'c') & strcmp(restart,'skip')
 			load(out_mat_name,'count','ksn_master','bnd_master','res_master','Sc');
 			if count>=num_ch
+				if isdeployed
+					errordlg('Run appears to have already completed, cannot restart')
+				end
 				error('Run appears to have already completed, cannot restart');
 			end
 			rng=count+2:num_ch;
 		elseif rf & strcmp(r_type,'r') & strcmp(restart,'continue')
 			load(out_restart_name,'count','ksn_master','bnd_master','res_master','Sc');
 			if count>=num_ch
+				if isdeployed
+					errordlg('Run appears to have already completed, cannot restart')
+				end
 				error('Run appears to have already completed, cannot restart');
 			end
 			rng=count+1:num_ch;
 		elseif rf & strcmp(r_type,'r') & strcmp(restart,'skip')
 			load(out_restart_name,'count','ksn_master','bnd_master','res_master','Sc');
 			if count>=num_ch
+				if isdeployed
+					errordlg('Run appears to have already completed, cannot restart')
+				end
 				error('Run appears to have already completed, cannot restart');
 			end
 			rng=count+2:num_ch;
@@ -3177,6 +3219,9 @@ function [OUT]=ChiCalc(S,DEM,A,a0,varargin)
 	if nnz(outlet)>1
 	    % there must not be more than one outlet (constraint could be removed
 	    % in the future).
+	    if isdeployed
+	    	errordlg('The stream network must not have more than one outlet')
+	    end
 	    error('The stream network must not have more than one outlet');
 	end
 

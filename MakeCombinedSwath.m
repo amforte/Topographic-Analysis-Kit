@@ -632,11 +632,17 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 			if ~isempty(bs)
 				scl=data.(bs);
 				if ~isnumeric(scl)
+					if isdeployed
+						errordlg('Value to scale points by must be numeric')
+					end
 					error('Value to scale points by must be numeric')
 				end
 			end
 
 			if ~isnumeric(col);
+				if isdeployed
+					errordlg('Value to color points by must be numeric')
+				end
 				error('Value to color points by must be numeric')
 			end
 
@@ -885,6 +891,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 		case 'basin_knicks'
 
 			if ~isdir(data)
+				if isdeployed
+					errordlg('For "basin_knicks" you must provide a valid directory to "data" that contains "Knicks_*.mat" files'))
+				end
 				error('For "basin_knicks" you must provide a valid directory to "data" that contains "Knicks_*.mat" files')
 			end
 
@@ -893,6 +902,9 @@ function [SW,SwathMat,xypoints,outData]=MakeCombinedSwath(DEM,points,width,data_
 
 			fileList=dir('Knicks_*.mat');
 			if isempty(fileList)
+				if isdeployed
+					errordlg('For "basin_knicks" you must provide a valid directory to "data" that contains "Knicks_*.mat" files')
+				end
 				error('For "basin_knicks" you must provide a valid directory to "data" that contains "Knicks_*.mat" files')
 			end
 			knps=cell(numel(fileList),1);

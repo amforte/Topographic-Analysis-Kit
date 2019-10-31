@@ -115,9 +115,17 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 
 	% Check that cut off values have been provided if base level
 	if strcmp(blm,'max_out_elevation') & (strcmp(product,'chigrid') | strcmp(product,'ksngrid') | strcmp(product,'all'))
-		warning('"max_out_elevation" is not a valid choice for a continuous gridded product, ignoring this input')
+		if isdeployed
+			warndlg('"max_out_elevation" is not a valid choice for a continuous gridded product, ignoring this input')
+		else
+			warning('"max_out_elevation" is not a valid choice for a continuous gridded product, ignoring this input')
+		end
 	elseif strcmp(blm,'elevation') & isempty(me)
-		warning('Selected outlet level adjust method "elevation" requires that you provide an input for parameter "min_elevation", running without baselevel control');
+		if isdeployed
+			warndlg('Selected outlet level adjust method "elevation" requires that you provide an input for parameter "min_elevation", running without baselevel control')
+		else
+			warning('Selected outlet level adjust method "elevation" requires that you provide an input for parameter "min_elevation", running without baselevel control');
+		end
 		blm=[];
 	end
 
@@ -384,6 +392,9 @@ function [SC]=DTSetOutlet(DEM,FD,A,S,method,varargin)
 	me=p.Results.min_elevation;
 
 	if ~cno & strcmp(method,'complete_networks_only')
+		if isdeployed
+			errordlg('Cannot set method to complete_only and set complete_network_only to false')
+		end
 		error('Cannot set method to complete_only and set complete_network_only to false');
 	end
 
@@ -423,7 +434,11 @@ function [SC]=DTSetOutlet(DEM,FD,A,S,method,varargin)
 		coel=DEM.Z(coix);
 		max_coel=max(coel);
 		if sum(coel>me)~=0 & ~cno
-			warning(['One or more stream outlets are above the provided elevation, maximum outlet elevation is ' num2str(max_coel)]);
+			if isdeployed
+				warndlg(['One or more stream outlets are above the provided elevation, maximum outlet elevation is ' num2str(max_coel)])
+			else 
+				warning(['One or more stream outlets are above the provided elevation, maximum outlet elevation is ' num2str(max_coel)]);
+			end
 		elseif sum(coel>me)~=0 & cno
 			[xo,yo]=getoutline(DEM,true);
 			% Control for incosistent output of getoutline

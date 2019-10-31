@@ -132,11 +132,17 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 				VarList=whos('-file',FileName);
 				RLFInd=find(strcmp(cellstr(char(VarList.name)),'rlf'));
 				if isempty(RLFInd)
+					if isdeployed
+						errordlg('Relief does appear to have been calculated for these basins')
+					end
 					error('Relief does appear to have been calculated for these basins')
 				end
 				load(FileName,'DEMoc','rlf','rlf_stats');
 				ix=find(rlf(:,2)==rr);
 				if isempty(ix)
+					if isdeployed
+						errordlg('Input relief radius was not found in relief outputs, please check to make sure relief radius is correct')
+					end
 					error('Input relief radius was not found in relief outputs, please check to make sure relief radius is correct')
 				end
 				val=rlf_stats(ix,1);
@@ -163,6 +169,9 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 					load(FileName,'ACGc_stats');
 					val=ACGc_stats(Nix,1);
 				else
+					if isdeployed
+						errordlg('Name provided to "valueOI" does not match name in either additional grids or additional categorical grids')
+					end
 					error('Name provided to "valueOI" does not match name in either additional grids or additional categorical grids');
 				end
 			end
@@ -246,11 +255,17 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 				VarList=whos('-file',FileName);
 				RLFInd=find(strcmp(cellstr(char(VarList.name)),'rlf'));
 				if isempty(RLFInd)
+					if isdeployed
+						errordlg('Relief does appear to have been calculated for these basins')
+					end
 					error('Relief does appear to have been calculated for these basins')
 				end
 				load(FileName,'DEMoc','rlf','rlf_stats');
 				ix=find(rlf(:,2)==rr);
 				if isempty(ix)
+					if isdeployed
+						errordlg('Input relief radius was not found in relief outputs, please check to make sure relief radius is correct')
+					end
 					error('Input relief radius was not found in relief outputs, please check to make sure relief radius is correct')
 				end
 				val=rlf_stats(ix,1);
@@ -277,6 +292,9 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 					load(FileName,'ACGc_stats');
 					val=ACGc_stats(Nix,1);
 				else
+					if isdeployed
+						errordlg('Name provided to "valueOI" does not match name in either additional grids or additional categorical grids')
+					end
 					error('Name provided to "valueOI" does not match name in either additional grids or additional categorical grids');
 				end
 			end

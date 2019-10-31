@@ -105,6 +105,9 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 
 	if strcmp(divide_method,'p_filtered_confluences') | strcmp(divide_method,'p_filtered_trunk') && (min_basin_size>100 | min_basin_size<=0)
 		min_basin_size
+		if isdeployed
+			errordlg('For divide_method "p_filtered_confluences" the entry to "min_basin_size" must be between 0 and 100')
+		end
 		error('For divide_method "p_filtered_confluences" the entry to "min_basin_size" must be between 0 and 100')
 	end
 
@@ -293,11 +296,17 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 							end
 							rec_count=rec_count+1;
 							if rec_count>10
+								if isdeployed
+									warndlg(['Subdivision of basin number ' num2str(basin_num) ' ended prematurely to avoid an infinite loop'])
+								end
 								warning(['Subdivision of basin number ' num2str(basin_num) ' ended prematurely to avoid an infinite loop']);
 							end
 						end
 						num_new_basins=numel(x);
 					catch
+						if isdeployed
+							warndlg(['Recursvie subdivision of basin number ' num2str(basin_num) ' failed, proceeding with regular subdivision'])
+						end
 						warning(['Recursvie subdivision of basin number ' num2str(basin_num) ' failed, proceeding with regular subdivision']);
 					end
 				end
@@ -357,11 +366,17 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 							end
 							rec_count=rec_count+1;
 							if rec_count>10
+								if isdeployed
+									warndlg(['Subdivision of basin number ' num2str(basin_num) ' ended prematurely to avoid an infinite loop'])
+								end								
 								warning(['Subdivision of basin number ' num2str(basin_num) ' ended prematurely to avoid an infinite loop']);
 							end						
 						end
 						num_new_basins=numel(x);
 					catch
+						if isdeployed
+							warndlg(['Recursvie subdivision of basin number ' num2str(basin_num) ' failed, proceeding with regular subdivision'])
+						end
 						warning(['Recursvie subdivision of basin number ' num2str(basin_num) ' failed, proceeding with regular subdivision']);
 					end
 				end
@@ -422,11 +437,17 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 							end
 							rec_count=rec_count+1;
 							if rec_count>10
+								if isdeployed
+									warndlg(['Subdivision of basin number ' num2str(basin_num) ' ended prematurely to avoid an infinite loop'])
+								end
 								warning(['Subdivision of basin number ' num2str(basin_num) ' ended prematurely to avoid an infinite loop']);
 							end
 						end
 						num_new_basins=numel(x);
 					catch
+						if isdeployed
+							warndlg(['Recursvie subdivision of basin number ' num2str(basin_num) ' failed, proceeding with regular subdivision'])
+						end
 						warning(['Recursvie subdivision of basin number ' num2str(basin_num) ' failed, proceeding with regular subdivision']);
 					end
 				end
@@ -476,6 +497,9 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 
 				% Check to make sure the stream object isn't empty
 				if isempty(Sc.x)
+					if isdeployed
+						warndlg(['Input threshold drainage area is too large for basin ' num2str(RiverMouth(:,3)) ' decreasing threshold area for this basin'])
+					end
 					warning(['Input threshold drainage area is too large for basin ' num2str(RiverMouth(:,3)) ' decreasing threshold area for this basin']);
 					new_thresh=threshold_area;
 					while isempty(Sc.x)
@@ -563,6 +587,9 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 						[KsnOBJc] = KsnAvg(DEMoc,MSNc,radius);
 						save(SubFileName,'KsnOBJc','radius','-append');
 					catch
+						if isdeployed
+							warndlg(['Interpolation of KSN grid failed for basin ' num2str(RiverMouth(:,3))])
+						end
 						warning(['Interpolation of KSN grid failed for basin ' num2str(RiverMouth(:,3))]);
 						save(SubFilename,'radius','-append');
 					end

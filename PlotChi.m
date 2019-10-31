@@ -62,6 +62,9 @@ function PlotChi(DEM,S,chi,chi_type,varargin)
 			chi=resample(chi,DEM);
 		end
 	else
+		if isdeployed
+			errordlg('Input to "chi" not recognized as a valid ascii or a GRIDobj')
+		end
 		error('Input to "chi" not recognized as a valid ascii or a GRIDobj');
 	end
 	

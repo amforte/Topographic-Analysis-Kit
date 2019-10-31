@@ -326,12 +326,21 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 					elseif isnumeric(field_value)
 						MS(ii,1).(field_name)=double(field_value);
 					else
+						if isdeployed
+							errordlg(['Extra field value provided for ' field_name ' is neither numeric or a character'])
+						end
 						error(['Extra field value provided for ' field_name ' is neither numeric or a character']);
 					end
 				end
 			elseif numel(ix)>1
+				if isdeployed
+					errordlg(['More than one entry was provided for extra fields for basin ' num2str(RiverMouth(:,3))])
+				end
 				error(['More than one entry was provided for extra fields for basin ' num2str(RiverMouth(:,3))]);
 			elseif isempty(ix)
+				if isdeployed
+					errordlg(['No one entry was provided for extra field values for basin ' num2str(RiverMouth(:,3))])
+				end
 				error(['No one entry was provided for extra field values for basin ' num2str(RiverMouth(:,3))]);
 			end
 		end

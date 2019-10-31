@@ -105,7 +105,12 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 		end
 		DEM=GRIDobj(dem);
 	else
+		if isdeployed
+			errordlg('Input for dem not recognized as either a GRIDobj or character')
+		end
+		
 		error('Input for dem not recognized as either a GRIDobj or character')
+
 	end
 
 	% Resample grid if flag is thrown
@@ -123,7 +128,11 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 
 	% Check resolution of DEM
 	if mod(DEM.cellsize,1)~=0 & ~resample_grid
-		warning('Grid Cellsize is not a whole number, this may cause problems in some TopoToolbox functions, consider using resample_grid option')
+		if isdeployed
+			warndlg('Grid Cellsize is not a whole number, this may cause problems in some TopoToolbox functions, consider using resample_grid option')
+		else
+			warning('Grid Cellsize is not a whole number, this may cause problems in some TopoToolbox functions, consider using resample_grid option')
+		end
 	end
 
 	% Optional cleaning step depending on user input
@@ -137,7 +146,11 @@ function [DEM,FD,A,S]=MakeStreams(dem,threshold_area,varargin)
 			% Remove any borders of nans
 			DEM=crop(DEM);
 		catch
-			warning('Provided "no_data_exp" was not a valid expression, proceeding without this no data condition');
+			if isdeployed
+				warndlg('Provided "no_data_exp" was not a valid expression, proceeding without this no data condition')
+			else
+				warning('Provided "no_data_exp" was not a valid expression, proceeding without this no data condition')
+			end
 		end
 	elseif strcmp(no_data_exp,'auto')
 		[DEM]=AutoFlat(DEM,min_flat_area);

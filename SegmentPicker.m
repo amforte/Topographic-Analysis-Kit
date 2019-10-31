@@ -129,12 +129,26 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 	% Catch errors
 	if strcmp(direction,'up') && ~isempty(p.Results.min_elev)
-		warning('Input for minimum elevation is ignored when picking streams up from a pour point')
+		if isdeployed 
+			warndlg('Input for minimum elevation is ignored when picking streams up from a pour point')
+		else
+			warning('Input for minimum elevation is ignored when picking streams up from a pour point')
+		end
 	elseif strcmp(direction,'up') && ~isempty(p.Results.max_area)
-		warning('Input for maximum drainage area is ignored when picking streams up from a pour point')
+		if isdeployed
+			warndlg('Input for maximum drainage area is ignored when picking streams up from a pour point')
+		else
+			warning('Input for maximum drainage area is ignored when picking streams up from a pour point')
+		end
 	elseif ~isempty(p.Results.min_elev) && ~isempty(p.Results.max_area)
+		if isdeployed
+			errordlg('Cannot specify both a minimum elevation and a maximum area, please provide one input only')
+		end
 		error('Cannot specify both a minimum elevation and a maximum area, please provide one input only')
 	elseif strcmp(method,'prev_picks') && isempty(p.Results.picks)
+		if isdeployed
+			errordlg('If you choose the previous picks method you must provide a list of outlets or channel heads')
+		end		
 		error('If you choose the previous picks method you must provide a list of outlets or channel heads') 
 	end
 
@@ -150,6 +164,9 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 	end
 
     if strcmp(method,'prev_picks') & isempty(points)
+    	if isdeployed
+    		errordlg('Please provide a m x 3 array of points or the valid path to a shapefile of points');
+    	end
         error('Please provide a m x 3 array of points or the valid path to a shapefile of points');
     elseif strcmp(method,'prev_picks') & ischar(points)
         disp('Reading shapefile')
@@ -159,6 +176,9 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
             fn=fieldnames(pt_shp);
             pt=horzcat([pt_shp.X]',[pt_shp.Y]',[pt_shp.(fn{4})]');
         catch
+        	if isdeployed
+				errordlg('Error reading shapefile, make sure the name provided did NOT include .shp, the shapefile is a point file with a single value column, and you have a license for the Mapping Toolbox')
+        	end
             error('Error reading shapefile, make sure the name provided did NOT include .shp, the shapefile is a point file with a single value column, and you have a license for the Mapping Toolbox');
         end
     elseif strcmp(method,'prev_picks')
@@ -274,10 +294,17 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 						ix2=find(ar_s>=ma,1,'last');
 						if isempty(ix2)
-							warning('Input maximum drainage area is too large, extracting full stream')
+							if isdeployed 
+								warndlg('Input maximum drainage area is too large, extracting full stream')
+							else
+								warning('Input maximum drainage area is too large, extracting full stream')
+							end
 							Sn=Sn_t;
 							short_circ=1;
 						elseif ix2==numel(ar)
+							if isdeployed
+								errordlg('Input maximum drainage area is too small, no portion of the stream selected')
+							end
 							error('Input maximum drainage area is too small, no portion of the stream selected')
 						else
 							xn=sx(ix2);
@@ -306,10 +333,17 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 						ix2=find(el_s>=me,1,'first');
 						if ix2==1
-							warning('Input minimum elevation is too low, extracting full stream')
+							if isdeployed
+								warndlg('Input minimum elevation is too low, extracting full stream')
+							else
+								warning('Input minimum elevation is too low, extracting full stream')
+							end
 							Sn=Sn_t;
 							short_circ=1;
 						elseif isempty(ix2)
+							if isdeployed
+								errordlg('Input minimum elevation is too high, no portion of the stream selected')
+							end
 							error('Input minimum elevation is too high, no portion of the stream selected')
 						else
 							xn=sx(ix2);
@@ -681,10 +715,17 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 						ix2=find(ar_s>=ma,1,'last');
 						if isempty(ix2)
-							warning('Input maximum drainage area is too large, extracting full stream')
+							if isdeployed
+								warndlg('Input maximum drainage area is too large, extracting full stream')
+							else
+								warning('Input maximum drainage area is too large, extracting full stream')
+							end
 							Sn=Sn_t;
 							short_circ=1;
 						elseif ix2==numel(ar)
+							if isdeployed
+								errordlg('Input maximum drainage area is too small, no portion of the stream selected')
+							end
 							error('Input maximum drainage area is too small, no portion of the stream selected')
 						else
 							xn=sx(ix2);
@@ -713,10 +754,17 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 						ix2=find(el_s>=me,1,'first');
 						if ix2==1
-							warning('Input minimum elevation is too low, extracting full stream')
+							if isdeployed
+								warndlg('Input minimum elevation is too low, extracting full stream')
+							else
+								warning('Input minimum elevation is too low, extracting full stream')
+							end
 							Sn=Sn_t;
 							short_circ=1;
 						elseif isempty(ix2)
+							if isdeployed
+								errordlg('Input minimum elevation is too high, no portion of the stream selected')
+							end
 							error('Input minimum elevation is too high, no portion of the stream selected')
 						else
 							xn=sx(ix2);
@@ -1053,10 +1101,17 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 					ix2=find(ar_s>=ma,1,'last');
 					if isempty(ix2)
-						warning('Input maximum drainage area is too large, extracting full stream')
+						if isdeployed
+							warndlg('Input maximum drainage area is too large, extracting full stream')
+						else
+							warning('Input maximum drainage area is too large, extracting full stream')
+						end
 						Sn=Sn_t;
 						short_circ=1;
 					elseif ix2==numel(ar)
+						if isdeployed
+							errordlg('Input maximum drainage area is too small, no portion of the stream selected')
+						end
 						error('Input maximum drainage area is too small, no portion of the stream selected')
 					else
 						xn=sx(ix2);
@@ -1085,9 +1140,16 @@ function [Sc]=SegmentPicker(DEM,FD,A,S,basin_num,varargin)
 
 					ix2=find(el_s>=me,1,'first');
 					if ix2==1
-						warning('Input minimum elevation is too low, extracting full stream')
+						if isdeployed
+							warndlg('Input minimum elevation is too low, extracting full stream')
+						else
+							warning('Input minimum elevation is too low, extracting full stream')
+						end
 						Sn=Sn_t;
 					elseif isempty(ix2)
+						if isdeployed
+							errordlg('Input minimum elevation is too high, no portion of the stream selected')
+						end
 						error('Input minimum elevation is too high, no portion of the stream selected')
 					else
 						xn=sx(ix2);

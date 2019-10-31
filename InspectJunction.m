@@ -68,6 +68,9 @@ function InspectJunction(S,IX,num,varargin)
 	num_nodes=p.Results.num_nodes;
 
 	if ~isempty(fit_distance) & ~isempty(num_nodes)
+		if isdeployed
+			errordlg('Provide a value to either fit_distance of num_nodes, not both')
+		end
 		error('Provide a value to either fit_distance of num_nodes, not both')
 	end
 
@@ -100,6 +103,9 @@ function InspectJunction(S,IX,num,varargin)
 	if ~isempty(fit_distance)
 		n=floor(fit_distance/hypot(S.cellsize,S.cellsize));
 		if n<1
+			if isdeployed
+				warndlg('Input fit_distance is too short, will not average across more than one node, setting to minimum distance')
+			end
 			warning('Input fit_distance is too short, will not average across more than one node, setting to minimum distance');
 			n=1;
 		end

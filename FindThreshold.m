@@ -120,7 +120,11 @@ function [Sn,thresh_list,xd_list]=FindThreshold(DEM,FD,A,S,num_streams,varargin)
 		num_ch=numel(chix);
 		if num_streams>num_ch;
 			num_streams=num_ch;
-			warning('Number of streams to fit was greater than number of channel heads, using all streams');
+			if isdeployed
+				warndlg('Number of streams to fit was greater than number of channel heads, using all streams')
+			else
+				warning('Number of streams to fit was greater than number of channel heads, using all streams')
+			end
 		end
 
 		% Sort channels by length, fitting proceeds from largest to smallest channels

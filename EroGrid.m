@@ -165,35 +165,62 @@ function [ERO,varargout]=EroGrid(DEM,KSN,rel_type,varargin)
 
 		% Check for inputs
 		if isempty(C) | isempty(phi)
+			if isdeployed
+				errordlg('Relationship type is "power", you must provide values for both "C" and "phi"')
+			end
 			error('Relationship type is "power", you must provide values for both "C" and "phi"');
 		end
 
 		% Basic error check for inputs
 		if numel(C) ~= numel(phi)
+			if isdeployed
+				errordlg('Number of coefficients provided to "C" must equal the number of exponents in "phi"')
+			end
 			error('Number of coefficients provided to "C" must equal the number of exponents in "phi"')
 		end
 
 		if numel(C_std) ~= numel(phi_std)
+			if isdeployed
+				errordlg('There must be the same number of entries to "C_std" and "phi_std"')
+			end
 			error('There must be the same number of entries to "C_std" and "phi_std"');
 		end
 
 		if ~isempty(C_std) & numel(C_std) ~= numel(C)
+			if isdeployed
+				errordlg('There must be the same number of entries to "C_std" and "C"')
+			end
 			error('There must be the same number of entries to "C_std" and "C"');
 		end
 
 		if ~isempty(phi_std) & numel(phi_std) ~= numel(phi)
+			if isdeployed
+				errordlg('There must be the same number of entries to "phi_std" and "phi"')
+			end
 			error('There must be the same number of entries to "phi_std" and "phi"');
 		end
 
 		% Additional error checker
 		if ~isempty(edges)
 			if isempty(VAL)
+				if isdeployed
+					errordlg('Cannot produce variable erosion rate map based on edges without an input for "VAL" that corresponds to the values in edges')
+				end
 				error('Cannot produce variable erosion rate map based on edges without an input for "VAL" that corresponds to the values in edges')
 			elseif numel(edges) ~= numel(C)+1
+				if isdeployed
+					errordlg('Number of edges is not compatible with the number of coefficients')
+				end
 				error('Number of edges is not compatible with the number of coefficients')
 			elseif min(edges)> min(VAL.Z(:),[],'omitnan')
+				if isdeployed
+					warndlg('Minimum value of "edges" is greater than minimum value in "VAL", there may be empty areas of the resulting ERO grid')
+				end
 				warning('Minimum value of "edges" is greater than minimum value in "VAL", there may be empty areas of the resulting ERO grid')
 			elseif max(edges)< max(VAL.Z(:),[],'omitnan')
+				if isdeployed
+					warndlg('Maximum value of "edges" is less than maximum value in "VAL", there may be empty areas of the resulting ERO grid')
+				end
 				warning('Maximum value of "edges" is less than maximum value in "VAL", there may be empty areas of the resulting ERO grid')			
 			end
 		end
@@ -383,6 +410,9 @@ function [ERO,varargout]=EroGrid(DEM,KSN,rel_type,varargin)
 
 		% Basic error check for inputs
 		if numel(k_e) ~= numel(tau_crit) | numel(k_e) ~= numel(k) | numel(k_e) ~= numel(Rb)
+			if isdeployed
+				errordlg('Number of values provided to "k_e", "tau_crit", "k", and "Rb" must be equal')
+			end
 			error('Number of values provided to "k_e", "tau_crit", "k", and "Rb" must be equal');
 		end
 
@@ -390,12 +420,24 @@ function [ERO,varargout]=EroGrid(DEM,KSN,rel_type,varargin)
 		% Additional error checker
 		if ~isempty(edges)
 			if isempty(VAL)
+				if isdeployed
+					errordlg('Cannot produce variable erosion rate map based on edges without an input for "VAL" that corresponds to the values in edges')
+				end
 				error('Cannot produce variable erosion rate map based on edges without an input for "VAL" that corresponds to the values in edges')
 			elseif numel(edges) ~= numel(k_e)+1
+				if isdeployed
+					errordlg('Number of edges is not compatible with the number of values provided to "k_e", "tau_crit", "k", and "Rb"')
+				end
 				error('Number of edges is not compatible with the number of values provided to "k_e", "tau_crit", "k", and "Rb"')
 			elseif min(edges)> min(VAL.Z(:),[],'omitnan')
+				if isdeployed
+					warndlg('Minimum value of "edges" is greater than minimum value in "VAL", there may be empty areas of the resulting ERO grid')
+				end
 				warning('Minimum value of "edges" is greater than minimum value in "VAL", there may be empty areas of the resulting ERO grid')
 			elseif max(edges)< max(VAL.Z(:),[],'omitnan')
+				if isdeployed
+					warndlg('Maximum value of "edges" is less than maximum value in "VAL", there may be empty areas of the resulting ERO grid')
+				end
 				warning('Maximum value of "edges" is less than maximum value in "VAL", there may be empty areas of the resulting ERO grid')			
 			end
 		end

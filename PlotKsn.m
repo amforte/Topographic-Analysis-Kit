@@ -75,6 +75,9 @@ function PlotKsn(DEM,FD,ksn,varargin)
 		end
 		grid_flag=true;
 	else
+		if isdeployed
+			errordlg('Input to "ksn" not recognized as a shapefile or a mapstructure')
+		end
 		error('Input to "ksn" not recognized as a shapefile or a mapstructure');
 	end
 	
@@ -106,6 +109,9 @@ function PlotKsn(DEM,FD,ksn,varargin)
 			elseif isfield(ksn,'fit_ksn')
 				sk{ii,1}=ones(numel(sx{ii,1}),1)*ksn(ii,1).fit_ksn;
 			else
+				if isdeployed
+					errordlg('There is no valid field in the provided shapefile or mapstructure named "ksn"')
+				end
 				error('There is no valid field in the provided shapefile or mapstructure named "ksn"')
 			end
 		end

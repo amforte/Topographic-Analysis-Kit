@@ -1180,6 +1180,10 @@ outlet = sum(M,2) == 0 & sum(M,1)'~=0;
 if nnz(outlet)>1
     % there must not be more than one outlet (constraint could be removed
     % in the future).
+    if isdeployed
+    	errordlg('The stream network must not have more than one outlet')
+    end
+    
     error('The stream network must not have more than one outlet');
 end
 

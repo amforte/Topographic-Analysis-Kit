@@ -78,6 +78,9 @@ function [SW,SwathMat,xypoints,bends]=MakeTopoSwath(DEM,points,width,varargin)
 	end
 
 	if plot_as_points & plot_as_heatmap
+		if isdeployed
+			errordlg('Please only set one of "plot_as_points" and "plot_as_heatmap" to true')
+		end
 		error('Please only set one of "plot_as_points" and "plot_as_heatmap" to true');
 	end
 

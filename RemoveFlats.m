@@ -51,6 +51,10 @@ function [DEMn,MASK]=RemoveFlats(dem,strength)
 	elseif strength==4
 		nhood2=ones(9,9);
 	else
+		if isdeployed
+			errordlg('Input to "strength" is not recognized, must be an integer between 1 and 4')
+		end
+
 		error('Input to "strength" is not recognized, must be an integer between 1 and 4')
 	end
 
@@ -61,6 +65,10 @@ function [DEMn,MASK]=RemoveFlats(dem,strength)
 		disp('Loading DEM')
 		DEM=GRIDobj(dem);
 	else
+		if isdeployed
+			errordlg('Input for dem not recognized as either a GRIDobj or character')
+		end
+
 		error('Input for dem not recognized as either a GRIDobj or character')
 	end
 

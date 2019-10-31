@@ -179,6 +179,9 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 	% Peform check on segment length
 	if (DEM.cellsize*3)>segment_length
 		segment_length=DEM.cellsize*3;
+		if isdeployed
+			warndlg(['Provided segment_length is incompatible with DEM resolution, segment_length reset to ' num2str(segment_length)])
+		end
 		warning(['Provided segment_length is incompatible with DEM resolution, segment_length reset to ' num2str(segment_length)])
 	end
 
@@ -198,6 +201,9 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 			% Perform check if there are duplicate river_mouth IDs and junk them if so
 			if numel(riv_nums)~=numel(unique(riv_nums))
 				riv_nums=[1:numel(riv_nums)]';
+				if isdeployed
+					warndlg('Duplicate values present in "river_mouths" IDs, IDs have been reassigned')
+				end
 				warning('Duplicate values present in "river_mouths" IDs, IDs have been reassigned');
 				redo_flag=true;
 			end	
@@ -231,6 +237,9 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 			RM=[rmx rmy riv_nums];
 			csvwrite(fullfile(bsn_path,'river_mouths.txt'),RM);
 		else
+			if isdeployed
+				errordlg('Shapefile provided as "river_mouths" does not appear to be a point or polyline shapefile')
+			end
 			error('Shapefile provided as "river_mouths" does not appear to be a point or polyline shapefile');
 		end
 
@@ -246,6 +255,9 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 		% Perform check if there are duplicate river_mouth IDs and junk them if so
 		if numel(riv_nums)~=numel(unique(riv_nums))
 			riv_nums=[1:numel(riv_nums)]';
+			if isdeployed
+				warndlg('Duplicate values present in "river_mouths" IDs, IDs have been reassigned')
+			end
 			warning('Duplicate values present in "river_mouths" IDs, IDs have been reassigned');
 			redo_flag=true;
 		end	
@@ -288,6 +300,9 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 
 	% Check for zeros and replace and warn
 	if nnz(RM(:,3))~=numel(RM(:,3))
+		if isdeployed
+			warndlg('Zeros present in "river_mouths" IDs, IDs for zeros have been reassigned')
+		end
 		warning('Zeros present in "river_mouths" IDs, IDs for zeros have been reassigned')
 		zeroIDX=RM(:,3)==0;
 		maxRM=max(RM(:,3));
@@ -331,6 +346,9 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 
 		% Check to make sure the stream object isn't empty, this shouldn't occur anymore unless a bad pour point was provided...
 		if isempty(Sc.x)
+			if isdeployed
+				warndlg(['Input threshold drainage area is too large for basin ' num2str(basin_num) ' decreasing threshold area for this basin'])
+			end
 			warning(['Input threshold drainage area is too large for basin ' num2str(basin_num) ' decreasing threshold area for this basin']);
 			new_thresh=threshold_area;
 			while isempty(Sc.x)
@@ -429,6 +447,9 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 				[KsnOBJc] = KsnAvg(DEMoc,MSNc,radius);
 				save(FileName,'KsnOBJc','radius','-append');
 			catch
+				if isdeployed
+					warndlg(['Interpolation of KSN grid failed for basin ' num2str(RiverMouth(:,3))])
+				end
 				warning(['Interpolation of KSN grid failed for basin ' num2str(RiverMouth(:,3))]);
 				save(FileName,'radius','-append');
 			end

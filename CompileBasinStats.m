@@ -143,8 +143,14 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 
 	% Check required entries
 	if fbc && ~strcmp(ft,'mode') && isempty(cgn) | isempty(cgv)
+		if isdeployed
+			errordlg('For "include" or "exclude" filters, entries must be provided for both "cat_grid" and "cat_values"')
+		end
 		error('For "include" or "exclude" filters, entries must be provided for both "cat_grid" and "cat_values"');
 	elseif fbc && strcmp(ft,'mode') && isempty(cgn)
+		if isdeployed
+			errordlg('For "mode" filter, entry must be provided for "cat_grid"'))
+		end
 		error('For "mode" filter, entry must be provided for "cat_grid"');
 	end
 
@@ -453,6 +459,9 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 			end
 
 		elseif fbc & isempty(AcgInd)
+			if isdeployed
+				errordlg('No Categorical Grids were provided to ProcessRiverBasins so filtered values cannot be calculated')
+			end
 			error('No Categorical Grids were provided to ProcessRiverBasins so filtered values cannot be calculated');
 		end
 
@@ -475,12 +484,21 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 					elseif isnumeric(field_value)
 						T.(field_name)(ii,1)=double(field_value);
 					else
+						if isdeployed
+							errordlg(['Extra field value provided for ' field_name ' is neither numeric or a character'])
+						end
 						error(['Extra field value provided for ' field_name ' is neither numeric or a character']);
 					end
 				end
 			elseif numel(ix)>1
+				if isdeployed
+					errordlg(['More than one entry was provided for extra fields for basin ' num2str(RiverMouth(:,3))])
+				end
 				error(['More than one entry was provided for extra fields for basin ' num2str(RiverMouth(:,3))]);
 			elseif isempty(ix)
+				if isdeployed
+					errordlg(['No one entry was provided for extra field values for basin ' num2str(RiverMouth(:,3))])
+				end
 				error(['No one entry was provided for extra field values for basin ' num2str(RiverMouth(:,3))]);
 			end
 		end
@@ -585,6 +603,9 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 
 	if ~isempty(mbc)
 		if warn_flag==true
+			if isdeployed
+				warndlg('One or more input for grid names to "means_by_category" was not recognized, table compiled without this entry')
+			end
 			warning('One or more input for grid names to "means_by_category" was not recognized, table compiled without this entry')
 		end
 	end

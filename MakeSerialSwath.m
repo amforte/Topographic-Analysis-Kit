@@ -115,6 +115,9 @@ function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin
 	end	
 
 	if ~isempty(points) & strcmp(alignment,'between') & isempty(points2)
+		if isdeployed
+			errordlg('If "alignment" is set to "between" then an entry must be provided for "points2"')
+		end
 		error('If "alignment" is set to "between" then an entry must be provided for "points2"')
 	end
 
@@ -165,8 +168,14 @@ function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin
     	in_bnd2=inpolygon(points2(:,1),points2(:,2),demx,demy);
 
     	if nnz(in_bnd1)~=numel(in_bnd1)
+    		if isdeployed
+    			errordlg('Portion of first boundary for serial swaths lies outside the DEM')
+    		end
     		error('Portion of first boundary for serial swaths lies outside the DEM');
     	elseif nnz(in_bnd2)~=numel(in_bnd2)
+    		if isdeployed
+    			errordlg('Portion of second boundary for serial swaths lies outside the DEM')
+    		end
     		error('Portion of second boundary for serial swaths lies outside the DEM');
     	end
 
@@ -189,6 +198,9 @@ function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin
 			number=divisions;
 			trim_flag=false;
 			if tot_dst/number < DEM.cellsize*2
+				if isdeployed
+					warndlg('Width of resultant swaths are near that of a single grid cell, did you input a width for swaths instead of a number of swaths?')
+				end
 				warning('Width of resultant swaths are near that of a single grid cell, did you input a width for swaths instead of a number of swaths?')
 			end
 		elseif strcmp(div_type,'width')
@@ -261,8 +273,14 @@ function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin
 		stop_in=inpolygon(stop_x,stop_y,demx,demy);
 
 		if nnz(start_in)~=numel(start_in)
+			if isdeployed
+				errordlg('Some of the serial swath start points lie outside the DEM, adjust the length of the swaths or the alignment')
+			end
 			error('Some of the serial swath start points lie outside the DEM, adjust the length of the swaths or the alignment');
 		elseif nnz(stop_in)~=numel(stop_in)
+			if isdeployed
+				errordlg('Some of the serial swath stop points lie outside the DEM, adjust the length of the swaths or the alignment')
+			end
 			error('Some of the serial swath stop points lie outside the DEM, adjust the length of the swaths or the alignment');
 		end
 
@@ -288,6 +306,9 @@ function [SWcell,points]=MakeSerialSwath(DEM,points,divisions,sw_length,varargin
 		if strcmp(div_type,'number')
 			number=divisions;
 			if min_dst/number < DEM.cellsize*2
+				if isdeployed
+					warndlg('Width of resultant swaths are near that of a single grid cell, did you input a width for swaths instead of a number of swaths?')
+				end
 				warning('Width of resultant swaths are near that of a single grid cell, did you input a width for swaths instead of a number of swaths?')
 			end
 

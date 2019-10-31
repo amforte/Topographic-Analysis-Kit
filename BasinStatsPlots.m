@@ -202,6 +202,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		rIDX=T.center_x>=regionOI(1) & T.center_x<=regionOI(2) & T.center_y>=regionOI(3) & T.center_y<=regionOI(4);
 		T=T(rIDX,:);
 		if isempty(T)
+			if isdeployed
+				errordlg('Provided region has eliminated all entries from the table, check that the coordinates are correct')
+			end
 			error('Provided region has eliminated all entries from the table, check that the coordinates are correct');
 		end
 	elseif ~isempty(regionOI) && islogical(regionOI) && regionOI
@@ -333,6 +336,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			if ismember(m_rlfN,T.Properties.VariableNames)
 				r=T.(m_rlfN);
 			else
+				if isdeployed
+					errordlg('Relief radius is not recognized, confirm that you calculated local relief at this radius when running "ProcessRiverBasins"')
+				end
 				error('Relief radius is not recognized, confirm that you calculated local relief at this radius when running "ProcessRiverBasins"')
 			end
 
@@ -344,6 +350,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			if ismember(m_rlfN,T.Properties.VariableNames)
 				r=T.(m_rlfN);
 			else
+				if isdeployed
+					errordlg('Relief radius is not recognized, confirm that you calculated local relief at this radius when running "ProcessRiverBasins"')
+				end				
 				error('Relief radius is not recognized, confirm that you calculated local relief at this radius when running "ProcessRiverBasins"')
 			end
 
@@ -425,6 +434,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			if ismember(m_rlfN,T.Properties.VariableNames)
 				r=T.(m_rlfN);
 			else
+				if isdeployed
+					errordlg('Relief radius is not recognized, confirm that you calculated local relief at this radius when running "ProcessRiverBasins"')
+				end				
 				error('Relief radius is not recognized, confirm that you calculated local relief at this radius when running "ProcessRiverBasins"')
 			end
 
@@ -436,6 +448,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			if ismember(m_rlfN,T.Properties.VariableNames)
 				r=T.(m_rlfN);
 			else
+				if isdeployed
+					errordlg('Relief radius is not recognized, confirm that you calculated local relief at this radius when running "ProcessRiverBasins"')
+				end				
 				error('Relief radius is not recognized, confirm that you calculated local relief at this radius when running "ProcessRiverBasins"')
 			end
 
@@ -808,6 +823,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		ix=cellfun(@any,ix);
 		VNoi=VN(ix);
 		if isempty(VNoi)
+			if isdeployed
+				errordlg('No filtered values were found in provided table')
+			end
 			error('No filtered values were found in provided table');
 		end
 
@@ -888,6 +906,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	case 'category_mean_hist'
 
 		if isempty(cm1)
+			if isdeployed
+				errordlg('For plot option "category_mean_hist" you must provide an input for "cat_mean1"')
+			end
 			error('For plot option "category_mean_hist" you must provide an input for "cat_mean1"')
 		elseif strcmp(cm1,'ksn')
 			VN=T.Properties.VariableNames;
@@ -910,6 +931,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			ix=cellfun(@any,ix);
 			VNoi=VN(ix);
 			if isempty(VNoi)
+				if isdeployed
+					errordlg('Entry for "cat_mean1" is not recognized, check that relief radius correct')
+				end
 				error('Entry for "cat_mean1" is not recognized, check that relief radius correct');
 			end
 			srch_strng=['mr' num2str(rr) '_'];
@@ -922,6 +946,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			ix=cellfun(@any,ix);
 			VNoi=VN(ix);
 			if isempty(VNoi)
+				if isdeployed
+					errordlg('Entry for "cat_mean1" is not recognized')
+				end
 				error('Entry for "cat_mean1" is not recognized');
 			end	
 			srch_strng=['m' cm1 '_'];			
@@ -961,6 +988,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	case 'category_mean_compare'
 
 		if isempty(cm1)
+			if isdeployed
+				errordlg('For plot option "category_mean_compare" you must provide an input for "cat_mean1"')
+			end
 			error('For plot option "category_mean_compare" you must provide an input for "cat_mean1"')
 		elseif strcmp(cm1,'ksn')
 			VN=T.Properties.VariableNames;
@@ -983,6 +1013,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			ix=cellfun(@any,ix);
 			VNoi1=VN(ix);
 			if isempty(VNoi1)
+				if isdeployed
+					errordlg('Entry for "cat_mean1" is not recognized, check that relief radius correct')
+				end
 				error('Entry for "cat_mean1" is not recognized, check that relief radius correct');
 			end
 			srch_strng=['mr' num2str(rr) '_'];
@@ -995,6 +1028,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			ix=cellfun(@any,ix);
 			VNoi1=VN(ix);
 			if isempty(VNoi1)
+				if isdeployed
+					errordlg('Entry for "cat_mean1" is not recognized')
+				end
 				error('Entry for "cat_mean1" is not recognized');
 			end	
 			srch_strng=['m' cm1 '_'];			
@@ -1003,6 +1039,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		end			
 
 		if isempty(cm2)
+			if isdeployed
+				errordlg('For plot option "category_mean_compare" you must provide an input for "cat_mean2"')
+			end
 			error('For plot option "category_mean_compare" you must provide an input for "cat_mean2"')
 		elseif strcmp(cm2,'ksn')
 			VN=T.Properties.VariableNames;
@@ -1025,6 +1064,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			ix=cellfun(@any,ix);
 			VNoi2=VN(ix);
 			if isempty(VNoi2)
+				if isdeployed
+					errordlg('Entry for "cat_mean2" is not recognized, check that relief radius correct')
+				end
 				error('Entry for "cat_mean2" is not recognized, check that relief radius correct');
 			end
 			srch_strng=['mr' num2str(rr) '_'];
@@ -1037,6 +1079,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			ix=cellfun(@any,ix);
 			VNoi2=VN(ix);
 			if isempty(VNoi2)
+				if isdeployed
+					errordlg('Entry for "cat_mean2" is not recognized')
+				end
 				error('Entry for "cat_mean2" is not recognized');
 			end	
 			srch_strng=['m' cm2 '_'];			
@@ -1116,6 +1161,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 				val=T.(m_valN);	
 				load_flag=4;
 			else
+				if isdeployed
+					errordlg('Relief radius is not recognized, confirm that you calculated local relief at this radius when running "ProcessRiverBasins"')
+				end
 				error('Relief radius is not recognized, confirm that you calculated local relief at this radius when running "ProcessRiverBasins"')
 			end
 			title_str=[num2str(rr) ' m^2 Relief'];
@@ -1125,6 +1173,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 				val=T.(m_valN);
 				load_flag=5;
 			else
+				if isdeployed
+					errordlg(['There is not a column named "mean_' stOI '" in the supplied table, confirm name of additional grid provided to "ProcessRiverBasins"'])
+				end
 				error(['There is not a column named "mean_' stOI '" in the supplied table, confirm name of additional grid provided to "ProcessRiverBasins"'])
 			end
 			title_str=[upper(stOI(1)) stOI(2:end)];
@@ -1219,6 +1270,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 			
 			ii=find(T.river_mouth==basin_num);
 			if isempty(ii)
+				if isdeployed
+					errordlg('Basin number does not appear in provided table')
+				end
 				error('Basin number does not appear in provided table')
 			end
 
@@ -1269,14 +1323,23 @@ function BasinStatsPlots(basin_table,plots,varargin)
 	case 'xy'
 
 		if isempty(xval) | isempty(yval)
+			if isdeployed
+				errordlg('For "xy" plot, entries for "xval" and "yval" are required')
+			end
 			error('For "xy" plot, entries for "xval" and "yval" are required');
 		end
 
 		VN=T.Properties.VariableNames;
 
 		if ~any(strcmp(VN,xval))
+			if isdeployed
+				errordlg('Entry to provided to "xval" is not regonized as the name of a column in the provided table')
+			end
 			error('Entry to provided to "xval" is not regonized as the name of a column in the provided table');
 		elseif ~any(strcmp(VN,yval))
+			if isdeployed
+				errordlg('Entry to provided to "yval" is not regonized as the name of a column in the provided table')
+			end
 			error('Entry to provided to "yval" is not regonized as the name of a column in the provided table');
 		end
 
@@ -1284,6 +1347,9 @@ function BasinStatsPlots(basin_table,plots,varargin)
 		y=T.(yval);
 
 		if ~isnumeric(x) | ~isnumeric(y)
+			if isdeployed
+				errordlg('Values in both x and y must be numeric')
+			end
 			error('Values in both x and y must be numeric')
 		end
 

@@ -58,7 +58,11 @@ function SegmentPlotter(basin_nums,varargin)
 
 	% Check for errors
 	if ~isempty(subset) & num_basins>1
-		warning('Providing a list of specific rivers via "subset" is only recognized if only one basin number is provided, ignoring "subset" input')
+		if isdeployed
+			warndlg('Providing a list of specific rivers via "subset" is only recognized if only one basin number is provided, ignoring "subset" input')
+		else
+			warning('Providing a list of specific rivers via "subset" is only recognized if only one basin number is provided, ignoring "subset" input')
+		end
 		su=0;
 	elseif ~isempty(subset) & num_basins==1
 		su=1;

@@ -175,7 +175,11 @@ function [nal,res,ms,brkPnts,param]=AutoKsnProfiler(DEM,FD,A,S,thresh_ratio,vara
 					if ~isempty(vals{3})
 						segment_length_temp=str2num(vals{3});
 						if segment_length_temp<DEM.cellsize*3;
-							warning('Input segment length is below 3 times the cellsize of your DEM, reverting to previous value');
+							if isdeployed
+								warndlg('Input segment length is below 3 times the cellsize of your DEM, reverting to previous value')
+							else
+								warning('Input segment length is below 3 times the cellsize of your DEM, reverting to previous value');
+							end
 						else
 							segment_length=segment_length_temp;
 						end
