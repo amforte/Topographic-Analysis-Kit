@@ -309,6 +309,10 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 					T.(std_prop_name)(ii,1)=double(AGc_stats(kk,3));
 				end
 			end
+
+			ag_flag=true;
+		else
+			ag_flag=false;
 		end		
 
 
@@ -406,24 +410,26 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 				T.std_ksn_f(ii,1)=std(KSNG.Z(F.Z),'omitnan');
 			end
 
-			ag_grids=size(AGc,1);
-			for kk=1:ag_grids
-				agG=AGc{kk,1};
-				mean_prop_name=['mean_' AGc{kk,2} '_f'];		
-				T.(mean_prop_name)(ii,1)=mean(agG.Z(F.Z),'omitnan');
+			if ag_flag
+				ag_grids=size(AGc,1);
+				for kk=1:ag_grids
+					agG=AGc{kk,1};
+					mean_prop_name=['mean_' AGc{kk,2} '_f'];		
+					T.(mean_prop_name)(ii,1)=mean(agG.Z(F.Z),'omitnan');
 
-				switch uncertainty
-				case 'se'
-					se_prop_name=['se_' AGc{kk,2} '_f'];
-					T.(se_prop_name)(ii,1)=std(agG.Z(F.Z),'omitnan')/sqrt(sum(~isnan(agG.Z(F.Z))));
-				case 'std'
-					std_prop_name=['std_' AGc{kk,2} '_f'];
-					T.(std_prop_name)(ii,1)=std(agG.Z(F.Z),'omitnan');
-				case 'both'
-					se_prop_name=['se_' AGc{kk,2} '_f'];
-					T.(se_prop_name)(ii,1)=std(agG.Z(F.Z),'omitnan')/sqrt(sum(~isnan(agG.Z(F.Z))));
-					std_prop_name=['std_' AGc{kk,2} '_f'];
-					T.(std_prop_name)(ii,1)=std(agG.Z(F.Z),'omitnan');
+					switch uncertainty
+					case 'se'
+						se_prop_name=['se_' AGc{kk,2} '_f'];
+						T.(se_prop_name)(ii,1)=std(agG.Z(F.Z),'omitnan')/sqrt(sum(~isnan(agG.Z(F.Z))));
+					case 'std'
+						std_prop_name=['std_' AGc{kk,2} '_f'];
+						T.(std_prop_name)(ii,1)=std(agG.Z(F.Z),'omitnan');
+					case 'both'
+						se_prop_name=['se_' AGc{kk,2} '_f'];
+						T.(se_prop_name)(ii,1)=std(agG.Z(F.Z),'omitnan')/sqrt(sum(~isnan(agG.Z(F.Z))));
+						std_prop_name=['std_' AGc{kk,2} '_f'];
+						T.(std_prop_name)(ii,1)=std(agG.Z(F.Z),'omitnan');
+					end
 				end
 			end
 
