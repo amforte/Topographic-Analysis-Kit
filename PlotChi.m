@@ -1,9 +1,9 @@
 function PlotChi(DEM,S,chi,chi_type,varargin)
 	%
 	% Usage:
-	%	PlotChi(DEM,S,chi,'chi_map');
-	%	PlotChi(DEM,S,chi,'chi_grid');
-	%	PlotChi(DEM,S,chi,'chi_map','name',value,...);
+	%	PlotChi(DEM,S,chi,'chimap');
+	%	PlotChi(DEM,S,chi,'chigrid');
+	%	PlotChi(DEM,S,chi,'chimap','name',value,...);
 	%
 	% Description:
 	% 	Function to plot a map of normalized channel steepness on a hillshade colored
