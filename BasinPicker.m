@@ -114,8 +114,16 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
     out_file=fullfile(current,'Outlets.mat');
 
     if exist(out_file,'file')==2;
-        load(out_file,'Outlets');
-        ii=max(Outlets(:,3))+1;
+        an=questdlg('Would you like to load the previous outlets from the "Outlets.mat" file in the current directory?',...
+            'Previous Outlets','No','Yes','Yes');
+        switch an
+        case 'Yes'           
+            load(out_file,'Outlets');
+            ii=max(Outlets(:,3))+1;
+        case 'No'
+            ii=1; 
+            Outlets=zeros(0,3); 
+        end
     else 
        ii=1; 
        Outlets=zeros(0,3);
@@ -616,8 +624,8 @@ function [Outlets]=BasinPicker(DEM,FD,A,S,varargin)
                     end 
                     hold off
 
+                    figure(2);
                     [x,y]=ginput(1);
-
                     close figure 2
 
                     % Build logical raster
