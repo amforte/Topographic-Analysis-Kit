@@ -1,8 +1,8 @@
 function [ERO,varargout]=EroGrid(DEM,KSN,rel_type,varargin)
 	% Usage:
-	%	[ERO]=EroGrid(DEM,KSN,C,phi);
-	%	[ERO]=EroGrid(DEM,KSN,C,phi,'name',value,...);
-	%	[ERO,ERO_P,ERO_M]=EroGrid(DEM,KSN,C,phi,'name',value,...);	
+	%	[ERO]=EroGrid(DEM,KSN,rel_type);
+	%	[ERO]=EroGrid(DEM,KSN,rel_type,'name',value,...);
+	%	[ERO,ERO_P,ERO_M]=EroGrid(DEM,KSN,rel_type,'name',value,...);
 	%
 	% Description;
 	%	Function to produce an erosion rate map based on an empirical relationship between normalized channel steepness (ksn)
