@@ -68,7 +68,13 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 	OUT=OUT-32768;
 
 	[head_dir,~,~]=fileparts(location_of_data_files);
-	file_name_prefix=[head_dir filesep file_name_prefix];
+	if isempty(head_dir)
+		file_name_prefix=[pwd filesep file_name_prefix];
+	else
+		file_name_prefix=[head_dir filesep file_name_prefix];
+	end
+
+
 
 	switch method
 	case 'subdivided'
