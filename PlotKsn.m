@@ -67,7 +67,7 @@ function PlotKsn(DEM,FD,ksn,varargin)
 		end
 		grid_flag=true;
 	elseif isstruct(ksn)
-		ksn=ksn
+		ksn=ksn;
 		grid_flag=false;
 	elseif isa(ksn,'GRIDobj');
 		if ~validatealignment(DEM,ksn)
