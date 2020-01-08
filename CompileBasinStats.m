@@ -154,6 +154,11 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 		error('For "mode" filter, entry must be provided for "cat_grid"');
 	end
 
+	% Deal with variability in format of locations
+	[sub_head,~,~]=fileparts(location_of_subbasins);
+	if isempty(sub_head)
+		location_of_subbasins=[location_of_data_files filesep location_of_subbasins];
+	end
 
 	% Switch for which basins to include
 	switch include
