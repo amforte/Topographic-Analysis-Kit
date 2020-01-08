@@ -94,6 +94,11 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 	pc=p.Results.populate_categories;
 	ssw=p.Results.suppress_shape_write;
 
+	% Deal with variability in format of locations
+	[sub_head,~,~]=fileparts(location_of_subbasins);
+	if isempty(sub_head)
+		location_of_subbasins=[location_of_data_files filesep location_of_subbasins];
+	end
 
 	% Switch for which basins to include
 	switch include
