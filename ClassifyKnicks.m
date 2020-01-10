@@ -1,14 +1,14 @@
-function ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,varargin)
+function ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,kn_list,varargin)
 	%
 	% Usage:
-	%	ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list);
-	%	ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,'shape_name','name');
+	%	ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,kn_list);
+	%	ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,kn_list,'shape_name','name');
 	%
 	% Description:
-	% 	Function to iterate through a set of bounds (i.e. knickpoints) selected while running 'KsnProfiler'. The function 
+	% 	Function to iterate through a set of bounds and knickpoints selected while running 'KsnProfiler'. The function 
 	%	will display a long profile and chi - elevation plot for individual stream segments and will iterate through each
-	%	bound point you selected in KsnProfiler. The code expects you to input a number or character (at the command prompt)
-	%	to categorize the knickpoint higlighted in red. You must be consistent in your choice (i.e. you must either use 
+	%	bound point or knickpoint you selected in KsnProfiler. The code expects you to input a number or character (in the pop up dialog)
+	%	to categorize the feature higlighted in red. You must be consistent in your choice (i.e. you must either use 
 	%	numbers for all of the classifications or characters for all the classifications within a given run), mixing numbers 
 	%	and characters will result in an error at the end of the run. For entering characters, it's recommended you keep these 
 	%	short strings without spaces (i.e. entries supported into a shapefile a attribute table), e.g. knick or bound  
@@ -27,8 +27,11 @@ function ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,varargin)
 	% Outputs:
 	%	saves a shapfile of knickpoints including the classification you assign using this tool
 	%
+	% Notes:
+	%	You must provide both the 'bnd_list' and 'kn_list' outputs from KsnProfiler, even if one of them has no values that aren't NaN.
+	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	% Function Written by Adam M. Forte - Updated : 01/10/20 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Parse Inputs
@@ -40,16 +43,18 @@ function ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,varargin)
 	addRequired(p,'Sc',@(x) isa(x,'STREAMobj'));
 	addRequired(p,'ksn_master',@(x) iscell(x));
 	addRequired(p,'bnd_list',@(x) ismatrix(x));
+	addRequired(p,'kn_list',@(x) ismatrix(x));
 
 	addParameter(p,'shape_name','ksn',@(x) ischar(x));
 
-	parse(p,DEM,FD,A,Sc,ksn_master,bnd_list,varargin{:});
+	parse(p,DEM,FD,A,Sc,ksn_master,bnd_list,kn_list,varargin{:});
 	DEM=p.Results.DEM;
 	FD=p.Results.FD;
 	Sc=p.Results.Sc;
 	A=p.Results.A;
 	ksn_master=p.Results.ksn_master;
 	bnd_list=p.Results.bnd_list;
+	kn_list=p.Results.kn_list;
 
 	shape_name=p.Results.shape_name;
 
@@ -59,7 +64,7 @@ function ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,varargin)
 	OUTIX.Z(outix)=true;
 	FLDS=flowdistance(FD,OUTIX); 
 
-	% Filter out streams with out knicks
+	% Filter out streams with out bound knicks
 	idx=isnan(bnd_list(:,1));
 	bnd_list=bnd_list(~idx,:);
 
@@ -68,12 +73,22 @@ function ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,varargin)
 	bnd_ix=coord2ind(DEM,bnd_x,bnd_y);
 	bnd_el=DEM.Z(bnd_ix);
 
+	% Filter out streams with out knicks
+	idx=isnan(kn_list(:,1));
+	kn_list=kn_list(~idx,:);
+
+	kn_x=kn_list(:,1);
+	kn_y=kn_list(:,2);
+	kn_ix=coord2ind(DEM,kn_x,kn_y);
+	kn_el=DEM.Z(kn_ix);	
+
 	% Find streams with knickpoints
-	str_list=unique(bnd_list(:,4));
+	str_list=unique(vertcat(bnd_list(:,4),kn_list(:,4)));
 	num_streams=numel(str_list);
 
 	% Initiate arrays
-	is_classified=logical(zeros(numel(bnd_ix),1));
+	b_is_classified=logical(zeros(numel(bnd_ix),1));
+	k_is_classified=logical(zeros(numel(kn_ix),1));
 
 	for ii=1:num_streams
 
@@ -93,19 +108,35 @@ function ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,varargin)
 		C.Z(ST.IXgrid)=c;
 
 		% Determine the knicks on this stream
-		idx=ismember(bnd_ix,ST.IXgrid);
+		bidx=ismember(bnd_ix,ST.IXgrid);
+		kidx=ismember(kn_ix,ST.IXgrid);
+
 		% Determine which have knicks have already been classified
-		idx2= idx & ~is_classified;
+		bidx2= bidx & ~b_is_classified;
+		kidx2= kidx & ~k_is_classified;
 
 		% Set is_classified for next loop
-		is_classified(idx2)=true;
+		b_is_classified(bidx2)=true;
+		k_is_classified(kidx2)=true;
 
 		% Select just the knickpoints of interest
-		bnd_ixOI=bnd_ix(idx2);
-		bnd_xOI=bnd_x(idx2);
-		bnd_yOI=bnd_y(idx);
+		bnd_ixOI=bnd_ix(bidx2);
+		bnd_xOI=bnd_x(bidx2);
+		bnd_yOI=bnd_y(bidx2);
+		bnd_class=zeros(numel(bnd_ixOI),1);
 
-		if ~isempty(bnd_ixOI)
+		kn_ixOI=kn_ix(kidx2);
+		kn_xOI=kn_x(kidx2);
+		kn_yOI=kn_y(kidx2);
+		kn_class=ones(numel(kn_ixOI),1);
+
+		% Combine bounds and knicks
+		cm_ixOI=vertcat(bnd_ixOI,kn_ixOI);
+		cm_xOI=vertcat(bnd_xOI,kn_xOI);
+		cm_yOI=vertcat(bnd_yOI,kn_yOI);
+		cm_class=vertcat(bnd_class,kn_class);
+
+		if ~isempty(cm_ixOI)
 			f1=figure(1);
 			set(f1,'Units','normalized','Position',[0.5 0.1 0.5 0.5],'renderer','painters');
 			clf
@@ -113,10 +144,24 @@ function ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,varargin)
 			hold on
 			plotdz(ST,DEM,'Color',[0.5 0.5 0.5]);
 			plotdz(ST,z,'Color','k');
-			scatter(FLDS.Z(bnd_ixOI),DEM.Z(bnd_ixOI),20,'k','filled');
+			cnt=0;
+			if ~isempty(bnd_ixOI)
+				cnt=cnt+1;
+				s1(cnt)=scatter(FLDS.Z(bnd_ixOI),DEM.Z(bnd_ixOI),30,'k','filled');
+				leg{cnt,1}='Segment Bounds';
+			end
+
+			if ~isempty(kn_ixOI)
+				cnt=cnt+1;
+				s1(cnt)=scatter(FLDS.Z(kn_ixOI),DEM.Z(kn_ixOI),30,'k','s','LineWidth',2);
+				leg{cnt,1}='Knickpoint';
+			end
+			% legend(s1,leg,'location','best');
+
 			if ~verLessThan('matlab','9.5')
 				disableDefaultInteractivity(sbplt1);
 			end	
+
 			hold off
 
 			sbplt2=subplot(2,1,2);
@@ -125,7 +170,13 @@ function ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,varargin)
 			[cvec,six]=sort(cvec);
 			evec=z(six);
 			plot(cvec,evec,'-k','LineWidth',2);
-			scatter(C.Z(bnd_ixOI),DEM.Z(bnd_ixOI),20,'k','filled');
+			if ~isempty(bnd_ixOI)
+				scatter(C.Z(bnd_ixOI),DEM.Z(bnd_ixOI),30,'k','filled');
+			end
+
+			if ~isempty(kn_ixOI)
+				scatter(C.Z(kn_ixOI),DEM.Z(kn_ixOI),30,'k','s','LineWidth',2);
+			end
 			if ~verLessThan('matlab','9.5')
 				disableDefaultInteractivity(sbplt2);
 			end				
@@ -133,20 +184,29 @@ function ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,varargin)
 
 			hold off
 
-			for jj=1:numel(bnd_ixOI);
+			for jj=1:numel(cm_ixOI);
 				subplot(2,1,1)
 				hold on
-				p1=scatter(FLDS.Z(bnd_ixOI(jj)),DEM.Z(bnd_ixOI(jj)),40,'r','filled');
+				if cm_class(jj)==0
+					p1=scatter(FLDS.Z(cm_ixOI(jj)),DEM.Z(cm_ixOI(jj)),50,'r','filled');
+				elseif cm_class(jj)==1
+					p1=scatter(FLDS.Z(cm_ixOI(jj)),DEM.Z(cm_ixOI(jj)),50,'r','filled','s');
+				end
+				legend(s1,leg,'location','best');
 				hold off
 
 				subplot(2,1,2)
 				hold on
-				p2=scatter(C.Z(bnd_ixOI(jj)),DEM.Z(bnd_ixOI(jj)),40,'r','filled');
+				if cm_class(jj)==0
+					p2=scatter(C.Z(cm_ixOI(jj)),DEM.Z(cm_ixOI(jj)),50,'r','filled');
+				elseif cm_class(jj)==1
+					p2=scatter(C.Z(cm_ixOI(jj)),DEM.Z(cm_ixOI(jj)),50,'r','filled','s');
+				end
 				xlabel('\chi');
 				ylabel('Elevation [m]');
 				hold off
 
-				c=inputdlg('Enter the classification for the selected knickpoint:','Knickpoint Classification');
+				c=inputdlg('Enter the classification for the selected feature:','Feature Classification');
 
 				cn=str2num(c{1});
 				if isempty(cn)
@@ -155,7 +215,7 @@ function ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,varargin)
 					char_flag=false;
 				end
 
-				new_bnds(jj,:)=[bnd_xOI(jj) bnd_yOI(jj) FLDS.Z(bnd_ixOI(jj)) DEM.Z(bnd_ixOI(jj)) str_list(ii)];
+				new_bnds(jj,:)=[cm_xOI(jj) cm_yOI(jj) FLDS.Z(cm_ixOI(jj)) DEM.Z(cm_ixOI(jj)) str_list(ii)];
 				if char_flag
 					bnd_cat{jj,1}=c;
 				else

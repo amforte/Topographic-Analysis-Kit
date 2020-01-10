@@ -1,8 +1,8 @@
-function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
+function [knl,ksn_master,bnd_list,kn_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%
 	% Usage:
-	%	[knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S);
-	%	[knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,'name',value,...);
+	%	[knl,ksn_master,bnd_list,kn_list,Sc]=KsnProfiler(DEM,FD,A,S);
+	%	[knl,ksn_master,bnd_list,kn_list,Sc]=KsnProfiler(DEM,FD,A,S,'name',value,...);
 	%
 	% Description:
 	% 	Function to interactively select channel heads and define segements over which to calculate channel steepness values.
@@ -10,10 +10,19 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%	with the stream network and expects the user to select a location near a channel head of interest. The user will be then 
 	%	prompted to confirm that the defined stream is the desired choice. Finally, displays of the chi-z and longitudinal profile 
 	%	of the selected river will appear and the user is expected to define (with mouse clicks) any obvious segments with different 
-	%	channel steepness (or concavity) on either the chi-z plot or the stream profile (see 'pick_method' option). When done selecting 
-	%	press enter/return. The user will be prompted whether they wish to continue picking streams or if they are done. When done 
-	%	picking streams, the function will output three different products (see below) and produce a shapefile of the selected streams 
+	%	channel steepness (or concavity) on either the chi-z plot, the stream profile, or a slope-area plot (see 'pick_method' option). 
+	%	When done selecting press enter/return. The user will be prompted whether they wish to continue picking streams or if they are done. 
+	%	When done picking streams, the function will output five different products (see below) and produce a shapefile of the selected streams 
 	%	with ksn, concavity, area, and gradient.
+	%
+	% Picking Bounds:
+	%	The function expects that you will select bounds for defining different ksn segments on the appropriate plot (the one with red
+	%	axes, based on what you provide to 'pick_method') with LEFT MOUSE CLICKS. If you click any other mouse button or press any key
+	%	(other than the return/enter key) the code will recognize this as selecting a knickpoint location. This is distinguished from a 
+	%	bound in that it's positions will be logged and recorded in the 'kn_list' output, but it will NOT be used to define different
+	%	ksn segments. This is to provide the user the ability to 'mark' locations on the profile that you do not wish to use as bounds.
+	%	Both bounds and these marked locations are provided to inputs to the companion 'ClassifyKnicks' function (where the bounds and
+	%	these knickpoints / marked locations are distinguished from each other).
 	%	
 	% Required Inputs:
 	%	DEM - Digital Elevation as a GRIDobj, assumes unconditioned DEM (e.g. DEMoc from ProcessRiverBasins or output from MakeStreams)
@@ -132,29 +141,31 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	%		positive ksn error, reference concavity, best fit concavity, mininum threshold area, gradient, fit residual, and an identifying number. Note
 	%		that if using the code in 'concavity_method','auto' mode then the reference concavity and best fit concavity columns will be the same.
 	%	ksn_master - identical to knl but as a cell array where individual cells are individual selected channels
-	%	bnd_list - n x 4 matrix of selected bounds for fitting ksn, columns are x coordinate, y coordinate, elevation, and the stream identifying number 
-	%		(this could be thought of as a list of knickpoints), also output as a seperate shapefile. If x y and z values appear as NaN, this indicates
-	%		that bounds for this stream were not selected. 
+	%	bnd_list - n x 4 matrix of selected bounds for fitting ksn, columns are x coordinate, y coordinate, elevation, and the stream identifying number, 
+	%		 also output as a seperate shapefile ('_bounds.shp'). If x y and z values appear as NaN, this indicates that bounds for this stream were not selected. 
+	%		
+	%	kn_list - n x 4 matrix of extra identified knickpoints (not bounds),columns are x coordinate, y coordinate, elevation, and the stream identifying number,
+	%		 also output as a seperate shapefile ('_knicks.shp'. If x y and z values appear as NaN, this indicates that knicks for this stream were not selected.
 	%	Sc - STREAMobj of selected streams
 	%
 	% Examples:
-	%	[knl,ksn_master,bnd_list,Sc]=KSN_Profiler(DEM,FD,A,S);
-	%	[knl,ksn_master,bnd_list,Sc]=KSN_Profiler(DEM,FD,A,S,'junction_method','ignore','ref_concavity',0.65,'max_ksn',500);
-	%	[knl,ksn_master,bnd_list,Sc]=KSN_Profiler(DEM,FD,A,S,'input_method','channel_heads','channel_head_list',channel_head_array);
-	%	[knl,ksn_master,bnd_list,Sc]=KSN_Profiler(DEM,FD,A,S,'input_method','channel_heads','channel_head_list','channel_heads.shp');
+	%	[knl,ksn_master,bnd_list,kn_list,Sc]=KSN_Profiler(DEM,FD,A,S);
+	%	[knl,ksn_master,bnd_list,kn_list,Sc]=KSN_Profiler(DEM,FD,A,S,'junction_method','ignore','ref_concavity',0.65,'max_ksn',500);
+	%	[knl,ksn_master,bnd_list,kn_list,Sc]=KSN_Profiler(DEM,FD,A,S,'input_method','channel_heads','channel_head_list',channel_head_array);
+	%	[knl,ksn_master,bnd_list,kn_list,Sc]=KSN_Profiler(DEM,FD,A,S,'input_method','channel_heads','channel_head_list','channel_heads.shp');
 	%	Restart Examples:
-	%	[knl,ksn_master,bnd_list,Sc]=KSN_Profiler(DEM,FD,A,S,'restart','continue'); % Continues where you left off
-	%	[knl,ksn_master,bnd_list,Sc]=KSN_Profiler(DEM,FD,A,S,'restart','skip'); % Skips next stream in non interactive sequence
+	%	[knl,ksn_master,bnd_list,kn_list,Sc]=KSN_Profiler(DEM,FD,A,S,'restart','continue'); % Continues where you left off
+	%	[knl,ksn_master,bnd_list,kn_list,Sc]=KSN_Profiler(DEM,FD,A,S,'restart','skip'); % Skips next stream in non interactive sequence
 	%	
 	%
 	% Note:
-	%	-If no boundaries/knickpoints are selected for any of the streams selected, then a '_knicks.shp' shapefile will not be produced.
+	%	-If no boundaries/knickpoints are selected for any of the streams selected, then a '_bounds.shp'/'_knicks.shp' shapefile will not be produced.
 	%	-The '*_profiler.mat' that is saved out contains additional files besides the formal outputs of the code. These additional variables
 	%		are necessary to be able to restart a run using the 'restart' option.
 	%	-If you have set 'save_figures' to true, DO NOT close figures manually as this will cause the code to error.
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	% Function Written by Adam M. Forte - Updated : 01/09/20 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Parse Inputs
@@ -537,7 +548,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 		if rf & strcmp(r_type,'c')
 			% Load in data from previous run
-			load(out_mat_name,'count','ksn_master','bnd_master','res_master','Sc');
+			load(out_mat_name,'count','ksn_master','bnd_master','kn_master','res_master','Sc');
 			ii=count+1;
 			% Regenerate plotted streams
 			km=vertcat(ksn_master{:});
@@ -551,7 +562,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 			clear km kix K;
 		elseif rf & strcmp(r_type,'r')
 			% Load in data from failed or aborted run
-			load(out_restart_name,'count','ksn_master','bnd_master','res_master','Sc');
+			load(out_restart_name,'count','ksn_master','bnd_master','kn_master','res_master','Sc');
 			ii=count+1;
 			% Regenerate plotted streams
 			km=vertcat(ksn_master{:});
@@ -839,7 +850,26 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet');
 					end	
 
-					[cv,e]=ginput;
+					[cv,~,bttn]=ginput;
+					% Determine if there any non bound knicks
+					bttn_idx=bttn~=1;
+					if any(bttn_idx)
+						% Parse out non bounds
+						cv_kn=cv(bttn_idx);
+						cv(bttn_idx)=[];
+						% Convert to indices
+						rc=C.chi; rx=C.x; ry=C.y;
+						kn_ix=zeros(numel(cv_kn),1); 
+						for jj=1:numel(cv_kn);
+							chidist=sqrt(sum(bsxfun(@minus, rc, cv_kn(jj)).^2,2));
+							[~,knbix]=min(chidist);
+							knbx=rx(knbix);
+							knby=ry(knbix);
+							kn_ix(jj)=coord2ind(DEM,knbx,knby);
+						end
+					else
+						kn_ix=NaN;
+					end
 
 					if isempty(cv)
 						if strcmp(theta_method,'ref')
@@ -1205,8 +1235,28 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet');	
 					end	
 
-					[d,e]=ginput;
+					[d,~,bttn]=ginput;
 					d=d*1000; % convert back to meters;
+
+					% Determine if there any non bound knicks
+					bttn_idx=bttn~=1;
+					if any(bttn_idx)
+						% Parse out non bounds
+						d_kn=d(bttn_idx);
+						d(bttn_idx)=[];
+						% Convert to indices
+						rd=C.distance; rx=C.x; ry=C.y;
+						kn_ix=zeros(numel(d_kn),1); 
+						for jj=1:numel(d_kn);
+							distdist=sqrt(sum(bsxfun(@minus, rd, d_kn(jj)).^2,2));
+							[~,knbix]=min(distdist);
+							knbx=rx(knbix);
+							knby=ry(knbix);
+							kn_ix(jj)=coord2ind(DEM,knbx,knby);
+						end
+					else
+						kn_ix=NaN;
+					end
 
 					if isempty(d)
 						if strcmp(theta_method,'ref')
@@ -1525,7 +1575,26 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					linkaxes([ax4,ax2],'x');
 					colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet'); colormap(ax4,'jet');
 
-					[av,~]=ginput;
+					[av,~,bttn]=ginput;
+					% Determine if there any non bound knicks
+					bttn_idx=bttn~=1;
+					if any(bttn_idx)
+						% Parse out non bounds
+						av_kn=av(bttn_idx);
+						av(bttn_idx)=[];
+						% Convert to indices
+						ra=C.area; rx=C.x; ry=C.y;
+						kn_ix=zeros(numel(av_kn),1); 
+						for jj=1:numel(av_kn);
+							areadist=sqrt(sum(bsxfun(@minus, ra, av_kn(jj)).^2,2));
+							[~,knbix]=min(areadist);
+							knbx=rx(knbix);
+							knby=ry(knbix);
+							kn_ix(jj)=coord2ind(DEM,knbx,knby);
+						end
+					else
+						kn_ix=NaN;
+					end					
 
 					if isempty(av)
 						if strcmp(theta_method,'ref')
@@ -1779,16 +1848,17 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					kmat=[ksn_list G.Z(gix) res_list(:,2) ones(size(ksn_list,1),1).*ii];
 					ksn_master{ii,1}=kmat;
 					bnd_master{ii,1}=bnd_ix;
+					kn_master{ii,1}=kn_ix;
 					res_master{ii,1}=res_list;
 					count=ii;
-					save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append');
+					save(out_restart_name,'ksn_master','bnd_master','kn_master','res_master','Sc','count','-append');
 					if save_figures
 						f2_name=[shape_name '_stream_fits_' num2str(ii) '.pdf'];
 						f3_name=[shape_name '_stream_rsds_' num2str(ii) '.pdf'];
 						print(f2,f2_name,'-dpdf','-fillpage');
 						print(f3,f3_name,'-dpdf','-fillpage');
 					end
-					clear ksn_list ksn_nodes res_list bnd_ix kidx gix kmat;
+					clear ksn_list ksn_nodes res_list bnd_ix kn_ix kidx gix kmat;
 					ii=ii+1;
 				case 'Stop Picking'
 					wtb=waitbar(0,'Cleaning up and generating outputs, do not close windows');
@@ -1803,20 +1873,21 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					kmat=[ksn_list G.Z(gix) res_list(:,2) ones(size(ksn_list,1),1).*ii];
 					ksn_master{ii,1}=kmat;
 					bnd_master{ii,1}=bnd_ix;
+					kn_master{ii,1}=kn_ix;
 					res_master{ii,1}=res_list;
 					count=ii;
-					save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append');					
+					save(out_restart_name,'ksn_master','bnd_master','kn_master','res_master','Sc','count','-append');					
 					if save_figures
 						f2_name=[shape_name '_stream_fits_' num2str(ii) '.pdf'];
 						f3_name=[shape_name '_stream_rsds_' num2str(ii) '.pdf'];
 						print(f2,f2_name,'-dpdf','-fillpage');
 						print(f3,f3_name,'-dpdf','-fillpage');
 					end
-					clear ksn_list ksn_nodes res_list bnd_ix kidx gix kmat;
+					clear ksn_list ksn_nodes res_list bnd_ix kn_ix kidx gix kmat;
 				case 'Redo Fit'
 					str3 = 'R';
 					str2 = 'Y';
-					clear ksn_list ksn_nodes res_list bnd_ix;
+					clear ksn_list ksn_nodes res_list bnd_ix kn_ix;
 				end
 
 				close figure 2
@@ -1836,7 +1907,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		end
 
 		if rf & strcmp(r_type,'c') & strcmp(restart,'continue')
-			load(out_mat_name,'count','ksn_master','bnd_master','res_master','Sc');
+			load(out_mat_name,'count','ksn_master','bnd_master','kn_master','res_master','Sc');
 			if count>=num_ch
 				if isdeployed
 					errordlg('Run appears to have already completed, cannot restart')
@@ -1845,7 +1916,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 			end
 			rng=count+1:num_ch;
 		elseif rf & strcmp(r_type,'c') & strcmp(restart,'skip')
-			load(out_mat_name,'count','ksn_master','bnd_master','res_master','Sc');
+			load(out_mat_name,'count','ksn_master','bnd_master','kn_master','res_master','Sc');
 			if count>=num_ch
 				if isdeployed
 					errordlg('Run appears to have already completed, cannot restart')
@@ -1854,7 +1925,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 			end
 			rng=count+2:num_ch;
 		elseif rf & strcmp(r_type,'r') & strcmp(restart,'continue')
-			load(out_restart_name,'count','ksn_master','bnd_master','res_master','Sc');
+			load(out_restart_name,'count','ksn_master','bnd_master','kn_master','res_master','Sc');
 			if count>=num_ch
 				if isdeployed
 					errordlg('Run appears to have already completed, cannot restart')
@@ -1863,7 +1934,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 			end
 			rng=count+1:num_ch;
 		elseif rf & strcmp(r_type,'r') & strcmp(restart,'skip')
-			load(out_restart_name,'count','ksn_master','bnd_master','res_master','Sc');
+			load(out_restart_name,'count','ksn_master','bnd_master','kn_master','res_master','Sc');
 			if count>=num_ch
 				if isdeployed
 					errordlg('Run appears to have already completed, cannot restart')
@@ -2064,7 +2135,26 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet');
 					end	
 
-					[cv,e]=ginput;
+					[cv,~,bttn]=ginput;
+					% Determine if there any non bound knicks
+					bttn_idx=bttn~=1;
+					if any(bttn_idx)
+						% Parse out non bounds
+						cv_kn=cv(bttn_idx);
+						cv(bttn_idx)=[];
+						% Convert to indices
+						rc=C.chi; rx=C.x; ry=C.y;
+						kn_ix=zeros(numel(cv_kn),1); 
+						for jj=1:numel(cv_kn);
+							chidist=sqrt(sum(bsxfun(@minus, rc, cv_kn(jj)).^2,2));
+							[~,knbix]=min(chidist);
+							knbx=rx(knbix);
+							knby=ry(knbix);
+							kn_ix(jj)=coord2ind(DEM,knbx,knby);
+						end
+					else
+						kn_ix=NaN;
+					end
 
 					if isempty(cv)
 						if strcmp(theta_method,'ref')
@@ -2402,8 +2492,28 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					linkaxes([ax2,ax3],'x');
 					colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet');
 
-					[d,e]=ginput;
+					[d,~,bttn]=ginput;
 					d=d*1000; % convert back to meters;
+
+					% Determine if there any non bound knicks
+					bttn_idx=bttn~=1;
+					if any(bttn_idx)
+						% Parse out non bounds
+						d_kn=d(bttn_idx);
+						d(bttn_idx)=[];
+						% Convert to indices
+						rd=C.distance; rx=C.x; ry=C.y;
+						kn_ix=zeros(numel(d_kn),1); 
+						for jj=1:numel(d_kn);
+							distdist=sqrt(sum(bsxfun(@minus, rd, d_kn(jj)).^2,2));
+							[~,knbix]=min(distdist);
+							knbx=rx(knbix);
+							knby=ry(knbix);
+							kn_ix(jj)=coord2ind(DEM,knbx,knby);
+						end
+					else
+						kn_ix=NaN;
+					end
 
 					if isempty(d)
 						if strcmp(theta_method,'ref')
@@ -2690,7 +2800,26 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 					linkaxes([ax4,ax2],'x');
 					colormap(ax1,'jet'); colormap(ax2,'jet'); colormap(ax3,'jet'); colormap(ax4,'jet');
 
-					[av,~]=ginput;
+					[av,~,bttn]=ginput;
+					% Determine if there any non bound knicks
+					bttn_idx=bttn~=1;
+					if any(bttn_idx)
+						% Parse out non bounds
+						av_kn=av(bttn_idx);
+						av(bttn_idx)=[];
+						% Convert to indices
+						ra=C.area; rx=C.x; ry=C.y;
+						kn_ix=zeros(numel(av_kn),1); 
+						for jj=1:numel(av_kn);
+							areadist=sqrt(sum(bsxfun(@minus, ra, av_kn(jj)).^2,2));
+							[~,knbix]=min(areadist);
+							knbx=rx(knbix);
+							knby=ry(knbix);
+							kn_ix(jj)=coord2ind(DEM,knbx,knby);
+						end
+					else
+						kn_ix=NaN;
+					end	
 
 					if isempty(av)
 						if strcmp(theta_method,'ref')
@@ -2918,21 +3047,22 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						kmat=[ksn_list G.Z(gix) res_list(:,2) ones(size(ksn_list,1),1).*ii];
 						ksn_master{ii,1}=kmat;
 						bnd_master{ii,1}=bnd_ix;
+						kn_master{ii,1}=kn_ix;
 						res_master{ii,1}=res_list;		
 						Sc=Sct;
 						count=ii;
-						save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append');						
+						save(out_restart_name,'ksn_master','bnd_master','kn_master','res_master','Sc','count','-append');						
 						if save_figures
 							f2_name=[shape_name '_stream_fits_' num2str(ii) '.pdf'];
 							f3_name=[shape_name '_stream_rsds_' num2str(ii) '.pdf'];
 							print(f2,f2_name,'-dpdf','-fillpage');
 							print(f3,f3_name,'-dpdf','-fillpage');
 						end
-						clear ksn_list ksn_nodes res_list bnd_ix kidx gix kmat;
+						clear ksn_list ksn_nodes res_list bnd_ix kn_ix kidx gix kmat;
 					case 'Redo Fit'
 						str2 = 'R';
 						str1 = 'R';
-						clear ksn_list ksn_nodes res_list bnd_ix;
+						clear ksn_list ksn_nodes res_list bnd_ix kn_ix;
 					case ignore_str
 						wtb=waitbar(0,'Cleaning up and generating outputs, do not close windows');
 						str1=[];
@@ -2945,17 +3075,18 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						kmat=[ksn_list G.Z(gix) res_list(:,2) ones(size(ksn_list,1),1).*ii];
 						ksn_master{ii,1}=kmat;
 						bnd_master{ii,1}=bnd_ix;
+						kn_master{ii,1}=kn_ix;
 						res_master{ii,1}=res_list;		
 						Sc=Sct;
 						count=ii;
-						save(out_restart_name,'ksn_master','bnd_master','res_master','Sc','count','-append');
+						save(out_restart_name,'ksn_master','bnd_master','kn_master','res_master','Sc','count','-append');
 						if save_figures
 							f2_name=[shape_name '_stream_fits_' num2str(ii) '.pdf'];
 							f3_name=[shape_name '_stream_rsds_' num2str(ii) '.pdf'];
 							print(f2,f2_name,'-dpdf','-fillpage');
 							print(f3,f3_name,'-dpdf','-fillpage');
 						end
-						clear ksn_list ksn_nodes res_list bnd_ix kidx gix kmat;	
+						clear ksn_list ksn_nodes res_list bnd_ix kn_ix kidx gix kmat;	
 						break_flag=true;
 					end
 
@@ -2977,6 +3108,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 						kmat=[ksn_list G.Z(gix) res_list(:,2) ones(size(ksn_list,1),1).*ii];
 						ksn_master{ii,1}=kmat;
 						bnd_master{ii,1}=bnd_ix;
+						kn_master{ii,1}=kn_ix;
 						res_master{ii,1}=res_list;		
 						Sc=Sct;
 						count=ii;
@@ -2987,11 +3119,11 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 							print(f2,f2_name,'-dpdf','-fillpage');
 							print(f3,f3_name,'-dpdf','-fillpage');
 						end
-						clear ksn_list ksn_nodes res_list bnd_ix kidx gix kmat;
+						clear ksn_list ksn_nodes res_list bnd_ix kn_ix kidx gix kmat;
 					case 'Redo Fit'
 						str2 = 'R';
 						str1 = 'R';
-						clear ksn_list ksn_nodes res_list bnd_ix;
+						clear ksn_list ksn_nodes res_list bnd_ix kn_ix;
 					end
 
 					close figure 2
@@ -3022,7 +3154,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 
 	% Add stream numbers to bound list and convert bound list
 	bnd_list=cell(numel(bnd_master),1);
-	for jj=1:numel(bnd_master);
+	for jj=1:numel(bnd_master)
 		bnd=bnd_master{jj,1};
 		if ~isnan(bnd)
 			% Extract elevations
@@ -3043,10 +3175,26 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 		end
 	end
 
-	% bnd_list
-
 	% Collapse bnd_list
 	bnd_list=vertcat(bnd_list{:});
+
+	% Add stream numbers to knick list and convert knick list
+	kn_list=cell(numel(kn_master),1);
+	for jj=1:numel(kn_master)
+		kn=kn_master{jj,1};
+		if ~isnan(kn)
+			knz=DEM.Z(kn);
+			[knx,kny]=ind2coord(DEM,kn);
+			knix=kn;
+			krm=ones(size(kn)).*jj;
+			kn_list{jj,1}=[knx kny knz krm knix];
+		elseif isempty(kn)
+			kn_list{jj,1}=[];
+		else
+			kn_list{jj,1}=[0 0 0 jj kn];
+		end
+	end
+	kn_list=vertcat(kn_list{:});
 
 	waitbar(1/5,wtb);
 
@@ -3184,8 +3332,26 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 			KNK(jj,1).Elev=double(bnd_strc(jj,3));
 			KNK(jj,1).StrNum=double(bnd_strc(jj,4));
 		end
+		out_bound_name=[shape_name '_bounds.shp'];
+		shapewrite(KNK,out_bound_name);
+	end
+
+	idx=~isnan(kn_list(:,5));
+	kn_strc=kn_list(idx,:);
+	kn_list(~idx,1)=NaN; kn_list(~idx,2)=NaN; kn_list(~idx,3)=NaN;
+	kn_list=kn_list(:,[1:4]);
+
+	if ~isempty(kn_strc)
+		XKNK=struct;
+		for jj=1:numel(kn_strc(:,1))
+			XKNK(jj,1).Geometry='Point';
+			XKNK(jj,1).X=double(kn_strc(jj,1));
+			XKNK(jj,1).Y=double(kn_strc(jj,2));
+			XKNK(jj,1).Elev=double(kn_strc(jj,3));
+			XKNK(jj,1).StrNum=double(kn_strc(jj,4));
+		end
 		out_knick_name=[shape_name '_knicks.shp'];
-		shapewrite(KNK,out_knick_name);
+		shapewrite(XKNK,out_knick_name);
 	end
 
 	waitbar(3/5,wtb);
@@ -3196,7 +3362,7 @@ function [knl,ksn_master,bnd_list,Sc]=KsnProfiler(DEM,FD,A,S,varargin)
 	waitbar(4/5,wtb);
 
 	% Save out file
-	save(out_mat_name,'knl','ksn_master','bnd_list','Sc','bnd_master','res_master','count','-append');
+	save(out_mat_name,'knl','ksn_master','bnd_list','kn_list','Sc','bnd_master','kn_master','res_master','count','-append');
 	% Delete restart file after successful completion
 	delete(out_restart_name);
 
