@@ -155,9 +155,11 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	end
 
 	% Deal with variability in format of locations
-	[sub_head,~,~]=fileparts(location_of_subbasins);
-	if isempty(sub_head)
-		location_of_subbasins=[location_of_data_files filesep location_of_subbasins];
+	if ~isempty(location_of_subbasins)
+		[sub_head,~,~]=fileparts(location_of_subbasins);
+		if isempty(sub_head)
+			location_of_subbasins=[location_of_data_files filesep location_of_subbasins];
+		end
 	end
 
 	% Switch for which basins to include
