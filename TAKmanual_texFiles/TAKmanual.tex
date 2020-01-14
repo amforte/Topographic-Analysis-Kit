@@ -188,7 +188,7 @@
 \affil[1]{Department of Geology and Geophysics, Louisiana State University, Baton Rouge, LA}
 \affil[2]{School of Earth and Space Exploration, Arizona State University, Tempe, AZ}
 
-\date{TAK Release Version 1.1.0}
+\date{TAK Release Version 1.2.0}
 
 \titlepic{\includegraphics[width=12cm]{PNGs/TAKlogo.png}}
 
@@ -242,40 +242,59 @@ Also, please cite the original TopoToolbox publications as TAK could not functio
 
 \paragraph{}The easiest way to use TAK is to just download a copy of the GitHub repository to your computer and work from that. The disadvantage is that to update you need to delete the old version and replace with a complete download of the new version (even if just a single function was updated). To avoid this, a suggested strategy for more advanced users for both the TopoToolbox and TAK functions is to 'fork' copies of these repositories and use these forked versions on your local machine. Periodically, you can \href{https://help.github.com/articles/syncing-a-fork/}{sync your fork} with the master of the original repository to merge in any changes that have been made to either TopoToolbox or TAK. If you are uncomfortable with the command line, this can also be done on the web version of GitHub by 'comparing' branches (for updating TopoToolbox, make sure the 'head fork' is wschwanghart/topotoolbox and the 'base fork' is your forked version of TopoToolbox, follow a similar procedure for TAK), click on the 'Create pull request' button, give the pull request a name in the 'Title' box (the new 'Create pull request' button will be grayed out until you provide a name) click 'Create pull request', click 'Merge pull request', and then finally click 'Confirm merge'. Your forked version will now be up to date with the master of TopoToolbox or TAK.
 
-\subsection{Compiled Functions} \label{sec:CmpFunc}
-\paragraph{}In attempt to make these functions accessible to a wider range of users, we have also produced compiled versions of these functions that do not require Matlab to run. Within the main repository, there is a folder called 'Compiled\_Versions' that contains three folders associated with the compiled versions, 'cmpMfiles', 'Windows', and 'MacOSx'. The 'cmpMfiles' folder contains modified versions of all the matlab functions that were compiled, for reference (you will likely need to look at these to understand the inputs to the compiled functions). The compiled versions all have a 'cmp' prefix on them to differentiate them from the main functions (these are all functional in Matlab on their own, though it's not generally recommended that you use these in Matlab over their main counterparts), but as described below, when calling a function from the command line of the compiled TAK, you use the name of the desired function without the 'cmp' prefix. The master function is 'TAK.m' (for which there is not a comparable function in the non-compiled versions). This master function will not successfully run in Matlab as it is designed to translate inputs from the command line to the other functions in a way that works only when used in a deployed (i.e. compiled) mode. The 'Windows' and 'MacOSX' folders each contain an executable named \textit{InstallTAKandMatlabRuntime} (with either an .exe or .app extension depending on the OS). Double clicking this executable will install the Matlab runtime environment that is necessary to run compiled matlab code and the executable for TAK. To keep the size of this install file manageable, this executable needs to access the internet to download the Matlab Runtime. Additionally, you will likely need to have administrator privileges on your local machine in order to successfully install Matlab Runtime. If you have previously installed the Matlab runtime environment, versions of just the TAK executable can be found in the 'Files\_Only' folder. 
+\subsection{Compiled Functions (DEPRECATED)} \label{sec:CmpFunc}
+\paragraph{}The original release of TAK included a set of companion compiled versions of the majority of TAK functions described in this manual. These required the MATLAB runtime environment to be installed and then were invoked at the command line, using either the 'Terminal' (MacOSX) or 'Command Prompt' (Windows) applications. While functional, these were ultimately hard for users to interact with and challenging for us to fully error test. For that reason, we are no longer updating or fixing these, though they do remain available (for now, but they will be removed from a future release) on the GitHub repository. We also maintain the description of their usage in the \nameref{sec:CmpDesc} section. These compiled conversions have been replaced with a GUI interface, described in the section \ref{sec:GUIgeneral} that can be run either within MATLAB or through the free MRE. 
 
-\paragraph{}Compiled TAK functions are designed to be run from the command line (i.e. cmd prompt on Windows, terminal on Mac OS X). \textbf{This means that after you have installed the compiled TAK functions, double clicking on the TAK.exe file or a shortcut to it will result in an error indicating that it is missing required arguments. You must run it from the command line as described below!} The procedure for running the compiled TAK functions differs between Windows and Mac OS X and is described in the readme that appears along with the executables. After installing Matlab Runtime, on Windows, open a command prompt and navigate to the location of the TAK executable and then simply call TAK:
+\subsection{GUI Versions} \label{sec:GUIgeneral}
+ \paragraph{}In TAK version 1.2.0 and later, we provide a GUI (Graphical User Interface) version of TAK. In detail, there are three versions of the GUI, a native MATLAB version (which does not require any additional installations, but does require all of the toolboxes, see \nameref{sec:Depend} for more details), and versions for both MacOSX and Windows which do not require MATLAB, but do require the free MATLAB Runtime Environment (MRE). If using the MRE version of the GUI, it is important that you install the MRE alongside TAK and not separately as this will ensure that you have installed the correct version of the MRE.
 
-\begin{lstlisting}[language=bash]
-TAK arguments
-\end{lstlisting}
+\begin{figure}[H]
+	\includegraphics[width=16.5cm]{PNGs/TAK_GUI_DataInput}
+	\caption{Opening screen of the TAK GUI.}
+	\label{fig:TAKguiGeneral}
+\end{figure}
 
-\noindent
-The procedure is a little more complicated on Mac OS X, here there is a shell script to run the application but it requires that you specify the location of the Matlab Runtime environment. For example, after installing Matlab Runtime and navigating to the location of the TAK executable and this shell script (with a .sh file extension) in a terminal window:
+\paragraph{}Within the GUI, most of the individual TAK functions appear in a variety of panels, grouped by the type of function, which roughly correspond to the sections in this manual. There are a few generic functions or operations that appear at the top of the GUI, specifically output controls, a function to dump the contents of a provided MAT file into individual files readable by standard GIS software, and some session controls (Figure \ref{fig:TAKguiGeneral}). 
 
-\begin{lstlisting} [language=bash]
-./run_TAK.sh /location/of/runtime arguments
-\end{lstlisting}
+\subsubsection{Installation}
+\paragraph{MATLAB}To install the GUI for use in MATLAB, within the downloaded repository folder, navigate to the 'TAK\_mlapinstall' file within the 'GUI/MATLAB' folder from within MATLAB. Double click on this file and click on the 'Install' button in the dialog that appears. Now the TAK app is installed in your 'App' toolbar and can be run by clicking on the TAK icon.
 
-\noindent
-As described in the readme associated with the Mac version, you can avoid having to give the location of the Matlab Runtime environment every time you run TAK by permanently setting the DYLD\_LIBRARY\_PATH location in your path.
+\paragraph{Windows or Mac with Runtime} To install the GUI for use outside of MATLAB and using the Matlab Runtime Environment, navigate to the correct folder for your operating system (e.g. 'GUI/Windows/AppAndRuntime' or 'GUI/Mac/AppAndRuntime') and double click on the enclosed 'TAKAppInstaller\_web' file. This will download and install the necessary portion of the Matlab Runtime Environment and install TAK. TAK needs the specific version of the MRE that comes bundled with TAK, so it is usually best to install the MRE and TAK together, though the app without the MRE is provided in the 'JustTheApp' folder. After installation, the TAK application / executable that is created can be run by double clicking on it. It may take a few minutes (especially the first time) for the GUI to appear (and you will see a splash screen first), so be patient.
 
-\paragraph{}Compiled TAK expects that the first argument (after whatever is required to call the main TAK function depending on the operating system you are using) will be the name of the function you wish to use  and the second argument will be the \textbf{full path} (it really does need to be the full path) to your working directory. TAK expects that all input data that you reference are stored in this working directory and it will store all output data in this working directory (or folders created within this working directory). Generally, the compiled versions of the functions take the same input as the matlab functions described in detail in later sections, but in some cases, because of the limitations of the style of inputs allowed, these inputs are slightly different (e.g. functions require a text file input instead of a cell array input, etc). To understand the inputs to the compiled functions, please refer to the headers of the relevant codes stored in the cmpMfiles folder and Section \ref{sec:CmpFuncCalls} of the Appendix. 
+\subsubsection{General Use}
+\paragraph{}Generally, any option that exists within the native MATLAB versions of the TAK functions appear as options in the GUI versions. With some limited exceptions, true-false options will appear as check boxes (where checked implies true and unchecked implies false), numeric parameters will be editable in dialog boxes (the few exceptions are when there are very specific ranges for input values), optional choices will appear as drop down menus, and definition of locations or loading of files is performed through buttons. All of the functions are setup such that the execution of the function will not occur until the \textbf{Run FunctionName} button is pushed. For some functions, upon clicking the run button, additional dialogs will appear to prompt the user to make additional choices or load extra data based on the users inputs. When running any function, there are a variety of required inputs, usually including selected portions of the datasets output from \textit{MakeStreams} and stored in a MAT file if created within the GUI along with an output directory in which to store any datasets that are generated. If you attempt to run a function without providing any or all of these required inputs, a series of warning dialogs will appear informing you which required inputs are missing (e.g. Figure \ref{fig:TAKguiWarn}).
 
-\paragraph{}It is important to note that the form of inputs are also different at the command line. In short, no input should be included in quotes regardless of the input type and each input should be separated by a single space. For example to call the compiled version of \nameref{sec:MakeStreams} on Mac OS X:
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=8cm]{PNGs/TAK_GUI_warn}
+	\caption{Example warning dialog when there is missing required data for a given function within the TAK GUI.}
+	\label{fig:TAKguiWarn}
+\end{figure}
 
-\begin{lstlisting}[language=bash]
-./run_TAK.sh /location/of/runtime MakeStreams /location/of/working/directory dem.tif 1e6 topo_files no_data_exp auto
-\end{lstlisting}
+\subsubsection{Output Controls}
+\paragraph{}When using the GUI, you are required to provide a location in which to save outputs. This is set by clicking on the 'Select Output Directory' button and choosing a valid directory. If you attempt to run any function without providing a valid directory, you will be warned that you must. The path of this output directory will be displayed to the right of the button after you define it. The output controls also allow the user to change the default file name prefix, set to 'Topo' within the GUI. For the majority of functions, if an output is saved, the entry that appears in this box will be added to the front of the file name. 
 
-\noindent
-where 'MakeStreams' is the name of the function you want to use, '/location/of/working/directory' is the working directory where input data will be read from and output data will be stored, 'dem.tif' is the first required input of MakeStreams and is the name of the dem file to import, '1e6' is the second required input of MakeStreams and is the threshold accumulation area to use, 'topo\_files' is the third required input of MakeStreams and is the name for output files (note that this is NOT a required input for the standard Matlab version of MakeStreams), 'no\_data\_exp' is the name of an optional parameter for MakeStreams, and 'auto' is the value being passed to that optional parameter. Some standards for the inputs; 1)  when the function requires that you provide a name of an input file, it expects that the file includes the file extension (e.g. .txt, .mat, .shp, etc) because it will use this file extension to make sure you're providing the correct kind of file, 2) any text file input is expected to have a .txt extension, 3) theoretically comma or tab delimited data are both fine for text file inputs, but in practice, comma delimited files are preferred, and 4) when the function requires (or allows as an optional input) the name of an output file, DO NOT include a file extension as this name will likely be used for several different files with different extensions and the function will handle appending the proper file extensions. The header of 'cmp*.m' files for each function contain example inputs to the command line to run that function.
+\subsubsection{Session Controls} \label{sec:SessCntrls}
+\paragraph{}There are a variety of options in the session controls panel, which appears in the top left of the GUI window (Figure \ref{fig:TAKguiGeneral}). For most of the TAK functions there are a variety of default values (i.e. the values that populate the dialog boxes upon starting a GUI session). If you ever want to reset all the values in these boxes to these default values without restarting the GUI, you can click on the 'Reset Defaults' button. As you interact with the GUI and use individual functions, you will end up loading a variety of files into active memory (e.g. DEM files, text files containing pour points, etc). If you want to clear active memory without restarting the GUI, you can click the 'Clear Loaded Data' button. This action will only clear loaded data and will not change the values of any parameters. Similarly, if you wish to save the current state of the GUI, you have two different options. 'Save Full State' will save the values for all the parameters along with any data you have loaded into the GUI. Alternatively, if you only want to save the values for parameters, you can use 'Save Parameter State'. Depending on the size of the datasets you have loaded in, saving the full state (and ultimately loading it back in) made be time consuming and produce a very large file, hence why the option to just save the state of the parameters is provided. The resultant MAT file produced from either option can be loaded back into the GUI with the 'Load Saved Data' button.
 
-\paragraph{}The compiled versions are designed to mostly behave exactly the same as the non-compiled functions running Matlab with a few minor exceptions (e.g. the compiled versions of \nameref{sec:KsnProfiler} and \nameref{sec:BsnPckr} do not allow for you to zoom into a location on the DEM before you start picking). All function names described in later sections are valid functions to invoke in the compiled version of TAK except \textit{ksncolor}, \textit{CatPoly2GRIDobj}, or \textit{ProjectOntoSwath}. Also note that two functions exist in compiled TAK which do not exist in the regular Matlab version. These functions, called as \textit{PrepareAddGrids} and \textit{PrepareCatAddGrids} at the command lines, are designed to prepare inputs for additional grids and additional categorical grids, respectively, for use in the compiled version of \nameref{sec:PrcRvBsn}. Refer to the 'cmp' files for these two functions ('cmpPrepareAddGrids.m' and 'cmpPrepareCatAddGrids.m') for instructions for use. 
+\subsubsection{Processing Status Indicator}
+ \paragraph{}When the GUI is not actively processing data, the indicator light at the top right will be green and to the left of it, text saying 'Idle' will appear (Figure \ref{fig:TAKguiGeneral}). When a user command is being processed, the lamp will change to red and the text will change to 'Processing'. Giving the GUI additional commands while there are processes running may result in errors, so it is recommended that you do not click any additional buttons or change parameter values while the GUI is processing your previous commands.
+ 
+ \subsubsection{Data Sharing within GUI}
+ \paragraph{}Generally, the outputs of TAK functions run within the GUI will be available to other functions within that GUI session (or in a loaded session if the full state is saved). For example, if you run \textit{MakeStreams} within a GUI session, the majority of other functions will assume that you want to use the DEM, FLOWobj, flow accumulation GRIDobj, and STREAMobj created during this call of \textit{MakeStreams} as the primary input. You can always override this choice by using the 'Load MAT File' button that appears within most functions and providing a previously saved MAT file as output by the \textit{MakeStreams} function. If you're ever unsure of what files may be loaded into active memory, you can always use the 'Clear Loaded Data' button in the \nameref{sec:SessCntrls}. 
+ 
+ \paragraph{}In addition to loaded data, some of the common parameters are shared between different functions, even those that appear in different panels of the GUI. For example, if you change the value of common parameters like the 'reference concavity' and 'threshold area' in one panel, these will be changed (and displayed) in the panels of other functions which also use this parameter. This is intentional to ensure consistency across a given analysis, but it can always be overridden, i.e. you can always change these values again when using a different function.
+ 
+ \subsubsection{Data Outputs from the GUI}
+ \paragraph{}Regardless of the version (i.e. the native MATLAB or one of the MRE versions), almost all functions will output a variety of files into the defined output directory. These will include files readable by standard GIS programs, but also a variety of MAT files. Within the context of the MRE versions of the GUI, the MAT files are mostly provided to serve as inputs for other TAK functions within the GUI, but many are also usable in terms of using the \textit{Mat2Arc} function to export files into formats readable by standard GIS programs. If you are using the GUI within MATLAB, outputs of functions will also be placed into the MATLAB workspace as if you were running the individual TAK functions from the command line.
 
 \section{Error Reporting}
-\paragraph{}We have tried to ensure that all options work properly within both the Matlab and compiled versions of TAK, but unexpected errors may occur. The preferred method of error reporting is to use the built in \href{https://github.com/amforte/Topographic-Analysis-Kit/issues}{'Issues'} function on the GitHub page for TAK so that there is a record of user encountered errors. If you have forked a version of the code and think you can fix an error, issue a pull request with the change, collaboration is welcome! If all else fails, you can email \href{mailto:aforte8@lsu.edu}{Adam Forte} as well. Before submitting an issue or contacting Adam, please check both open and closed issues to see if the bug has already been reported or fixed in an updated version. Whether submitting an issue or emailing Adam, please provide as much information as possible on the error (e.g. cut and paste the error message you received) and what you were doing when it occurred.
+\paragraph{}We have tried to ensure that all options work properly within both the Matlab and GUI versions of TAK, but unexpected errors may occur. The preferred method of error reporting is to use the built in \href{https://github.com/amforte/Topographic-Analysis-Kit/issues}{'Issues'} function on the GitHub page for TAK so that there is a record of user encountered errors. If you have forked a version of the code and think you can fix an error, issue a pull request with the change, collaboration is welcome! If all else fails, you can email \href{mailto:aforte8@lsu.edu}{Adam Forte} as well. Before submitting an issue or contacting Adam, please check both open and closed issues to see if the bug has already been reported or fixed in an updated version. Whether submitting an issue or emailing Adam, please provide as much information as possible on the error (e.g. cut and paste the error message you received) and what you were doing when it occurred. For the GUI versions, errors may be significantly more opaque, i.e. the GUI may simply stop responding or quit. In these cases, please try to replicate the behavior to make sure it was not a one off glitch before reporting it as an error and if you are reporting it as an error, please try to be specific as possible as to what you were doing before the error occurred.
+
+\section{Manual vs. Tutorial}
+\paragraph{}You are reading the manual. This manual is designed to be a reference for the various TAK functions and focuses on explaining some of the details of how these functions work. It is \textbf{not} designed to be rigorous walk through of common usages of the functions. To fill that need, we have also provided a tutorial, which walks through an example dataset in some level of detail showing how the majority of the TAK functions can be used. 
+
+\paragraph{}Two different versions of the tutorial are provided, one focused on using the native MATLAB functions and one focused on using the GUI. The example dataset for the two tutorials are the same. Both tutorials and the example data set are available in releases of TAK after v1.2. Please note that the 'ExampleData.tar.gz' is the example dataset referenced in this manual. The 'TutorialFiles.tar.gz' included with the release contains the example dataset for the tutorial (along with the tutorial presentations). 
 
 %%%%%%%%
 \section{Preparing Datasets for TAK} \label{sec:exmpl}
@@ -300,8 +319,6 @@ where 'MakeStreams' is the name of the function you want to use, '/location/of/w
 	\item \textit{river\_mouths.txt} - text file containing the river mouths used to generate basins in the example using \nameref{sec:PrcRvBsn}
 \end{itemize} 
 
-
-
 \paragraph{}Matlab, and thus TopoToolbox and TAK, generally require that an entire dataset be loaded into active memory before it can be used. This means that the size of DEM you can successfully process and use in TAK will be dependent on the available memory (i.e. RAM) of the computer on which you're running TAK along with the operating system (Mac OS X, Windows, and Linux versions of Matlab deal with memory in slightly different ways). It's also not as straightforward as looking at the size of the input DEM as you need to account for all the datasets that need to be in active memory for many TAK functions, e.g. a GRIDobj, a FLOWobj, and a STREAMobj. If you are encountering memory issues, there aren't too many simple solutions, but the best bets are to either spit your data into smaller segments (though you must be careful to not introduce errors by truncating portions of drainage basins of interest) or use a dataset with a larger cellsize. 
 
 %%%%%%%%
@@ -318,7 +335,7 @@ where 'MakeStreams' is the name of the function you want to use, '/location/of/w
 
 %%%%%%%%
 \section{Matlab and TopoToolbox Crash Course} \label{sec:primer}
-\paragraph{}The following sections are written for people who have never used Matlab (Sections \ref{sec:dataPrimer}, \ref{sec:funcPrimer}, \ref{sec:loadPrimer}) or TopoToolbox (Section \ref{sec:ttPrimer}). If you are familiar with basic manipulations of Matlab datatypes,  general procedure for using Matlab functions, how to load and save variables in matfiles, and the four primary TopoToolbox classes, feel free to skip these sections and get right into \nameref{sec:idp} with TAK.
+\paragraph{}The following sections are written for people who have never used Matlab (Sections \ref{sec:dataPrimer}, \ref{sec:funcPrimer}, \ref{sec:loadPrimer}) or TopoToolbox (Section \ref{sec:ttPrimer}). If you are familiar with basic manipulations of Matlab datatypes,  general procedure for using Matlab functions, how to load and save variables in matfiles, and the four primary TopoToolbox classes, feel free to skip these sections and get right into \nameref{sec:idp} with TAK. Similarly, if you intend to use the GUI versions (either in or outside of MATLAB), you can probably ignore the MATLAB primer, but you still may want to understand the details of the TopoToolbox data types (Section \ref{sec:ttPrimer}).
 
 \subsection{Matlab Data Types} \label{sec:dataPrimer}
 \paragraph{}There are four Matlab data types that appear commonly in TAK functions as either inputs or ouptuts (in addition to TopoToolbox specific classes, described in section \ref{sec:ttPrimer}), arrays, cell arrays, tables, and structures/geographic data structures.
@@ -605,7 +622,7 @@ CheckTAKDependencies
 \end{lstlisting}
 
 \noindent
-TAK requires licenses for the Image Processing Toolbox, Mapping Toolbox, Optimization Toolbox, and Statistics and Machine Learning Toolbox. If you do not have all licenses for all of these, you may need to use the \nameref{sec:CmpFunc}.
+TAK requires licenses for the Image Processing Toolbox, Mapping Toolbox, Optimization Toolbox, and Statistics and Machine Learning Toolbox. If you do not have all licenses for all of these, you may need to use the MRE version of the GUI.
 
 \subsection{\textit{MakeStreams}} \label{sec:MakeStreams}
 \paragraph{}\textit{MakeStreams} is a simple wrapper around creating the basic TopoToolbox objects needed for the majority of other TAK functions, specifically a digital elevation model (DEM) as a \textit{GRIDobj}, a flow direction dataset as a \textit{FLOWobj}, a flow accumulation grid as a \textit{GRIDobj}, and a stream network as a \textit{STREAMobj}. It should be noted that while, as described in more detail in \cite{Schwanghart2014}, TopoToolbox supports flow routing using either D8 or D$\infty$ algorithms, TAK functions use the simpler D8 flow routing scheme. The minimum inputs to \textit{MakeStreams} are the location of a valid DEM as either a geotiff or ascii grid and a minimum threshold drainage area (in square map units) for beginning stream network definition:
@@ -675,13 +692,13 @@ PRECIP=GRIDobj('/Users/aforte/GISdata/prism_precip.tif');
 
 \paragraph{}Finally, for large DEMs, the flow routing can take a long time. To speed this up, you can call upon the 'mex' files associated with the flow routing routines by setting the \textit{'mex'} parameter to true. This will only work if you have precompiled the appropriate mex files from TopoToolbox on your machine, see the TopoToolbox function \textit{'compilemexfiles.m'} for more information.
 
-\subsection{\textit{ConditionDEM}}
+\subsection{\textit{ConditionDEM}} \label{sec:ConDem}
 
 \paragraph{}DEMs can be extremely noisy and thus can produce very jagged stream profiles. This is both visually unappealing, but more importantly is problematic for calculations that use stream gradient (e.g. normalized channel steepness). TopoToolbox includes a variety of different algorithms to condition or smooth DEMs, either as an entire grid or specifically along specified stream networks. The \textit{ConditionDEM} function is a wrapper around all of these different routines. We refer readers to the TopoToolbox documentation for detailed discussions of these smoothing routines, including \cite{Schwanghart2017} for consideration of the 'crs' algorithm. Some are very computationally intensive and require several parameters, so you are advised to spend some time 'playing' with the parameters and choices to see the outcome. \textit{ConditionDEM} produces example stream profiles comparing the unconditioned and conditioned result along with a map showing where elevations were changed to aid you in understanding what the chosen algorithm has done. 
 
 \paragraph{}It is not strictly required to use the \textit{ConditionDEM} function. All TAK functions that need smoothed channel profiles have built in conditioning, using the \textit{mincosthydrocon} algorithm with an interpolation value of 0.1. If you want to use a different conditioning algorithm, you can use \textit{ConditionDEM} to produce a conditioned DEM that you can then supply as an optional input to TAK functions that need a conditioned DEM.
 
-\subsection{\textit{RemoveFlats}}
+\subsection{\textit{RemoveFlats}} \label{sec:RemFlats}
 
 \paragraph{}For topographic analysis, standard stream routing algorithms will usually route streams through lakes and playas, which in some circumstances is inappropriate and could produce misleading results, so it can be helpful to remove these from DEMs or set them to no data to restrict stream definition. Some of this can be accomplished with the simple controls built into \nameref{sec:MakeStreams}, but when these flat areas are not perfectly flat or occur at multiple elevations, they can be problematic to remove without manual clipping of DEMs. The \textit{RemoveFlats} function is an attempt to partially automate this process. It allows you to graphically identify areas (with a single click for each connected flat area) that you consider flats and the function will attempt to find contiguous areas. The function first fills all sinks in the DEM and then performs a morhpological erosion on the filled DEM with a 3x3 neighborhood. This means that any pixel will be set to the lowest elevation in a 3x3 neighborhood centered on that pixel. The eroded DEM is then morphologically dilated, with a neighborhood of between 3x3 to 9x9 depending on the users selection for the \textit{'strength'} parameter. This dilation sets pixels within the neighborhood to the maximum value. When the user then selects a location on the DEM, all pixels which are connected (using the dilated DEM) are identified as a flat and set to NaN.
 
@@ -693,6 +710,9 @@ PRECIP=GRIDobj('/Users/aforte/GISdata/prism_precip.tif');
 
 \paragraph{}\textit{FindThreshold} can be run in one of two ways. In the first way, when you provide a numeric input to the \textit{'num\_streams'} parameter, the function displays this user specified number of streams extracted all the way to the drainage divide and allows you to choose, on either a $\chi$-elevation or slope-area plot where you think the hillslope to channel transition might be. In this mode, the function will produce a new stream network based on the average of your minimum threshold area choices, and will also give you the population of minimum threshold areas and associated distances from the drainage divide to the channel head for the streams you choose. Alternatively, \textit{FindThreshold} if \textit{'num\_streams'} is set to \textit{'all'}, it runs in a mode where the function iterates through all channel heads in the provided stream network and uses the same picking protocol as above to manually set the minimum threshold area for each stream. In this mode each stream will have a variable minimum threshold area, but the total number of streams (i.e. channel heads) will still be dictated by the drainage density of the input stream network. Running \textit{FindThreshold} with \textit{'num\_streams'} set to \textit{'all'} on a large stream network may be very labor intensive, for example, the southern California dataset with an initial threshold area of 1e6 m\textsuperscript{2} has $>$ 120,000 channel heads so if you were to in \textit{'all'} mode, you would have to manually identify the hillslope-channel transition on ALL of those channel heads.
 
+\subsection{GUI Data Input}
+\paragraph{}The four preceding tools, \nameref{sec:MakeStreams}, \nameref{sec:ConDem}, \nameref{sec:RemFlats}, and \nameref{sec:FindThresh}, all appear in the 'Data Input' tab of the TAK GUI (Figure \ref{fig:TAKguiGeneral}).
+
 %%%%%%%%
 \section{Stream Selection and Projection}
 
@@ -701,7 +721,7 @@ PRECIP=GRIDobj('/Users/aforte/GISdata/prism_precip.tif');
 \subsection{\textit{SegmentPicker}} \label{sec:SegPick}
 \paragraph{}\textit{SegmentPicker} is a function designed to select portions of larger stream networks. In terms of stream selection, the function has two primary modes, either 'down', i.e. you select individual streams based on a channel head location, or 'up', i.e. you select portions of networks above a given pour point. If selecting on the basis of channel head location, the function will interpret your selection to be the channel head that is the minimum euclidean distance between your selection and the actual channel heads. Channel selection can be done interactively within Matlab or by providing coordinates of channel heads or pour points as an array or a point shapefile. \textit{SegmentPicker} shares some similarity to the TopoToolbox function \textit{flowpathapp} or functionality available in \textit{topoapp}.
 
-\subsection{\textit{SegmentPlotter}}
+\subsection{\textit{SegmentPlotter}} \label{sec:SegPlot}
 \paragraph{}\textit{SegmentPlotter} takes the output of \nameref{sec:SegPick} and plots each selected stream individually. The stream network is plotted as $\chi$-elevation, longitudinal profile, and slope-area plots. With the logical \textit{'separate'} flag, you can produce individual figures for each segment. Alternatively, you can provide a list of identifying numbers (i.e. the ID number in the third column of the \nameref{sec:SegPick} output) to the \textit{'subset'} parameter to only plot specific segments. You can also initiate and control labeling of stream segments with the \textit{'label'} and \textit{'names'} parameters.
 
 \subsection{\textit{SegmentProjector}} \label{sec:SegProj}
@@ -746,7 +766,7 @@ PRECIP=GRIDobj('/Users/aforte/GISdata/prism_precip.tif');
 
 \paragraph{}\textit{SegmentProjector} will iterate through all channel heads within a provided stream network, so it is suggested that you use \nameref{sec:SegPick} or some other means of selecting streams of interest before running \textit{SegmentProjector}. Note that if you are using the output of \textit{SegmentPicker}, you will need to load the \textit{PickedSegments\_*.mat} file and provide the \textit{STREAMobj} \textit{Sc} stored within this file as the required \textit{STREAMobj} input to \textit{SegmentProjector}. \textit{SegmentProjector} is similar to the TopoToolbox \textit{streamproj} function.
 
-\subsection{\textit{ProjectedIncision}}
+\subsection{\textit{ProjectedIncision}} \label{sec:ProjInc}
 \paragraph{}The \textit{ProjectedIncision} function uses the output of \nameref{sec:SegProj} to estimate incision across an entire network. To do this, the function must assume that the topology of the drainage network in question has not changed over the time period of interest. The \textit{ProjectedIncision} function takes the series of projected profiles that are calculated in \nameref{sec:SegProj} and assumes that the projected portions of the network represent relict patches of equilibrium river profiles, i.e. it assumes that at some point in the past, the entire landscape had the same k\textsubscript{sn} as the given relict patch and uses the $\chi$ values of the modern drainage to estimate what the elevation of all portions of that relict stream network would be and uses the difference between those elevations and the modern elevations (across the entire provided network) to calculate incision. If more than one section of stream was projected when using \nameref{sec:SegProj}, then the \textit{ProjectedIncision} function will calculate projected elevations and implied incision amounts for each individual projected segment and then report the mean, minimum, maximum, and standard deviations of the projected elevations and incision. The function will also optionally display this estimated incision in a figure (e.g. Figure \ref{fig:ProjInc}). Positive incision amounts indicate the projected elevations of the profile lie above the modern stream elevations whereas negative incision amounts indicate that the projected elevations of the profile lies below the modern stream elevations.
 
 \begin{figure}[H]
@@ -754,6 +774,16 @@ PRECIP=GRIDobj('/Users/aforte/GISdata/prism_precip.tif');
 	\caption{Example of projected incision amounts for Basin 402 (northeastern San Jacinto Mountains) using data from 5 projected streams.}
 	\label{fig:ProjInc}
 \end{figure}
+
+\subsection{GUI Stream Selection and Projection}
+\paragraph{}The four preceding functions, \nameref{sec:SegPick}, \nameref{sec:SegPlot}, \nameref{sec:SegProj}, and \nameref{sec:ProjInc}, appear in the 'Stream Selection and Projection' tab of the GUI (Figure \ref{fig:TAKguiProj}). There are several options that are shared between all, or most, of these functions, so to avoid clutter in the GUI, there are only single entry boxes for those parameters, e.g. the reference concavity.
+
+\begin{figure}[H]
+	\includegraphics[width=16.5cm]{PNGs/TAK_GUI_Proj}
+	\caption{The stream selection and projection tab within the TAK GUI.}
+	\label{fig:TAKguiProj}
+\end{figure}
+
 
 %%%%%%%%
 \section{Channel Steepness and $\chi$ Maps}
@@ -962,7 +992,7 @@ In this mode, the first time a particular stream segment within a given connecte
 \noindent
  where \textit{knl} is an array of all stream locations with best fit \textit{k\textsubscript{sn}}, uncertainty values on this fit, concavity values, gradient, drainage area information, and reference ID numbers for the streams. This same output is also provided as a cell array, \textit{ksn\_master}, where individual streams are separated into cells. The segment boundaries are provided as an array of x, y, and z, locations in \textit{bnd\_list} and a \textit{STREAMobj} of the selected streams is provided as \textit{Sc}. Two shapefiles are produced, one as a polyline of the selected streams and containing all the information in the \textit{knl} output and a point shapefile of segment boundaries (i.e. knickpoints) is also produced (assuming segment boundaries were selected for any stream). Depending on the setup of your \textit{KsnProfiler} run, all of the plots generated during the fitting process may also be saved automatically.
 
-\subsection{\textit{ClassifyKnicks}}
+\subsection{\textit{ClassifyKnicks}} \label{sec:ClassKnicks}
 The \textit{ClassifyKnicks} is a companion function to \nameref{sec:KsnProfiler} that allows you to iterate through all segment boundaries selected during a \textit{KsnProfiler} run and provide a classification. This classification can either be numeric (e.g. 1, 2, 3, etc) or a character string (e.g., 'bound', 'slopebreak', 'knick', etc). If using character strings, these should be short (the shapefile format restricts entries in fields to 254 characters). The function will generate a new version of the knickpoint shapefile with this classification appended.
 
 \subsection{\textit{EroGrid}} \label{sec:EroGrid}
@@ -1017,6 +1047,15 @@ phi=[0.5 0.4 0.5];
 \end{lstlisting}
 
 \noindent You can use this option to calculate erosion rates differently depending on the spatial variation in another grid along with uncertainties on k\textsubscript{sn}, C, or $\phi$, the only requirement is that there are the same number of entries to \textit{'C\_std'} and \textit{'phi\_std'} as there are to \textit{'C'} and \textit{'phi'}, respectively.
+
+\subsection{GUI Ksn \& Chi Maps}
+\paragraph{}Four out of the five preceding functions, \nameref{sec:KsnBatch}, \nameref{sec:KsnAuto}, \nameref{sec:KsnProfiler}, and \nameref{sec:ClassKnicks}, appear in the 'Ksn \& Chi Maps' tab of the GUI (Figure \ref{fig:TAKguiKsnChi}). There are several options that are shared between all, or most, of these functions, so to avoid clutter in the GUI, there are only single entry boxes for those parameters, e.g. the reference concavity. This panel of the GUI also includes options to plot the result of producing maps of either k\textsubscript{sn} or $\chi$.
+
+\begin{figure}[H]
+	\includegraphics[width=16.5cm]{PNGs/TAK_GUI_KsnChi}
+	\caption{The k\textsubscript{sn} and $\chi$ map tab within the TAK GUI.}
+	\label{fig:TAKguiKsnChi}
+\end{figure}
 
 %%%%%%%%
 \section{Stream Junctions}
@@ -1156,6 +1195,15 @@ InspectJunction(S,IX,[]);
 
 \paragraph{}The \textit{JunctionLinks} function outputs a table with information for each link (including which junctions as output in the junction table from \nameref{sec:JAngle} define the link). Optionally, the function can be used to produce a shapefile that contains this information for each link, but it should be noted that the production of this shapefile can be EXTREMELY time consuming. It is strongly recommended that if you have access to the Parallel Computing Toolbox for MATLAB that you leave the optional \textit{'par'} parameter set to \textit{true}. If you do not have access to this toolbox, the function will automatically detect this, so it is not necessary to set \textit{'par'} to \textit{false}.
 
+\subsection{GUI Junctions and Erosion}
+\paragraph{}The three preceding functions, \nameref{sec:JAngle}, \nameref{sec:JLinks}, and \nameref{sec:InJunc}, along with the \nameref{sec:EroGrid} function appear in the 'Junctions and Erosion' tab of the GUI (Figure \ref{fig:TAKguiJuncs}).
+
+\begin{figure}[H]
+	\includegraphics[width=16.5cm]{PNGs/TAK_GUI_Juncs}
+	\caption{The Junctions and Erosion tab within the TAK GUI.}
+	\label{fig:TAKguiJuncs}
+\end{figure}
+
 %%%%%%%%
 \section{Basin Selection}
 
@@ -1263,7 +1311,7 @@ ProcessRiverBasins(DEM,FD,A,S,Outlets,'basin_dir','add_grids',AG);
 \noindent
 As a note, it is not recommended that you provide a local relief grid as an extra grid, but rather use the \textit{'calc\_relief'} option. The reason for this is twofold, 1) because local relief is calculated with a moving window, simply clipping out watersheds from a larger local relief raster will bias the statistics within the clipped watersheds as edge pixels will be influenced by neighboring basins and 2) subsequent codes explicitly look for the relief datasets in \textit{ProcessRiverBasins} outputs to determine behaviors. 
 
-\paragraph{Note for Compiled Versions:} If you are running the compiled version of \textit{ProcessRiverBasins}, the procedure for adding extra grids is slightly different. Instead of directly providing the extra grids to \textit{ProcessRiverBasins}, you must first use the \nameref{sec:PrepAdd} function to prepare a .mat file containing these extra grids, the name of which is then provided to the compiled \textit{ProcessRiverBasins} function.
+\paragraph{Note for GUI Versions:} If you are running the GUI version of \textit{ProcessRiverBasins}, the procedure for adding extra grids is quite easy. Just click on the 'Add Raster Grids' button and navigate to the location of a suitable raster (saved as either a GeoTiff or ASCII in the same coordinate system as the original DEM). The GUI will then prompt you to provide a name for this raster (this is equivalent to the second input of the cell array in the command line usage). If you wish to add more than one raster, simply click the button again, the GUI will display a running list of the number of rasters you've loaded as 'Additional Grids'.
 
 \subsubsection{Categorical Grids} \label{sec:PRB_ACG}
 \paragraph{}Some data that you may want to include in ProcessRiverBasins is not natively supported as a \textit{GRIDobj}, specifically non-numeric data stored in polygonal shapefiles, e.g. units from a geologic map or vegetation types. You can provide this data as a usable input to ProcessRiverBasins via the optional \textit{'add\_cat\_grids'} parameter and with the help of the \nameref{sec:CatGrid} function. The input to the \textit{'add\_cat\_grids'} parameter is expected as a 3 column Matlab cell array, where the first column is the \textit{GRIDobj}, the second column is the lookup table (both of these are generated by \textit{CatPoly2GRIDobj}), and a name for the grid:
@@ -1287,7 +1335,7 @@ ProcessRiverBasins(DEM,FD,A,S,Outlets,'basin_dir','add_cat_grids',{GEO geo_table
 \noindent
 As with extra grids, more than one categorical grid can be provided, simply add additional rows to the input cell array. The remaining functions in this section all are either designed to operate on the products of \textit{ProcessRiverBasins} or serve as helper functions for \textit{ProcessRiverBasins}, e.g. \nameref{sec:CatGrid}. Because it is assumed that mean values of a category are not meaningful, the mode category value for each basin is found and used as the statistic. The function also calculates the number of pixels of each basin that belong to each category and saves this within the outputs.
 
-\paragraph{Note for Compiled Versions:} If you are running the compiled version of \textit{ProcessRiverBasins}, the procedure for adding categorical grids is slightly different. Instead of running \nameref{sec:CatGrid} and providing the result directly to \textit{ProcessRiverBasins}, you must instead use the \nameref{sec:PrepCat} function to prepare a .mat file containing these categorical grids, the name of which is then provided to the compiled \textit{ProcessRiverBasins} function.
+\paragraph{Note for GUI Versions:} If you are running the GUI version of \textit{ProcessRiverBasins}, the procedure for adding categorical grids is quite easy and similar to adding raster grids. Just click on the 'Add Categorcial Grids' button and navigate to the location of a suitable polygon shapefile. The GUI will then prompt you to select which field of this shapefile you wish to use (equivalent to the second input to \textit{CatPoly2GRIDobj}) and a name to give this categorical grid (equivalent to the third input to the cell array in the command line usage). If you wish to add more than one categorical grid, simply click the button again, the GUI will display a running list of the number of categorical grids you've loaded as 'Categorical Grids'. 
 
 \subsubsection{Understanding Outputs} \label{sec:UndOuts}
 \paragraph{}Each basin .mat file (or sub-basin file if considering the outputs of the related \nameref{sec:SbDvdBsn}) contains a lot of outputs. For the most part, subsequent functions are designed to use and process these basin files, but in some cases you may wish to use products directly so we provide a list of all the outputs and a brief description of each below.
@@ -1336,7 +1384,7 @@ As with extra grids, more than one categorical grid can be provided, simply add 
 	\end{itemize}	
 \end{enumerate}
 
-\paragraph{Note for Compiled Versions:} The compiled version of \nameref{sec:PrcRvBsn} (and the related \nameref{sec:SbDvdBsn} function) will still produce the .mat file described above for use in other functions. However, if you wish to directly access the contents of each .mat file, there are several options available to you. For accessing the raster and vector data stored for each basin, you can run \textit{ProcessRiverBasins} with the optional \textit{'write\_arc\_files'} parameter set to true or alternatively use the compiled version of \nameref{sec:Mat2Arc} after the completion of \textit{ProcessRiverBasins} to extract and save versions of these files usable in a GIS program. For accessing the statistics, running the compiled version of \nameref{sec:CompStats} will produce a table (that is output as a text file) that contains the majority of these statistics. As an alternative, you can also read the individual .mat files directly using the \href{https://docs.scipy.org/doc/scipy/reference/tutorial/io.html}{scipy.io module of python}.
+\paragraph{Note for GUI Versions:} The GUI version of \nameref{sec:PrcRvBsn} (and the related \nameref{sec:SbDvdBsn} function) will still produce the .mat file described above for use in other functions. However, if you wish to directly access the contents of each .mat file, there are several options available to you. For accessing the raster and vector data stored for each basin, you can run \textit{ProcessRiverBasins} with the optional \textit{'write\_arc\_files'} parameter set to true or alternatively use \nameref{sec:Mat2Arc} after the completion of \textit{ProcessRiverBasins} to extract and save versions of these files usable in a GIS program. For accessing the statistics, running the GUI version of \nameref{sec:CompStats} will produce a table (that is output as a text file) that contains the majority of these statistics. As an alternative, you can also read the individual .mat files directly using the \href{https://docs.scipy.org/doc/scipy/reference/tutorial/io.html}{scipy.io module of python}.
 
 \subsection{\textit{CatPoly2GRIDobj}} \label{sec:CatGrid}
 \paragraph{}As discussed in section \ref{sec:PRB_ACG}, sometimes it is helpful to have categorical data stored as a \textit{GRIDobj}, but \textit{GRIDobj}s  do not natively support non numeric values for cells. \textit{CatPoly2GRIDobj} is designed to get around that by generating a valid \textit{GRIDobj} with numeric values replacing categorical values and bundling this with a lookup table that serves as a key for the numeric values in the \textit{GRIDobj}. \textit{CatPoly2GRIDobj} requires a DEM input along with the name of a valid polygonal shapefile that contains the categorical data of interest and the name of the field within that shapefile that contains the specific data. 
@@ -1349,7 +1397,7 @@ As with extra grids, more than one categorical grid can be provided, simply add 
 \noindent
 The output \textit{GRIDobj} will have the same dimensions as the input DEM. The provided shapefile does not need to have the same dimensions (it can be larger or smaller than the input DEM), but it does need to be in the same coordinate system and projection.  \textit{CatPoly2GRIDobj} can only handle one field within a shapefile, so if you have a shapefile that has multiple fields you wish to convert to \textit{GRIDobj}s, you will need to run \textit{CatPoly2GRIDobj} multiple times. Any node of the input DEM that does not have categorical values associated with it will be set to '0' in the \textit{GRIDobj}, which will correspond to a value of 'undef' in the lookup table. As a note, this function relies heavily on the underlying TopoToolbox function \textit{polygon2GRIDobj}. At the time of writing, \textit{polygon2GRIDobj} sometimes has issues dealing with nested or overlapping polygons that will result in areas being set to '0' and 'undef'.
 
-\paragraph{Note for Compiled Versions:} There is no compiled version of \textit{CatPoly2GRIDobj}. The \nameref{sec:PrepCat} function replaces it and prepares inputs directly for the compiled version of \nameref{sec:PrcRvBsn}.
+\paragraph{Note for GUI Versions:} There is no compiled version of \textit{CatPoly2GRIDobj} as this is bound up within the GUI version of \nameref{sec:PrcRvBsn}.
 
 \subsection{\textit{SubDivideBigBasins}} \label{sec:SbDvdBsn}
 \paragraph{}The \textit{SubDivideBigBasins} function is designed to automatically divide up basins output from \nameref{sec:PrcRvBsn} greater than a user specified drainage area. There are a variety of different methods for subdividing basins, including on the basis of stream order (i.e. outlets of streams of a user specified order within a basin are used as new river mouths above which to extract new sub-basins), confluences or upstream confluences (i.e. the former using the confluence as a river mouth, the latter using points immediately upstream of a confluences as river mouths), filtered confluences (i.e. using confluences as river mouths if those confluence points are above a user defined drainage area or percentage of the input basin drainage area), confluence points with trunk stream (i.e. river mouths will be points immediately upstream of every confluence with the main trunk within each specified basin), or filtered confluences with the trunk stream. Some examples:
@@ -1431,9 +1479,9 @@ shapewrite(MS,'shape_name.shp');
 \noindent
 but the function will automatically produce a shapefile saved in the active directory unless you suppress this with the optional \textit{'suppress\_shape\_write'} parameter. 
 
-\paragraph{Note for Compiled Versions:} In the compiled version of \nameref{sec:CmpBsn2Shp}, extra field values are dealt with differently. Instead of providing separate inputs for the values and names for those values, a text file is provided to the \textit{'extra\_field\_values'} parameter and the names of columns in that text file are used as the names of the resulting categories. 
+\paragraph{Note for GUI Versions:} In the GUI version of \textit{Basin2Shape}, extra field values are dealt with differently. Instead of providing separate inputs for the values and names for those values, a text file is loaded with the 'Load Extra Values' and the names of columns in that text file are used as the names of the resulting categories. 
 
-\subsection{\textit{Basin2Raster}}
+\subsection{\textit{Basin2Raster}} \label{sec:B2R}
 \paragraph{}The \textit{Basin2Raster} is a simpler alternative to \nameref{sec:B2S} that will output a \textit{GRIDobj} and save out an ascii raster of the basin extents filled with values specified by the user. Possible values are mean \textit{k\textsubscript{sn}}, mean gradient, mean elevation, mean relief (you must specify which radius you want to use), R\textsuperscript{2} value on the $\chi$-elevation relationship (this can be a useful metric for assessing how well adjusted a basin is, R\textsuperscript{2} values closer to 1 should have fewer significant deviations from a linear $\chi$-elevation relationship, though this will also be influenced by the reference concavity used for calculating $\chi$), drainage area in km\textsuperscript{2}, hypsometric intergral, basin ID number, best-fit concavity, or the name of any additional grid or additional categorical grid originally provided to \textit{ProcessRiverBasins}. If the name of an additional grid is provided, value will be the basin mean and if the name of a categorical grid is provided , value will be the basin mode. 
 
 \paragraph{}If the basins provided to \textit{Basin2Raster} were manually nested (i.e. you provided a list of river mouths to \nameref{sec:PrcRvBsn} that included nested catchments and did not run \nameref{sec:SbDvdBsn}), then you should set the optional \textit{'method'} parameter to \textit{'nested'} to ensure that all basins are visible in the output raster. If you did not manually nest any basins or ran \textit{SubDivideBigBasins}, then you do not need to provide an argument to \textit{'method'}.
@@ -1480,7 +1528,7 @@ where the argument provided to \textit{'cat\_grid'} is the name of the additiona
 \noindent
 where the first column in the cell array provided to \textit{'means\_by\_category'} must be the name of the categorical grid provided to \textit{ProcessRiverBasins} (in the example, \textit{'geology'}) followed by valid names of particular quantities (see header of the function for full list).
 
-\paragraph{Note for Compiled Versions:} If using the compiled version \nameref{sec:CmpCmpBsnStats} and you wish to supply extra fields, the procedure is identical as described for the the compiled version of \nameref{sec:CmpBsn2Shp}.
+\paragraph{Note for GUI Versions:} If using the GUI version of \textit{CompileBasinStats} and you wish to supply extra fields, the procedure is identical as described for the GUI version of \nameref{sec:B2S}.
 
 \subsection{\textit{BasinStatsPlots}} \label{sec:BSPlots}
 \paragraph{}Using the Matlab table output from \nameref{sec:CompStats}, you can quickly plot a variety of basin averaged statistics, but we have written the \textit{BasinStatsPlots} function to aid in you producing some potentially useful plots. These plot types are designed to allow you to explore populations of basins quickly and efficiently and are envisioned as primarily data exploration tools (i.e. you will probably want to design your own functions to analyze and plot data output from \textit{'CompileBasinStats'}, with these plots as easy ways to guide further analysis). In the following sections, we describe the different plotting options available to you in \textit{BasinStatsPlots} and provide some examples of outputs using the example dataset.
@@ -1616,6 +1664,20 @@ S_{avg}=\frac{z(0)-z(L_{H})}{L_{H}}
 \subsubsection{Generic X-Y plot - \textit{'xy'}} \label{sec:xy}
 \paragraph{}The final plot option for \nameref{sec:BSPlots} is a generic option to plot any value against any other value. To use this option you must specify the name of the columns to be used as the x and y values via the \textit{'xval'} and \textit{'yval'} parameters. Using conjunction with the \textit{'color\_by'} parameter can quickly produce plots to explore potential relationships within the basin data (e.g. Figure \ref{fig:BsnSts}).
 
+\subsection{GUI Select, Extract, and Summarize  Basins}
+\paragraph{}The functions associated with selecting, extracting, and summarize basins are split between two tabs in the TAK GUI, the 'Select and Extract Basins' tab (Figure \ref{fig:TAKguiExBasins}) and the 'Summarize Basins' (Figure \ref{fig:TAKguiSumBasins}) tabs. The \nameref{sec:BsnPckr}, \nameref{sec:PrcRvBsn}, \nameref{sec:SbDvdBsn}, and \nameref{sec:BsnKncks} functions appear in the 'Select and Extract Basins' tab. The \nameref{sec:B2R}, \nameref{sec:B2S}, \nameref{sec:CompStats}, and \nameref{sec:BSPlots} functions appear in the 'Summarize Basins' tab. The \nameref{sec:CatGrid} function does not appear in the GUI, but its functionality is embedded within the \textit{ProcessRiverBasins} function and is invoked if the 'Add Categorical Grids' button is pushed. 
+
+\begin{figure}[H]
+	\includegraphics[width=16.5cm]{PNGs/TAK_GUI_ExBasins}
+	\caption{The Select and Extract Basins tab within the TAK GUI.}
+	\label{fig:TAKguiExBasins}
+\end{figure}
+
+\begin{figure}[H]
+	\includegraphics[width=16.5cm]{PNGs/TAK_GUI_SumBasins}
+	\caption{The Summarize Basins tab within the TAK GUI.}
+	\label{fig:TAKguiSumBasins}
+\end{figure}
 
 %%%%%%%%
 \section{Swath Profiles with Projected Data}
@@ -1712,18 +1774,26 @@ end
 \end{lstlisting}
 
 
-
 \subsection{\textit{ProjectOntoSwath}} \label{sec:ProjSwath}
 \paragraph{}The \textit{ProjectOntoSwath} function is used in \nameref{sec:CombSwath} to do the data projection, but we include it as a separate function as it may be useful for users. \textit{ProjectOntoSwath} finds the distance of a list of x and y points along and from the centerline of a provided \textit{SWATHobj} based on a user defined width within which to sample the data. Distances of points that lie beyond the extent of the swath or lie outside of the data sampling width will be set to NaN. The function projects data onto each swath segment (i.e. if the swath line is bent) and finds the swath segment that data are closest to in tangential distance to avoid duplication of points. Note that there is no compiled version of \textit{ProjectOntoSwath}.
 
-\subsection{\textit{ProjectSmallCircleOntoSwath}}
+\subsection{\textit{ProjectSmallCircleOntoSwath}} \label{sec:ProjCircSwath}
 \paragraph{}This function is similar to \nameref{sec:ProjSwath}, but instead of projecting points along paths perpendicular to the swath, this function takes an input coordinate (in projected coordinates) to use as the center of a family of small circles along which to project the provided x-y points. This function can be used in combination with \nameref{sec:SmallCirc} if you need to first determine a small circle center that would be appropriate. As with \nameref{sec:ProjSwath}, the function outputs the location of points along the swath based on their projected positions. The function also calculates the distance from the point along the swath both in map units as measured along the small circle arc between the point and the swath center line and in degrees.
 
-\subsection{\textit{ProjectGPSOntoSwath}}
+\subsection{\textit{ProjectGPSOntoSwath}} \label{sec:ProjGPSSwath}
 \paragraph{}The \textit{ProjectGPSOntoSwath} behaves identically to \nameref{sec:ProjSwath} in terms of the projection of the provided x-y location onto the swath and similarly provides distance along and from the swath of those points, but it also takes velocity and associated uncertainties (assumed to be in the standard north and east components) and projects those onto the swath. The output of the function gives the magnitude of the projected GPS vector, i.e. the magnitude of the velocity if resolved onto a plane parallel to the \textit{SWATHobj} and the associated uncertainty, i.e. the radius of a slice through the error ellipse at the orientation of the \textit{SWATHobj}. The function also provides north and east components for this projected vector which would be suitable inputs to the \textit{quiver} function for plotting.
 
 \subsection{\textit{CrossSwath}}
 \paragraph{}Often, it is useful to precisely determine where a particular linear feature crosses a \textit{SWATHobj} for plotting purposes. This function takes a \textit{SWATHobj} and a line (defined by a series of x-y points at the vertices of the line in question) and calculates the positions along a swath where the line crosses the bounds of the swath (in both x-y coordinates and distance along the swath) and the mean crossing location of the line. 
+
+\subsection{GUI Swath}
+\paragraph{}The \nameref{sec:Swath}, \nameref{sec:CombSwath}, and \nameref{sec:SerSwath} functions appear in the 'Swath' tab of the TAK GUI (Figure \ref{fig:TAKguiSwath}). The version of \textit{MakeCombinedSwath} implemented in the GUI can be run on a single swath or on the output of \textit{MakeSerialSwath}. The \nameref{sec:ProjSwath}, \nameref{sec:ProjCircSwath}, and \nameref{sec:ProjGPSSwath} functions are not formally included in the GUI versions, but are the outputs of these functions are accessible through the provided functions. E.g. the data that is output from running \textit{MakeCombinedSwath} will include the projected form of the provided data, which will be the product of \textit{ProjectOntoSwath}, \textit{ProjectSmallCircleOntoSwath}, \textit{ProjectGPSOntoSwath} depending on the exact choices. 
+
+\begin{figure}[H]
+	\includegraphics[width=16.5cm]{PNGs/TAK_GUI_Swath}
+	\caption{The Swaths tab within the TAK GUI.}
+	\label{fig:TAKguiSwath}
+\end{figure}
 
 %%%%%%%%
 \section{Miscellaneous}
@@ -1787,15 +1857,50 @@ da=C*x^h
 \noindent where the values are the same, but obviously the values of \textit{C} and \textit{h} are interpreted differently. This function allows you to fit the relationship with either form using the optional \textit{'relation'} parameter, with the \textit{'original'} (Equation \ref{eq:HackOrig})  or \textit{'inverse'} (Equation \ref{eq:HackNew}) form. To compute the relationship, the function will calculate a value of \textit{C} and \textit{h} for each drainage basin, defined by the number and location of outlets in the provided \textit{STREAMobj} and also calculates a 'global' value of \textit{C} and \textit{h} from all relevant points in the landscape. The function has a variety of options to control what data is used to fit. For example, for a given watershed, the function can measure distances from the channel heads to the outlets or from the divides to the outlets. The function can also do the fit using only data along the trunk stream in a watershed, along all streams in a watershed, or using all contributing pixels in a watershed.
 
 \subsection{\textit{Mat2Arc}} \label{sec:Mat2Arc}
-\paragraph{}\textit{Mat2Arc} is a helper function that takes any matfile as an input and will search its contents and produce either ESRI ascii grids or geotiffs and shapefiles from any valid datasets. Specifically, will make ascii grids or geotiffs of any \textit{GRIDobj}, will convert any \textit{FLOWobj} to an Arc style flow raster an export as an ascii grid or geotiff, and output any \textit{STREAMobj} or recognizable geographic data structure as a shapefile. Whether rasters are saved as ESRI ascii grids or geotiffs is controlled with the optional \textit{'raster\_type'} parameter.
+\paragraph{}\textit{Mat2Arc} is a helper function that takes any matfile as an input and will search its contents and produce either ESRI ascii grids or geotiffs and shapefiles from any valid datasets. Specifically, will make ascii grids or geotiffs of any \textit{GRIDobj}, will convert any \textit{FLOWobj} to an Arc style flow raster an export as an ascii grid or geotiff, and output any \textit{STREAMobj} or recognizable geographic data structure as a shapefile. Whether rasters are saved as ESRI ascii grids or geotiffs is controlled with the optional \textit{'raster\_type'} parameter. A version of the \textit{Mat2Arc} function is included in the GUI version of TAK.
 
 % Uncomment to regenerate bbl file
 \bibliography{TAKmanualREF.bib}
 
-\appendix
+%\appendix
+\begin{appendices}
 
 %%%%%%%%%%%%%%%%%%%%%
-\section{Headers for Compiled Functions}\label{sec:CmpFuncCalls}
+\section{Original Description of Compiled Functions} \label{sec:CmpDesc}
+\paragraph{}It is recommended you use the MRE GUI version of TAK as opposed to the old compiled functions as these are no longer maintained and will be removed from a future release. We include the original description of these for reference.
+
+\paragraph{}In attempt to make these functions accessible to a wider range of users, we have also produced compiled versions of these functions that do not require Matlab to run. Within the main repository, there is a folder called 'Compiled\_Versions' that contains three folders associated with the compiled versions, 'cmpMfiles', 'Windows', and 'MacOSx'. The 'cmpMfiles' folder contains modified versions of all the matlab functions that were compiled, for reference (you will likely need to look at these to understand the inputs to the compiled functions). The compiled versions all have a 'cmp' prefix on them to differentiate them from the main functions (these are all functional in Matlab on their own, though it's not generally recommended that you use these in Matlab over their main counterparts), but as described below, when calling a function from the command line of the compiled TAK, you use the name of the desired function without the 'cmp' prefix. The master function is 'TAK.m' (for which there is not a comparable function in the non-compiled versions). This master function will not successfully run in Matlab as it is designed to translate inputs from the command line to the other functions in a way that works only when used in a deployed (i.e. compiled) mode. The 'Windows' and 'MacOSX' folders each contain an executable named \textit{InstallTAKandMatlabRuntime} (with either an .exe or .app extension depending on the OS). Double clicking this executable will install the Matlab runtime environment that is necessary to run compiled matlab code and the executable for TAK. To keep the size of this install file manageable, this executable needs to access the internet to download the Matlab Runtime. Additionally, you will likely need to have administrator privileges on your local machine in order to successfully install Matlab Runtime. If you have previously installed the Matlab runtime environment, versions of just the TAK executable can be found in the 'Files\_Only' folder. 
+
+\paragraph{}Compiled TAK functions are designed to be run from the command line (i.e. cmd prompt on Windows, terminal on Mac OS X). \textbf{This means that after you have installed the compiled TAK functions, double clicking on the TAK.exe file or a shortcut to it will result in an error indicating that it is missing required arguments. You must run it from the command line as described below!} The procedure for running the compiled TAK functions differs between Windows and Mac OS X and is described in the readme that appears along with the executables. After installing Matlab Runtime, on Windows, open a command prompt and navigate to the location of the TAK executable and then simply call TAK:
+
+\begin{lstlisting}[language=bash]
+TAK arguments
+\end{lstlisting}
+
+\noindent
+The procedure is a little more complicated on Mac OS X, here there is a shell script to run the application but it requires that you specify the location of the Matlab Runtime environment. For example, after installing Matlab Runtime and navigating to the location of the TAK executable and this shell script (with a .sh file extension) in a terminal window:
+
+\begin{lstlisting} [language=bash]
+./run_TAK.sh /location/of/runtime arguments
+\end{lstlisting}
+
+\noindent
+As described in the readme associated with the Mac version, you can avoid having to give the location of the Matlab Runtime environment every time you run TAK by permanently setting the DYLD\_LIBRARY\_PATH location in your path.
+
+\paragraph{}Compiled TAK expects that the first argument (after whatever is required to call the main TAK function depending on the operating system you are using) will be the name of the function you wish to use  and the second argument will be the \textbf{full path} (it really does need to be the full path) to your working directory. TAK expects that all input data that you reference are stored in this working directory and it will store all output data in this working directory (or folders created within this working directory). Generally, the compiled versions of the functions take the same input as the matlab functions described in detail in later sections, but in some cases, because of the limitations of the style of inputs allowed, these inputs are slightly different (e.g. functions require a text file input instead of a cell array input, etc). To understand the inputs to the compiled functions, please refer to the headers of the relevant codes stored in the cmpMfiles folder and Section \ref{sec:CmpFuncCalls} of the Appendix. 
+
+\paragraph{}It is important to note that the form of inputs are also different at the command line. In short, no input should be included in quotes regardless of the input type and each input should be separated by a single space. For example to call the compiled version of \nameref{sec:MakeStreams} on Mac OS X:
+
+\begin{lstlisting}[language=bash]
+./run_TAK.sh /location/of/runtime MakeStreams /location/of/working/directory dem.tif 1e6 topo_files no_data_exp auto
+\end{lstlisting}
+
+\noindent
+where 'MakeStreams' is the name of the function you want to use, '/location/of/working/directory' is the working directory where input data will be read from and output data will be stored, 'dem.tif' is the first required input of MakeStreams and is the name of the dem file to import, '1e6' is the second required input of MakeStreams and is the threshold accumulation area to use, 'topo\_files' is the third required input of MakeStreams and is the name for output files (note that this is NOT a required input for the standard Matlab version of MakeStreams), 'no\_data\_exp' is the name of an optional parameter for MakeStreams, and 'auto' is the value being passed to that optional parameter. Some standards for the inputs; 1)  when the function requires that you provide a name of an input file, it expects that the file includes the file extension (e.g. .txt, .mat, .shp, etc) because it will use this file extension to make sure you're providing the correct kind of file, 2) any text file input is expected to have a .txt extension, 3) theoretically comma or tab delimited data are both fine for text file inputs, but in practice, comma delimited files are preferred, and 4) when the function requires (or allows as an optional input) the name of an output file, DO NOT include a file extension as this name will likely be used for several different files with different extensions and the function will handle appending the proper file extensions. The header of 'cmp*.m' files for each function contain example inputs to the command line to run that function.
+
+\paragraph{}The compiled versions are designed to mostly behave exactly the same as the non-compiled functions running Matlab with a few minor exceptions (e.g. the compiled versions of \nameref{sec:KsnProfiler} and \nameref{sec:BsnPckr} do not allow for you to zoom into a location on the DEM before you start picking). All function names described in later sections are valid functions to invoke in the compiled version of TAK except \textit{ksncolor}, \textit{CatPoly2GRIDobj}, or \textit{ProjectOntoSwath}. Also note that two functions exist in compiled TAK which do not exist in the regular Matlab version. These functions, called as \textit{PrepareAddGrids} and \textit{PrepareCatAddGrids} at the command lines, are designed to prepare inputs for additional grids and additional categorical grids, respectively, for use in the compiled version of \nameref{sec:PrcRvBsn}. Refer to the 'cmp' files for these two functions ('cmpPrepareAddGrids.m' and 'cmpPrepareCatAddGrids.m') for instructions for use. 
+
+\section{Headers for Original Compiled Functions}\label{sec:CmpFuncCalls}
 \paragraph{} The following section reproduces the headers of each compiled function. Please refer to the \nameref{sec:CmpFunc} section of the user manual for additional information on how to use the compiled versions of the functions.
 
 \subsection{AutoKsnProfiler}
@@ -3606,6 +3711,6 @@ SubDivideBigBasins /path/to/wdir Basins 100 trunk
 SubDivideBigBasins /path/to/wdir Basins 100 order SBFiles_Dir MySubBasins order 4
 \end{lstlisting}
 
-
+\end{appendices}
 
 \end{document}
