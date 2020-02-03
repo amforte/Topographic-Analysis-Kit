@@ -21,5 +21,8 @@ If you use or modify these codes and use the results in a publication, please ci
 A.M. Forte, K.X. Whipple. Short communication: The Topographic Analysis Kit (TAK) for TopoToolbox. Earth Surface Dynamics, 2019, v. 7, p. 87-95, doi: 10.5194/esurf-7-87-2019. 
 [https://www.earth-surf-dynam.net/7/87/2019/]
 
+The current DOI for the latest release is:
+[![DOI](https://zenodo.org/badge/70010178.svg)](https://zenodo.org/badge/latestdoi/70010178)
+
 # Error Reporting and Feature Request
 If you encounter a bug or have a suggestion for a new feature / improvement the preferred method of communication is to use the 'Issues' function built into GitHub. You can also email Adam [aforte8 'at' lsu.edu]. If you encounter an issue that you know how to fix and are comfortable with how git works, please feel free to fork the code and submit a pull request with fixes and improvements, collaboration is welcome!
