@@ -204,7 +204,7 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 
 		ix_cell=cell(num_basins,1);
 		basin_list=zeros(num_basins,1);
-		fileCell=cell(num_basins,1);
+		FileCell=cell(num_basins,1);
 		for jj=1:num_basins
 			FileName=AllFiles(jj,1).name;
 			FileCell{jj}=FileName;
@@ -224,7 +224,7 @@ function [OUT]=Basin2Raster(DEM,valueOI,location_of_data_files,varargin)
 
 		% Sort basin size list in descending order
 		[~,six]=sort(basin_list,'descend');
-		% Apply sorting index to fileCell and ix_cell
+		% Apply sorting index to FileCell and ix_cell
 		FileCell=FileCell(six);
 		ix_cell=ix_cell(six);
 
