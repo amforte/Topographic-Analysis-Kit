@@ -156,7 +156,6 @@ function ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,kn_list,varargin)
 				s1(cnt)=scatter(FLDS.Z(kn_ixOI),DEM.Z(kn_ixOI),30,'k','s','LineWidth',2);
 				leg{cnt,1}='Knickpoint';
 			end
-			% legend(s1,leg,'location','best');
 
 			if ~verLessThan('matlab','9.5')
 				disableDefaultInteractivity(sbplt1);
@@ -192,7 +191,14 @@ function ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,kn_list,varargin)
 				elseif cm_class(jj)==1
 					p1=scatter(FLDS.Z(cm_ixOI(jj)),DEM.Z(cm_ixOI(jj)),50,'r','filled','s');
 				end
-				legend(s1,leg,'location','best');
+
+				% This is necessary because of 'leg' has identical inputs (i.e. {'Knickpoint','Knickpoint'})
+				% it will error out
+				if numel(unique(leg))==1
+					legend(s1(1),leg{1},'location','best');
+				else
+					legend(s1,leg,'location','best');
+				end
 				hold off
 
 				subplot(2,1,2)
