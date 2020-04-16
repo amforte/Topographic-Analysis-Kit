@@ -81,7 +81,7 @@ function ClassifyKnicks(DEM,FD,A,Sc,ksn_master,bnd_list,kn_list,varargin)
 	kn_y=kn_list(:,2);
 	kn_ix=coord2ind(DEM,kn_x,kn_y);
 	kn_el=DEM.Z(kn_ix);	
-
+ 
 	% Find streams with knickpoints
 	str_list=unique(vertcat(bnd_list(:,4),kn_list(:,4)));
 	num_streams=numel(str_list);
