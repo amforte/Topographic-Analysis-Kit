@@ -199,6 +199,11 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 		num_files=numel(FileList);
 	end
 
+	% Catch for an empty list of files
+	if num_files==0
+		error('The directory provided to "location_of_data_files" was a valid directory, but contained no valid basin files. Check that you have provided the correct file path.');
+	end
+
 	% Initiate Table
 	T=table;
 
