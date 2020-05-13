@@ -292,6 +292,8 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 
 		c=chiplot(Sc,DEMcc,Ac,'a0',1,'mn',theta_ref,'plot',false);
 		T.chi_R_squared(ii,1)=c.R2;
+		c_trunk=chiplot(trunk(Sc),DEMcc,Ac,'a0',1,'mn',theta_ref,'plot',false);
+		T.chi_R_squared_trunk(ii,1)=c_trunk.R2;
 
 		% Check for additional grids within the process river basins output
 		VarList=whos('-file',FileName);
