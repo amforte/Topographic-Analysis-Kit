@@ -33,7 +33,11 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	%			These must be in the same order as values are given in extra_field_values. If for example your extra_field_values cell array is 3 columns with the river number, 
 	%			sample name, and erosion rate then your extra_field_names cell array should include entries for 'sample_name' and 'erosion_rate' in that order. 
 	%		new_concavity [] - a 1 x m array of concavity values to recalculate normalized channel steepness statistics (mean, standard error and/or standard deviation) using the
-	%			provided concavities.
+	%			provided concavities. The default method for this is very quick, but an approximation. If you are willing to wait and you want the ksn statistics at the new 
+	%			concavity to be exact, change 'new_ksn_method' to 'exact'.
+	%		new_ksn_method ['approximate'] - parameter to control how a new concavity is calculated if an entry is provided to 'new_concavity', options are 'approximate' (the default)
+	%			and 'exact'. Setting this to exact will slow the calculation time considerably.
+	%		segment_length [1000] - smoothing distance for ksn if new_concavities are provided and new_ksn_method is set to 'exact', otherwise ignored.
 	%		uncertainty ['se'] - parameter to control which measure of uncertainty is included, expects 'se' for standard error (default), 'std' for standard deviation, or 'both'
 	%			to include both standard error and deviation.
 	%		dist_along_azimuth [] - option to calculate distances along a given azimuth for all basins. Expects an single numeric input, interpreted as an azimuth in degrees 
@@ -114,9 +118,11 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	addParameter(p,'extra_field_values',[],@(x) isa(x,'cell') || isempty(x));
 	addParameter(p,'extra_field_names',[],@(x) isa(x,'cell') && size(x,1)==1 || isempty(x));
 	addParameter(p,'new_concavity',[],@(x) isnumeric(x));
+	addParameter(p,'new_ksn_method','approximate',@(x) ischar(validatestring(x,{'approximate','exact'})));
+	addParameter(p,'segment_length',1000,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'dist_along_azimuth',[],@(x) isnumeric(x) && isscalar(x) && x>=0 && x<=360 || isempty(x));
 	addParameter(p,'uncertainty','se',@(x) ischar(validatestring(x,{'se','std','both'})));
-	addParameter(p,'populate_categories',false,@(x) isscalar(x) && islogical(x))
+	addParameter(p,'populate_categories',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'means_by_category',[],@(x) isa(x,'cell') && size(x,2)>=2 || isempty(x));
 	addParameter(p,'filter_by_category',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'filter_type','exclude',@(x) ischar(validatestring(x,{'exclude','include','mode'})));
@@ -132,6 +138,8 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	efv=p.Results.extra_field_values;
 	efn=p.Results.extra_field_names;
 	new_concavity=p.Results.new_concavity;
+	new_ksn_method=p.Results.new_ksn_method;
+	segment_length=p.Results.segment_length;
 	az=p.Results.dist_along_azimuth;
 	uncertainty=p.Results.uncertainty;
 	pc=p.Results.populate_categories;
@@ -256,7 +264,12 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 		if ~isempty(new_concavity)
 			load(FileName,'MSNc');
 			for jj=1:numel(new_concavity)
-				[mean_ksn,std_ksn,se_ksn]=ksn_convert(MSNc,new_concavity(jj));
+				switch new_ksn_method
+				case 'approximate'
+					[mean_ksn,std_ksn,se_ksn]=ksn_convert_approx(MSNc,new_concavity(jj));
+				case 'exact'
+					[mean_ksn,std_ksn,se_ksn]=ksn_convert_exact(FileName,segment_length,new_concavity(jj));
+				end
 				ksn_cat_name=matlab.lang.makeValidName(['mean_ksn_' num2str(new_concavity(jj))]);
 				T.(ksn_cat_name)(ii,1)=mean_ksn;
 				switch uncertainty
@@ -631,11 +644,9 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 	end
 
 	close(w1);
-
-
 end
 
-function [mean_ksn,std_ksn,se_ksn]=ksn_convert(okm,new_ref_concavity)
+function [mean_ksn,std_ksn,se_ksn]=ksn_convert_approx(okm,new_ref_concavity)
 
 	g=[okm.gradient];
 	a=[okm.uparea];
@@ -645,5 +656,227 @@ function [mean_ksn,std_ksn,se_ksn]=ksn_convert(okm,new_ref_concavity)
 	mean_ksn=mean(ksn_calc,'omitnan');
 	std_ksn=std(ksn_calc,'omitnan');
 	se_ksn=std_ksn/sqrt(numel(ksn_calc));
+
+end
+
+function [mean_ksn,std_ksn,se_ksn]=ksn_convert_exact(FN,segment_length,new_ref_concavity)
+	% Determine ksn method
+	load(FN,'DEMoc','DEMcc','FDc','Ac','Sc','ksn_method');
+
+	% Calculate ksn
+	switch ksn_method
+	case 'quick'
+		[MSNc]=KSN_Quick(DEMoc,DEMcc,Ac,Sc,new_ref_concavity,segment_length);
+	case 'trunk'
+		[MSNc]=KSN_Trunk(DEMoc,DEMcc,Ac,Sc,new_ref_concavity,segment_length,min_order);			
+	case 'trib'
+		% Overide choice if very small basin as KSN_Trib will fail for small basins
+		if drainage_area>2.5
+			[MSNc]=KSN_Trib(DEMoc,DEMcc,FDc,Ac,Sc,new_ref_concavity,segment_length);
+		else
+			[MSNc]=KSN_Quick(DEMoc,DEMcc,Ac,Sc,new_ref_concavity,segment_length);
+		end
+	end
+
+	% Calculate basin wide ksn statistics
+	mean_ksn=mean([MSNc.ksn],'omitnan');
+	std_ksn=std([MSNc.ksn],'omitnan');
+	se_ksn=std_ksn/sqrt(numel(MSNc)); % Standard error
+end
+
+function [ksn_ms]=KSN_Quick(DEM,DEMc,A,S,theta_ref,segment_length)
+	g=gradient(S,DEMc);
+	G=GRIDobj(DEM);
+	G.Z(S.IXgrid)=g;
+
+	Z_RES=DEMc-DEM;
+
+	ksn=G./(A.*(A.cellsize^2)).^(-theta_ref);
+
+	SD=GRIDobj(DEM);
+	SD.Z(S.IXgrid)=S.distance;
+	
+	ksn_ms=STREAMobj2mapstruct(S,'seglength',segment_length,'attributes',...
+		{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'cut_fill' Z_RES @mean...
+		'min_dist' SD @min 'max_dist' SD @max});
+
+	seg_dist=[ksn_ms.max_dist]-[ksn_ms.min_dist];
+	distcell=num2cell(seg_dist');
+	[ksn_ms(1:end).seg_dist]=distcell{:};
+	ksn_ms=rmfield(ksn_ms,{'min_dist','max_dist'});
+end
+
+function [ksn_ms]=KSN_Trunk(DEM,DEMc,A,S,theta_ref,segment_length,min_order)
+
+	order_exp=['>=' num2str(min_order)];
+
+    Smax=modify(S,'streamorder',order_exp);
+	Smin=modify(S,'rmnodes',Smax);
+
+	g=gradient(S,DEMc);
+	G=GRIDobj(DEM);
+	G.Z(S.IXgrid)=g;
+
+	Z_RES=DEMc-DEM;
+
+	ksn=G./(A.*(A.cellsize^2)).^(-theta_ref);
+
+	SDmax=GRIDobj(DEM);
+	SDmin=GRIDobj(DEM);
+	SDmax.Z(Smax.IXgrid)=Smax.distance;
+	SDmin.Z(Smin.IXgrid)=Smin.distance;
+
+	ksn_ms_min=STREAMobj2mapstruct(Smin,'seglength',segment_length,'attributes',...
+		{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'cut_fill' Z_RES @mean...
+		'min_dist' SDmin @min 'max_dist' SDmin @max});
+
+	ksn_ms_max=STREAMobj2mapstruct(Smax,'seglength',segment_length,'attributes',...
+		{'ksn' ksn @mean 'uparea' (A.*(A.cellsize^2)) @mean 'gradient' G @mean 'cut_fill' Z_RES @mean...
+		'min_dist' SDmax @min 'max_dist' SDmax @max});
+
+	ksn_ms=vertcat(ksn_ms_min,ksn_ms_max);
+	seg_dist=[ksn_ms.max_dist]-[ksn_ms.min_dist];
+	distcell=num2cell(seg_dist');
+	[ksn_ms(1:end).seg_dist]=distcell{:};
+	ksn_ms=rmfield(ksn_ms,{'min_dist','max_dist'});
+end
+
+function [ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length)
+
+	% Define non-intersecting segments
+	[as]=networksegment_slim(DEM,FD,S);
+	seg_bnd_ix=as.ix;
+	% Precompute values or extract values needed for later
+	z=getnal(S,DEMc);
+	zu=getnal(S,DEM);
+	z_res=z-zu;
+	g=gradient(S,DEMc);
+	c=chitransform(S,A,'a0',1,'mn',theta_ref);
+	d=S.distance;
+	da=getnal(S,A.*(A.cellsize^2));
+	ixgrid=S.IXgrid;
+	% Extract ordered list of stream indices and find breaks between streams
+	s_node_list=S.orderednanlist;
+	streams_ix=find(isnan(s_node_list));
+	streams_ix=vertcat(1,streams_ix);
+	% Generate empty node attribute list for ksn values
+	ksn_nal=zeros(size(d));
+	% Begin main loop through channels
+	num_streams=numel(streams_ix)-1;
+	seg_count=1;
+	for ii=1:num_streams
+		% Extract node list for stream of interest
+		if ii==1
+			snlOI=s_node_list(streams_ix(ii):streams_ix(ii+1)-1);
+		else
+			snlOI=s_node_list(streams_ix(ii)+1:streams_ix(ii+1)-1);
+		end
+
+		% Determine which segments are within this stream
+		[~,~,dn]=intersect(snlOI,seg_bnd_ix(:,1));
+		[~,~,up]=intersect(snlOI,seg_bnd_ix(:,2));
+		seg_ix=intersect(up,dn);
+
+		num_segs=numel(seg_ix);
+		dn_up=seg_bnd_ix(seg_ix,:);
+		for jj=1:num_segs
+			% Find positions within node list
+			dnix=find(snlOI==dn_up(jj,1));
+			upix=find(snlOI==dn_up(jj,2));
+			% Extract segment indices of desired segment
+			seg_ix_oi=snlOI(upix:dnix);
+			% Extract flow distances and normalize
+			dOI=d(seg_ix_oi);
+			dnOI=dOI-min(dOI);
+			num_bins=ceil(max(dnOI)/segment_length);
+			bin_edges=[0:segment_length:num_bins*segment_length];
+			% Loop through bins
+			for kk=1:num_bins
+				idx=dnOI>bin_edges(kk) & dnOI<=bin_edges(kk+1);
+				bin_ix=seg_ix_oi(idx);
+				cOI=c(bin_ix);
+				zOI=z(bin_ix);
+					if numel(cOI)>2
+						[ksn_val,r2]=Chi_Z_Spline(cOI,zOI);
+						ksn_nal(bin_ix)=ksn_val;
+
+						% Build mapstructure
+						ksn_ms(seg_count).Geometry='Line';
+						ksm_ms(seg_count).BoundingBox=[min(S.x(bin_ix)),min(S.y(bin_ix));max(S.x(bin_ix)),max(S.y(bin_ix))];
+						ksn_ms(seg_count).X=S.x(bin_ix);
+						ksn_ms(seg_count).Y=S.y(bin_ix);
+						ksn_ms(seg_count).ksn=ksn_val;
+						ksn_ms(seg_count).uparea=mean(da(bin_ix));
+						ksn_ms(seg_count).gradient=mean(g(bin_ix));
+						ksn_ms(seg_count).cut_fill=mean(z_res(bin_ix));
+						ksn_ms(seg_count).seg_dist=max(S.distance(bin_ix))-min(S.distance(bin_ix));
+						ksn_ms(seg_count).chi_r2=r2;
+						
+						seg_count=seg_count+1;
+					end
+			end
+		end
+	end
+end
+
+function seg = networksegment_slim(DEM,FD,S)
+	% Slimmed down version of 'networksegment' from main TopoToolbox library that also removes zero and single node length segments
+
+	%% Identify channel heads, confluences, b-confluences and outlets
+	Vhead = streampoi(S,'channelheads','logical');  ihead=find(Vhead==1);  IXhead=S.IXgrid(ihead);
+	Vconf = streampoi(S,'confluences','logical');   iconf=find(Vconf==1);  IXconf=S.IXgrid(iconf);
+	Vout = streampoi(S,'outlets','logical');        iout=find(Vout==1);    IXout=S.IXgrid(iout);
+	Vbconf = streampoi(S,'bconfluences','logical'); ibconf=find(Vbconf==1);IXbconf=S.IXgrid(ibconf);
+
+	%% Identify basins associated to b-confluences and outlets
+	DB   = drainagebasins(FD,vertcat(IXbconf,IXout));DBhead=DB.Z(IXhead); DBbconf=DB.Z(IXbconf); DBconf=DB.Z(IXconf); DBout=DB.Z(IXout);
+
+	%% Compute flowdistance
+	D = flowdistance(FD);
+
+	%% Identify river segments
+	% links between channel heads and b-confluences
+	[~,ind11,ind12]=intersect(DBbconf,DBhead);
+	% links between confluences and b-confluences
+	[~,ind21,ind22]=intersect(DBbconf,DBconf);
+	% links between channel heads and outlets
+	[~,ind31,ind32]=intersect(DBout,DBhead);
+	% links between channel heads and outlets
+	[~,ind41,ind42]=intersect(DBout,DBconf);
+	% Connecting links into segments
+	IX(:,1) = [ IXbconf(ind11)' IXbconf(ind21)' IXout(ind31)'  IXout(ind41)'  ];   ix(:,1)= [ ibconf(ind11)' ibconf(ind21)' iout(ind31)'  iout(ind41)'  ];
+	IX(:,2) = [ IXhead(ind12)'  IXconf(ind22)'  IXhead(ind32)' IXconf(ind42)' ];   ix(:,2)= [ ihead(ind12)'  iconf(ind22)'  ihead(ind32)' iconf(ind42)' ];
+
+	% Compute segment flow length
+	flength=double(abs(D.Z(IX(:,1))-D.Z(IX(:,2))));
+
+	% Remove zero and one node length elements
+	idx=flength>=2*DEM.cellsize;
+	seg.IX=IX(idx,:);
+	seg.ix=ix(idx,:);
+	seg.flength=flength(idx);
+
+	% Number of segments
+	seg.n=numel(IX(:,1));
+end
+
+function [KSN,R2] = Chi_Z_Spline(c,z)
+
+	% Resample chi-elevation relationship using cubic spline interpolation
+	[~,minIX]=min(c);
+	zb=z(minIX);
+	chiF=c-min(c);
+	zabsF=z-min(z);
+	chiS=linspace(0,max(chiF),numel(chiF)).';
+	zS=spline(chiF,zabsF,chiS);
+
+	% Calculate ksn via slope
+	KSN= chiS\(zS); % mn not needed because a0 is fixed to 1
+
+	% Calculate R^2
+	z_pred=chiF.*KSN;
+	sstot=sum((zabsF-mean(zabsF)).^2);
+	ssres=sum((zabsF-z_pred).^2);
+	R2=1-(ssres/sstot);
 
 end
