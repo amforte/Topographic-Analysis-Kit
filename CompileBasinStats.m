@@ -313,6 +313,23 @@ function [T]=CompileBasinStats(location_of_data_files,varargin)
 		AgInd=find(strcmp(cellstr(char(VarList.name)),'AGc'));
 		RlfInd=find(strcmp(cellstr(char(VarList.name)),'rlf'));
 		AcgInd=find(strcmp(cellstr(char(VarList.name)),'ACGc'));
+		KsnQInd=find(strcmp(cellstr(char(VarList.name)),'KSNQc_stats'));
+
+		if ~isempty(KsnQInd)
+			load(FileName,'KSNQc_stats');
+
+			T.mean_ksn_q(ii,1)=KSNQc_stats(:,1);
+
+			switch uncertainty
+			case 'se'
+				T.se_ksn_q(ii,1)=KSNQc_stats(:,2);
+			case 'std'
+				T.std_ksn_q(ii,1)=KSNQc_stats(:,3);
+			case 'both'
+				T.se_ksn_q(ii,1)=KSNQc_stats(:,2);
+				T.std_ksn_q(ii,1)=KSNQc_stats(:,3);
+			end
+		end
 
 		if ~isempty(AgInd)
 			load(FileName,'AGc','AGc_stats');

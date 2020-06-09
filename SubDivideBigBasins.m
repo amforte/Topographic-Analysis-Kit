@@ -598,8 +598,43 @@ function SubDivideBigBasins(basin_dir,max_basin_size,divide_method,varargin)
 				end
 
 				VarList=whos('-file',FileName);
-				VarInd=find(strcmp(cellstr(char(VarList.name)),'AGc'));
 
+				VarInd=find(strcmp(cellstr(char(VarList.name)),'KSNQc_stats'));
+				if ~isempty(VarInd)
+					% Extract precip weighted flow accumulation
+					load(FileName,'WAc');
+					WA=WAc;
+					WAc=crop(WA,I,nan);
+					switch ksn_method
+					case 'quick'
+						[WMSc]=KSN_Quick(DEMoc,DEMcc,WAc,Sc,Chic.mn,segment_length);
+						[WMSNc]=KSN_Quick(DEMoc,DEMcc,WAc,Sc,theta_ref,segment_length);
+					case 'trunk'
+						[WMSc]=KSN_Trunk(DEMoc,DEMcc,WAc,Sc,Chic.mn,segment_length,min_order);
+						[WMSNc]=KSN_Trunk(DEMoc,DEMcc,WAc,Sc,theta_ref,segment_length,min_order);			
+					case 'trib'
+						% Overide choice if very small basin as KSN_Trib will fail for small basins
+						if drainage_area>2.5
+							[WMSc]=KSN_Trib(DEMoc,DEMcc,FDc,WAc,Sc,Chic.mn,segment_length);
+							[WMSNc]=KSN_Trib(DEMoc,DEMcc,FDc,WAc,Sc,theta_ref,segment_length);
+						else
+							[WMSc]=KSN_Quick(DEMoc,DEMcc,WAc,Sc,Chic.mn,segment_length);
+							[WMSNc]=KSN_Quick(DEMoc,DEMcc,WAc,Sc,theta_ref,segment_length);
+						end
+					end
+
+					% Calculate basin wide ksn-q statistics
+					min_ksnq=min([WMSNc.ksn],[],'omitnan');
+					mean_ksnq=mean([WMSNc.ksn],'omitnan');
+					max_ksnq=max([WMSNc.ksn],[],'omitnan');
+					std_ksnq=std([WMSNc.ksn],'omitnan');
+					se_ksnq=std_ksnq/sqrt(numel(WMSNc)); % Standard error
+
+					KSNQc_stats=[mean_ksnq se_ksnq std_ksnq min_ksnq max_ksnq];
+					save(SubFileName,'KSNQc_stats','-append');
+				end	
+				
+				VarInd=find(strcmp(cellstr(char(VarList.name)),'AGc'));
 				if ~isempty(VarInd)
 					load(FileName,'AGc');
 					AG=AGc;

@@ -66,7 +66,12 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 	%		ksn_radius [5000] - radius of circular, moving area over which to average ksn values for making an interpolated ksn grid. If you provide an empty array, 
 	%			i.e. [], to this argument this will suppress the calculation (and saving of this output)
 	%		min_basin_size [10] - minimum size (in km^2) of basins to extract if the 'river_mouths' input is a single value or a polyline shapefile. Set to 0 if you wish
-	%			to extract all basins that meet the defined criteria 
+	%			to extract all basins that meet the defined criteria
+	%		precip_raster_name [] - string that indicates the name of a precipitation raster in the provided 'add_grids'. If a valid entry is provided here, this precipitation
+	%			grid will be used to produce a weighted flow accumulation raster and calculation of a discharge weighted normalized channel steepness (i.e. ksn-q sensu 
+	%			Adams et al, In Review). If the name provided here does not match the name of a grid in the 'add_grids' entry (or if no 'add_grids' are provided), then the user will
+	%			be warned and ksn-q values will not be generated. For the resultant ksn-q to be interpreted directly, the provided precipitation dataset should be a mean annual
+	%			precipitation raster in m/year.	 
 	%
 	% Notes:
 	%		-The code will perform a check of the river_mouths input to confirm that 1) there are no duplicate ID numbers (it will dump your ID numbers and create new
@@ -135,6 +140,7 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 	radius=p.Results.ksn_radius;
 	out_dir=p.Results.out_dir;
 	mbsz=p.Results.min_basin_size;
+	prn=p.Results.precip_raster_name;
 
 
 	% Set redo_flag
@@ -174,6 +180,28 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 				AG{jj,1}=resample(AGoi,DEM,resample_method);
 			end
 		end
+	end
+
+	% Peform check relating to precip_raster_name and AG
+	if ~isempty(prn)
+		if isempty(AG)
+			warning('No additional grids are present, so cannot caculate ksn-q with provided name for precipitation raster');
+			weight_acc_flag=false;
+		else
+			AGnames=AG(:,2);
+			Pidx=strcmp(AGnames,prn);
+			if any(Pidx)
+				PRECIP=AG{Pidx,1};
+				disp('Calculating weighted flow accumulation raster for calculating ksn-q values');
+				WA=flowacc(FD,PRECIP);
+				weight_acc_flag=true;
+			else
+				warning('No entries in additional grid match provided name for precipitation raster, so cannot calculate ksn-q');
+				weight_acc_flag=false;
+			end
+		end
+	else
+		weight_acc_flag=false;
 	end
 
 	% Peform check on segment length
@@ -404,6 +432,37 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 			end
 		end
 
+		if weight_acc_flag
+			% Extract precip weighted flow accumulation
+			WAc=crop(WA,I,nan);
+			switch ksn_method
+			case 'quick'
+				[WMSc]=KSN_Quick(DEMoc,DEMcc,WAc,Sc,Chic.mn,segment_length);
+				[WMSNc]=KSN_Quick(DEMoc,DEMcc,WAc,Sc,theta_ref,segment_length);
+			case 'trunk'
+				[WMSc]=KSN_Trunk(DEMoc,DEMcc,WAc,Sc,Chic.mn,segment_length,min_order);
+				[WMSNc]=KSN_Trunk(DEMoc,DEMcc,WAc,Sc,theta_ref,segment_length,min_order);			
+			case 'trib'
+				% Overide choice if very small basin as KSN_Trib will fail for small basins
+				if drainage_area>2.5
+					[WMSc]=KSN_Trib(DEMoc,DEMcc,FDc,WAc,Sc,Chic.mn,segment_length);
+					[WMSNc]=KSN_Trib(DEMoc,DEMcc,FDc,WAc,Sc,theta_ref,segment_length);
+				else
+					[WMSc]=KSN_Quick(DEMoc,DEMcc,WAc,Sc,Chic.mn,segment_length);
+					[WMSNc]=KSN_Quick(DEMoc,DEMcc,WAc,Sc,theta_ref,segment_length);
+				end
+			end
+
+			% Calculate basin wide ksn-q statistics
+			min_ksnq=min([WMSNc.ksn],[],'omitnan');
+			mean_ksnq=mean([WMSNc.ksn],'omitnan');
+			max_ksnq=max([WMSNc.ksn],[],'omitnan');
+			std_ksnq=std([WMSNc.ksn],'omitnan');
+			se_ksnq=std_ksnq/sqrt(numel(WMSNc)); % Standard error
+
+			KSNQc_stats=[mean_ksnq se_ksnq std_ksnq min_ksnq max_ksnq];
+		end
+
 		% Calculate basin wide ksn statistics
 		min_ksn=min([MSNc.ksn],[],'omitnan');
 		mean_ksn=mean([MSNc.ksn],'omitnan');
@@ -436,6 +495,10 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 		% Save base file
 		FileName=fullfile(bsn_path,['Basin_' num2str(basin_num) '_Data.mat']);
 		save(FileName,'RiverMouth','DEMcc','DEMoc','out_el','drainage_area','hyps','FDc','Ac','Sc','SLc','Chic','Goc','MSc','MSNc','KSNc_stats','Gc_stats','Zc_stats','Centroid','ChiOBJc','ksn_method','gradient_method','theta_ref','-v7.3');
+
+		if weight_acc_flag
+			save(FileName,'WAc','KSNQc_stats','-append');
+		end
 	
 		if strcmp(ksn_method,'trunk')
 			save(FileName,'min_order','-append');
