@@ -67,11 +67,11 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 	%			i.e. [], to this argument this will suppress the calculation (and saving of this output)
 	%		min_basin_size [10] - minimum size (in km^2) of basins to extract if the 'river_mouths' input is a single value or a polyline shapefile. Set to 0 if you wish
 	%			to extract all basins that meet the defined criteria
-	%		precip_raster_name [] - string that indicates the name of a precipitation raster in the provided 'add_grids'. If a valid entry is provided here, this precipitation
-	%			grid will be used to produce a weighted flow accumulation raster and calculation of a discharge weighted normalized channel steepness (i.e. ksn-q sensu 
-	%			Adams et al, In Review). If the name provided here does not match the name of a grid in the 'add_grids' entry (or if no 'add_grids' are provided), then the user will
-	%			be warned and ksn-q values will not be generated. For the resultant ksn-q to be interpreted directly, the provided precipitation dataset should be a mean annual
-	%			precipitation raster in m/year.	 
+	%		precip_AGcol_name [] - string that indicates the name of a precipitation raster in the provided 'add_grids' (i.e. the second column input in the provided cell array.
+	%			If a valid entry is provided here, this precipitation grid will be used to produce a weighted flow accumulation raster and calculation of a discharge weighted 
+	%			normalized channel steepness (i.e. ksn-q sensu Adams et al, In Review). If the name provided here does not match the name of a grid in the 'add_grids' entry 
+	%			(or if no 'add_grids' are provided), then the user will be warned and ksn-q values will not be generated. For the resultant ksn-q to be interpreted directly,
+	%			the provided precipitation dataset should be a mean annual precipitation raster in m/year.	 
 	%
 	% Notes:
 	%		-The code will perform a check of the river_mouths input to confirm that 1) there are no duplicate ID numbers (it will dump your ID numbers and create new
@@ -113,6 +113,7 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 	addParameter(p,'interp_value',0.1,@(x) isnumeric(x) && x>=0 && x<=1);
 	addParameter(p,'ksn_radius',5000,@(x) isnumeric(x) && isscalar(x) || isempty(x));
 	addParameter(p,'min_basin_size',10,@(x) isnumeric(x) && isscalar(x));
+	addParameter(p,'precip_AGcol_name',[],@(x) ischar(x));
 	addParameter(p,'out_dir',[],@(x) ischar(x)); % Hidden option for use in GUIs
 
 	parse(p,DEM,FD,A,S,river_mouths,basin_dir,varargin{:});
@@ -140,7 +141,7 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 	radius=p.Results.ksn_radius;
 	out_dir=p.Results.out_dir;
 	mbsz=p.Results.min_basin_size;
-	prn=p.Results.precip_raster_name;
+	prn=p.Results.precip_AGcol_name;
 
 
 	% Set redo_flag
