@@ -1,7 +1,8 @@
-function [ds,db]=ProjectOntoSwath(SW,x,y,data_width)
+function [ds,db]=ProjectOntoSwath(SW,x,y,data_width,varargin)
 	%
 	% Usage:
 	%	[ds,db]=ProjectOntoSwath(SW,x,y,data_width);
+	%	[ds,db]=ProjectOntoSwath(SW,x,y,data_width,'name',value);	
 	%
 	% Description:
 	% 	Function projects points on a SWATHobj (SW) and finds distance along (ds) and 
@@ -13,15 +14,50 @@ function [ds,db]=ProjectOntoSwath(SW,x,y,data_width)
 	%	y - ydata to project
 	%	data_width - width (in map units) from centerline of swath to include
 	%
+	% Optional Inputs:
+	%	signed [false] - flag to control whether distance from the baseline
+	%		"db" is signed, if false, all values will be positive. If true,
+	%		values will be signed where positive values indicate distances to
+	%		the right of the swath line (in the direction in which the swath
+	%		nodes are defined) and negative values indicate distances to the 
+	%		left of the swath line.
+	%	include_concave_bend_regions [true] - flag to control whether
+	%		the code will assign distances for points that lie
+	%		within the triangular region within the concave bends
+	%		 of a swath.
+	%
 	% Outputs:
 	%	ds - distance along swath of each x-y point
 	%	db - distance from center line in map units of each x-y point
 	% 
-	% Values for points that do not project onto swath are set to NaN
+	% Notes:
+	% 	Values for points that do not project onto swath are set to NaN.
+	%	Swaths with tight bends may produce unexpected results, especially when
+	%		calculating signed distances.
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Updated : 06/18/18 %
+	% Function Written by Adam M. Forte - Updated : 09/19/20 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+	% Parse Inputs
+	p = inputParser;
+	p.FunctionName = 'ClassifyKnicks';
+	addRequired(p,'SW',@(x) isa(x,'SWATHobj'));
+	addRequired(p,'x',@(x) isnumeric(x));
+	addRequired(p,'y',@(x) isnumeric(x));
+	addRequired(p,'data_width',@(x) isnumeric(x) && isscalar(x));
+
+	addParameter(p,'signed',false,@(x) islogical(x) && isscalar(x));
+	addParameter(p,'include_concave_bend_regions',true,@(x) islogical(x) && isscalar(x));
+
+	parse(p,SW,x,y,data_width,varargin{:});
+	SW=p.Results.SW;
+	x=p.Results.x;
+	y=p.Results.y;
+	data_width=p.Results.data_width;
+
+	signed=p.Results.signed;
+	in_cn_bnds=p.Results.include_concave_bend_regions;
 
 	% Extract parameters from SWATHobj
 	xypoints=SW.xy;
@@ -116,16 +152,33 @@ function [ds,db]=ProjectOntoSwath(SW,x,y,data_width)
 				pd_in_seg(jj)=seg_dist(I);
 				% Find distance from the baseline
 				BaseLine=n_swy(I);
-				DistFromBaseLine(jj)=abs(BaseLine-n_y(jj));
+				if signed
+					DistFromBaseLine(jj)=BaseLine-n_y(jj);
+				else
+					DistFromBaseLine(jj)=abs(BaseLine-n_y(jj));
+				end
+
 			else 
 				pd_in_seg(jj)=NaN;
 				DistFromBaseLine(jj)=NaN;
 			end
 
-			% Control for points that are within bend overlaps
-			if isnan(pd_in_seg(jj)) & n_dist(jj)<=data_width & ii~=num_segs
-				pd_in_seg(jj)=seg_dist(bend_ix(ii+1));
-				DistFromBaseLine(jj)=n_dist(jj);
+			if in_cn_bnds
+				% Control for points that are within bend overlaps
+				if isnan(pd_in_seg(jj)) & n_dist(jj)<=data_width & ii~=num_segs
+					pd_in_seg(jj)=seg_dist(bend_ix(ii+1));
+					if signed
+						% Determine sign
+						[n_swx1,n_swy1]=RotCoord(swx1,swy1,sw_angle,swx0,swy0);
+						if n_swy1>n_y(jj)
+							DistFromBaseLine(jj)=n_dist(jj);
+						else 
+							DistFromBaseLine(jj)=-1*n_dist(jj);
+						end
+					else
+						DistFromBaseLine(jj)=n_dist(jj);
+					end
+				end
 			end 
 
 		end
@@ -140,10 +193,14 @@ function [ds,db]=ProjectOntoSwath(SW,x,y,data_width)
 	end
 
 	% Find distances of points that are closest to their segment line
-	[db,c]=min(dist_from_base,[],2,'omitnan');
+	% [db,c]=min(abs(dist_from_base),[],2,'omitnan');
+	[~,c]=min(abs(dist_from_base),[],2,'omitnan');
+
 	r=[1:numel(c)]; r=r(:);
 	ix=sub2ind(size(dist_from_base),r,c);
 	ds=dist_in_swath(ix);
+
+	db=dist_from_base(ix);
 
 	% Set any points greater than the total swath distance to NaN;
 	idx=single(ds)>=max(swdist);
