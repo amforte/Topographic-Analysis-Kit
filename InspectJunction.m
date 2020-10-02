@@ -1,11 +1,4 @@
 function InspectJunction(S,IX,num,varargin)
-	%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%%% THIS FUNCTION IS UNDER ACTIVE DEVELOPMENT %%%
-	%% FUNCTION IS NOT FULLY DOCUMENTED IN MANUAL %%%
-	%%%%%% CHANGES AND MALFUNCTIONS ARE LIKELY %%%%%%
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%
 	% Usage:
 	%	InspectJunction(S,IX,num);
 	%	InspectJunction(S,IX,num,'fit_distance',val);
