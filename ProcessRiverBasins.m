@@ -69,7 +69,7 @@ function ProcessRiverBasins(DEM,FD,A,S,river_mouths,basin_dir,varargin)
 	%			to extract all basins that meet the defined criteria
 	%		precip_AGcol_name [] - string that indicates the name of a precipitation raster in the provided 'add_grids' (i.e. the second column input in the provided cell array.
 	%			If a valid entry is provided here, this precipitation grid will be used to produce a weighted flow accumulation raster and calculation of a discharge weighted 
-	%			normalized channel steepness (i.e. ksn-q sensu Adams et al, In Review). If the name provided here does not match the name of a grid in the 'add_grids' entry 
+	%			normalized channel steepness (i.e. ksn-q sensu Adams et al, 2020). If the name provided here does not match the name of a grid in the 'add_grids' entry 
 	%			(or if no 'add_grids' are provided), then the user will be warned and ksn-q values will not be generated. For the resultant ksn-q to be interpreted directly,
 	%			the provided precipitation dataset should be a mean annual precipitation raster in m/year.	 
 	%

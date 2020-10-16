@@ -61,6 +61,10 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	% Notes:
 	%	Please be aware that the production of the ksngrid and/or chigrid can be time consuming, so be patient...
 	%
+	%	If you wish to calculate ksn-q (e.g. Adams et al, 2020), run MakeStreams and provide a precipitation grid to "precip_grid" and
+	% 		provide the output grids to KsnChiBatch. The resulting flow accumulation grid "A" will be precipitation weighted and 
+	%		the calculated ksn values will actually be ksn-q values.
+	%
 	% Example:
 	%	KsnChiBatch(DEM,FD,A,S,'ksn');
 	%	[KSN,ChiMap,ChiGrid]=KsnChiBatch(DEM,FD,A,S,'output',true,'theta_ref',0.55);
