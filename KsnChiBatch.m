@@ -31,19 +31,26 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	% 	output [false]- switch to either output matlab files to the workspace (true) or to not only save the specified files
 	%		without any workspace output (false). The number of outputs will depend on the 'product' input.
 	%			'ksn' - [KSNG,ksn_ms] where KSNG is a GRIDobj with ksn values along the stream network and ksn_ms is the mapstructure suitable for creating 
-	%					a shapefile
+	%					a shapefile. If a precip_grid is provided, then the outputs will be [KSNG,ksn_ms,KSNQG,ksnq_ms] where the second two are the 
+	%					precipitation weighted ksn-q values (e.g. Adams et al, 2020)
 	%			'ksngrid' - [KSNgrid,KSNstdGrid] where KSNgrid is a GRIDobj of interpolated ksn values and KSNstdGrid is a GRIDobj of the standard deviation
-	%					of ksn within the specified radius
+	%					of ksn within the specified radius. If a precip_grid is provided, then the outputs will be be [KSNgrid,KSNstdGrid,KSNQgrid,KSNQstdGrid]
 	%			'chimap' - [ChiMap] where ChiMap is a GRIDobj with chi values along the stream network
 	%			'chigrid' - [ChiGrid] where ChiGrid is a GRIDobj with chi values across the entire grid
 	%			'chi' - [ChiMap,ChiGrid]
-	%			'all' - [KSNG,ksn_ms,KSNGrid,KSNstdGrid,ChiMap,ChiGrid]
+	%			'all' - [KSNG,ksn_ms,KSNGrid,KSNstdGrid,ChiMap,ChiGrid], if a precp_grid is provided, then the outputs will be 
+	%					[KSNG,ksn_ms,KSNGrid,KSNstdGrid,ChiMap,ChiGrid,KSNQG,ksnq_ms,KSNQGrid,KSNQstdGrid]
 	%	ksn_method [quick] - switch between method to calculate ksn values, options are 'quick', 'trunk', or 'trib', the 'trib' method takes 3-4 times longer 
 	%		than the 'quick' method. In most cases, the 'quick' method works well, but if values near tributary junctions are important, then 'trib'
 	%		may be better as this calculates ksn values for individual channel segments individually. The 'trunk' option calculates steepness values
 	%		of large streams independently (streams considered as trunks are controlled by the stream order value supplied to 'min_order'). The 'trunk' option
 	%		may be of use if you notice anomaoloulsy high channel steepness values on main trunk streams that can result because of the way values are reach
 	%		averaged.
+	%	precip_grid [] - optional input of a GRIDobj of precipitation. If you provide an argument for this, there will be additional outputs corresponding
+	%		to ksn-q values (see Adams et al, 2020), i.e. a precipitation weighted ksn value. DO NOT provide both an optional precipitation grid here and a flow
+	%		accumulation grid "A" which is precipitation weighted (which you will get if you provide a precip_grid when running MakeStreams) as this will produce
+	%		erroneous values. The precip_grid input should cover the same area (or larger) than the provided DEM, but does not need to have the same cellsize as the
+	%		function will resample the precip_grid if necessary.
 	%	min_order [4] - minimum stream order for a stream to be considered a trunk stream, only used if 'ksn_method' is set to 'trunk'
 	%	outlet_level_method [] - parameter to control how stream network outlet level is adjusted. Options for control of outlet elevation are:
 	%			'elevation' - extract streams only above a given elevation (provided by the user using the 'min_elevation' parameter) to ensure that base level
@@ -61,16 +68,13 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	% Notes:
 	%	Please be aware that the production of the ksngrid and/or chigrid can be time consuming, so be patient...
 	%
-	%	If you wish to calculate ksn-q (e.g. Adams et al, 2020), run MakeStreams and provide a precipitation grid to "precip_grid" and
-	% 		provide the output grids to KsnChiBatch. The resulting flow accumulation grid "A" will be precipitation weighted and 
-	%		the calculated ksn values will actually be ksn-q values.
-	%
 	% Example:
 	%	KsnChiBatch(DEM,FD,A,S,'ksn');
-	%	[KSN,ChiMap,ChiGrid]=KsnChiBatch(DEM,FD,A,S,'output',true,'theta_ref',0.55);
+	%	[KSNG,ksn_ms]=KsnChiBatch(DEM,FD,A,S,'ksn','output',true,'theta_ref',0.55);
+	%	[KSNG,ksn_ms,KSNQG,ksnq_ms]=KsnChiBatch(DEM,FD,A,S,'ksn','output',true,'theta_ref',0.45,'precip_grid',PRECIP);
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Updated : 06/16/19 %
+	% Function Written by Adam M. Forte - Updated : 10/17/20 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Parse Inputs
@@ -87,6 +91,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	addParameter(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'output',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'ksn_method','quick',@(x) ischar(validatestring(x,{'quick','trunk','trib'})));
+	addParameter(p,'precip_grid',[],@(x) isa(x,'GRIDobj') || isempty(x));	
 	addParameter(p,'min_order',4,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'outlet_level_method',[],@(x) isempty(x) || ischar(validatestring(x,{'elevation','max_out_elevation'})));
 	addParameter(p,'min_elevation',[],@(x) isnumeric(x) || isempty(x));
@@ -108,6 +113,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	theta_ref=p.Results.ref_concavity;
 	output=p.Results.output;
 	ksn_method=p.Results.ksn_method;
+	precip_grid=p.Results.precip_grid;	
 	min_order=p.Results.min_order;
 	blm=p.Results.outlet_level_method;
 	me=p.Results.min_elevation;
@@ -131,6 +137,19 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 			warning('Selected outlet level adjust method "elevation" requires that you provide an input for parameter "min_elevation", running without baselevel control');
 		end
 		blm=[];
+	end
+
+
+	% Check for precip grid and product, resample if necessary, and make precip weighted flow accumulation GRIDobj
+	if ~isempty(precip_grid) & (strcmp(product,'ksn') | strcmp(product,'ksngrid') | strcmp(product,'all'));
+		disp('Calculating precpitation weighted flow accumulation grid')
+		if ~validatealignment(precip_grid,DEM);
+			precip_grid=resample(precip_grid,DEM,'nearest');
+		end
+		WA=flowacc(FD,precip_grid);
+		q_flag=true;
+	else
+		q_flag=false;
 	end
 
 	switch product
@@ -167,20 +186,56 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 		out_file=[file_name_prefix '_ksn.shp'];
 		shapewrite(ksn_ms,out_file);
 
+		if q_flag
+			disp('Calculating precipitation weighted channel steepness')
+
+			switch ksn_method
+			case 'quick'
+				[ksnq_ms]=KSN_Quick(DEM,DEMc,WA,S,theta_ref,segment_length);
+			case 'trunk'
+				[ksnq_ms]=KSN_Trunk(DEM,DEMc,WA,S,theta_ref,segment_length,min_order);
+			case 'trib'
+				[ksnq_ms]=KSN_Trib(DEM,DEMc,FD,WA,S,theta_ref,segment_length);
+			end
+
+			disp('Writing ARC files')
+			out_file=[file_name_prefix '_ksnq.shp'];
+			shapewrite(ksnq_ms,out_file);			
+		end
+
 		switch output
 		case true
-			KSNG=GRIDobj(DEM);
-			KSNG.Z(:,:)=NaN;
-			for ii=1:numel(ksn_ms)
-				ix=coord2ind(DEM,ksn_ms(ii).X,ksn_ms(ii).Y);
-				KSNG.Z(ix)=ksn_ms(ii).ksn;
+			if q_flag
+				KSNG=GRIDobj(DEM);
+				KSNG.Z(:,:)=NaN;
+				for ii=1:numel(ksn_ms)
+					ix=coord2ind(DEM,ksn_ms(ii).X,ksn_ms(ii).Y);
+					KSNG.Z(ix)=ksn_ms(ii).ksn;
+				end
+				KSNQG=GRIDobj(DEM);
+				KSNQG.Z(:,:)=NaN;
+				for ii=1:numel(ksnq_ms)
+					ix=coord2ind(DEM,ksnq_ms(ii).X,ksnq_ms(ii).Y);
+					KSNQG.Z(ix)=ksnq_ms(ii).ksn;
+				end
+				varargout{1}=KSNG;
+				varargout{2}=ksn_ms;
+				varargout{3}=KSNQG;
+				varargout{4}=ksnq_ms;
+			else
+				KSNG=GRIDobj(DEM);
+				KSNG.Z(:,:)=NaN;
+				for ii=1:numel(ksn_ms)
+					ix=coord2ind(DEM,ksn_ms(ii).X,ksn_ms(ii).Y);
+					KSNG.Z(ix)=ksn_ms(ii).ksn;
+				end
+				varargout{1}=KSNG;
+				varargout{2}=ksn_ms;
 			end
-			varargout{1}=KSNG;
-			varargout{2}=ksn_ms;
 		end
 
 	case 'ksngrid'
-
+		disp('Calculating channel steepness')
 		if strcmp(blm,'elevation')
 			IDX=DEM<me;
 			DEM.Z(IDX.Z)=NaN;
@@ -214,6 +269,7 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 			[ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length);
 		end
 
+		disp('Calculating gridded channel steepness')
 		[KSNGrid,KSNstdGrid]=KsnAvg(DEM,ksn_ms,radius,error_type);
 
 		disp('Writing ARC files')
@@ -222,10 +278,38 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 		GRIDobj2ascii(KSNGrid,out_file_ksng);
 		GRIDobj2ascii(KSNstdGrid,out_file_ksnstd);
 
+		if q_flag
+			disp('Calculating precipitation weighted channel steepness')
+			switch ksn_method
+			case 'quick'
+				[ksnq_ms]=KSN_Quick(DEM,DEMc,WA,S,theta_ref,segment_length);
+			case 'trunk'
+				[ksnq_ms]=KSN_Trunk(DEM,DEMc,WA,S,theta_ref,segment_length,min_order);
+			case 'trib'
+				[ksnq_ms]=KSN_Trib(DEM,DEMc,FD,WA,S,theta_ref,segment_length);
+			end
+
+			disp('Calculating precipitation weighted gridded channel steepness')
+			[KSNQGrid,KSNQstdGrid]=KsnAvg(DEM,ksnq_ms,radius,error_type);
+
+			disp('Writing ARC files')
+			out_file_ksng=[file_name_prefix '_ksnqgrid.txt'];
+			out_file_ksnstd=[file_name_prefix '_ksnqstdgrid.txt'];
+			GRIDobj2ascii(KSNQGrid,out_file_ksng);
+			GRIDobj2ascii(KSNQstdGrid,out_file_ksnstd);			
+		end		
+
 		switch output
 		case true
-			varargout{1}=KSNGrid;
-			varargout{2}=KSNstdGrid;
+			if q_flag
+				varargout{1}=KSNGrid;
+				varargout{2}=KSNstdGrid;
+				varargout{3}=KSNQGrid;
+				varargout{4}=KSNQstdGrid;				
+			else
+				varargout{1}=KSNGrid;
+				varargout{2}=KSNstdGrid;				
+			end
 		end
 
 	case 'chimap'
@@ -328,8 +412,24 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 			[ksn_ms]=KSN_Trib(DEM,DEMc,FD,A,S,theta_ref,segment_length);
 		end
 
-		disp('Calculating interpolated ksn grid')
+		disp('Calculating gridded ksn grid')
 		[KSNGrid,KSNstdGrid]=KsnAvg(DEM,ksn_ms,radius,error_type);
+
+		if q_flag
+			disp('Calculating precipitation weighted channel steepness')
+
+			switch ksn_method
+			case 'quick'
+				[ksnq_ms]=KSN_Quick(DEM,DEMc,WA,S,theta_ref,segment_length);
+			case 'trunk'
+				[ksnq_ms]=KSN_Trunk(DEM,DEMc,WA,S,theta_ref,segment_length,min_order);
+			case 'trib'
+				[ksnq_ms]=KSN_Trib(DEM,DEMc,FD,WA,S,theta_ref,segment_length);
+			end
+
+			disp('Calculating precipitation weighted gridded channel steepness')
+			[KSNQGrid,KSNQstdGrid]=KsnAvg(DEM,ksnq_ms,radius,error_type);		
+		end	
 
 	    disp('Calculating chi map');
 		[ChiMap]=MakeChiMap(DEM,FD,A,S,theta_ref);
@@ -348,21 +448,53 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 		GRIDobj2ascii(ChiGrid,out_file_cg);
 		out_file_cm=[file_name_prefix '_chimap.txt'];
 		GRIDobj2ascii(ChiMap,out_file_cm);
+		if q_flag
+			out_file_ksnqg=[file_name_prefix '_ksnqgrid.txt'];
+			out_file_ksnqstd=[file_name_prefix '_ksnqstdgrid.txt'];
+			GRIDobj2ascii(KSNQGrid,out_file_ksnqg);
+			GRIDobj2ascii(KSNQstdGrid,out_file_ksnqstd);	
+		end
 
 		switch output
 		case true
-			KSNG=GRIDobj(DEM);
-			KSNG.Z(:,:)=NaN;
-			for ii=1:numel(ksn_ms)
-				ix=coord2ind(DEM,ksn_ms(ii).X,ksn_ms(ii).Y);
-				KSNG.Z(ix)=ksn_ms(ii).ksn;
+			if q_flag
+				KSNG=GRIDobj(DEM);
+				KSNG.Z(:,:)=NaN;
+				for ii=1:numel(ksn_ms)
+					ix=coord2ind(DEM,ksn_ms(ii).X,ksn_ms(ii).Y);
+					KSNG.Z(ix)=ksn_ms(ii).ksn;
+				end
+				varargout{1}=KSNG;
+				varargout{2}=ksn_ms;
+				varargout{3}=KSNGrid;
+				varargout{4}=KSNstdGrid;
+				varargout{5}=ChiMap;
+				varargout{6}=ChiGrid;
+
+				KSNQG=GRIDobj(DEM);
+				KSNQG.Z(:,:)=NaN;
+				for ii=1:numel(ksnq_ms)
+					ix=coord2ind(DEM,ksnq_ms(ii).X,ksnq_ms(ii).Y);
+					KSNQG.Z(ix)=ksnq_ms(ii).ksn;
+				end
+				varargout{7}=KSNQG;
+				varargout{8}=ksnq_ms;
+				varargout{9}=KSNQGrid;
+				varargout{10}=KSNQstdGrid;				
+			else
+				KSNG=GRIDobj(DEM);
+				KSNG.Z(:,:)=NaN;
+				for ii=1:numel(ksn_ms)
+					ix=coord2ind(DEM,ksn_ms(ii).X,ksn_ms(ii).Y);
+					KSNG.Z(ix)=ksn_ms(ii).ksn;
+				end
+				varargout{1}=KSNG;
+				varargout{2}=ksn_ms;
+				varargout{3}=KSNGrid;
+				varargout{4}=KSNstdGrid;
+				varargout{5}=ChiMap;
+				varargout{6}=ChiGrid;
 			end
-			varargout{1}=KSNG;
-			varargout{2}=ksn_ms;
-			varargout{3}=KSNGrid;
-			varargout{4}=KSNstdGrid;
-			varargout{5}=ChiMap;
-			varargout{6}=ChiGrid;
 		end
 	end
 
