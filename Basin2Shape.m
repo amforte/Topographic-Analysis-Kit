@@ -223,19 +223,19 @@ function [MS]=Basin2Shape(DEM,location_of_data_files,varargin)
 					[mean_ksn,std_ksn,se_ksn]=ksn_convert_exact(FileName,segment_length,new_concavity(jj));
 				end
 				ksn_cat_name=matlab.lang.makeValidName(['mean_ksn_' num2str(new_concavity(jj))]);
-				T.(ksn_cat_name)(ii,1)=mean_ksn;
+				MS(ii,1).(ksn_cat_name)=mean_ksn;
 				switch uncertainty
 				case 'se'
 					ksn_cat_name_se=matlab.lang.makeValidName(['se_ksn_' num2str(new_concavity(jj))]);
-					T.(ksn_cat_name_se)(ii,1)=se_ksn;
+					MS(ii,1).(ksn_cat_name_se)=se_ksn;
 				case 'std'
 					ksn_cat_name_std=matlab.lang.makeValidName(['std_ksn_' num2str(new_concavity(jj))]);
-					T.(ksn_cat_name_std)(ii,1)=std_ksn;
+					MS(ii,1).(ksn_cat_name_std)=std_ksn;
 				case 'both'
 					ksn_cat_name_se=matlab.lang.makeValidName(['se_ksn_' num2str(new_concavity(jj))]);
-					T.(ksn_cat_name_se)(ii,1)=se_ksn;
+					MS(ii,1).(ksn_cat_name_se)=se_ksn;
 					ksn_cat_name_std=matlab.lang.makeValidName(['std_ksn_' num2str(new_concavity(jj))]);
-					T.(ksn_cat_name_std)(ii,1)=std_ksn;					
+					MS(ii,1).(ksn_cat_name_std)=std_ksn;					
 				end
 			end
 		end		
