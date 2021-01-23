@@ -8,7 +8,7 @@ If you encounter a bug or have a suggestion for a new feature / improvement the 
 v.1.2.0 has been released! The release includes all files in the 'master' repository along with a tarball bundling the example data sets referenced in the manual. New releases are created periodically when major changes in the codes occur.
 
 ## GUI
-Starting with v.1.2.0, TAK comes with a GUI which incorporates almost all of the standard TAK functions. This can be run either in MATLAB or through the Matlab Runtime Environment.
+Starting with v.1.2.0, TAK comes with a GUI which incorporates almost all of the standard TAK functions. This can be run either in MATLAB or through the Matlab Runtime Environment. Because of the nature of GUIs in Matlab, running the GUI will have a little more overhead meaning that it will eat into the size of dataset you can successfully process in TAK. Similarly, updates and new features that are implemented in the code versions will be added to the GUI later, i.e. the GUI will alg behind the code. So, if you need the bleeding edge, the codes are the way to go.
 
 ## Tutorial Files
 Starting with v.1.2.0, the release includes a detailed tutorial for standard usage of TAK. The tutorial comes in two versions, one for the MATLAB function version and one for the GUI version. The tutorial is only available through downloading a release (because of file size limitations for files in the repository). 
