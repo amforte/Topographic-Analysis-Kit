@@ -1,6 +1,9 @@
 ## Topographic Analyis Kit for TopoToolbox ##
 These are a series of MATLAB functions written by Adam M. Forte [aforte8 'at' lsu.edu] that build upon the functionality of TopoToolbox [https://github.com/wschwanghart/topotoolbox]. Each function contains a header with basic functionality info along with expected inputs and possible outputs. There is now a detailed user guide included in the repository as both a PDF ('TAKmanual_reduce.pdf') and a LaTeX file (folder 'TAKmanual_texFiles' which inludes the tex file and associated images).
 
+# Error Reporting and Feature Request
+If you encounter a bug or have a suggestion for a new feature / improvement the preferred method of communication is to use the 'Issues' function built into GitHub. To make sure that I actually know about it, **when submitting an issue, tag me, i.e. type "@amforte" into the top of the issue**. This way I will get a notification that there is an issue, otherwise I won't know about it unless I'm checking the issues page. You can also email Adam [aforte8 'at' lsu.edu]. If you encounter an issue that you know how to fix and are comfortable with how git works, please feel free to fork the code and submit a pull request with fixes and improvements, collaboration is welcome!
+
 # Release
 v.1.2.0 has been released! The release includes all files in the 'master' repository along with a tarball bundling the example data sets referenced in the manual. New releases are created periodically when major changes in the codes occur.
 
@@ -23,6 +26,3 @@ A.M. Forte, K.X. Whipple. Short communication: The Topographic Analysis Kit (TAK
 
 The current DOI for the latest release is:
 [![DOI](https://zenodo.org/badge/70010178.svg)](https://zenodo.org/badge/latestdoi/70010178)
-
-# Error Reporting and Feature Request
-If you encounter a bug or have a suggestion for a new feature / improvement the preferred method of communication is to use the 'Issues' function built into GitHub. You can also email Adam [aforte8 'at' lsu.edu]. If you encounter an issue that you know how to fix and are comfortable with how git works, please feel free to fork the code and submit a pull request with fixes and improvements, collaboration is welcome!
