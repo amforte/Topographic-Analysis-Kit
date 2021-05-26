@@ -25,7 +25,7 @@ function [clat,clon,crad,cpx,cpy]=BestFitSmallCircle(x,y,proj)
 	%	[clat,clon,crad,cpx,cpy]=BestFitSmallCircle(x,y,DEM.georef.mstruct);
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Updated : 04/02/19 %
+	% Function Written by Adam M. Forte - Updated : 05/25/21 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Remove any NaNs
