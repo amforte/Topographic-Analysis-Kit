@@ -1,4 +1,4 @@
-function [clat,clon,crad,cpx,cpy]=BestFitSmallCircle(x,y,proj)
+function [clat,clon,crad,cpx,cpy]=BestFitSmallCircle(x,y,proj,varargin)
 	% Usage:
 	%	[clat,clon,crad,cpx,cpy]=BestFitSmallCircle(x,y,proj)
 	%
@@ -13,6 +13,11 @@ function [clat,clon,crad,cpx,cpy]=BestFitSmallCircle(x,y,proj)
 	%	the 'proj' argument, it's assumed that the x and y coordinates are longitude and 
 	%	latitude respectively. In this case, the outputs 'cpx' and 'cpy' will also be in
 	%	longitude and latitude.
+	% 
+	% Optional Inputs:
+	%	trim_circle [false] - logical flag to trim circle to the approximate extent of the provided x y points,
+	%		performance of this will improve if you increase the num_points beyond the default of 100.
+	%	num_points [100] - number of points to generate along the small circle that is extracted
 	%
 	% Outputs:
 	%	clat - latitude of center of small circle
@@ -27,6 +32,23 @@ function [clat,clon,crad,cpx,cpy]=BestFitSmallCircle(x,y,proj)
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Function Written by Adam M. Forte - Updated : 05/25/21 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    p = inputParser;
+    p.FunctionName = 'BestFitSmallCircle';
+    addRequired(p,'x',@(x) isnumeric(x));
+    addRequired(p,'y',@(x) isnumeric(x));
+    addRequired(p,'proj',@(x) isstruct(x));
+
+    addParameter(p,'trim_circle',false,@(x) islogical(x) && isscalar(x));
+    addParameter(p,'num_points',100,@(x) isscalar(x) && isnumeric(x));
+
+    parse(p,x,y,proj,varargin{:});
+    x=p.Results.x;
+    y=p.Results.y;
+    proj=p.Results.proj;
+
+    trim_circle=p.Results.trim_circle;
+    num_points=p.Results.num_points;
 
 	% Remove any NaNs
 	idx=~isnan(x) | ~isnan(y);
@@ -57,11 +79,31 @@ function [clat,clon,crad,cpx,cpy]=BestFitSmallCircle(x,y,proj)
 	crad=est(3);
 
 	% Calculate circle perimeter in projected coordinates
-	[circ_lat,circ_lon]=scircle1(clat,clon,crad);
+	[circ_lat,circ_lon]=scircle1(clat,clon,crad,[],[],[],num_points);
 	if ~isempty(proj)
 		[cpx,cpy]=projfwd(proj,circ_lat,circ_lon);
 	else
 		cpx=circ_lon; cpy=circ_lat;
+	end
+
+	% Trim circle to extent 
+	if trim_circle
+		x0=x(1); y0=y(1);
+		x1=x(end); y1=y(end);
+
+		d0=hypot((x0-cpx),(y0-cpy));
+		d1=hypot((x1-cpx),(y1-cpy));
+
+		[~,ix0]=min(d0);
+		[~,ix1]=min(d1);
+
+		if ix0<ix1
+			cpx=cpx(ix0:ix1);
+			cpy=cpy(ix0:ix1);
+		elseif ix0>ix1
+			cpx=cpx(ix1:ix0);
+			cpy=cpy(ix1:ix0);
+		end
 	end
 
 	% Minimization function
