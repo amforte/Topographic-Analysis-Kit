@@ -28,6 +28,11 @@ function [clat,clon,crad,cpx,cpy]=BestFitSmallCircle(x,y,proj)
 	% Function Written by Adam M. Forte - Updated : 04/02/19 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+	% Remove any NaNs
+	idx=~isnan(x) | ~isnan(y);
+	x=x(idx);
+	y=y(idx);
+
 	% Convert input x y points to lat lon
 	if ~isempty(proj)
 		[lat,lon]=projinv(proj,x,y);
@@ -52,7 +57,7 @@ function [clat,clon,crad,cpx,cpy]=BestFitSmallCircle(x,y,proj)
 	crad=est(3);
 
 	% Calculate circle perimeter in projected coordinates
-	[circ_lat,circ_lon]=scircle1(clat,clon,rad);
+	[circ_lat,circ_lon]=scircle1(clat,clon,crad);
 	if ~isempty(proj)
 		[cpx,cpy]=projfwd(proj,circ_lat,circ_lon);
 	else
