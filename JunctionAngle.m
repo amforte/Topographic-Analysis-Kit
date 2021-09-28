@@ -29,6 +29,7 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 	% Required Inputs:
 	%	S - STREAMobj for calculating junction angles
 	%	A - GRIDobj of flow accumulation grid
+	%	DEM - GRIDobj of elevations, used for calculating slopes
 	%	fit_distance - distance in stream distance (map units) for fitting stream links, 
 	%		if more than one value is provided to fit_distance, it is assumed you want to calculate
 	%		junction angles fitting stream segments with the range of distances. The provided value(s)
