@@ -775,7 +775,7 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 					case 'minimum_power'
 						% Howard 1971 minimum power method
 						ix1=S.IXgrid(us1ix);
-						ix2=S.IXgrid(us2ix});
+						ix2=S.IXgrid(us2ix);
 						ix3=S.IXgrid(dsix);
 						sl1=mean(G.Z(ix1));
 						sl2=mean(G.Z(ix2));
