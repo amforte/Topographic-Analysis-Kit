@@ -22,7 +22,9 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 	%	1969, 'Frequency distributions of stream link lengths'. It is important to note that angles
 	%	related to junctions at which more than two upstream links meet or for which there are no 
 	%	downstream nodes (i.e. the junction is an outlet) are set to NaN as these are undefined in
-	%	the Howard criteria.
+	%	the Howard criteria. If a GRIDobj of estimated discharges in m^3/sec is provided, then an 
+	%	alternate prediction method using the minimum power criteria described in Howard, 1971 will
+	%	also be calculated. 
 	%
 	% Required Inputs:
 	%	S - STREAMobj for calculating junction angles
@@ -44,13 +46,22 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 	%		value provided to fit distance does not exceed the maximum fit distance that was provided when
 	%		you initially ran the function to produce the provided IX input. The code will check that the fit
 	%		distances are compatible, but will not explicity check that S, A, and the DEM are the same.
+	%	discharge [] - GRIDobj of discharge in m^3/sec to use in the area or stream power junction angle 
+	%		estimates. The most direct method for providing this would be using the FLOWobj and a GRIDobj
+	%		of mean precipitation in m/sec in the 'flowacc' function to produce an estimate of discharge.
+	%		If an argument is provided to this parameter, then this value will be used in place of area in
+	%		the 'area' prediction method. This argument is required if the 'predict_angle_method' is 
+	%		'minimum_power'.
 	%	predict_angle_method ['area'] - method to use to calculate predicted junction angles. Both
 	%		methods are simple geometric predictions from Howard, 1971. Valid inputs are 'slope', 
-	%		'area',  or 'both'. If pred_angle_method is set to 'area' (default), then you should make sure the 
-	%		ref_concavity is valid for the network you are analyzing, default value is 0.5. For the 'slope'
+	%		'area', 'minimum_power', or 'all'. If pred_angle_method is set to 'area' (default), then you should 
+	%		make sure the ref_concavity is valid for the network you are analyzing, default value is 0.5. For the 'slope'
 	%		method, the slope of the two upstream and one downstream link will be the mean of the gradient
-	%		of those links over the length of stream sampled (controlled by the values provided to fit_distance).
-	%		Providing 'both' will calculate both the slope and area predicted angles.
+	%		of those links over the length of stream sampled (controlled by the values provided to fit_distance). 
+	%		For the 'minimum_power' method, an argument is required for 'discharge'. If an entry for 'discharge' is provided
+	%		then the 'area' method will also use this estimated discharge in place of a drainage area approximation.
+	%		Providing 'all' will calculate both the slope and area predicted angles if no discharge is provided and
+	%		will calculate the slope, area, and minimum power angles if a discharge is provided.
 	%	ref_concavity - [0.5] - reference concavity for calculating predicted junction angles using
 	%		Howard, 1971 area relation. If no value is provided, default value of 0.5 will be used.
 	%	make_shape [false] - logical flag to generate a shapefile containing the junction locations
@@ -73,9 +84,12 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 	%			tributary 1 and tributary 2 (true) or does not (false)
 	%		e1_obs_angle - angle between tributary 1 and upstream projection of downstream link
 	%		e1_Apred_angle - predicted angle between tributary 1 and upstream projection of downstream link
-	%			based on Howard 1971 area relations (will appear if 'predict_angle_method' is 'area' or 'both')
+	%			based on Howard 1971 area relations (will appear if 'predict_angle_method' is 'area' or 'all')
 	%		e1_Spred_angle - predicted angle between tributary 1 and upstream projection of downstream link
-	%			based on Howard 1971 slope relations (will appear if 'predict_angle_method' is 'slope' or 'both')	
+	%			based on Howard 1971 slope relations (will appear if 'predict_angle_method' is 'slope' or 'all')	
+	%		e1_MPpred_angle - predicted angle between tributary 1 and upstream projection of downstream link
+	%			based on Howard 1971 minimum power criteria (will appear if 'predict_angle_method' is 'minimum_power' or 'all'),
+	%			but requires that a valid GRIDobj is provided to 'discharge'
 	%		e1_rotation - orientation of tributary 1 with respect to the upstream projection of the
 	%			downstream link, options are CCW (counter-clockwise), CW (clockwise), or Undefined
 	%			(more than two tributaries meet at junction). If split is true, one of the upstream links will be
@@ -87,9 +101,12 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 	%		e1_R2 - R2 value on linear fit of tributary 1
 	%		e2_obs_angle - angle between tributary 2 and upstream projection of downstream link
 	%		e2_Apred_angle - predicted angle between tributary 2 and upstream projection of downstream link
-	%			based on Howard 1971 area relations (will appear if 'predict_angle_method' is 'area' or 'both')
+	%			based on Howard 1971 area relations (will appear if 'predict_angle_method' is 'area' or 'all')
 	%		e2_Spred_angle - predicted angle between tributary 2 and upstream projection of downstream link
-	%			based on Howard 1971 slope relations (will appear if 'predict_angle_method' is 'slope' or 'both')	
+	%			based on Howard 1971 slope relations (will appear if 'predict_angle_method' is 'slope' or 'all')
+	%		e2_MPpred_angle - predicted angle between tributary 1 and upstream projection of downstream link
+	%			based on Howard 1971 minimum power criteria (will appear if 'predict_angle_method' is 'minimum_power' or 'all'),
+	%			but requires that a valid GRIDobj is provided to 'discharge'		
 	%		e2_rotation - orientation of tributary 2 with respect to the upstream projection of the
 	%			downstream link, options are CCW (counter-clockwise), CW (clockwise), or Undefined
 	%			(more than two tributaries meet at junction)
@@ -129,13 +146,17 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 	%	[J,IX]=JunctionAngle(S,A,DEM,1000);
 	%	[J,IX]=JunctionAngle(S,A,DEM,1000,'verbose',true,'make_shape',true,'ref_concavity',0.45);
 	%	[J,IX,MJ]=JunctionAngle(S,A,[250 500 1000 2500 5000]);
-	%	[J,IX]=JunctionAngle(S,A,DEM,1000,'predict_angle_method','slope')
+	%	[J,IX]=JunctionAngle(S,A,DEM,1000,'predict_angle_method','slope');
+	%	% Example for minimum power criteria
+	%	PRECIPr=resample(PRECIP_M_S,DEM,'nearest');
+	%	Q=flowacc(FD,PRECIPr);
+	%	[J,IX]=JunctionAngle(S,A,DEM,1000,'discharge',Q,'predict_angle_method','minimum_power');
 	%	
 	% Related Functions:
-	% 	InspectJunction JunctionLinks
+	% 	InspectJunction JunctionLinks JunctionSegments
 	%
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Function Written by Adam M. Forte - Updated : 06/26/19 %
+	% Function Written by Adam M. Forte - Updated : 09/27/21 %
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	% Parse Inputs
@@ -148,7 +169,8 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 
 	addParameter(p,'use_n_nodes',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'previous_IX',[],@(x) iscell(x) || isempty(x));
-	addParameter(p,'predict_angle_method','area',@(x) ischar(validatestring(x,{'slope','area','both'})));
+	addParameter(p,'discharge',[],@(x) isa(x,'GRIDobj'));
+	addParameter(p,'predict_angle_method','area',@(x) ischar(validatestring(x,{'slope','area','minimum_power','all'})));
 	addParameter(p,'ref_concavity',0.50,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'make_shape',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'verbose',false,@(x) isscalar(x) && islogical(x));
@@ -163,6 +185,7 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 
 	use_n_nodes=p.Results.use_n_nodes;
 	PIX=p.Results.previous_IX;
+	Q=p.Results.discharge;
 	method=p.Results.predict_angle_method;
 	ref_theta=p.Results.ref_concavity;
 	make_shape=p.Results.make_shape;
@@ -248,9 +271,18 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 	% Calculate Shreve stream orders
 	so=streamorder(S,'shreve');
 
+	% Check for required inputs
+	if strcmp(method,'minimum_power') & isempty(Q)
+		error('Must provide a GRIDobj for the discharge parameter to use the minimum power method');
+	end
+
+	if ~isempty(Q) & ~validatealignment(S,Q)
+		error('STREAMobj and GRIDobj provided to discharge do not appear to have been derived from the same FLOWobj');
+	end
+
 	% Calculate gradient if pred_angle_method is slope
 	switch method
-	case {'slope','both'}
+	case {'slope','minimum_power','all'}
 		if verbose
 			disp('Calculating stream gradients')
 		end
@@ -375,8 +407,13 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 					% Howard 1971 area method
 					ix1=S.IXgrid(us{ii,1});
 					ix2=S.IXgrid(us{ii,2});
-					da1=max(A.Z(ix1).*A.cellsize^2);
-					da2=max(A.Z(ix2).*A.cellsize^2);
+					if isempty(Q)
+						da1=max(A.Z(ix1).*A.cellsize^2);
+						da2=max(A.Z(ix2).*A.cellsize^2);
+					else
+						da1=max(Q.Z(ix1));
+						da2=max(Q.Z(ix2));
+					end
 					e1p=acos(((da1+da2)/da1)^-ref_theta);
 					e2p=acos(((da1+da2)/da2)^-ref_theta);
 					% Convert to degrees
@@ -410,12 +447,49 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 					e2p=rad2deg(e2p);
 					% Store out
 					pred_angle(ii,:)=[e1p e2p];
-				case 'both'
+				case 'minimum_power'
+					% Howard 1971 minimum power method
+					ix1=S.IXgrid(us{ii,1});
+					ix2=S.IXgrid(us{ii,2});
+					ix3=S.IXgrid(ds{ii,1});
+					sl1=mean(G.Z(ix1));
+					sl2=mean(G.Z(ix2));
+					sl3=mean(G.Z(ix3));
+					q1=max(Q.Z(ix1));
+					q2=max(Q.Z(ix2));
+					q3=q1+q2;
+					C1=q1*sl1;
+					C2=q2*sl2;
+					C3=q3*sl3;
+					inner1=((C3^2)+(C1^2)-(C2^2))/(2*C1*C3);
+					inner2=((C3^2)+(C2^2)-(C1^2))/(2*C2*C3);
+					if inner1>1
+						e1p=0;
+					else
+						e1p=acos(inner1);
+					end
+
+					if inner>1
+						e2p=0;
+					else
+						e2p=acos(inner2);
+					end
+					% Convert to degrees
+					e1p=rad2deg(e1p);
+					e2p=rad2deg(e2p);				
+					% Store out
+					pred_angle(ii,:)=[e1p e2p];
+				case 'all'
 					% Howard 1971 area method
 					ix1=S.IXgrid(us{ii,1});
 					ix2=S.IXgrid(us{ii,2});
-					da1=max(A.Z(ix1).*A.cellsize^2);
-					da2=max(A.Z(ix2).*A.cellsize^2);
+					if isempty(Q)
+						da1=max(A.Z(ix1).*A.cellsize^2);
+						da2=max(A.Z(ix2).*A.cellsize^2);
+					else
+						da1=max(Q.Z(ix1));
+						da2=max(Q.Z(ix2));
+					end
 					e1Ap=acos(((da1+da2)/da1)^-ref_theta);
 					e2Ap=acos(((da1+da2)/da2)^-ref_theta);
 					% Convert to degrees
@@ -443,10 +517,35 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 					% Convert to degrees
 					e1Sp=rad2deg(e1Sp);
 					e2Sp=rad2deg(e2Sp);
-					% Store out
-					pred_angle(ii,:)=[e1Ap e2Ap e1Sp e2Sp];
-				end
 
+					% Howard 1971 Minimum Power
+					if ~isempty(Q)
+						C1=da1*sl1;
+						C2=da2*sl2;
+						C3=(da1+da2)*sl3;
+						inner1=((C3^2)+(C1^2)-(C2^2))/(2*C1*C3);
+						inner2=((C3^2)+(C2^2)-(C1^2))/(2*C2*C3);
+						if inner1>1
+							e1Mp=0;
+						else
+							e1Mp=acos(inner1);
+						end
+
+						if inner>1
+							e2Mp=0;
+						else
+							e2Mp=acos(inner2);
+						end
+						% Convert to degrees
+						e1Mp=rad2deg(e1Mp);
+						e2Mp=rad2deg(e2Mp);	
+						% Store out
+						pred_angle(ii,:)=[e1Ap e2Ap e1Sp e2Sp e1Mp e2Mp];					
+					else
+						% Store out
+						pred_angle(ii,:)=[e1Ap e2Ap e1Sp e2Sp];
+					end
+				end
 
 				% Rotate all points to horizontal
 				[xu1r,yu1r]=rotcoord(xu1,yu1,-theta1ap,0,0); 
@@ -533,10 +632,14 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 				fit_streams(ii,:)=[NaN NaN NaN NaN NaN NaN NaN NaN NaN];
 
 				switch method
-				case {'area','slope'}
+				case {'area','slope','minimum_power'}
 					pred_angle(ii,:)=[NaN NaN];
-				case 'both'
-					pred_angle(ii,:)=[NaN NaN NaN NaN];
+				case 'all'
+					if isempty(Q)
+						pred_angle(ii,:)=[NaN NaN NaN NaN];
+					else
+						pred_angle(ii,:)=[NaN NaN NaN NaN NaN NaN];
+					end
 				end
 			end
 		end
@@ -562,10 +665,14 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 			fs=zeros(num_con,9);
 
 			switch method
-			case {'area','slope'}
+			case {'area','slope','minimum_power'}
 				pa=zeros(num_con,2);
-			case 'both'
-				pa=zeros(num_con,4);
+			case 'all'
+				if isempty(Q)
+					pa=zeros(num_con,4);
+				else
+					pa=zeros(num_con,6);
+				end
 			end			
 
 			for ii=1:num_con
@@ -624,8 +731,13 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 						% Howard 1971 area method
 						ix1=S.IXgrid(us1ix);
 						ix2=S.IXgrid(us2ix);
-						da1=max(A.Z(ix1).*A.cellsize^2);
-						da2=max(A.Z(ix2).*A.cellsize^2);
+						if isempty(Q)
+							da1=max(A.Z(ix1).*A.cellsize^2);
+							da2=max(A.Z(ix2).*A.cellsize^2);
+						else
+							da1=max(Q.Z(ix1));
+							da2=max(Q.Z(ix2));
+						end
 						e1p=acos(((da1+da2)/da1)^-ref_theta);
 						e2p=acos(((da1+da2)/da2)^-ref_theta);
 						% Convert to degrees
@@ -659,12 +771,49 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 						e2p=rad2deg(e2p);
 						% Store out
 						pa(ii,:)=[e1p e2p];
-					case 'both'
+					case 'minimum_power'
+						% Howard 1971 minimum power method
+						ix1=S.IXgrid(us1ix);
+						ix2=S.IXgrid(us2ix});
+						ix3=S.IXgrid(dsix);
+						sl1=mean(G.Z(ix1));
+						sl2=mean(G.Z(ix2));
+						sl3=mean(G.Z(ix3));
+						q1=max(Q.Z(ix1));
+						q2=max(Q.Z(ix2));
+						q3=q1+q2;
+						C1=q1*sl1;
+						C2=q2*sl2;
+						C3=q3*sl3;
+						inner1=((C3^2)+(C1^2)-(C2^2))/(2*C1*C3);
+						inner2=((C3^2)+(C2^2)-(C1^2))/(2*C2*C3);
+						if inner1>1
+							e1p=0;
+						else
+							e1p=acos(inner1);
+						end
+
+						if inner>1
+							e2p=0;
+						else
+							e2p=acos(inner2);
+						end
+						% Convert to degrees
+						e1p=rad2deg(e1p);
+						e2p=rad2deg(e2p);				
+						% Store out
+						pa(ii,:)=[e1p e2p];
+					case 'all'
 						% Howard 1971 area method
 						ix1=S.IXgrid(us1ix);
 						ix2=S.IXgrid(us2ix);
-						da1=max(A.Z(ix1).*A.cellsize^2);
-						da2=max(A.Z(ix2).*A.cellsize^2);
+						if isempty(Q)
+							da1=max(A.Z(ix1).*A.cellsize^2);
+							da2=max(A.Z(ix2).*A.cellsize^2);
+						else
+							da1=max(Q.Z(ix1));
+							da2=max(Q.Z(ix2));
+						end
 						e1Ap=acos(((da1+da2)/da1)^-ref_theta);
 						e2Ap=acos(((da1+da2)/da2)^-ref_theta);
 						% Convert to degrees
@@ -691,9 +840,35 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 						end
 						% Convert to degrees
 						e1Sp=rad2deg(e1Sp);
-						e2Sp=rad2deg(e2Sp);	
-						% Store out
-						pa(ii,:)=[e1Ap e2Ap e1Sp e2Sp];
+						e2Sp=rad2deg(e2Sp);
+
+						% Howard 1971 Minimum Power
+						if ~isempty(Q)
+							C1=da1*sl1;
+							C2=da2*sl2;
+							C3=(da1+da2)*sl3;
+							inner1=((C3^2)+(C1^2)-(C2^2))/(2*C1*C3);
+							inner2=((C3^2)+(C2^2)-(C1^2))/(2*C2*C3);
+							if inner1>1
+								e1Mp=0;
+							else
+								e1Mp=acos(inner1);
+							end
+
+							if inner>1
+								e2Mp=0;
+							else
+								e2Mp=acos(inner2);
+							end
+							% Convert to degrees
+							e1Mp=rad2deg(e1Mp);
+							e2Mp=rad2deg(e2Mp);	
+							% Store out
+							pa(ii,:)=[e1Ap e2Ap e1Sp e2Sp e1Mp e2Mp];					
+						else
+							% Store out
+							pa(ii,:)=[e1Ap e2Ap e1Sp e2Sp];
+						end
 					end
 
 					% Rotate all points to horizontal
@@ -781,10 +956,14 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 					fs(ii,:)=[NaN NaN NaN NaN NaN NaN NaN NaN NaN];
 
 					switch method
-					case {'slope','area'}
+					case {'slope','area','minimum_power'}
 						pa(ii,:)=[NaN NaN];
 					case 'both'
-						pa(ii,:)=[NaN NaN NaN NaN];
+						if isempty(Q)
+							pa(ii,:)=[NaN NaN NaN NaN];
+						else
+							pa(ii,:)=[NaN NaN NaN NaN NaN NaN];
+						end
 					end
 				end
 			end
@@ -817,7 +996,7 @@ function [junctions,IX,varargout]=JunctionAngle(S,A,DEM,fit_distance,varargin);
 		std_e1_angle=std(e1mat,1,2);
 		std_e2_angle=std(e2mat,1,2);
 
-		if strcmp(method,'slope') | strcmp(method,'both')
+		if strcmp(method,'slope') | strcmp(method,'all')
 			e1pmat=zeros(size(jamat));
 			e2pmat=zeros(size(jamat));
 			for jj=1:num_n
@@ -1149,16 +1328,40 @@ function [T]=makejunctiontable(la,pa,cr,fs,method)
 			e2_obs_angle,e2_Spred_angle,e2_rotation,e2_shreve,e2_direction,e2_distance,e2_num,e2_R2,...
 			e3_direction,e3_distance,e3_num,e3_R2);		
 
-	case 'both'
-		e1_Apred_angle=pa(:,1);	
-		e2_Apred_angle=pa(:,2);
-		e1_Spred_angle=pa(:,3);	
-		e2_Spred_angle=pa(:,4);
+	case 'minimum_power'
+		e1_MPpred_angle=pa(:,1);	
+		e2_MPpred_angle=pa(:,2);
 
 		T=table(junction_number,junction_x,junction_y,junction_angle,handedness,split,...
-			e1_obs_angle,e1_Apred_angle,e1_Spred_angle,e1_rotation,e1_shreve,e1_direction,e1_distance,e1_num,e1_R2,...
-			e2_obs_angle,e2_Apred_angle,e2_Spred_angle,e2_rotation,e2_shreve,e2_direction,e2_distance,e2_num,e2_R2,...
+			e1_obs_angle,e1_MPpred_angle,e1_rotation,e1_shreve,e1_direction,e1_distance,e1_num,e1_R2,...
+			e2_obs_angle,e2_MPpred_angle,e2_rotation,e2_shreve,e2_direction,e2_distance,e2_num,e2_R2,...
 			e3_direction,e3_distance,e3_num,e3_R2);	
+
+	case 'all'
+		if size(pa,2)==4
+			e1_Apred_angle=pa(:,1);	
+			e2_Apred_angle=pa(:,2);
+			e1_Spred_angle=pa(:,3);	
+			e2_Spred_angle=pa(:,4);
+
+
+			T=table(junction_number,junction_x,junction_y,junction_angle,handedness,split,...
+				e1_obs_angle,e1_Apred_angle,e1_Spred_angle,e1_rotation,e1_shreve,e1_direction,e1_distance,e1_num,e1_R2,...
+				e2_obs_angle,e2_Apred_angle,e2_Spred_angle,e2_rotation,e2_shreve,e2_direction,e2_distance,e2_num,e2_R2,...
+				e3_direction,e3_distance,e3_num,e3_R2);	
+		else
+			e1_Apred_angle=pa(:,1);	
+			e2_Apred_angle=pa(:,2);
+			e1_Spred_angle=pa(:,3);	
+			e2_Spred_angle=pa(:,4);
+			e1_MPpred_angle=pa(:,5);
+			e2_MPpred_angle=pa(:,6);			
+
+			T=table(junction_number,junction_x,junction_y,junction_angle,handedness,split,...
+				e1_obs_angle,e1_Apred_angle,e1_Spred_angle,e1_MPpred_angle,e1_rotation,e1_shreve,e1_direction,e1_distance,e1_num,e1_R2,...
+				e2_obs_angle,e2_Apred_angle,e2_Spred_angle,e2_MPpred_angle,e2_rotation,e2_shreve,e2_direction,e2_distance,e2_num,e2_R2,...
+				e3_direction,e3_distance,e3_num,e3_R2);	
+		end
 	end
 
 end
@@ -1199,9 +1402,17 @@ function makejunctionshape(la,pa,cr,fs,method,num_shp,out_dir,out_name)
 			ms(ii,1).E1_APred=double(pa(ii,1));
 		case 'slope'
 			ms(ii,1).E1_SPred=double(pa(ii,1));
-		case 'both'
-			ms(ii,1).E1_APred=double(pa(ii,1));
-			ms(ii,1).E1_SPred=double(pa(ii,3));
+		case 'minimum_power'
+			ms(ii,1).E1_MPpred=double(pa(ii,1));
+		case 'all'
+			if size(pa,2)==4
+				ms(ii,1).E1_APred=double(pa(ii,1));
+				ms(ii,1).E1_SPred=double(pa(ii,3));
+			else
+				ms(ii,1).E1_APred=double(pa(ii,1));
+				ms(ii,1).E1_SPred=double(pa(ii,3));
+				ms(ii,1).E1_MPpred=double(pa(ii,5));
+			end
 		end			
 
 		ms(ii,1).E2_Ang=double(la(ii,5));
@@ -1211,9 +1422,17 @@ function makejunctionshape(la,pa,cr,fs,method,num_shp,out_dir,out_name)
 			ms(ii,1).E2_APred=double(pa(ii,2));
 		case 'slope'
 			ms(ii,1).E2_SPred=double(pa(ii,2));
-		case 'both'
-			ms(ii,1).E2_APred=double(pa(ii,2));
-			ms(ii,1).E2_SPred=double(pa(ii,4));
+		case 'minimum_power'
+			ms(ii,1).E2_MPpred=double(pa(ii,2));			
+		case 'all'
+			if size(pa,2)==4
+				ms(ii,1).E2_APred=double(pa(ii,2));
+				ms(ii,1).E2_SPred=double(pa(ii,4));
+			else
+				ms(ii,1).E2_APred=double(pa(ii,2));
+				ms(ii,1).E2_SPred=double(pa(ii,4));
+				ms(ii,1).E2_MPpred=double(pa(ii,6));
+			end
 		end	
 
 		if la(ii,7)==1
