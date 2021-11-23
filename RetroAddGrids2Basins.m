@@ -1,4 +1,4 @@
-function RetroAddGrids2Basins(location_of_data_files,DEM,varargin)
+function RetroAddGrids2Basins(location_of_data_files,DEM,behavior,varargin)
 	%
 	% Usage:
 	%		RetroAddGrids2Basins(locations_of_data_files,DEM,behavior,'name','value',...);
