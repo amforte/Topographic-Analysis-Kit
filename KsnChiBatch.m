@@ -64,6 +64,8 @@ function [varargout]=KsnChiBatch(DEM,FD,A,S,product,varargin)
 	%			on certain DEMs and when used in tandem with 'min_elevation', it can be slow to calculate as it requires recalculation of the FLOWobj.
 	%	interp_value [0.1] - value (between 0 and 1) used for interpolation parameter in mincosthydrocon (not used if user provides a conditioned DEM)
 	%	radius [5000] - radius of circular, moving area over which to average ksn values to produced an interpolated ksn grid if product is set to 'ksngrid' or 'all'
+	%	error_type ['std'] - controls whether the second output when calculating a KsnGrid is the standard deviation (default) or standard error. To calculate
+	%			standard error instead of standard deviation, provide 'std_error' as the optional input.
 	%
 	% Notes:
 	%	Please be aware that the production of the ksngrid and/or chigrid can be time consuming, so be patient...
