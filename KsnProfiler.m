@@ -3540,10 +3540,17 @@ function [bs,ba,bc,bd,a,g,d,C]=sa(DEM,S,A,C,bin_size)
 	% Run through STREAMobj2XY so chi and everything else are same size
 	[~,~,a,g,d]=STREAMobj2XY(S,an,gn,S.distance);
 	% Remove NaNs
-	a(isnan(a))=[];
-	g(isnan(g))=[];
-	d(isnan(d))=[];
-	C(isnan(C))=[];
+	% a(isnan(a))=[];
+	% g(isnan(g))=[];
+	% d(isnan(d))=[];
+	% C(isnan(C))=[];
+
+	% This avoids erroneous selection of confluence points at end of selected streams
+	rlIDX= ~isnan(a) & ~isnan(g) & ~isnan(d) & ~isnan(C);
+	a = a(rlIDX); 
+	g = g(rlIDX);
+	d = d(rlIDX);
+	C = C(rlIDX):
 
 	mina=min(a);
 	maxa=max(a);
