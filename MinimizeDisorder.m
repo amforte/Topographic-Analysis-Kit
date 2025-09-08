@@ -110,10 +110,6 @@ function [theta_out] = MinimizeDisorder(DEM,FD,A,S,varargin)
 			else
 				theta_out(ii) = fminsearch(@(theta) disorder(Stest,DEM,A,theta),p.Results.start_val);
 			end
-
-			if mod(ii,100)==0
-				disp(ii)
-			end
 		end
 
 
