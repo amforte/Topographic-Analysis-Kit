@@ -107,8 +107,7 @@ function [theta_out] = MinimizeDisorder(DEM,FD,A,S,varargin)
 				% Generate a stream network of just the three selected tributaries
 				Sup = modify(S,'upstreamto',n(ii,:));
 				% Create logical raster
-				L = GRIDobj(DEM);
-				L.Z = logical(L.Z);
+				L = GRIDobj(DEM,'logical');
 				% Populate with the trunk, selected tribs, and their outlets
 				L.Z(ST.IXgrid) = 1;
 				L.Z(Sup.IXgrid) = 1;
