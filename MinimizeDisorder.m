@@ -37,6 +37,10 @@ function [theta_out] = MinimizeDisorder(DEM,FD,A,S,varargin)
 	%		where n is the number of unique set of 3 tributaries that drain to the trunk. Note, that if you are supplying 
 	%		a large network or a network where channel definition used a low threshold area (i.e., in a scenario where 
 	%		there are a lot of tributaries), turning on bootstrapping may take a long time to complete.
+	%	tributary_numbers [3] - the number of tributaries (along with the trunk) to include, along with the trunk
+	%		in the bootstrap routine (if bootstrap is set to true). The default, 3, is what is used in Mudd et al., 
+	%		(2018). As this number increases, the number of repititions within the bootstrap routine will also increase
+	%		as will the computation time.
 	%
 	% Examples:
 	%	[theta_out] = MinimizeDisorder(DEM,FD,A,S,'bounded',true,'lower_bound',0.1,'upper_bound',0.9);
@@ -68,6 +72,7 @@ function [theta_out] = MinimizeDisorder(DEM,FD,A,S,varargin)
 	addParameter(p,'bounded',false,@(x) isscalar(x) && islogical(x));
 	addParameter(p,'lower_bound',0.0,@(x) isscalar(x) && isnumeric(x));
 	addParameter(p,'upper_bound',1.5,@(x) isscalar(x) && isnumeric(x));
+	addParameter(p,'tributary_numbers',3,@(x) isscalar(x) && isnumeric(x));
 
 	parse(p,DEM,FD,A,S,varargin{:});
 
@@ -85,7 +90,7 @@ function [theta_out] = MinimizeDisorder(DEM,FD,A,S,varargin)
 		trib_oix = streampoi(Strib,'outlets','ix');
 
 		% Create 3-n list of tributaries to iterate through
-		n = nchoosek(trib_oix,3);
+		n = nchoosek(trib_oix,p.Results.tributary_numbers);
 		num_trib_pairs = size(n,1);
 
 		% Generate a container for the theta results
