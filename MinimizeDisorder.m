@@ -89,31 +89,44 @@ function [theta_out] = MinimizeDisorder(DEM,FD,A,S,varargin)
 		Strib = modify(S,'tributaryto',ST);
 		trib_oix = streampoi(Strib,'outlets','ix');
 
-		% Create 3-n list of tributaries to iterate through
-		n = nchoosek(trib_oix,p.Results.tributary_numbers);
-		num_trib_pairs = size(n,1);
+		% The bootstrap routine will only produce a non-zero output if the
+		% number of tributaries is equal to or greater than the number of
+		% tributaries to use in the bootstrap routine. If there is a small
+		% number of tributaries, this reverts to a single determination of 
+		% theta based on minimization of the disorder.
+		if numel(trib_oix) >= p.Results.tributary_numbers
+			% Create 3-n list of tributaries to iterate through
+			n = nchoosek(trib_oix,p.Results.tributary_numbers);
+			num_trib_pairs = size(n,1);
 
-		% Generate a container for the theta results
-		theta_out = zeros(num_trib_pairs,1);
+			% Generate a container for the theta results
+			theta_out = zeros(num_trib_pairs,1);
 
-		% Begin iterating through tributary pairs
-		for ii=1:num_trib_pairs
-			% Generate a stream network of just the three selected tributaries
-			Sup = modify(S,'upstreamto',n(ii,:));
-			% Create logical raster
-			L = GRIDobj(DEM);
-			L.Z = logical(L.Z);
-			% Populate with the trunk, selected tribs, and their outlets
-			L.Z(ST.IXgrid) = 1;
-			L.Z(Sup.IXgrid) = 1;
-			L.Z(n(ii,:)) = 1;
-			% Recreate this candidate stream network
-			Stest = STREAMobj(FD,L);
-			% Do the optimization
+			% Begin iterating through tributary pairs
+			for ii=1:num_trib_pairs
+				% Generate a stream network of just the three selected tributaries
+				Sup = modify(S,'upstreamto',n(ii,:));
+				% Create logical raster
+				L = GRIDobj(DEM);
+				L.Z = logical(L.Z);
+				% Populate with the trunk, selected tribs, and their outlets
+				L.Z(ST.IXgrid) = 1;
+				L.Z(Sup.IXgrid) = 1;
+				L.Z(n(ii,:)) = 1;
+				% Recreate this candidate stream network
+				Stest = STREAMobj(FD,L);
+				% Do the optimization
+				if p.Results.bounded
+					theta_out(ii) = fminbnd(@(theta) disorder(Stest,DEM,A,theta),p.Results.lower_bound,p.Results.upper_bound);
+				else
+					theta_out(ii) = fminsearch(@(theta) disorder(Stest,DEM,A,theta),p.Results.start_val);
+				end
+			end
+		else
 			if p.Results.bounded
-				theta_out(ii) = fminbnd(@(theta) disorder(Stest,DEM,A,theta),p.Results.lower_bound,p.Results.upper_bound);
+				theta_out = fminbnd(@(theta) disorder(S,DEM,A,theta),p.Results.lower_bound,p.Results.upper_bound);
 			else
-				theta_out(ii) = fminsearch(@(theta) disorder(Stest,DEM,A,theta),p.Results.start_val);
+				theta_out = fminsearch(@(theta) disorder(S,DEM,A,theta),p.Results.start_val);
 			end
 		end
 
