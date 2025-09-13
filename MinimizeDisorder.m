@@ -146,6 +146,10 @@ function [D] = disorder(S,DEM,A,theta_ref)
 	c = chitransform(S,A,'a0',1,'mn',theta_ref);
 	% Extract z
 	z = getnal(S,DEM);
+	% Remove any nans
+	idx = isnan(c) | isnan(z);
+	c = c(~idx);
+	z = z(~idx);
 	% Sort by ascending elevation
 	[zs,idx] = sort(z);
 	% Apply sorting to chi
